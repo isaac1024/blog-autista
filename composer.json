@@ -11,6 +11,7 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.7",
         "symfony/apache-pack": "^1.0",
+        "symfony/asset": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
@@ -97,6 +98,7 @@
         ],
         "complexity": "phpmd analyze src --ruleset phpmd.xml --exclude '*Migrations*' --cache --cache-file var/phpmd.result-cache.php --no-progress",
         "test": "phpunit",
+        "check:ui": "node tools/ui-check.mjs",
         "infection": "XDEBUG_MODE=coverage infection",
         "check": [
             "@cs:check",

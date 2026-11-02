@@ -1,6 +1,9 @@
 cms:
     login:
         title: 'Sign in'
+        subtitle: 'Access the administration panel'
+        brand: 'blog autista'
+        error: 'Error:'
         username: 'Username'
         password: 'Password'
         submit: 'Sign in'

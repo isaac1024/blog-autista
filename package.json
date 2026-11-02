@@ -1,0 +1,21 @@
+{
+  "name": "blog-autista",
+  "private": true,
+  "type": "module",
+  "description": "UI quality gates (HTML, CSS, performance and accessibility) for the blog.autista frontend.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "ui:check": "node tools/ui-check.mjs",
+    "ui:html": "node tools/ui-check.mjs --only=html",
+    "ui:css": "node tools/ui-check.mjs --only=css",
+    "ui:contrast": "node tools/ui-check.mjs --only=contrast",
+    "ui:lighthouse": "node tools/ui-check.mjs --only=lighthouse"
+  },
+  "devDependencies": {
+    "chrome-launcher": "^1.2.2",
+    "lighthouse": "^13.6.0",
+    "vnu-jar": "^26.10.12"
+  }
+}
