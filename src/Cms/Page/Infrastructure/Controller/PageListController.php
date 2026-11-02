@@ -51,8 +51,8 @@ final class PageListController extends AbstractController
     {
         return [
             new PageComponent('Shared:Form', [
-                'action' => '#',
-                'method' => 'dialog',
+                'action' => $this->generateUrl('cms_pages_create'),
+                'method' => 'post',
             ], [
                 new PageComponent('Shared:FormField', [], [
                     new PageComponent('Shared:FormLabel', [
@@ -64,7 +64,7 @@ final class PageListController extends AbstractController
                         'id' => 'page-title',
                         'attributes' => [
                             'required' => true,
-                            'data-dialog-autofocus' => true,
+                            'autofocus' => true,
                         ],
                     ]),
                 ]),
