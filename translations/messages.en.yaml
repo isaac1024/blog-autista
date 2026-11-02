@@ -9,7 +9,14 @@ cms:
         logout: 'Sign out'
     pages:
         title: 'Pages'
+        subtitle: "Create and manage your blog's pages."
         empty: 'There are no pages yet.'
+        add: 'Add page'
+        modal:
+            title: 'New page'
+            description: 'Enter the title of the page.'
+            title_label: 'Title'
+            submit: 'Create page'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'
@@ -20,5 +27,5 @@ cms:
         submit: 'Sign in'
 
 ui:
-    skip_to_content: 'Skip to content'
+    close: 'Close'
     primary_navigation: 'Primary navigation'

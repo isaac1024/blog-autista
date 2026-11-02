@@ -1,9 +1,19 @@
-<header class="m-0">
-    <h1 class="m-0 font-bold text-balance {{ variant == 'login' ? 'text-[clamp(1.75rem,5vw,2.25rem)] leading-[1.2]' : 'text-[clamp(2rem,5vw,3rem)] leading-tight' }}">{{ title }}</h1>
+{% import 'shared/render_component.html.twig' as renderer %}
+<header class="m-0 flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+    <div class="min-w-0">
+        <h1 class="m-0 font-bold text-balance {{ variant == 'login' ? 'text-[clamp(1.75rem,5vw,2.25rem)] leading-[1.2]' : 'text-[clamp(2rem,5vw,3rem)] leading-tight' }}">{{ title }}</h1>
 {% if variant == 'login' %}
-    <span class="mt-3 block h-[0.3rem] w-14 bg-linear-to-r from-spectrum-1 to-spectrum-2" aria-hidden="true"></span>
+        <span class="mt-3 block h-[0.3rem] w-14 bg-linear-to-r from-spectrum-1 to-spectrum-2" aria-hidden="true"></span>
 {% endif %}
 {% if subtitle %}
-    <p class="mt-3 {{ variant == 'login' ? 'text-[1rem]' : 'text-lg' }} text-muted">{{ subtitle }}</p>
+        <p class="mt-3 {{ variant == 'login' ? 'text-[1rem]' : 'text-lg' }} text-muted">{{ subtitle }}</p>
+{% endif %}
+    </div>
+{% if children is not empty %}
+    <div class="flex flex-none flex-wrap items-center gap-3">
+{% for child in children %}
+        {{ renderer.render(child) }}
+{% endfor %}
+    </div>
 {% endif %}
 </header>

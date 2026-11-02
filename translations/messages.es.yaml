@@ -9,7 +9,14 @@ cms:
         logout: 'Cerrar sesión'
     pages:
         title: 'Páginas'
+        subtitle: 'Crea y gestiona las páginas de tu blog.'
         empty: 'Todavía no hay páginas.'
+        add: 'Añadir página'
+        modal:
+            title: 'Nueva página'
+            description: 'Introduce el título de la página.'
+            title_label: 'Título'
+            submit: 'Crear página'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -20,5 +27,5 @@ cms:
         submit: 'Entrar'
 
 ui:
-    skip_to_content: 'Saltar al contenido'
+    close: 'Cerrar'
     primary_navigation: 'Navegación principal'

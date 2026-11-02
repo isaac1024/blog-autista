@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Infrastructure\Controller;
 
 use Shared\Ui\CmsLayout;
+use Shared\Ui\Page\PageComponent;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,9 +28,50 @@ final class PageListController extends AbstractController
         ))
             ->withMain('Shared:PageTitle', [
                 'title' => $this->translator->trans('cms.pages.title'),
-                'subtitle' => $this->translator->trans('cms.pages.empty'),
+                'subtitle' => $this->translator->trans('cms.pages.subtitle'),
+            ], [
+                new PageComponent('Shared:Modal', [
+                    'id' => 'new-page',
+                    'trigger' => $this->translator->trans('cms.pages.add'),
+                    'title' => $this->translator->trans('cms.pages.modal.title'),
+                    'description' => $this->translator->trans('cms.pages.modal.description'),
+                ], $this->newPageForm()),
+            ])
+            ->withMain('Shared:EmptyState', [
+                'message' => $this->translator->trans('cms.pages.empty'),
             ]);
 
         return $this->pageRenderer->render($page);
+    }
+
+    /**
+     * @return list<PageComponent>
+     */
+    private function newPageForm(): array
+    {
+        return [
+            new PageComponent('Shared:Form', [
+                'action' => '#',
+                'method' => 'dialog',
+            ], [
+                new PageComponent('Shared:FormField', [], [
+                    new PageComponent('Shared:FormLabel', [
+                        'for' => 'page-title',
+                        'text' => $this->translator->trans('cms.pages.modal.title_label'),
+                    ]),
+                    new PageComponent('Shared:FormInput', [
+                        'name' => 'title',
+                        'id' => 'page-title',
+                        'attributes' => [
+                            'required' => true,
+                            'data-dialog-autofocus' => true,
+                        ],
+                    ]),
+                ]),
+                new PageComponent('Shared:FormButton', [
+                    'label' => $this->translator->trans('cms.pages.modal.submit'),
+                ]),
+            ]),
+        ];
     }
 }
