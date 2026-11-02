@@ -1,0 +1,6 @@
+cms:
+    login:
+        title: 'Sign in'
+        username: 'Username'
+        password: 'Password'
+        submit: 'Sign in'

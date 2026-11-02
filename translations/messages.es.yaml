@@ -1,0 +1,6 @@
+cms:
+    login:
+        title: 'Iniciar sesión'
+        username: 'Usuario'
+        password: 'Contraseña'
+        submit: 'Entrar'

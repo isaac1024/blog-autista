@@ -36,3 +36,7 @@ services:
         class: Shared\Tests\Architecture\ContextIndependenceRules
         tags:
             - phpat.test
+    -
+        class: Cms\Tests\Architecture\HexagonalArchitectureRules
+        tags:
+            - phpat.test

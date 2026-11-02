@@ -19,6 +19,7 @@
         "symfony/runtime": "8.1.*",
         "symfony/scheduler": "8.1.*",
         "symfony/security-bundle": "8.1.*",
+        "symfony/translation": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/ux-twig-component": "^3.6",
         "symfony/yaml": "8.1.*"

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}CMS · {{ 'cms.login.title'|trans }}{% endblock %}
+
+{% block body %}
+    <main>
+        <h1>CMS</h1>
+
+        {% if error %}
+            <p role="alert">{{ error.messageKey|trans(error.messageData, 'security') }}</p>
+        {% endif %}
+
+        <form method="post" action="{{ path('cms_login_check') }}">
+            <p>
+                <label for="username">{{ 'cms.login.username'|trans }}</label>
+                <input type="text" id="username" name="_username" value="{{ last_username }}" autocomplete="username" required autofocus>
+            </p>
+            <p>
+                <label for="password">{{ 'cms.login.password'|trans }}</label>
+                <input type="password" id="password" name="_password" autocomplete="current-password" required>
+            </p>
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+            <button type="submit">{{ 'cms.login.submit'|trans }}</button>
+        </form>
+    </main>
+{% endblock %}
