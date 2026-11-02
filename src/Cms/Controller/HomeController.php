@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Controller;
 
 use Shared\Ui\CmsLayout;
+use Shared\Ui\Page\Page;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,11 +18,19 @@ final class HomeController extends AbstractController
     #[Route('/', name: 'cms_home', methods: ['GET'])]
     public function __invoke(): Response
     {
-        $page = CmsLayout::page('CMS · blog autista')
+        return $this->pageRenderer->render($this->page());
+    }
+
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
+    private function page(): Page
+    {
+        return CmsLayout::page('CMS · blog autista')
             ->withMain('Shared:PageTitle', [
                 'title' => 'CMS context is up.',
             ]);
-
-        return $this->pageRenderer->render($page);
     }
 }

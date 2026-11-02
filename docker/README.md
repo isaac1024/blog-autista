@@ -79,8 +79,9 @@ composer infection    # mutation testing
 
 `composer stan` warms the dev cache first because the dead-code detector and the
 Symfony extension need `var/cache/dev/Shared_KernelDevDebugContainer.xml`.
-Infection requires Xdebug or PCOV; the PHP container has neither, so it runs on
-the host with `XDEBUG_MODE=coverage` (already set in the Composer script).
+Infection requires a coverage driver: the PHP image ships PCOV (development
+only), so run it inside the container, where the database is reachable:
+`docker compose exec -u www-data php composer infection`.
 
 Architecture rules live in `tests/Shared/Architecture/ContextIndependenceRules.php`
 and are registered in PHPStan with the `phpat.test` tag. Since selectors include

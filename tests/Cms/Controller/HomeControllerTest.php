@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 
-final class HomeControllerTest extends WebTestCase
+final class HomeControllerTest extends CmsWebTestCase
 {
     public function testItRedirectsAnonymousVisitorsToTheLoginForm(): void
     {
@@ -19,14 +19,9 @@ final class HomeControllerTest extends WebTestCase
 
     public function testItServesTheCmsHostToAnAuthenticatedUser(): void
     {
-        $client = self::createClient();
+        $client = self::createAuthenticatedClient();
 
-        $client->request('GET', 'http://cms.blogautista.localhost/login');
-        $client->submitForm('Sign in', [
-            '_username' => 'admin',
-            '_password' => 'admin',
-        ]);
-        $client->followRedirect();
+        $client->request('GET', 'http://cms.blogautista.localhost/');
 
         self::assertResponseIsSuccessful();
         self::assertRouteSame('cms_home');

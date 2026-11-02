@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 
-final class PageListControllerTest extends WebTestCase
+final class PageListControllerTest extends CmsWebTestCase
 {
     public function testItRedirectsAnonymousVisitorsToTheLoginForm(): void
     {
@@ -19,14 +19,7 @@ final class PageListControllerTest extends WebTestCase
 
     public function testItServesTheEmptyPageListToAnAuthenticatedUser(): void
     {
-        $client = self::createClient();
-
-        $client->request('GET', 'http://cms.blogautista.localhost/login');
-        $client->submitForm('Sign in', [
-            '_username' => 'admin',
-            '_password' => 'admin',
-        ]);
-        $client->followRedirect();
+        $client = self::createAuthenticatedClient();
 
         $client->request('GET', 'http://cms.blogautista.localhost/pages');
 

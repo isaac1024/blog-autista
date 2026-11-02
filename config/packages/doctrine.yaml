@@ -7,6 +7,8 @@ doctrine:
         #server_version: '16'
 
         profiling_collect_backtrace: '%kernel.debug%'
+        types:
+            cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
@@ -22,6 +24,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Entity'
                 prefix: 'Cms\Entity'
+            CmsPage:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Page/Domain'
+                prefix: 'Cms\Page\Domain'
             Shared:
                 type: attribute
                 is_bundle: false

@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shared\Domain;
+
+use Symfony\Component\Uid\Uuid as SymfonyUuid;
+
+/**
+ * Base value object for identifiers expressed as an RFC 4122 UUID.
+ */
+abstract readonly class Uuid implements \Stringable
+{
+    final public function __construct(private string $value)
+    {
+        if (!SymfonyUuid::isValid($value)) {
+            throw InvalidUuid::withValue($value);
+        }
+    }
+
+    #[\Override]
+    public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * Generates a new time-ordered (v7) UUID, which keeps database indexes compact.
+     */
+    public static function random(): static
+    {
+        return new static(SymfonyUuid::v7()->toRfc4122());
+    }
+
+    public function value(): string
+    {
+        return $this->value;
+    }
+}

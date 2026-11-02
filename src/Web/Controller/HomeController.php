@@ -17,7 +17,17 @@ final class HomeController extends AbstractController
     #[Route('/', name: 'web_home', methods: ['GET'])]
     public function __invoke(): Response
     {
-        $page = Page::create('Web · blog autista')
+        return $this->pageRenderer->render($this->page());
+    }
+
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
+    private function page(): Page
+    {
+        return Page::create('Web · blog autista')
             ->withHeader('Shared:PageHeader', [
                 'brand' => 'blog autista',
                 'homeUrl' => $this->generateUrl('web_home'),
@@ -28,7 +38,5 @@ final class HomeController extends AbstractController
             ->withFooter('Shared:PageFooter', [
                 'brand' => 'blog autista',
             ]);
-
-        return $this->pageRenderer->render($page);
     }
 }

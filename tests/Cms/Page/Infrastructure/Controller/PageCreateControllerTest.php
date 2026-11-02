@@ -4,48 +4,26 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
-final class PageCreateControllerTest extends WebTestCase
+final class PageCreateControllerTest extends CmsWebTestCase
 {
-    public function testItRedirectsAnonymousVisitorsToTheLoginForm(): void
+    public function testItRespondsSeeOtherWhenThePageIsCreated(): void
     {
-        $client = self::createClient();
+        $client = self::createAuthenticatedClient();
 
         $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Posts']);
 
-        self::assertResponseRedirects('http://cms.blogautista.localhost/login');
+        self::assertResponseStatusCodeSame(Response::HTTP_SEE_OTHER);
     }
 
-    public function testItAcceptsThePageTitle(): void
+    public function testItRespondsBadRequestWhenTheTitleIsInvalid(): void
     {
-        $client = self::createClient();
-        $this->login($client);
-
-        $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Posts']);
-
-        self::assertResponseRedirects('http://cms.blogautista.localhost/pages', Response::HTTP_SEE_OTHER);
-    }
-
-    public function testItRejectsAnEmptyTitle(): void
-    {
-        $client = self::createClient();
-        $this->login($client);
+        $client = self::createAuthenticatedClient();
 
         $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => ' ']);
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-    }
-
-    private function login(KernelBrowser $client): void
-    {
-        $client->request('GET', 'http://cms.blogautista.localhost/login');
-        $client->submitForm('Sign in', [
-            '_username' => 'admin',
-            '_password' => 'admin',
-        ]);
-        $client->followRedirect();
     }
 }

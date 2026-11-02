@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Infrastructure\Controller;
 
 use Shared\Ui\CmsLayout;
+use Shared\Ui\Page\Page;
 use Shared\Ui\Page\PageComponent;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -22,7 +23,17 @@ final class PageListController extends AbstractController
     #[Route('/pages', name: 'cms_pages', methods: ['GET'])]
     public function __invoke(): Response
     {
-        $page = CmsLayout::page(\sprintf(
+        return $this->pageRenderer->render($this->page());
+    }
+
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
+    private function page(): Page
+    {
+        return CmsLayout::page(\sprintf(
             '%s · blog autista',
             $this->translator->trans('cms.pages.title'),
         ))
@@ -35,43 +46,33 @@ final class PageListController extends AbstractController
                     'trigger' => $this->translator->trans('cms.pages.add'),
                     'title' => $this->translator->trans('cms.pages.modal.title'),
                     'description' => $this->translator->trans('cms.pages.modal.description'),
-                ], $this->newPageForm()),
+                ], [
+                    new PageComponent('Shared:Form', [
+                        'action' => $this->generateUrl('cms_pages_create'),
+                        'method' => 'post',
+                    ], [
+                        new PageComponent('Shared:FormField', [], [
+                            new PageComponent('Shared:FormLabel', [
+                                'for' => 'page-title',
+                                'text' => $this->translator->trans('cms.pages.modal.title_label'),
+                            ]),
+                            new PageComponent('Shared:FormInput', [
+                                'name' => 'title',
+                                'id' => 'page-title',
+                                'attributes' => [
+                                    'required' => true,
+                                    'autofocus' => true,
+                                ],
+                            ]),
+                        ]),
+                        new PageComponent('Shared:FormButton', [
+                            'label' => $this->translator->trans('cms.pages.modal.submit'),
+                        ]),
+                    ]),
+                ]),
             ])
             ->withMain('Shared:EmptyState', [
                 'message' => $this->translator->trans('cms.pages.empty'),
             ]);
-
-        return $this->pageRenderer->render($page);
-    }
-
-    /**
-     * @return list<PageComponent>
-     */
-    private function newPageForm(): array
-    {
-        return [
-            new PageComponent('Shared:Form', [
-                'action' => $this->generateUrl('cms_pages_create'),
-                'method' => 'post',
-            ], [
-                new PageComponent('Shared:FormField', [], [
-                    new PageComponent('Shared:FormLabel', [
-                        'for' => 'page-title',
-                        'text' => $this->translator->trans('cms.pages.modal.title_label'),
-                    ]),
-                    new PageComponent('Shared:FormInput', [
-                        'name' => 'title',
-                        'id' => 'page-title',
-                        'attributes' => [
-                            'required' => true,
-                            'autofocus' => true,
-                        ],
-                    ]),
-                ]),
-                new PageComponent('Shared:FormButton', [
-                    'label' => $this->translator->trans('cms.pages.modal.submit'),
-                ]),
-            ]),
-        ];
     }
 }

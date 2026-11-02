@@ -28,6 +28,9 @@ RUN apt-get update \
         zip \
     && pecl install apcu redis \
     && docker-php-ext-enable apcu redis \
+    # Development only: code coverage driver for PHPUnit and Infection.
+    && pecl install pcov \
+    && docker-php-ext-enable pcov \
     && apt-get purge -y --auto-remove ${PHPIZE_DEPS} \
     && rm -rf /var/lib/apt/lists/* /tmp/pear
 

@@ -25,6 +25,16 @@ final class LoginController extends AbstractController
     #[Route('/login', name: 'cms_login', methods: ['GET'])]
     public function __invoke(AuthenticationUtils $authenticationUtils): Response
     {
+        return $this->pageRenderer->render($this->page($authenticationUtils));
+    }
+
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
+    private function page(AuthenticationUtils $authenticationUtils): Page
+    {
         $error = $authenticationUtils->getLastAuthenticationError();
 
         $page = Page::create(\sprintf(
@@ -54,7 +64,7 @@ final class LoginController extends AbstractController
             ]);
         }
 
-        $page = $page->withMain('Shared:Form', [
+        return $page->withMain('Shared:Form', [
             'action' => $this->generateUrl('cms_login_check'),
             'method' => 'post',
         ], [
@@ -98,7 +108,5 @@ final class LoginController extends AbstractController
                 'label' => $this->translator->trans('cms.login.submit'),
             ]),
         ]);
-
-        return $this->pageRenderer->render($page);
     }
 }

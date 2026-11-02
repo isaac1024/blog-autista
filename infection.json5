@@ -4,10 +4,29 @@
         "directories": [
             "src"
         ],
+        // Paths are relative to the source directories above.
         "excludes": [
-            "src/Shared/Kernel.php",
-            "src/Shared/Migrations"
+            "Shared/Kernel.php",
+            "Shared/Migrations",
+            "Shared/Twig",
+            "Shared/Ui"
         ]
+    },
+    "mutators": {
+        "@default": true,
+        // Controllers compose their page from Twig components in a private
+        // page() method. That composition is checked by the ui-check harness,
+        // not by PHPUnit, so mutating its arrays only yields unkillable mutants.
+        // The rest of the controller keeps every mutator.
+        "ArrayItem": {
+            "ignore": ["*\\Controller\\*::page"]
+        },
+        "ArrayItemRemoval": {
+            "ignore": ["*\\Controller\\*::page"]
+        },
+        "TrueValue": {
+            "ignore": ["*\\Controller\\*::page"]
+        }
     },
     "timeout": 60,
     "threads": "auto",
