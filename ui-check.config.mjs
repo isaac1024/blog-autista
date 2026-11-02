@@ -8,25 +8,60 @@
  * Tools:
  *   - HTML : W3C Nu HTML Checker (vnu-jar). Requires Java 11+; set JAVA_PATH
  *            or JAVA_HOME if the default `java` is older.
- *   - CSS  : W3C CSS Validation Service (network access). Override `css.validator`
- *            to point at a self-hosted instance.
- *   - A11y / performance : Lighthouse (accessibility audits run axe-core).
+ *   - A11y / performance : Lighthouse (accessibility audits run axe-core),
+ *            executed once per configured form factor (desktop and mobile).
  *            There is no W3C performance validator; Lighthouse is the de
  *            facto standard there.
  *
+ * Tailwind's generated CSS is not checked by the W3C CSS3 validator because
+ * it does not understand modern at-rules; a successful `npm run
+ * tailwind:build` is the CSS syntax gate.
+ *
  * Each page accepts:
- *   - name:       unique identifier used in reports and `--page=` filters
- *   - host:       host that resolves the route (e.g. cms.blogautista.localhost)
- *   - path:       request path (e.g. /login)
- *   - url:        alternative to host + path (the port is provided by the harness)
- *   - headers:    extra request headers, useful for authenticated pages
- *                 (e.g. { Cookie: 'PHPSESSID=...' })
- *   - thresholds: per-page overrides for the Lighthouse thresholds
+ *   - name:        unique identifier used in reports and `--page=` filters
+ *   - host:        host that resolves the route (e.g. cms.blogautista.localhost)
+ *   - path:        request path (e.g. /login)
+ *   - url:         alternative to host + path (the port is provided by the harness)
+ *   - headers:     extra request headers, useful for authenticated pages
+ *                  (e.g. { Cookie: 'PHPSESSID=...' })
+ *   - thresholds:  per-page overrides for the Lighthouse thresholds
+ *   - formFactors: per-page override of `lighthouse.formFactors`
+ *
+ * Authenticated CMS pages are included when `CMS_SESSION_COOKIE` holds a valid
+ * PHPSESSID from a logged-in development session.
  *
  * `server.command` supports `{bind}` and `{port}` placeholders. The default
- * checks are HTML, CSS, contrast and Lighthouse; run a subset with
- * `--only=html,css,contrast` and a subset of pages with `--page=cms-login`.
+ * checks are HTML, contrast and Lighthouse; run a subset with
+ * `--only=html,lighthouse` and a subset of pages with `--page=cms-login`.
  */
+
+const cmsSession = process.env.CMS_SESSION_COOKIE;
+const cmsHeaders = cmsSession ? { Cookie: `PHPSESSID=${cmsSession}` } : {};
+
+const pages = [
+    {
+        name: 'cms-login',
+        host: 'cms.blogautista.localhost',
+        path: '/login',
+    },
+];
+
+if (cmsSession) {
+    pages.push(
+        {
+            name: 'cms-home',
+            host: 'cms.blogautista.localhost',
+            path: '/',
+            headers: cmsHeaders,
+        },
+        {
+            name: 'cms-pages',
+            host: 'cms.blogautista.localhost',
+            path: '/pages',
+            headers: cmsHeaders,
+        },
+    );
+}
 export default {
     server: {
         bind: '127.0.0.1',
@@ -37,14 +72,9 @@ export default {
         },
     },
 
-    css: {
-        // Tailwind compiles the styles. Its modern output uses at-rules that
-        // the W3C CSS3 validator does not understand yet, so the generated
-        // file is excluded; this check is kept for any future hand-written CSS.
-        files: ['public/**/*.css'],
-        exclude: ['public/styles/tailwind.css'],
-        validator: 'https://jigsaw.w3.org/css-validator/validator',
-        profile: 'css3svg',
+    lighthouse: {
+        // Both widths are audited for every page unless the page sets formFactors.
+        formFactors: ['desktop', 'mobile'],
     },
 
     /*
@@ -74,11 +104,5 @@ export default {
         'best-practices': 0.9,
     },
 
-    pages: [
-        {
-            name: 'cms-login',
-            host: 'cms.blogautista.localhost',
-            path: '/login',
-        },
-    ],
+    pages,
 };

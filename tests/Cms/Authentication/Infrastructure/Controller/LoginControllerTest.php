@@ -8,19 +8,14 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class LoginControllerTest extends WebTestCase
 {
-    public function testItRendersTheLoginForm(): void
+    public function testItServesTheLoginForm(): void
     {
         $client = self::createClient();
 
         $client->request('GET', 'http://cms.blogautista.localhost/login');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorExists('form[method="post"][action="/login"]');
-        self::assertSelectorTextContains('label[for="username"]', 'Username');
-        self::assertSelectorTextContains('button[type="submit"]', 'Sign in');
-        self::assertSelectorExists('form input[name="_username"]');
-        self::assertSelectorExists('form input[name="_password"]');
-        self::assertSelectorExists('form input[name="_csrf_token"]');
+        self::assertRouteSame('cms_login');
     }
 
     public function testItRejectsInvalidCredentials(): void
@@ -35,6 +30,6 @@ final class LoginControllerTest extends WebTestCase
         $client->followRedirect();
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('[role="alert"]', 'Invalid credentials.');
+        self::assertRouteSame('cms_login');
     }
 }

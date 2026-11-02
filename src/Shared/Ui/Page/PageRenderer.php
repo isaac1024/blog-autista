@@ -8,19 +8,17 @@ use Symfony\Component\HttpFoundation\Response;
 use Twig\Environment;
 
 /**
- * Renders every page through the same generic template.
+ * Renders a page through the layout it names.
  *
- * Controllers only build a Page; the template decides how regions and
+ * Controllers only build a Page; the layout decides how regions and
  * components are painted.
  */
 final readonly class PageRenderer
 {
-    public const string TEMPLATE = 'page.html.twig';
-
     public function __construct(private Environment $twig) {}
 
     public function render(Page $page): Response
     {
-        return new Response($this->twig->render(self::TEMPLATE, ['page' => $page]));
+        return new Response($this->twig->render($page->layout, ['page' => $page]));
     }
 }

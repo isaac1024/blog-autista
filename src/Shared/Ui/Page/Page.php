@@ -7,11 +7,13 @@ namespace Shared\Ui\Page;
 /**
  * Immutable description of a page.
  *
- * Controllers compose the regions with Twig components; the generic
- * `page.html.twig` template is the only place that renders them.
+ * Controllers compose the regions with Twig components and pick the layout
+ * that paints them, so every context can provide its own chrome.
  */
 final readonly class Page
 {
+    public const string DEFAULT_LAYOUT = 'page.html.twig';
+
     private const string DEFAULT_MAIN_CLASS = 'mx-auto w-[min(100%-2rem,72rem)] py-[clamp(2rem,6vw,4rem)]';
 
     /**
@@ -25,11 +27,12 @@ final readonly class Page
         public array $main,
         public array $footer,
         public string $mainClass,
+        public string $layout,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT);
     }
 
     /**
@@ -64,6 +67,11 @@ final readonly class Page
         return $this->copy(mainClass: $mainClass);
     }
 
+    public function withLayout(string $layout): self
+    {
+        return $this->copy(layout: $layout);
+    }
+
     /**
      * @param null|list<PageComponent> $header
      * @param null|list<PageComponent> $main
@@ -74,6 +82,7 @@ final readonly class Page
         ?array $main = null,
         ?array $footer = null,
         ?string $mainClass = null,
+        ?string $layout = null,
     ): self {
         return new self(
             $this->title,
@@ -81,6 +90,7 @@ final readonly class Page
             $main ?? $this->main,
             $footer ?? $this->footer,
             $mainClass ?? $this->mainClass,
+            $layout ?? $this->layout,
         );
     }
 }

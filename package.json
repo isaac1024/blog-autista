@@ -2,7 +2,7 @@
   "name": "blog-autista",
   "private": true,
   "type": "module",
-  "description": "UI quality gates (HTML, CSS, performance and accessibility) for the blog.autista frontend.",
+  "description": "UI quality gates (HTML, performance and accessibility) for the blog.autista frontend.",
   "engines": {
     "node": ">=22"
   },
@@ -11,7 +11,6 @@
     "tailwind:watch": "tailwindcss -i assets/styles/app.css -o public/styles/tailwind.css --watch --poll=500",
     "ui:check": "node tools/ui-check.mjs",
     "ui:html": "node tools/ui-check.mjs --only=html",
-    "ui:css": "node tools/ui-check.mjs --only=css",
     "ui:contrast": "node tools/ui-check.mjs --only=contrast",
     "ui:lighthouse": "node tools/ui-check.mjs --only=lighthouse"
   },

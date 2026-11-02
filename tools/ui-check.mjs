@@ -7,25 +7,28 @@
  * rendered output with browsers and external validators, not PHP behaviour,
  * so they do not add noise or runtime to the mutation-testing pipeline.
  *
- * Tools (W3C recommendations):
+ * Tools:
  *   - HTML : W3C Nu HTML Checker (vnu-jar, requires Java 11+)
- *   - CSS  : W3C CSS Validation Service
  *   - A11y : Lighthouse, whose accessibility audits are powered by axe-core
  *            (both appear in W3C WAI's evaluation tools list)
  *   - Perf : Lighthouse (W3C does not publish a performance validator;
  *            Lighthouse is the de facto standard)
  *
- * Pages, server command, CSS globs, validator endpoints and thresholds live
- * in `ui-check.config.mjs`.
+ * Tailwind's generated CSS is not validated by the W3C CSS3 service, which
+ * does not understand its modern at-rules; a successful `npm run
+ * tailwind:build` is the CSS syntax gate.
+ *
+ * Pages, server command, Lighthouse form factors and thresholds live in
+ * `ui-check.config.mjs`.
  *
  *   npm run ui:check
  *   npm run ui:check -- --page=cms-login
- *   npm run ui:check -- --only=html,css
+ *   npm run ui:check -- --only=html,lighthouse
  */
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { glob, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import path from 'node:path';
 import process from 'node:process';
@@ -41,9 +44,47 @@ const CONFIG_FILE = process.env.UI_CHECK_CONFIG
     : path.join(ROOT, 'ui-check.config.mjs');
 const PORT = Number(process.env.UI_CHECK_PORT ?? 8099);
 const VNU_JAR = path.join(ROOT, 'node_modules', 'vnu-jar', 'build', 'dist', 'vnu.jar');
-const W3C_CSS_VALIDATOR = 'https://jigsaw.w3.org/css-validator/validator';
 
 const LH_CATEGORIES = ['performance', 'accessibility', 'best-practices'];
+
+const LIGHTHOUSE_FORM_FACTORS = {
+    desktop: {
+        formFactor: 'desktop',
+        screenEmulation: {
+            mobile: false,
+            width: 1350,
+            height: 940,
+            deviceScaleFactor: 1,
+            disabled: false,
+        },
+        throttling: {
+            rttMs: 40,
+            throughputKbps: 10 * 1024,
+            cpuSlowdownMultiplier: 1,
+            requestLatencyMs: 0,
+            downloadThroughputKbps: 0,
+            uploadThroughputKbps: 0,
+        },
+    },
+    mobile: {
+        formFactor: 'mobile',
+        screenEmulation: {
+            mobile: true,
+            width: 412,
+            height: 823,
+            deviceScaleFactor: 1.75,
+            disabled: false,
+        },
+        throttling: {
+            rttMs: 150,
+            throughputKbps: 1638.4,
+            cpuSlowdownMultiplier: 4,
+            requestLatencyMs: 562.5,
+            downloadThroughputKbps: 1474.56,
+            uploadThroughputKbps: 675,
+        },
+    },
+};
 
 const supportsColor = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code) => (text) => (supportsColor ? `\u001b[${code}m${text}\u001b[0m` : text);
@@ -69,7 +110,7 @@ function parseListArg(prefix) {
 
 const only = parseListArg('--only=');
 const pageFilter = parseListArg('--page=');
-const VALID_CHECKS = ['html', 'css', 'contrast', 'lighthouse'];
+const VALID_CHECKS = ['html', 'contrast', 'lighthouse'];
 const shouldRun = (name) => only.size === 0 || only.has(name);
 
 function validateOnly() {
@@ -149,6 +190,7 @@ function normalizePage(page) {
         path: requestPath,
         headers: { ...(page.headers ?? {}) },
         thresholds: { ...(page.thresholds ?? {}) },
+        formFactors: Array.isArray(page.formFactors) ? page.formFactors : null,
     };
 }
 
@@ -433,111 +475,6 @@ async function validateHtml(page, response, java) {
     record(`html:${page.name}`, false);
 }
 
-async function collectCssFiles(patterns, excludes = []) {
-    const files = new Set();
-    const excluded = new Set(excludes.map((file) => path.resolve(ROOT, file)));
-
-    for (const pattern of patterns) {
-        for await (const file of glob(pattern, { cwd: ROOT })) {
-            const absolute = path.resolve(ROOT, file);
-            if (excluded.has(absolute)) {
-                continue;
-            }
-            files.add(absolute);
-        }
-    }
-
-    return [...files].sort();
-}
-
-async function validateCssFile(file, config) {
-    const endpoint = config.css?.validator ?? W3C_CSS_VALIDATOR;
-    const profile = config.css?.profile ?? 'css3svg';
-    const css = await readFile(file, 'utf8');
-    const relative = path.relative(ROOT, file);
-
-    const params = new URLSearchParams({
-        text: css,
-        output: 'json',
-        profile,
-        warning: '1',
-    });
-
-    let response;
-    try {
-        response = await fetch(`${endpoint}?${params}`, {
-            headers: { Accept: 'application/json' },
-        });
-    } catch (error) {
-        throw new Error(
-            `Could not reach ${endpoint}: ${error instanceof Error ? error.message : String(error)}`,
-        );
-    }
-
-    if (!response.ok) {
-        throw new Error(`${endpoint} returned HTTP ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const validation = payload.cssvalidation;
-
-    if (!validation || !validation.result) {
-        throw new Error(`${endpoint} returned an unexpected payload.`);
-    }
-
-    const errors = Number(validation.result?.errorcount ?? 0);
-    const warnings = Number(validation.result?.warningcount ?? 0);
-
-    if (errors > 0) {
-        fail(`${relative}: ${errors} error(s), ${warnings} warning(s).`, 4);
-        for (const error of asArray(validation.errors)) {
-            console.log(
-                `        ${String(error.line ?? 0).padEnd(8)} error   ${error.message}`,
-            );
-        }
-    } else if (warnings > 0) {
-        warn(`${relative}: valid, ${warnings} warning(s).`, 4);
-        for (const warning of asArray(validation.warnings)) {
-            console.log(
-                `        ${String(warning.line ?? 0).padEnd(8)} warning ${warning.message}`,
-            );
-        }
-    } else {
-        pass(`${relative}: valid per W3C CSS Validator.`, 4);
-    }
-
-    return errors === 0;
-}
-
-async function checkCss(config) {
-    header('CSS · W3C CSS Validation Service');
-
-    const patterns = config.css?.files ?? ['public/**/*.css'];
-    const files = await collectCssFiles(patterns, config.css?.exclude);
-
-    if (files.length === 0) {
-        warn(`No CSS files matched ${patterns.join(', ')}.`);
-        record('css', true);
-        return;
-    }
-
-    let ok = true;
-
-    for (const file of files) {
-        try {
-            ok = (await validateCssFile(file, config)) && ok;
-        } catch (error) {
-            fail(
-                `${path.relative(ROOT, file)}: ${error instanceof Error ? error.message : String(error)}`,
-                4,
-            );
-            ok = false;
-        }
-    }
-
-    record('css', ok);
-}
-
 function parseColor(value) {
     const trimmed = value.trim();
     const hex = trimmed.match(/^#([0-9a-f]{3,8})$/i);
@@ -791,28 +728,14 @@ function failingAudits(lhr, category) {
     });
 }
 
-async function checkLighthouse(page, chrome, thresholds) {
+async function checkLighthouse(page, chrome, thresholds, formFactor) {
+    const emulation = LIGHTHOUSE_FORM_FACTORS[formFactor];
     const runnerResult = await lighthouse(publicUrl(page), {
         port: chrome.port,
         output: 'json',
         logLevel: 'error',
         onlyCategories: LH_CATEGORIES,
-        formFactor: 'desktop',
-        screenEmulation: {
-            mobile: false,
-            width: 1350,
-            height: 940,
-            deviceScaleFactor: 1,
-            disabled: false,
-        },
-        throttling: {
-            rttMs: 40,
-            throughputKbps: 10 * 1024,
-            cpuSlowdownMultiplier: 1,
-            requestLatencyMs: 0,
-            downloadThroughputKbps: 0,
-            uploadThroughputKbps: 0,
-        },
+        ...emulation,
         extraHeaders: lighthouseHeaders(page),
     });
 
@@ -823,12 +746,12 @@ async function checkLighthouse(page, chrome, thresholds) {
     const { lhr, report } = runnerResult;
     await mkdir(REPORT_DIR, { recursive: true });
     await writeFile(
-        path.join(REPORT_DIR, `${safeName(page.name)}.lighthouse.json`),
+        path.join(REPORT_DIR, `${safeName(page.name)}.${formFactor}.lighthouse.json`),
         report,
         'utf8',
     );
 
-    console.log(`    ${bold(page.name)}`);
+    console.log(`    ${bold(page.name)} ${dim(`(${formFactor})`)}`);
     let ok = true;
 
     const finalUrl = lhr.finalDisplayedUrl ?? lhr.finalUrl;
@@ -869,7 +792,7 @@ async function checkLighthouse(page, chrome, thresholds) {
         }
     }
 
-    record(`lighthouse:${page.name}`, ok);
+    record(`lighthouse:${page.name}:${formFactor}`, ok);
 }
 
 async function main() {
@@ -891,7 +814,6 @@ async function main() {
     );
 
     const runHtml = shouldRun('html');
-    const runCss = shouldRun('css');
     const runContrast = shouldRun('contrast');
     const runLighthouse = shouldRun('lighthouse');
     const needsServer = runHtml || runLighthouse;
@@ -933,20 +855,47 @@ async function main() {
             console.log(dim(`\n    Rendered pages saved to var/ui-check/`));
         }
 
-        if (runCss) {
-            await checkCss(config);
-        }
-
         if (runContrast) {
             checkContrast(config);
         }
 
         if (runLighthouse) {
             header('Accessibility & performance · Lighthouse (axe-core)');
+
+            const defaultFormFactors = config.lighthouse?.formFactors ?? ['desktop', 'mobile'];
+            if (!Array.isArray(defaultFormFactors) || defaultFormFactors.length === 0) {
+                throw new ConfigError(
+                    'lighthouse.formFactors must be a non-empty array containing desktop and/or mobile.',
+                );
+            }
+
+            for (const formFactor of defaultFormFactors) {
+                if (!LIGHTHOUSE_FORM_FACTORS[formFactor]) {
+                    throw new ConfigError(
+                        `Unknown Lighthouse form factor "${formFactor}". Use: ${Object.keys(LIGHTHOUSE_FORM_FACTORS).join(', ')}.`,
+                    );
+                }
+            }
+
             chrome = await launchChrome(pages, bind);
 
             for (const page of pages) {
-                await checkLighthouse(page, chrome, resolveThresholds(config, page));
+                const formFactors = page.formFactors ?? defaultFormFactors;
+
+                for (const formFactor of formFactors) {
+                    if (!LIGHTHOUSE_FORM_FACTORS[formFactor]) {
+                        throw new ConfigError(
+                            `Page "${page.name}" uses unknown Lighthouse form factor "${formFactor}". Use: ${Object.keys(LIGHTHOUSE_FORM_FACTORS).join(', ')}.`,
+                        );
+                    }
+
+                    await checkLighthouse(
+                        page,
+                        chrome,
+                        resolveThresholds(config, page),
+                        formFactor,
+                    );
+                }
             }
         }
     } finally {

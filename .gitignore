@@ -31,3 +31,8 @@ phpstan.neon
 ###> node ###
 /node_modules/
 ###< node ###
+
+###> open-codebase-index ###
+/.codebase-index/
+/.opencode/index/
+###< open-codebase-index ###

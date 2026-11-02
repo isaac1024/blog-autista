@@ -1,6 +1,15 @@
 cms:
     nav:
+        account: 'Account'
+        administration: 'Administration'
+        content: 'Content'
+        dashboard: 'Dashboard'
+        menu: 'Menu'
+        pages: 'Pages'
         logout: 'Sign out'
+    pages:
+        title: 'Pages'
+        empty: 'There are no pages yet.'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'

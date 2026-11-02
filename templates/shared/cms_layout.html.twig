@@ -1,0 +1,60 @@
+{% extends 'page.html.twig' %}
+
+{% macro navigation(currentRoute) %}
+<ul class="m-0 flex list-none flex-col gap-1 p-0">
+    <li>
+        <a class="block border-l-4 px-3 py-2 no-underline {{ currentRoute == 'cms_home' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_home') }}"{% if currentRoute == 'cms_home' %} aria-current="page"{% endif %}>{{ 'cms.nav.dashboard'|trans }}</a>
+    </li>
+    <li>
+        <a class="block border-l-4 px-3 py-2 no-underline {{ currentRoute == 'cms_pages' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_pages') }}"{% if currentRoute == 'cms_pages' %} aria-current="page"{% endif %}>{{ 'cms.nav.pages'|trans }}</a>
+    </li>
+</ul>
+{% endmacro %}
+
+{% block regions %}
+{% set currentRoute = app.request.attributes.get('_route') %}
+    <div class="flex flex-1 flex-col md:flex-row">
+        <aside class="relative flex items-center justify-between gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 md:w-64 md:flex-none md:flex-col md:items-stretch md:justify-start md:gap-6 md:border-b-0 md:border-r-2 md:py-5">
+            <twig:Shared:Brand brand="blog autista" :homeUrl="path('cms_home')" />
+
+            <details class="group md:hidden">
+                <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center border-2 border-border bg-surface text-text hover:border-accent hover:text-accent group-open:border-accent group-open:text-accent [&::-webkit-details-marker]:hidden">
+                    <span class="sr-only">{{ 'cms.nav.menu'|trans }}</span>
+                    <svg class="h-6 w-6 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <svg class="hidden h-6 w-6 group-open:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </summary>
+
+                <div class="absolute inset-x-0 top-full z-50 flex flex-col gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 shadow-card">
+                    <nav aria-label="{{ 'cms.nav.administration'|trans }}">
+                        <p class="m-0 mb-3 text-[0.8rem] font-bold uppercase tracking-[0.12em] text-muted">{{ 'cms.nav.content'|trans }}</p>
+                        {{ _self.navigation(currentRoute) }}
+                    </nav>
+                    <div class="border-t-2 border-border pt-4">
+                        <twig:Shared:Nav :label="'cms.nav.account'|trans" :links="[{label: 'cms.nav.logout'|trans, url: path('cms_logout')}]" />
+                    </div>
+                </div>
+            </details>
+
+            <nav class="hidden md:block" aria-label="{{ 'cms.nav.administration'|trans }}">
+                <p class="m-0 mb-3 text-[0.8rem] font-bold uppercase tracking-[0.12em] text-muted">{{ 'cms.nav.content'|trans }}</p>
+                {{ _self.navigation(currentRoute) }}
+            </nav>
+
+            <div class="hidden md:mt-auto md:block">
+                <twig:Shared:Nav :label="'cms.nav.account'|trans" :links="[{label: 'cms.nav.logout'|trans, url: path('cms_logout')}]" />
+            </div>
+        </aside>
+
+        <div class="flex min-w-0 flex-1 flex-col">
+{{ parent() }}
+        </div>
+    </div>
+{% endblock %}
+
+{# The CMS chrome lives in the sidebar: no separate top bar or footer. #}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}

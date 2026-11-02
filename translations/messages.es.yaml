@@ -1,6 +1,15 @@
 cms:
     nav:
+        account: 'Cuenta'
+        administration: 'Administración'
+        content: 'Contenido'
+        dashboard: 'Panel'
+        menu: 'Menú'
+        pages: 'Páginas'
         logout: 'Cerrar sesión'
+    pages:
+        title: 'Páginas'
+        empty: 'Todavía no hay páginas.'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'

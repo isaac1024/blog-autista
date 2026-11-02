@@ -29,6 +29,7 @@ final class HomeControllerTest extends WebTestCase
         $client->followRedirect();
 
         self::assertResponseIsSuccessful();
+        self::assertRouteSame('cms_home');
     }
 
     public function testItDoesNotAnswerOnAnUnknownHost(): void

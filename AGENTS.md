@@ -47,6 +47,10 @@ Symfony:
 - Before hand-writing infrastructure (locks, queues, caches, HTTP clients,
   mailers, schedulers) or reaching for a third-party library, check whether a
   Symfony component covers it. It usually does.
+- All Twig components live in `Shared\Twig\Components`, with their templates
+  under `templates/components/shared/` and the `Shared:` prefix. Layouts live in
+  `Shared\Ui` and `templates/shared/`. Contexts (`Cms`, `Web`) must not declare
+  their own components or layouts; they compose the shared ones.
 
 Three specifics worth spelling out, because they are easy to get wrong:
 
@@ -83,6 +87,13 @@ Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend
 `php bin/phpunit` (falls back to `vendor/bin/phpunit`). A feature isn't done
 until it has a test that exercises it the way a caller would, an HTTP request for
 a controller or a service call for a service, not just "it didn't throw."
+
+Don't test the interface with PHPUnit. No `assertSelector*` and no assertions on
+markup, CSS classes or UI copy. PHPUnit covers HTTP behavior (status codes,
+redirects, authentication, routes) and services; HTML, accessibility and visual
+checks belong to the `ui-check` harness (`npm run ui:check`). The harness runs
+Lighthouse at both desktop and mobile widths. Tailwind's build is the CSS syntax
+gate; the W3C CSS3 validator cannot parse its modern output.
 
 ## Code style
 
