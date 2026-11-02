@@ -1,0 +1,28 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "src/Shared/Kernel.php",
+            "src/Shared/Migrations"
+        ]
+    },
+    "timeout": 60,
+    "threads": "auto",
+    "minMsi": 70,
+    "minCoveredMsi": 80,
+    "ignoreMsiWithNoMutations": true,
+    // Infection does not quote paths containing spaces in its generated
+    // commands, so this working directory lives outside the project path.
+    "tmpDir": "/tmp/infection-blog-autista",
+    "logs": {
+        "text": "var/infection/infection.log",
+        "summary": "var/infection/summary.log",
+        "json": "var/infection/infection.json"
+    },
+    "phpUnit": {
+        "configDir": "."
+    }
+}

@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
+
+/*
+ * Each context is served from its own host.
+ *
+ * Symfony forbids %env()% placeholders in routing configuration (see
+ * Router::resolveParameters()), so the hosts are read from the process
+ * environment here instead. "development" defaults live in .env; production
+ * overrides them with real environment variables. Routes are cached, so clear
+ * the cache after changing them.
+ */
+return static function (RoutingConfigurator $routes): void {
+    $host = static function (string $name, string $default): string {
+        $value = $_SERVER[$name] ?? $_ENV[$name] ?? getenv($name);
+
+        return \is_string($value) && '' !== $value ? $value : $default;
+    };
+
+    $routes->import(['path' => '../src/Web/', 'namespace' => 'Web'], 'attribute')
+        ->host($host('WEB_HOST', 'www.blogautista.localhost'));
+
+    $routes->import(['path' => '../src/Cms/', 'namespace' => 'Cms'], 'attribute')
+        ->host($host('CMS_HOST', 'cms.blogautista.localhost'));
+};

@@ -5,7 +5,7 @@ serves the app at Hetzner Webhosting L.
 
 | Layer | Webhosting L | Local replica |
 | --- | --- | --- |
-| Edge | nginx (HTTP/2 + HTTP/3, TLS) | `nginx:stable-alpine` on `:8080`, plain HTTP |
+| Edge | nginx (HTTP/2 + HTTP/3, TLS) | `nginx:stable-alpine` on `:80`, plain HTTP |
 | HTTP server | Apache 2.4.69 | `httpd:2.4.69` |
 | PHP | 8.5 via FPM (selectable in konsoleH) | `php:8.5-fpm-trixie` |
 | PHP processes | 10 | `pm.max_children = 10` |
@@ -17,8 +17,11 @@ serves the app at Hetzner Webhosting L.
 ## Usage
 
 ```bash
-docker compose up -d --build            # http://localhost:8080
+docker compose up -d --build            # http://www.blogautista.localhost
 docker compose exec -u www-data php bin/console about
+docker compose exec -u www-data php php bin/phpunit
+docker compose exec -u www-data php bin/console doctrine:migrations:migrate
+docker compose exec -u www-data php bin/console messenger:consume scheduler_default -vv
 docker compose exec -u www-data php composer require symfony/twig-bundle
 docker compose run --rm -u www-data php bin/console cache:clear
 docker compose logs -f apache php
@@ -28,8 +31,90 @@ docker compose down                     # add -v to drop the database
 `-u www-data` matters: the image remaps `www-data` to your host UID/GID, so
 files written through the container stay editable on the host and vice versa.
 
-The database is reachable from the host only inside the compose network. To
-inspect it, use `docker compose exec database mariadb -uapp -papp app`.
+The database is only reachable inside the compose network, so run Doctrine and
+Messenger commands through `docker compose exec`. To inspect it, use
+`docker compose exec database mariadb -uapp -papp app`.
+
+## Application components
+
+| Need | Package | Notes |
+| --- | --- | --- |
+| Database | `symfony/orm-pack` | Doctrine ORM + migrations, MariaDB 11.8 |
+| Events | `symfony/messenger` | Sync bus active; the Doctrine `async` transport is ready to enable in `config/packages/messenger.yaml` |
+| Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Schedule.php`; consume with `messenger:consume scheduler_default` |
+| Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
+| Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |
+
+Doctrine mappings are split per context (`src/Web/Entity`, `src/Cms/Entity`,
+`src/Shared/Entity`) and migrations live in `src/Shared/Migrations`. The
+`app_test` database is created by `docker/mariadb/init/01-test-database.sql`.
+
+On Webhosting L, wire the 10 available cron jobs to a short-lived consumer, for
+example `php bin/console messenger:consume scheduler_default --time-limit=50`
+every minute.
+
+## Code quality (DDD / SOLID / clean code)
+
+| Gate | Tool | Configuration |
+| --- | --- | --- |
+| Style | PHP-CS-Fixer | `@Symfony` + `@PHP85Migration`, strict types, strict comparisons, strict `in_array`, `void` returns, ordered class elements |
+| Twig style | Twig CS Fixer | Symfony standard over `templates/` |
+| Complexity and size | PHPMD | cyclomatic ≤ 10, NPath ≤ 200, methods ≤ 60 lines, parameters ≤ 6, classes ≤ 500 lines, WMC ≤ 50, coupling ≤ 20, inheritance depth ≤ 4, naming/clean-code guardrails |
+| Types and SOLID | PHPStan | level **max**, strict rules, Symfony + Doctrine + PHPUnit extensions |
+| Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
+| Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both |
+| Tests | PHPUnit | random order, strict output, fail on risky/deprecation/notice/warning |
+| Mutation | Infection | MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
+
+```bash
+composer check        # fast gate: style, Twig, PHPMD, PHPStan, PHPUnit
+composer check:full   # check + mutation testing
+composer cs           # apply PHP coding style
+composer twig:cs      # apply Twig coding style
+composer complexity   # PHPMD only
+composer stan         # PHPStan (types + dead code + architecture)
+composer test         # PHPUnit only
+composer infection    # mutation testing
+```
+
+`composer stan` warms the dev cache first because the dead-code detector and the
+Symfony extension need `var/cache/dev/Shared_KernelDevDebugContainer.xml`.
+Infection requires Xdebug or PCOV; the PHP container has neither, so it runs on
+the host with `XDEBUG_MODE=coverage` (already set in the Composer script).
+
+Architecture rules live in `tests/Shared/Architecture/ContextIndependenceRules.php`
+and are registered in PHPStan with the `phpat.test` tag. Since selectors include
+subnamespaces, the boundaries also apply to `Web\Tests` and `Cms\Tests`.
+`src/Shared/Migrations` is generated code and is excluded from PHPStan, PHPMD,
+PHP-CS-Fixer and Infection.
+
+These are guardrails, not dogma: adjust the thresholds in `phpmd.xml`, the level
+in `phpstan.dist.neon`, the MSI values in `infection.json5`, and the fixer rules
+in `.php-cs-fixer.dist.php` as the domain grows.
+
+## Development hosts
+
+| Context | URL | Env var |
+| --- | --- | --- |
+| Web | http://www.blogautista.localhost | `WEB_HOST` |
+| CMS | http://cms.blogautista.localhost | `CMS_HOST` |
+
+`.env` contains these development defaults. Routing is host based: each context
+only answers on its own domain (see `config/routes.php`), and routes are only
+discovered inside `src/Web/` and `src/Cms/`. Production must set `WEB_HOST` and
+`CMS_HOST` to the real domains and clear the cache, because routes are compiled
+and cached. On shared hosting, where arbitrary environment variables are not
+always available, set them in `.env.local` on the account instead.
+
+The local stack publishes port 80, so the development URLs mirror production
+minus TLS.
+
+Most browsers resolve `*.localhost` to 127.0.0.1 automatically. If yours does
+not, add these entries to `/etc/hosts`:
+
+```
+127.0.0.1 www.blogautista.localhost cms.blogautista.localhost
+```
 
 ## Differences from production (on purpose)
 
@@ -39,7 +124,7 @@ inspect it, use `docker compose exec database mariadb -uapp -papp app`.
   for a Symfony app with sessions and CSRF tokens it must be configured with
   pass rules; adding it later is a deliberate decision, not a default.
 - **TLS/HTTP/3 are not reproduced.** HTTPS is terminated by Hetzner; local
-  traffic is plain HTTP on port 8080.
+  traffic is plain HTTP on port 80.
 - **The document root differs.** On the account, the web root is `public_html`.
   Either symlink it to `public/` or rename the directory (Symfony documents
   both approaches). Do not copy `public/` elsewhere: the front controller and

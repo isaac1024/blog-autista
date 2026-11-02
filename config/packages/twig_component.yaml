@@ -1,0 +1,6 @@
+twig_component:
+    anonymous_template_directory: 'components/'
+    defaults:
+        Web\Twig\Components\: 'components/web/'
+        Cms\Twig\Components\: 'components/cms/'
+        Shared\Twig\Components\: 'components/shared/'

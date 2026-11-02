@@ -1,0 +1,5 @@
+doctrine_migrations:
+    enable_service_migrations: true
+    migrations_paths:
+        'Shared\Migrations': '%kernel.project_dir%/src/Shared/Migrations'
+    enable_profiler: false

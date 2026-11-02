@@ -1,0 +1,38 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/shipmonk/dead-code-detector/rules.neon
+    - vendor/phpat/phpat/extension.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+    excludePaths:
+        analyse:
+            # Bootstrap script and generated migrations are not application code.
+            - tests/bootstrap.php
+            - src/Shared/Migrations/*
+    tmpDir: var/phpstan
+    checkMissingOverrideMethodAttribute: true
+    symfony:
+        containerXmlPath: var/cache/dev/Shared_KernelDevDebugContainer.xml
+    phpat:
+        show_rule_names: true
+    shipmonkDeadCode:
+        detect:
+            deadMethods: true
+            deadConstants: true
+            deadEnumCases: true
+            deadProperties:
+                neverRead: true
+                neverWritten: true
+
+services:
+    -
+        class: Shared\Tests\Architecture\ContextIndependenceRules
+        tags:
+            - phpat.test

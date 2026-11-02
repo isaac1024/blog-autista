@@ -4,36 +4,63 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.4",
+        "php": ">=8.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
+        "doctrine/orm": "^3.7",
         "symfony/apache-pack": "^1.0",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "8.1.*",
+        "symfony/messenger": "8.1.*",
         "symfony/runtime": "8.1.*",
+        "symfony/scheduler": "8.1.*",
+        "symfony/security-bundle": "8.1.*",
+        "symfony/twig-bundle": "8.1.*",
+        "symfony/ux-twig-component": "^3.6",
         "symfony/yaml": "8.1.*"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "infection/infection": "^0.35.8",
+        "phpat/phpat": "^0.12.5",
+        "phpmd/phpmd": "^3.0",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-doctrine": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.1",
+        "phpstan/phpstan-symfony": "^2.1",
+        "phpunit/phpunit": "^13.4",
+        "shipmonk/dead-code-detector": "^1.4",
+        "symfony/browser-kit": "8.1.*",
+        "symfony/css-selector": "8.1.*",
+        "vincentlanglet/twig-cs-fixer": "^4.1"
     },
     "config": {
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "infection/extension-installer": true
         },
         "bump-after-update": true,
         "sort-packages": true
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "Web\\": "src/Web/",
+            "Cms\\": "src/Cms/",
+            "Shared\\": "src/Shared/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "App\\Tests\\": "tests/"
+            "Web\\Tests\\": "tests/Web/",
+            "Cms\\Tests\\": "tests/Cms/",
+            "Shared\\Tests\\": "tests/Shared/"
         }
     },
     "replace": {
@@ -58,6 +85,28 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "cs": "php-cs-fixer fix",
+        "cs:check": "php-cs-fixer fix --dry-run --diff",
+        "twig:cs": "twig-cs-fixer fix",
+        "twig:cs:check": "twig-cs-fixer lint",
+        "stan": [
+            "bin/console cache:warmup --env=dev",
+            "phpstan analyse --memory-limit=1G"
+        ],
+        "complexity": "phpmd analyze src --ruleset phpmd.xml --exclude '*Migrations*' --cache --cache-file var/phpmd.result-cache.php --no-progress",
+        "test": "phpunit",
+        "infection": "XDEBUG_MODE=coverage infection",
+        "check": [
+            "@cs:check",
+            "@twig:cs:check",
+            "@complexity",
+            "@stan",
+            "@test"
+        ],
+        "check:full": [
+            "@check",
+            "@infection"
         ]
     },
     "conflict": {
