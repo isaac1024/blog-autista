@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% import 'shared/render_component.html.twig' as renderer %}
+
+{% block title %}{{ page.title }}{% endblock %}
+
+{% block body %}
+    <a class="absolute left-0 top-0 z-[100] -translate-y-full bg-accent px-4 py-3 font-bold text-on-accent focus-visible:translate-y-0" href="#main">{{ 'ui.skip_to_content'|trans }}</a>
+{% for component in page.header %}
+        {{ renderer.render(component) }}
+{% endfor %}
+    <main id="main" class="{{ page.mainClass }}">
+{% for component in page.main %}
+        {{ renderer.render(component) }}
+{% endfor %}
+    </main>
+{% for component in page.footer %}
+        {{ renderer.render(component) }}
+{% endfor %}
+{% endblock %}

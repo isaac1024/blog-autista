@@ -1,0 +1,6 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<form class="grid gap-6" method="{{ method }}" action="{{ action }}">
+{% for child in children %}
+    {{ renderer.render(child) }}
+{% endfor %}
+</form>

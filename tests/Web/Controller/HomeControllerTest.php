@@ -15,7 +15,6 @@ final class HomeControllerTest extends WebTestCase
         $client->request('GET', 'http://www.blogautista.localhost/');
 
         self::assertResponseIsSuccessful();
-        self::assertSame('Web context is up.', $client->getResponse()->getContent());
     }
 
     public function testItDoesNotAnswerOnAnUnknownHost(): void

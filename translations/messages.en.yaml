@@ -1,4 +1,6 @@
 cms:
+    nav:
+        logout: 'Sign out'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'
@@ -7,3 +9,7 @@ cms:
         username: 'Username'
         password: 'Password'
         submit: 'Sign in'
+
+ui:
+    skip_to_content: 'Skip to content'
+    primary_navigation: 'Primary navigation'

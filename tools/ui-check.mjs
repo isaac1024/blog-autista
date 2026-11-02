@@ -433,12 +433,17 @@ async function validateHtml(page, response, java) {
     record(`html:${page.name}`, false);
 }
 
-async function collectCssFiles(patterns) {
+async function collectCssFiles(patterns, excludes = []) {
     const files = new Set();
+    const excluded = new Set(excludes.map((file) => path.resolve(ROOT, file)));
 
     for (const pattern of patterns) {
         for await (const file of glob(pattern, { cwd: ROOT })) {
-            files.add(path.resolve(ROOT, file));
+            const absolute = path.resolve(ROOT, file);
+            if (excluded.has(absolute)) {
+                continue;
+            }
+            files.add(absolute);
         }
     }
 
@@ -508,7 +513,7 @@ async function checkCss(config) {
     header('CSS · W3C CSS Validation Service');
 
     const patterns = config.css?.files ?? ['public/**/*.css'];
-    const files = await collectCssFiles(patterns);
+    const files = await collectCssFiles(patterns, config.css?.exclude);
 
     if (files.length === 0) {
         warn(`No CSS files matched ${patterns.join(', ')}.`);
@@ -577,7 +582,7 @@ function contrastRatio(foreground, background) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
-function extractBracedBlock(source, startIndex) {
+function findBracedBlock(source, startIndex) {
     const open = source.indexOf('{', startIndex);
     if (open === -1) {
         return null;
@@ -591,7 +596,7 @@ function extractBracedBlock(source, startIndex) {
         if (source[index] === '}') {
             depth -= 1;
             if (depth === 0) {
-                return source.slice(open + 1, index);
+                return { inner: source.slice(open + 1, index), end: index };
             }
         }
     }
@@ -599,14 +604,13 @@ function extractBracedBlock(source, startIndex) {
     return null;
 }
 
-function parseCustomProperties(block) {
-    const root = block.match(/:root\s*\{([^}]*)\}/);
-    if (!root) {
-        return {};
-    }
+function extractBracedBlock(source, startIndex) {
+    return findBracedBlock(source, startIndex)?.inner ?? null;
+}
 
+function parseDeclarations(block) {
     const properties = {};
-    for (const declaration of root[1].split(';')) {
+    for (const declaration of block.split(';')) {
         const separator = declaration.indexOf(':');
         if (separator === -1) {
             continue;
@@ -623,16 +627,41 @@ function parseCustomProperties(block) {
     return properties;
 }
 
+function parseCustomProperties(source) {
+    const properties = {};
+
+    for (const match of source.matchAll(/(?::root|@theme)\s*\{/g)) {
+        const block = findBracedBlock(source, match.index);
+        if (!block) {
+            continue;
+        }
+
+        Object.assign(properties, parseDeclarations(block.inner));
+    }
+
+    return properties;
+}
+
 function extractThemes(css) {
     const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    const light = parseCustomProperties(withoutComments);
     const darkStart = withoutComments.search(
         /@media\s*\(\s*prefers-color-scheme:\s*dark\s*\)/,
     );
-    const darkBlock = darkStart === -1 ? null : extractBracedBlock(withoutComments, darkStart);
-    const dark = darkBlock
-        ? { ...light, ...parseCustomProperties(darkBlock) }
-        : { ...light };
+
+    let lightSource = withoutComments;
+    let darkSource = null;
+
+    if (darkStart !== -1) {
+        const darkBlock = findBracedBlock(withoutComments, darkStart);
+        if (darkBlock) {
+            lightSource =
+                withoutComments.slice(0, darkStart) + withoutComments.slice(darkBlock.end + 1);
+            darkSource = darkBlock.inner;
+        }
+    }
+
+    const light = parseCustomProperties(lightSource);
+    const dark = darkSource ? { ...light, ...parseCustomProperties(darkSource) } : { ...light };
 
     return { light, dark };
 }
@@ -640,7 +669,7 @@ function extractThemes(css) {
 function checkContrast(config) {
     header('Contrast · WCAG AAA');
 
-    const file = path.resolve(ROOT, config.contrast?.css ?? 'public/styles/theme.css');
+    const file = path.resolve(ROOT, config.contrast?.css ?? 'assets/styles/app.css');
     const pairs = config.contrast?.pairs ?? [];
 
     if (!existsSync(file)) {

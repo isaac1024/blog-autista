@@ -1,0 +1,6 @@
+<header class="flex flex-wrap items-center justify-between gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,2rem)] py-4">
+    <twig:Shared:Brand :brand="brand" :homeUrl="homeUrl" class="text-text" />
+{% if links is not empty %}
+    <twig:Shared:Nav :label="'ui.primary_navigation'|trans" :links="links" />
+{% endif %}
+</header>

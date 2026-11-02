@@ -1,4 +1,6 @@
 cms:
+    nav:
+        logout: 'Cerrar sesión'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -7,3 +9,7 @@ cms:
         username: 'Usuario'
         password: 'Contraseña'
         submit: 'Entrar'
+
+ui:
+    skip_to_content: 'Saltar al contenido'
+    primary_navigation: 'Navegación principal'

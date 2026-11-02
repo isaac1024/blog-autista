@@ -1,0 +1,7 @@
+<nav{% if label %} aria-label="{{ label }}"{% endif %}>
+    <ul class="m-0 flex list-none flex-wrap gap-4 p-0">
+{% for link in links %}
+        <twig:Shared:NavItem :label="link.label" :url="link.url" />
+{% endfor %}
+    </ul>
+</nav>

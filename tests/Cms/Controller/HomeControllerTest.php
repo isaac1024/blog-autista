@@ -29,7 +29,6 @@ final class HomeControllerTest extends WebTestCase
         $client->followRedirect();
 
         self::assertResponseIsSuccessful();
-        self::assertSame('CMS context is up.', $client->getResponse()->getContent());
     }
 
     public function testItDoesNotAnswerOnAnUnknownHost(): void

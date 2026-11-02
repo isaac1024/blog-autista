@@ -38,7 +38,11 @@ export default {
     },
 
     css: {
+        // Tailwind compiles the styles. Its modern output uses at-rules that
+        // the W3C CSS3 validator does not understand yet, so the generated
+        // file is excluded; this check is kept for any future hand-written CSS.
         files: ['public/**/*.css'],
+        exclude: ['public/styles/tailwind.css'],
         validator: 'https://jigsaw.w3.org/css-validator/validator',
         profile: 'css3svg',
     },
@@ -48,7 +52,7 @@ export default {
      * borders and focus indicators require 3:1 (WCAG AA non-text contrast).
      */
     contrast: {
-        css: 'public/styles/theme.css',
+        css: 'assets/styles/app.css',
         pairs: [
             { foreground: '--color-text', background: '--color-bg', minimum: 7 },
             { foreground: '--color-text', background: '--color-surface', minimum: 7 },
