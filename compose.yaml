@@ -1,0 +1,121 @@
+# Local parity for Hetzner Webhosting L.
+#
+# This mirrors the shared-hosting stack, it is NOT a deployment target:
+# Webhosting L is shared hosting, so there is no Docker (and no root) in
+# production. The same code is uploaded over SSH/FTP and served by Hetzner's
+# own nginx -> Apache -> PHP-FPM chain.
+#
+#   edge (nginx)  ->  apache 2.4.69  ->  php-fpm 8.5  (10 workers, 384 MB each)
+#                                      database: mariadb 11.8
+#                                      cache:    redis
+#
+# Usage:
+#   docker compose up -d --build
+#   docker compose exec -u www-data php bin/console about
+#   docker compose run --rm -u www-data php composer require <package>
+#
+name: blog-autista
+
+services:
+  # Hetzner fronts Apache with nginx (HTTP/2 and HTTP/3). Locally we only keep
+  # the proxying layer; TLS terminates at the edge in production.
+  edge:
+    image: nginx:stable-alpine
+    depends_on:
+      - apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - app
+    restart: unless-stopped
+
+  # Apache 2.4.69 + .htaccess, as on the hosting account.
+  apache:
+    image: httpd:2.4.69
+    depends_on:
+      - php
+    volumes:
+      # Application files are read-only for the web server.
+      - .:/var/www/html:ro
+      - ./docker/apache/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    networks:
+      - app
+    restart: unless-stopped
+
+  # PHP-FPM 8.5, the version set in konsoleH -> Services -> PHP configuration.
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        # Match the developer UID/GID so cache/log files stay writable
+        # from both the host and the container.
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      DEFAULT_URI: http://localhost:8080
+      # Credentials are local-only; production values live in .env.local
+      # (or the secrets vault) on the hosting account.
+      DATABASE_URL: "mysql://app:app@database:3306/app?serverVersion=11.8.9-MariaDB&charset=utf8mb4"
+      REDIS_URL: "redis://redis:6379"
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz-app.ini:ro
+      - ./docker/php/zzz-app-fpm.conf:/usr/local/etc/php-fpm.d/zzz-app-fpm.conf:ro
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app
+    restart: unless-stopped
+
+  # Webhosting L was migrated from MariaDB 10.11 to 11.8.
+  database:
+    image: mariadb:11.8
+    environment:
+      MARIADB_DATABASE: app
+      MARIADB_USER: app
+      MARIADB_PASSWORD: app
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - app
+    restart: unless-stopped
+
+  # Redis is included in Webhosting L (from Webhosting XL onwards in older
+  # plan naming; the current L page lists it).
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - app
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  redis-data:
+
+networks:
+  app:
