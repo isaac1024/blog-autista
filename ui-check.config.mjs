@@ -28,7 +28,8 @@
  *   - formFactors: per-page override of `lighthouse.formFactors`
  *
  * Authenticated CMS pages are included when `CMS_SESSION_COOKIE` holds a valid
- * PHPSESSID from a logged-in development session.
+ * PHPSESSID from a logged-in development session; the page editor also needs
+ * `CMS_PAGE_ID`, the id of an existing page.
  *
  * `server.command` supports `{bind}` and `{port}` placeholders. The default
  * checks are HTML, contrast and Lighthouse; run a subset with
@@ -60,13 +61,17 @@ if (cmsSession) {
             path: '/pages',
             headers: cmsHeaders,
         },
-        {
-            name: 'cms-page-edit',
-            host: 'cms.blogautista.localhost',
-            path: '/pages/01a19e72-b07f-7d78-889c-fa4a14a4fb95',
-            headers: cmsHeaders,
-        },
     );
+}
+
+// The editor needs an existing page: set CMS_PAGE_ID to the id of one in the dev database.
+if (cmsSession && process.env.CMS_PAGE_ID) {
+    pages.push({
+        name: 'cms-page-edit',
+        host: 'cms.blogautista.localhost',
+        path: `/pages/${process.env.CMS_PAGE_ID}`,
+        headers: cmsHeaders,
+    });
 }
 export default {
     server: {

@@ -13,6 +13,8 @@ interface PageRepository
 {
     public function save(Page $page): void;
 
+    public function find(PageId $id): ?Page;
+
     /**
      * @return list<Page>
      */

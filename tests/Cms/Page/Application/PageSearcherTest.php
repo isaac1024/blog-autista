@@ -80,7 +80,7 @@ final class PageSearcherTest extends TestCase
         ]);
 
         self::assertEquals(
-            [new PageResponse($guideId, 'Guía rápida'), new PageResponse($aboutId, 'Sobre mí')],
+            [new PageResponse($guideId, 'Guía rápida', 'guia-rapida'), new PageResponse($aboutId, 'Sobre mí', 'sobre-mi')],
             (new PageSearcher('', 1))($repository),
         );
     }

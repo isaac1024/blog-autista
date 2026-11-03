@@ -14,10 +14,11 @@ final readonly class PageResponse
     public function __construct(
         public string $id,
         public string $title,
+        public string $slug,
     ) {}
 
     public static function fromPage(Page $page): self
     {
-        return new self($page->id()->value(), $page->title()->value());
+        return new self($page->id()->value(), $page->title()->value(), $page->slug()->value());
     }
 }

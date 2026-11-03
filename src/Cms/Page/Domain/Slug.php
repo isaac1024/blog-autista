@@ -38,4 +38,9 @@ final readonly class Slug
             throw InvalidSlug::tooLong(self::MAX_LENGTH);
         }
     }
+
+    public function value(): string
+    {
+        return $this->value;
+    }
 }

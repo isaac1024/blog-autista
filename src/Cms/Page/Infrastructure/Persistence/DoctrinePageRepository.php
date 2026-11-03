@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Infrastructure\Persistence;
 
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -34,6 +35,12 @@ final readonly class DoctrinePageRepository implements PageRepository
     {
         $this->entityManager->persist($page);
         $this->entityManager->flush();
+    }
+
+    #[\Override]
+    public function find(PageId $id): ?Page
+    {
+        return $this->entityManager->find(Page::class, $id);
     }
 
     #[\Override]

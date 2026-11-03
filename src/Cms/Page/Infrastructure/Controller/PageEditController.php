@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Cms\Page\Infrastructure\Controller;
 
+use Cms\Page\Application\PageFinder;
+use Cms\Page\Application\PageNotFound;
+use Cms\Page\Application\PageResponse;
+use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
 use Shared\Ui\CmsLayout;
@@ -24,12 +28,18 @@ final class PageEditController extends AbstractController
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(string $id): Response
+    public function __invoke(string $id, PageRepository $pageRepository): Response
     {
-        return $this->pageRenderer->render($this->page($id));
+        try {
+            $page = new PageFinder($id)($pageRepository);
+        } catch (PageNotFound $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        }
+
+        return $this->pageRenderer->render($this->page($page));
     }
 
-    private function page(string $id): Page
+    private function page(PageResponse $page): Page
     {
         return CmsLayout::page(\sprintf(
             '%s · blog autista',
@@ -45,7 +55,7 @@ final class PageEditController extends AbstractController
                 ]),
             ])
             ->withMain('Shared:Form', [
-                'action' => $this->generateUrl('cms_pages_edit', ['id' => $id]),
+                'action' => $this->generateUrl('cms_pages_edit', ['id' => $page->id]),
                 'method' => 'post',
             ], [
                 new PageComponent('Shared:FormField', [], [
@@ -56,6 +66,7 @@ final class PageEditController extends AbstractController
                     new PageComponent('Shared:FormInput', [
                         'name' => 'title',
                         'id' => 'page-title',
+                        'value' => $page->title,
                         'attributes' => [
                             'required' => true,
                             'minlength' => Title::MIN_LENGTH,
@@ -75,6 +86,7 @@ final class PageEditController extends AbstractController
                     new PageComponent('Shared:FormInput', [
                         'name' => 'slug',
                         'id' => 'page-slug',
+                        'value' => $page->slug,
                         'attributes' => [
                             'required' => true,
                             'minlength' => Slug::MIN_LENGTH,

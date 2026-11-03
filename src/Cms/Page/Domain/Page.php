@@ -52,4 +52,9 @@ final readonly class Page
     {
         return $this->title;
     }
+
+    public function slug(): Slug
+    {
+        return $this->slug;
+    }
 }
