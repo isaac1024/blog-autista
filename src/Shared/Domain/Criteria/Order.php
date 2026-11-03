@@ -11,6 +11,6 @@ final readonly class Order
 {
     public function __construct(
         public string $field,
-        public OrderDirection $direction = OrderDirection::Ascending,
+        public OrderDirection $direction,
     ) {}
 }

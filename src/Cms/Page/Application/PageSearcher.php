@@ -20,8 +20,8 @@ final readonly class PageSearcher
     public const int PAGE_SIZE = 20;
 
     public function __construct(
-        private string $title = '',
-        private int $page = 1,
+        private string $title,
+        private int $page,
     ) {}
 
     /**

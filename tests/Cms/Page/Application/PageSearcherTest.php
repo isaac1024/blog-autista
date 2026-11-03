@@ -40,28 +40,28 @@ final class PageSearcherTest extends TestCase
         $pageSize = PageSearcher::PAGE_SIZE;
 
         yield 'no title, first page by default' => [
-            new PageSearcher(),
-            new Criteria(order: $newestFirst, limit: $pageSize, offset: 0),
+            new PageSearcher('', 1),
+            new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'blank title does not filter' => [
-            new PageSearcher('   '),
-            new Criteria(order: $newestFirst, limit: $pageSize, offset: 0),
+            new PageSearcher('   ', 1),
+            new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'title filters by its words' => [
-            new PageSearcher('guía familias'),
-            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía familias')], order: $newestFirst),
+            new PageSearcher('guía familias', 1),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía familias')], order: $newestFirst, offset: 0),
         ];
         yield 'title is trimmed before filtering' => [
-            new PageSearcher('  guía  '),
-            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst),
+            new PageSearcher('  guía  ', 1),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst, offset: 0),
         ];
         yield 'second page skips the first one' => [
-            new PageSearcher(page: 2),
-            new Criteria(order: $newestFirst, limit: $pageSize, offset: $pageSize),
+            new PageSearcher('', 2),
+            new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: $pageSize),
         ];
         yield 'later pages skip every previous one' => [
-            new PageSearcher(page: 5),
-            new Criteria(order: $newestFirst, limit: $pageSize, offset: 4 * $pageSize),
+            new PageSearcher('', 5),
+            new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 4 * $pageSize),
         ];
         yield 'title and page together' => [
             new PageSearcher('guía', 3),
@@ -79,7 +79,7 @@ final class PageSearcherTest extends TestCase
 
         self::assertEquals(
             [new PageResponse('Guía rápida'), new PageResponse('Sobre mí')],
-            (new PageSearcher())($repository),
+            (new PageSearcher('', 1))($repository),
         );
     }
 
@@ -88,7 +88,7 @@ final class PageSearcherTest extends TestCase
         $repository = self::createStub(PageRepository::class);
         $repository->method('matching')->willReturn([]);
 
-        self::assertSame([], (new PageSearcher('inexistente'))($repository));
+        self::assertSame([], (new PageSearcher('inexistente', 1))($repository));
     }
 
     #[DataProvider('invalidPages')]
@@ -99,7 +99,7 @@ final class PageSearcherTest extends TestCase
 
         $this->expectExceptionObject(InvalidCriteria::nonPositivePage($page));
 
-        (new PageSearcher(page: $page))($repository);
+        (new PageSearcher('', $page))($repository);
     }
 
     /**

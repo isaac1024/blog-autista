@@ -73,13 +73,13 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
 
         self::assertEqualsCanonicalizing(
             array_values(self::PAGES),
-            $this->titles($repository->matching(new Criteria(Criteria::MAX_LIMIT))),
+            $this->titles($repository->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: null, offset: 0))),
             'without criteria, every page',
         );
 
         self::assertEquals(
             [PageMother::create(id: '01a19e72-b07f-7d78-889c-fa4a14a4fb04', title: 'Guía rápida de autismo', slug: 'pagina-4')],
-            $repository->matching(new Criteria(Criteria::MAX_LIMIT, [TitleFilter::matches('rápida')])),
+            $repository->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [TitleFilter::matches('rápida')], order: null, offset: 0)),
             'pages come back whole: id, title and slug',
         );
 
@@ -92,15 +92,15 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     {
         $repository = $this->repository();
 
-        self::assertSame([], $repository->matching(new Criteria(Criteria::MAX_LIMIT)), 'without criteria');
-        self::assertSame([], $repository->matching(new Criteria(Criteria::MAX_LIMIT, [TitleFilter::matches('guía')])), 'searching the title');
+        self::assertSame([], $repository->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: null, offset: 0)), 'without criteria');
+        self::assertSame([], $repository->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [TitleFilter::matches('guía')], order: null, offset: 0)), 'searching the title');
     }
 
     public function testItRejectsSortingByAFieldItDoesNotExpose(): void
     {
         $this->expectExceptionObject(InvalidCriteria::unknownField('createdAt'));
 
-        $this->repository()->matching(new Criteria(Criteria::MAX_LIMIT, order: new Order('createdAt')));
+        $this->repository()->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('createdAt', OrderDirection::Ascending), offset: 0));
     }
 
     /**
@@ -120,26 +120,26 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
             'Taller de autismo 100% gratis',
             'Yo también soy TEA: autismo en adultos',
         ];
-        $byId = new Order('id');
+        $byId = new Order('id', OrderDirection::Ascending);
         $newestFirst = new Order('id', OrderDirection::Descending);
 
         // Sorting.
-        yield 'sorted by id, oldest first' => [new Criteria(Criteria::MAX_LIMIT, order: $byId), $oldestFirst];
-        yield 'sorted by id, newest first' => [new Criteria(Criteria::MAX_LIMIT, order: $newestFirst), array_reverse($oldestFirst)];
-        yield 'sorted by title, ignoring accents' => [new Criteria(Criteria::MAX_LIMIT, order: new Order('title')), $alphabetical];
+        yield 'sorted by id, oldest first' => [new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: $byId, offset: 0), $oldestFirst];
+        yield 'sorted by id, newest first' => [new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: $newestFirst, offset: 0), array_reverse($oldestFirst)];
+        yield 'sorted by title, ignoring accents' => [new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('title', OrderDirection::Ascending), offset: 0), $alphabetical];
         yield 'sorted by title, descending' => [
-            new Criteria(Criteria::MAX_LIMIT, order: new Order('title', OrderDirection::Descending)),
+            new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('title', OrderDirection::Descending), offset: 0),
             array_reverse($alphabetical),
         ];
-        yield 'sorted by slug' => [new Criteria(Criteria::MAX_LIMIT, order: new Order('slug')), $oldestFirst];
+        yield 'sorted by slug' => [new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('slug', OrderDirection::Ascending), offset: 0), $oldestFirst];
 
         // Pagination.
-        yield 'first page' => [new Criteria(3, order: $byId), \array_slice($oldestFirst, 0, 3)];
-        yield 'middle page' => [new Criteria(3, order: $byId, offset: 3), \array_slice($oldestFirst, 3, 3)];
-        yield 'last, incomplete page' => [new Criteria(3, order: $byId, offset: 6), \array_slice($oldestFirst, 6)];
-        yield 'page past the end' => [new Criteria(3, order: $byId, offset: 9), []];
-        yield 'limit larger than the results' => [new Criteria(50, order: $byId), $oldestFirst];
-        yield 'limit of one' => [new Criteria(1, order: $byId), \array_slice($oldestFirst, 0, 1)];
+        yield 'first page' => [new Criteria(limit: 3, filters: [], order: $byId, offset: 0), \array_slice($oldestFirst, 0, 3)];
+        yield 'middle page' => [new Criteria(limit: 3, filters: [], order: $byId, offset: 3), \array_slice($oldestFirst, 3, 3)];
+        yield 'last, incomplete page' => [new Criteria(limit: 3, filters: [], order: $byId, offset: 6), \array_slice($oldestFirst, 6)];
+        yield 'page past the end' => [new Criteria(limit: 3, filters: [], order: $byId, offset: 9), []];
+        yield 'limit larger than the results' => [new Criteria(limit: 50, filters: [], order: $byId, offset: 0), $oldestFirst];
+        yield 'limit of one' => [new Criteria(limit: 1, filters: [], order: $byId, offset: 0), \array_slice($oldestFirst, 0, 1)];
 
         // Full-text search on the title: by relevance first, newest first on ties.
         $search = static fn (string $text, int $limit = Criteria::MAX_LIMIT, int $offset = 0): Criteria => new Criteria(

@@ -29,9 +29,13 @@ final class AdministratorUserProviderTest extends TestCase
     {
         $provider = $this->provider(null);
 
-        $this->expectException(UserNotFoundException::class);
-
-        $provider->loadUserByIdentifier('someone-else');
+        try {
+            $provider->loadUserByIdentifier('someone-else');
+            self::fail('An unknown identifier must not load a user.');
+        } catch (UserNotFoundException $exception) {
+            // Symfony reads it back, e.g. to keep the last username in the login form.
+            self::assertSame('someone-else', $exception->getUserIdentifier());
+        }
     }
 
     public function testItKeepsTheUserStoredInTheSession(): void

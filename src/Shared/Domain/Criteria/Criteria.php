@@ -20,9 +20,9 @@ final readonly class Criteria
      */
     public function __construct(
         public int $limit,
-        public array $filters = [],
-        public ?Order $order = null,
-        public int $offset = 0,
+        public array $filters,
+        public ?Order $order,
+        public int $offset,
     ) {
         if ($limit < 1) {
             throw InvalidCriteria::nonPositiveLimit($limit);

@@ -6,6 +6,7 @@ namespace Cms\Tests\Authentication\Infrastructure\Persistence;
 
 use Cms\Authentication\Domain\Administrator;
 use Cms\Authentication\Infrastructure\Persistence\EnvironmentAdministratorRepository;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactory;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -31,6 +32,34 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
 
         self::assertNull($repository->findByIdentifier('someone-else'));
         self::assertFalse($repository->existsByIdentifier('someone-else'));
+    }
+
+    #[DataProvider('incompleteCredentials')]
+    public function testItRefusesToStartWithIncompleteCredentials(string $identifier, string $password): void
+    {
+        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_IDENTIFIER and CMS_USER_PASSWORD must not be empty.'));
+
+        $this->repository($identifier, $password);
+    }
+
+    /**
+     * Either one missing is enough: a CMS must never run without a password.
+     *
+     * @return iterable<string, array{string, string}>
+     */
+    public static function incompleteCredentials(): iterable
+    {
+        yield 'no identifier' => ['', 'secret'];
+        yield 'no password' => ['admin', ''];
+    }
+
+    public function testItRejectsAnIdentifierMadeOfWhitespace(): void
+    {
+        $repository = $this->repository('   ', 'secret');
+
+        $this->expectExceptionObject(new \InvalidArgumentException('The administrator identifier must not be empty.'));
+
+        $repository->findByIdentifier('   ');
     }
 
     private function repository(string $identifier, string $password): EnvironmentAdministratorRepository
