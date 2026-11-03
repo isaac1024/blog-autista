@@ -6,9 +6,12 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
+use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\UniquePageCannotBeDeleted;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\InvalidUuid;
 
@@ -28,6 +31,30 @@ final class PageDeleterTest extends TestCase
             ->with(self::identicalTo($page));
 
         (new PageDeleter($id))($repository);
+    }
+
+    #[DataProvider('uniquePages')]
+    public function testItNeverDeletesAUniquePage(Page $page): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::never())->method('delete');
+
+        $this->expectExceptionObject(UniquePageCannotBeDeleted::ofType($page->type()));
+
+        (new PageDeleter($page->id()->value()))($repository);
+    }
+
+    /**
+     * @return iterable<string, array{Page}>
+     */
+    public static function uniquePages(): iterable
+    {
+        yield 'home' => [PageMother::home()];
+
+        foreach (PageMother::uniqueButHome() as $type => $page) {
+            yield $type => [$page];
+        }
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

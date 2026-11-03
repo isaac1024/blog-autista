@@ -88,6 +88,31 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         );
     }
 
+    public function testItSavesTheHomePageWithoutASlug(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
+        self::getContainer()->get(PageRepository::class)->save($home);
+
+        // The editor of the home page has no slug field, so none is posted.
+        $client->request('POST', \sprintf(self::URL, $home->id()->value()), ['title' => 'Inicio']);
+
+        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Inicio'), $this->storedPage($home));
+    }
+
+    public function testItRespondsBadRequestAndKeepsTheHomePageWhenItIsGivenASlug(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
+        self::getContainer()->get(PageRepository::class)->save($home);
+
+        $client->request('POST', \sprintf(self::URL, $home->id()->value()), ['title' => 'Inicio', 'slug' => 'inicio']);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Portada'), $this->storedPage($home));
+    }
+
     public function testItRespondsNotFoundWhenThePageDoesNotExist(): void
     {
         $client = self::createAuthenticatedClient();

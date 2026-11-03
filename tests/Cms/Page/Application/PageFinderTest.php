@@ -8,6 +8,7 @@ use Cms\Page\Application\PageFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +26,31 @@ final class PageFinderTest extends TestCase
             ->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
 
         self::assertEquals(
-            new PageResponse($id, 'Sobre mí', 'sobre-mi'),
+            new PageResponse($id, 'Sobre mí', 'sobre-mi', home: false, unique: false),
+            (new PageFinder($id))($repository),
+        );
+    }
+
+    public function testItTellsTheHomePageApart(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
+
+        self::assertEquals(
+            new PageResponse($id, 'Portada', '', home: true, unique: true),
+            (new PageFinder($id))($repository),
+        );
+    }
+
+    public function testItTellsTheOtherUniquePagesApart(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
+
+        self::assertEquals(
+            new PageResponse($id, 'Contacto', 'contacto', home: false, unique: true),
             (new PageFinder($id))($repository),
         );
     }

@@ -10,6 +10,7 @@ use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\Title;
@@ -124,6 +125,66 @@ final class PageUpdaterTest extends TestCase
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Quién soy', slug: 'sobre-mi')));
 
         (new PageUpdater($id, 'Quién soy', 'sobre-mi'))($repository);
+    }
+
+    public function testItSavesTheHomePageWithTheEditedTitleAndStillNoSlug(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::home(id: $id, title: 'Inicio')));
+
+        (new PageUpdater($id, 'Inicio', ''))($repository);
+    }
+
+    public function testItSavesNothingWhenTheHomePageIsGivenASlug(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidSlug::onHome('inicio'));
+
+        (new PageUpdater($id, 'Inicio', 'inicio'))($repository);
+    }
+
+    public function testItSavesNothingWhenTheHomePageEditIsInvalid(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidTitle::tooShort(Title::MIN_LENGTH));
+
+        (new PageUpdater($id, 'Sí', ''))($repository);
+    }
+
+    public function testItSavesAUniquePageWithTheEditedTitleAndSlugKeepingItsType(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::create(id: $id, title: 'Escríbeme', slug: 'escribeme', type: PageType::Contact)));
+
+        (new PageUpdater($id, 'Escríbeme', 'escribeme'))($repository);
+    }
+
+    public function testItSavesNothingWhenAPageOtherThanTheHomeIsLeftWithoutASlug(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidSlug::malformed(''));
+
+        (new PageUpdater($id, 'Contacto', ''))($repository);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

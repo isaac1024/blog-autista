@@ -24,7 +24,7 @@ final readonly class UniquePageCreateCommand
 
     public function __invoke(
         SymfonyStyle $style,
-        #[Argument(description: 'Type of the unique page', suggestedValues: [self::class, 'uniqueTypes'])]
+        #[Argument(description: 'Type of the unique page', suggestedValues: self::uniqueTypes(...))]
         string $type,
         #[Argument(description: 'Title of the page; the slug is derived from it, except for the home page')]
         string $title,
@@ -45,7 +45,7 @@ final readonly class UniquePageCreateCommand
     /**
      * @return list<string>
      */
-    public function uniqueTypes(): array
+    public static function uniqueTypes(): array
     {
         return array_map(static fn (PageType $type): string => $type->value, PageType::uniqueTypes());
     }

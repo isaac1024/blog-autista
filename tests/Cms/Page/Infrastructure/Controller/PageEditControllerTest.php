@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
@@ -33,6 +34,30 @@ final class PageEditControllerTest extends CmsWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertRouteSame('cms_pages_edit', ['id' => $id]);
+    }
+
+    public function testItOpensTheEditorOfTheHomePage(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PageIdMother::random()->value();
+        self::getContainer()->get(PageRepository::class)->save(PageMother::home(id: $id));
+
+        $client->request('GET', \sprintf(self::URL, $id));
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testItOpensTheEditorOfAUniquePage(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PageIdMother::random()->value();
+        self::getContainer()->get(PageRepository::class)->save(
+            PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact),
+        );
+
+        $client->request('GET', \sprintf(self::URL, $id));
+
+        self::assertResponseIsSuccessful();
     }
 
     public function testItRespondsNotFoundWhenThePageDoesNotExist(): void

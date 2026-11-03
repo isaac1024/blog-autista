@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Persistence;
 
+use Cms\Page\Domain\HomeSlug;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageMother;
@@ -115,6 +117,86 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
         $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Quién soy', slug: 'sobre-mi'));
+    }
+
+    public function testItSavesTheHomePageWithoutASlugSoItCanBeReadBack(): void
+    {
+        $id = PageId::random();
+        $page = PageMother::home(id: $id->value());
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($page);
+        $entityManager->clear();
+
+        self::assertEquals($page, $entityManager->find(Page::class, $id));
+    }
+
+    public function testItSavesTheTypeOfAUniquePageSoItCanBeReadBack(): void
+    {
+        $id = PageId::random();
+        $page = PageMother::create(id: $id->value(), title: 'Política de cookies', slug: 'politica-cookies', type: PageType::CookiePolicy);
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($page);
+        $entityManager->clear();
+
+        self::assertEquals($page, $entityManager->find(Page::class, $id));
+    }
+
+    public function testItFindsTheHomePageByItsEmptySlug(): void
+    {
+        $home = PageMother::home(id: PageId::random()->value());
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $repository->save($home);
+        $this->entityManager()->clear();
+
+        self::assertEquals($home, $repository->findBySlug(new HomeSlug()));
+    }
+
+    public function testItFindsNoPageAtTheRootWithoutAHomePage(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $this->entityManager()->clear();
+
+        self::assertNull($repository->findBySlug(new HomeSlug()));
+    }
+
+    public function testItFindsThePageOfTheGivenType(): void
+    {
+        $contact = PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto', type: PageType::Contact);
+        $repository = $this->repository();
+        $repository->save(PageMother::home(id: PageId::random()->value()));
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->save($contact);
+        $this->entityManager()->clear();
+
+        self::assertEquals($contact, $repository->findByType(PageType::Contact));
+    }
+
+    public function testItFindsNoPageWhenNoneHasTheType(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::home(id: PageId::random()->value()));
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+        $this->entityManager()->clear();
+
+        self::assertNull($repository->findByType(PageType::Contact));
+    }
+
+    /**
+     * The home page is the only one stored with an empty slug, so the unique
+     * index also keeps the site to a single home page.
+     */
+    public function testItRejectsSavingASecondHomePage(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::home(id: PageId::random()->value()));
+
+        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(new HomeSlug()));
+
+        $repository->save(PageMother::home(id: PageId::random()->value(), title: 'Otra portada'));
     }
 
     public function testItDeletesOnlyTheGivenPage(): void

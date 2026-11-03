@@ -10,6 +10,7 @@ use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -37,6 +38,30 @@ final class PageDeleteControllerTest extends CmsWebTestCase
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertNull($this->storedPage($page));
+    }
+
+    #[DataProvider('uniquePages')]
+    public function testItRespondsBadRequestAndKeepsAUniquePage(Page $page): void
+    {
+        $client = self::createAuthenticatedClient();
+        self::getContainer()->get(PageRepository::class)->save($page);
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertEquals($page, $this->storedPage($page));
+    }
+
+    /**
+     * @return iterable<string, array{Page}>
+     */
+    public static function uniquePages(): iterable
+    {
+        yield 'home' => [PageMother::home(id: PageIdMother::random()->value())];
+
+        foreach (PageMother::uniqueButHome(PageIdMother::random()->value()) as $type => $page) {
+            yield $type => [$page];
+        }
     }
 
     public function testItOnlyAcceptsPost(): void
