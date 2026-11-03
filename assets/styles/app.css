@@ -57,17 +57,39 @@
     --color-selection-bg: #614092;
     --color-selection-text: #fff;
 
+    /*
+     * Muted spectrum inspired by the neurodiversity infinity symbol. Purely
+     * decorative: low saturation to avoid sensory overload, and never the only
+     * carrier of meaning.
+     */
     --color-spectrum-1: #614092;
-    --color-spectrum-2: #b9a3d9;
+    --color-spectrum-2: #3e6ea6;
+    --color-spectrum-3: #2e8277;
+    --color-spectrum-4: #74943f;
+    --color-spectrum-5: #cc9433;
+    --color-spectrum-6: #c0604f;
 
-    --radius-card: 0;
-    --radius-control: 0;
+    /* Soft corners make the interface warmer without blurring its shapes. */
+    --radius-card: 0.75rem;
+    --radius-control: 0.5rem;
     --shadow-card: 0 24px 60px rgb(24 32 40 / 14%);
 
     --font-sans: "Atkinson Hyperlegible", verdana, tahoma, sans-serif;
     --text-base: 1.125rem;
     --leading-base: 1.7;
     --tracking-base: 0.01em;
+}
+
+@utility bg-spectrum {
+    background-image: linear-gradient(
+        90deg,
+        var(--color-spectrum-1),
+        var(--color-spectrum-2),
+        var(--color-spectrum-3),
+        var(--color-spectrum-4),
+        var(--color-spectrum-5),
+        var(--color-spectrum-6)
+    );
 }
 
 @layer base {
@@ -95,7 +117,11 @@
             --color-selection-text: #17151a;
 
             --color-spectrum-1: #c9b6ea;
-            --color-spectrum-2: #9f86c9;
+            --color-spectrum-2: #9ebde3;
+            --color-spectrum-3: #8ccbc1;
+            --color-spectrum-4: #b8d18e;
+            --color-spectrum-5: #e8c483;
+            --color-spectrum-6: #eba597;
 
             --shadow-card: 0 24px 60px rgb(5 8 12 / 50%);
         }

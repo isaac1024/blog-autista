@@ -1,4 +1,7 @@
 cms:
+    home:
+        title: 'Panel'
+        subtitle: 'Desde aquí gestionas el contenido del blog.'
     nav:
         account: 'Cuenta'
         administration: 'Administración'
@@ -9,12 +12,24 @@ cms:
         logout: 'Cerrar sesión'
     pages:
         title: 'Páginas'
-        subtitle: 'Crea y gestiona las páginas de tu blog.'
-        empty: 'Todavía no hay páginas.'
+        subtitle: 'Las páginas son el contenido fijo del blog, como «Sobre mí» o «Contacto».'
+        empty:
+            title: 'Todavía no hay páginas'
+            message: 'Cuando crees una página, aparecerá aquí.'
+            action: 'Crear la primera página'
+        search:
+            label: 'Buscar por título'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+                message: 'Ninguna página tiene «%title%» en el título.'
+                action: 'Ver todas las páginas'
+        list:
+            label: 'Páginas del blog'
         add: 'Añadir página'
         modal:
             title: 'Nueva página'
-            description: 'Introduce el título de la página.'
+            description: 'Escribe el título. La dirección web de la página se creará a partir de él.'
             title_label: 'Título'
             submit: 'Crear página'
     login:

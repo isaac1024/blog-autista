@@ -1,0 +1,9 @@
+<search class="w-full max-w-xl">
+    <form class="flex flex-col gap-2" method="get" action="{{ action }}">
+        <label class="text-[1rem] font-bold" for="{{ id }}">{{ label }}</label>
+        <div class="flex gap-2">
+            <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-2.5 text-text focus-visible:border-accent [&::-webkit-search-cancel-button]:cursor-pointer" type="search" id="{{ id }}" name="{{ name }}" value="{{ value }}">
+            <button class="min-h-12 flex-none cursor-pointer rounded-control border-2 border-accent bg-surface px-4 py-2.5 text-[1rem] font-bold text-accent transition-colors duration-150 hover:bg-accent hover:text-on-accent active:translate-y-px motion-reduce:transition-none motion-reduce:active:translate-y-0 forced-colors:border-[ButtonText]" type="submit">{{ submit }}</button>
+        </div>
+    </form>
+</search>

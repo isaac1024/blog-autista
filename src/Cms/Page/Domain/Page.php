@@ -13,11 +13,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_page')]
 #[ORM\Index(name: 'idx_cms_page_slug', columns: ['slug'])]
+#[ORM\Index(name: 'ftx_cms_page_title', columns: ['title'], flags: ['fulltext'])]
 final readonly class Page
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: 'cms_page_id', length: 36)]
+        #[ORM\Column(type: 'cms_page_id')]
         private PageId $id,
         #[ORM\Embedded(class: Title::class, columnPrefix: false)]
         private Title $title,
@@ -40,5 +41,10 @@ final readonly class Page
     public function save(PageRepository $pageRepository): void
     {
         $pageRepository->save($this);
+    }
+
+    public function title(): Title
+    {
+        return $this->title;
     }
 }

@@ -1,0 +1,6 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<ul class="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3" aria-label="{{ label }}">
+{% for child in children %}
+    <li class="flex">{{ renderer.render(child) }}</li>
+{% endfor %}
+</ul>

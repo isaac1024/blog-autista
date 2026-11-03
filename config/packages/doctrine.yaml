@@ -9,10 +9,19 @@ doctrine:
         profiling_collect_backtrace: '%kernel.debug%'
         types:
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
+        # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
+        # have to map to a Doctrine type when the schema is introspected. Any
+        # UuidType declares the same "UUID" column, so the schema comparison
+        # works for every identifier whichever one is named here.
+        mapping_types:
+            uuid: cms_page_id
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
         auto_mapping: true
+        dql:
+            numeric_functions:
+                MATCH_AGAINST: Shared\Infrastructure\Persistence\Doctrine\MatchAgainstFunction
         mappings:
             Web:
                 type: attribute

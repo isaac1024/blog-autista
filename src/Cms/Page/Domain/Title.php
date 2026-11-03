@@ -30,4 +30,9 @@ final readonly class Title
             throw InvalidTitle::tooLong(self::MAX_LENGTH);
         }
     }
+
+    public function value(): string
+    {
+        return $this->value;
+    }
 }

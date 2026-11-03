@@ -1,0 +1,113 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Tests\Page\Application;
+
+use Cms\Page\Application\PageResponse;
+use Cms\Page\Application\PageSearcher;
+use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\TitleFilter;
+use Cms\Tests\Page\Domain\PageIdMother;
+use Cms\Tests\Page\Domain\PageMother;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shared\Domain\Criteria\Criteria;
+use Shared\Domain\Criteria\InvalidCriteria;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
+
+final class PageSearcherTest extends TestCase
+{
+    #[DataProvider('searches')]
+    public function testItAsksTheRepositoryForTheRequestedSliceOfPages(PageSearcher $searcher, Criteria $expected): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->expects(self::once())
+            ->method('matching')
+            ->with(self::equalTo($expected))
+            ->willReturn([]);
+
+        $searcher($repository);
+    }
+
+    /**
+     * @return iterable<string, array{PageSearcher, Criteria}>
+     */
+    public static function searches(): iterable
+    {
+        $newestFirst = new Order('id', OrderDirection::Descending);
+        $pageSize = PageSearcher::PAGE_SIZE;
+
+        yield 'no title, first page by default' => [
+            new PageSearcher(),
+            new Criteria(order: $newestFirst, limit: $pageSize, offset: 0),
+        ];
+        yield 'blank title does not filter' => [
+            new PageSearcher('   '),
+            new Criteria(order: $newestFirst, limit: $pageSize, offset: 0),
+        ];
+        yield 'title filters by its words' => [
+            new PageSearcher('guía familias'),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía familias')], order: $newestFirst),
+        ];
+        yield 'title is trimmed before filtering' => [
+            new PageSearcher('  guía  '),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst),
+        ];
+        yield 'second page skips the first one' => [
+            new PageSearcher(page: 2),
+            new Criteria(order: $newestFirst, limit: $pageSize, offset: $pageSize),
+        ];
+        yield 'later pages skip every previous one' => [
+            new PageSearcher(page: 5),
+            new Criteria(order: $newestFirst, limit: $pageSize, offset: 4 * $pageSize),
+        ];
+        yield 'title and page together' => [
+            new PageSearcher('guía', 3),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst, offset: 2 * $pageSize),
+        ];
+    }
+
+    public function testItReturnsTheFoundPagesInTheRepositoryOrder(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('matching')->willReturn([
+            PageMother::create(id: PageIdMother::random()->value(), title: 'Guía rápida', slug: 'guia-rapida'),
+            PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
+        ]);
+
+        self::assertEquals(
+            [new PageResponse('Guía rápida'), new PageResponse('Sobre mí')],
+            (new PageSearcher())($repository),
+        );
+    }
+
+    public function testItReturnsNothingWhenNoPageMatches(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('matching')->willReturn([]);
+
+        self::assertSame([], (new PageSearcher('inexistente'))($repository));
+    }
+
+    #[DataProvider('invalidPages')]
+    public function testItRejectsPageNumbersBelowOne(int $page): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->expects(self::never())->method('matching');
+
+        $this->expectExceptionObject(InvalidCriteria::nonPositivePage($page));
+
+        (new PageSearcher(page: $page))($repository);
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function invalidPages(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'negative' => [-1];
+    }
+}

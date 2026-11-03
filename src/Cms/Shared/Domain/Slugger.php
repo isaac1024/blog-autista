@@ -27,7 +27,7 @@ final readonly class Slugger
     public function __invoke(): string
     {
         $words = $this->words();
-        $meaningful = array_values(array_diff($words, self::STOP_WORDS));
+        $meaningful = array_diff($words, self::STOP_WORDS);
 
         return implode('-', [] === $meaningful ? $words : $meaningful);
     }

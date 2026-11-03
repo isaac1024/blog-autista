@@ -4,36 +4,52 @@ declare(strict_types=1);
 
 namespace Cms\Page\Infrastructure\Controller;
 
+use Cms\Page\Application\PageResponse;
+use Cms\Page\Application\PageSearcher;
+use Cms\Page\Domain\PageRepository;
 use Shared\Ui\CmsLayout;
 use Shared\Ui\Page\Page;
 use Shared\Ui\Page\PageComponent;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class PageListController extends AbstractController
 {
+    private const string NEW_PAGE_MODAL = 'new-page';
+
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
     ) {}
 
     #[Route('/pages', name: 'cms_pages', methods: ['GET'])]
-    public function __invoke(): Response
-    {
-        return $this->pageRenderer->render($this->page());
+    public function __invoke(
+        PageRepository $pageRepository,
+        #[MapQueryParameter]
+        string $title = '',
+        #[MapQueryParameter(options: ['min_range' => 1])]
+        int $page = 1,
+    ): Response {
+        $title = trim($title);
+        $pages = new PageSearcher($title, $page)($pageRepository);
+
+        return $this->pageRenderer->render($this->page($pages, $title));
     }
 
     /**
      * Composes the whole page from Twig components, so it is long by design.
      *
+     * @param list<PageResponse> $pages
+     *
      * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
      */
-    private function page(): Page
+    private function page(array $pages, string $title): Page
     {
-        return CmsLayout::page(\sprintf(
+        $page = CmsLayout::page(\sprintf(
             '%s · blog autista',
             $this->translator->trans('cms.pages.title'),
         ))
@@ -42,7 +58,7 @@ final class PageListController extends AbstractController
                 'subtitle' => $this->translator->trans('cms.pages.subtitle'),
             ], [
                 new PageComponent('Shared:Modal', [
-                    'id' => 'new-page',
+                    'id' => self::NEW_PAGE_MODAL,
                     'trigger' => $this->translator->trans('cms.pages.add'),
                     'title' => $this->translator->trans('cms.pages.modal.title'),
                     'description' => $this->translator->trans('cms.pages.modal.description'),
@@ -71,8 +87,46 @@ final class PageListController extends AbstractController
                     ]),
                 ]),
             ])
-            ->withMain('Shared:EmptyState', [
-                'message' => $this->translator->trans('cms.pages.empty'),
+            ->withMain('Shared:SearchForm', [
+                'action' => $this->generateUrl('cms_pages'),
+                'name' => 'title',
+                'id' => 'page-search',
+                'label' => $this->translator->trans('cms.pages.search.label'),
+                'submit' => $this->translator->trans('cms.pages.search.submit'),
+                'value' => $title,
             ]);
+
+        if ([] === $pages && '' === $title) {
+            return $page->withMain('Shared:EmptyState', [
+                'title' => $this->translator->trans('cms.pages.empty.title'),
+                'message' => $this->translator->trans('cms.pages.empty.message'),
+            ], [
+                new PageComponent('Shared:ModalTrigger', [
+                    'target' => self::NEW_PAGE_MODAL,
+                    'label' => $this->translator->trans('cms.pages.empty.action'),
+                ]),
+            ]);
+        }
+
+        if ([] === $pages) {
+            return $page->withMain('Shared:EmptyState', [
+                'title' => $this->translator->trans('cms.pages.search.empty.title'),
+                'message' => $this->translator->trans('cms.pages.search.empty.message', ['%title%' => $title]),
+            ], [
+                new PageComponent('Shared:ButtonLink', [
+                    'url' => $this->generateUrl('cms_pages'),
+                    'label' => $this->translator->trans('cms.pages.search.empty.action'),
+                ]),
+            ]);
+        }
+
+        return $page->withMain('Shared:CardList', [
+            'label' => $this->translator->trans('cms.pages.list.label'),
+        ], array_map(
+            static fn (PageResponse $response): PageComponent => new PageComponent('Shared:Card', [
+                'title' => $response->title,
+            ]),
+            $pages,
+        ));
     }
 }

@@ -1,4 +1,7 @@
 cms:
+    home:
+        title: 'Dashboard'
+        subtitle: 'Manage the blog content from here.'
     nav:
         account: 'Account'
         administration: 'Administration'
@@ -9,12 +12,24 @@ cms:
         logout: 'Sign out'
     pages:
         title: 'Pages'
-        subtitle: "Create and manage your blog's pages."
-        empty: 'There are no pages yet.'
+        subtitle: 'Pages are the fixed content of the blog, like “About me” or “Contact”.'
+        empty:
+            title: 'There are no pages yet'
+            message: 'When you create a page, it will appear here.'
+            action: 'Create the first page'
+        search:
+            label: 'Search by title'
+            submit: 'Search'
+            empty:
+                title: 'No results'
+                message: 'No page has “%title%” in its title.'
+                action: 'See all pages'
+        list:
+            label: 'Blog pages'
         add: 'Add page'
         modal:
             title: 'New page'
-            description: 'Enter the title of the page.'
+            description: 'Write the title. The page web address will be created from it.'
             title_label: 'Title'
             submit: 'Create page'
     login:

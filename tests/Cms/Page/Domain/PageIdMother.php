@@ -11,6 +11,7 @@ use Cms\Page\Domain\PageId;
  *
  *     PageIdMother::create()
  *     PageIdMother::create('0f8fad5b-d9cb-469f-a165-70867728950e')
+ *     PageIdMother::random()
  */
 final class PageIdMother
 {
@@ -19,5 +20,14 @@ final class PageIdMother
     public static function create(string $value = self::DEFAULT_VALUE): PageId
     {
         return new PageId($value);
+    }
+
+    /**
+     * A PageId with a fresh random value, for tests where the id doesn't matter
+     * but has to be unique.
+     */
+    public static function random(): PageId
+    {
+        return PageId::random();
     }
 }

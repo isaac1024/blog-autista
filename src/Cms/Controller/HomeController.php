@@ -10,10 +10,14 @@ use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class HomeController extends AbstractController
 {
-    public function __construct(private readonly PageRenderer $pageRenderer) {}
+    public function __construct(
+        private readonly PageRenderer $pageRenderer,
+        private readonly TranslatorInterface $translator,
+    ) {}
 
     #[Route('/', name: 'cms_home', methods: ['GET'])]
     public function __invoke(): Response
@@ -28,9 +32,10 @@ final class HomeController extends AbstractController
      */
     private function page(): Page
     {
-        return CmsLayout::page('CMS · blog autista')
+        return CmsLayout::page(\sprintf('%s · blog autista', $this->translator->trans('cms.home.title')))
             ->withMain('Shared:PageTitle', [
-                'title' => 'CMS context is up.',
+                'title' => $this->translator->trans('cms.home.title'),
+                'subtitle' => $this->translator->trans('cms.home.subtitle'),
             ]);
     }
 }

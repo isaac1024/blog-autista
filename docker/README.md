@@ -63,8 +63,8 @@ every minute.
 | Types and SOLID | PHPStan | level **max**, strict rules, Symfony + Doctrine + PHPUnit extensions |
 | Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
 | Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both |
-| Tests | PHPUnit | random order, strict output, fail on risky/deprecation/notice/warning |
-| Mutation | Infection | MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
+| Tests | PHPUnit + ParaTest | in parallel, one database per process; random order, strict output, fail on risky/deprecation/notice/warning |
+| Mutation | Infection | in parallel, one database per thread, only the test cases that cover each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
 
 ```bash
 composer check        # fast gate: style, Twig, PHPMD, PHPStan, PHPUnit
@@ -73,9 +73,19 @@ composer cs           # apply PHP coding style
 composer twig:cs      # apply Twig coding style
 composer complexity   # PHPMD only
 composer stan         # PHPStan (types + dead code + architecture)
-composer test         # PHPUnit only
-composer infection    # mutation testing
+composer test         # PHPUnit in parallel (ParaTest)
+composer test:serial  # PHPUnit in a single process, handy to debug a failure
+composer infection    # mutation testing of the whole src/
+composer infection:diff  # mutation testing of the lines changed against master
 ```
+
+Tests run in parallel: ParaTest workers and Infection threads each get a
+`TEST_TOKEN`, and `doctrine.yaml` appends it to the database name, so every
+process owns `app_test<token>`. `tests/bootstrap.php` creates and migrates that
+database the first time and leaves a marker in `var/test-databases/`, keyed by
+token and migration set, so later runs skip the work and a new migration
+triggers it again. If you recreate the database volume, delete that directory.
+The MariaDB init script grants the `app` user every `app_test%` database.
 
 `composer stan` warms the dev cache first because the dead-code detector and the
 Symfony extension need `var/cache/dev/Shared_KernelDevDebugContainer.xml`.

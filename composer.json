@@ -28,6 +28,7 @@
         "symfony/yaml": "8.1.*"
     },
     "require-dev": {
+        "brianium/paratest": "^7.27",
         "dama/doctrine-test-bundle": "^8.7",
         "friendsofphp/php-cs-fixer": "^3.95",
         "infection/infection": "^0.35.8",
@@ -100,9 +101,11 @@
             "phpstan analyse --memory-limit=1G"
         ],
         "complexity": "phpmd analyze src --ruleset phpmd.xml --exclude '*Migrations*' --cache --cache-file var/phpmd.result-cache.php --no-progress",
-        "test": "phpunit",
+        "test": "paratest",
+        "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
-        "infection": "XDEBUG_MODE=coverage infection",
+        "infection": "XDEBUG_MODE=coverage infection --only-covering-test-cases",
+        "infection:diff": "XDEBUG_MODE=coverage infection --only-covering-test-cases --git-diff-lines --git-diff-base=master --map-source-class-to-test",
         "check": [
             "@cs:check",
             "@twig:cs:check",

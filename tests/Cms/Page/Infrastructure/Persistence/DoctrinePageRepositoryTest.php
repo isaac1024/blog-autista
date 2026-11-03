@@ -7,21 +7,207 @@ namespace Cms\Tests\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageMother;
+use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
+use Shared\Domain\Criteria\Criteria;
+use Shared\Domain\Criteria\InvalidCriteria;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
+/**
+ * Full-text tests skip the rollback of dama/doctrine-test-bundle: InnoDB only
+ * adds rows to a FULLTEXT index when their transaction commits, so a search
+ * inside the test transaction would never see them. tearDown() empties the
+ * table instead.
+ */
 final class DoctrinePageRepositoryTest extends KernelTestCase
 {
+    /**
+     * The one set of pages every assertion runs against. Titles keyed by id,
+     * oldest first: page ids are time-ordered UUIDs. Every title has
+     * "autismo", so the search also covers a word found in every page.
+     */
+    private const array PAGES = [
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb01' => 'Guías y más guías sobre autismo',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb02' => 'Cómo empezar a entender el autismo',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb03' => 'Guía para familias recién diagnosticadas de autismo',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb04' => 'Guía rápida de autismo',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb05' => 'Yo también soy TEA: autismo en adultos',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb06' => 'Taller de autismo 100% gratis',
+        '01a19e72-b07f-7d78-889c-fa4a14a4fb07' => 'Autismo y empleo: guía para empresas',
+    ];
+
+    #[\Override]
+    protected function tearDown(): void
+    {
+        $this->entityManager()->getConnection()->executeStatement('DELETE FROM cms_page');
+
+        parent::tearDown();
+    }
+
     public function testItSavesThePageSoItCanBeReadBack(): void
     {
         $id = PageId::random();
         $page = PageMother::create(id: $id->value(), title: 'Sobre mí', slug: 'sobre-mi');
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $entityManager = $this->entityManager();
 
-        self::getContainer()->get(PageRepository::class)->save($page);
+        $this->repository()->save($page);
         $entityManager->clear();
 
         self::assertEquals($page, $entityManager->find(Page::class, $id));
+    }
+
+    /**
+     * The only test that commits its data, which full-text search needs: it
+     * saves the pages once and checks every kind of criteria against them, so
+     * the suite pays for one committed fixture instead of one per case.
+     */
+    #[SkipDatabaseRollback]
+    public function testItFindsThePagesMatchingTheCriteria(): void
+    {
+        $this->savePages();
+        $repository = $this->repository();
+
+        self::assertEqualsCanonicalizing(
+            array_values(self::PAGES),
+            $this->titles($repository->matching(new Criteria(Criteria::MAX_LIMIT))),
+            'without criteria, every page',
+        );
+
+        self::assertEquals(
+            [PageMother::create(id: '01a19e72-b07f-7d78-889c-fa4a14a4fb04', title: 'Guía rápida de autismo', slug: 'pagina-4')],
+            $repository->matching(new Criteria(Criteria::MAX_LIMIT, [TitleFilter::matches('rápida')])),
+            'pages come back whole: id, title and slug',
+        );
+
+        foreach (self::criteriaCases() as $case => [$criteria, $expected]) {
+            self::assertSame($expected, $this->titles($repository->matching($criteria)), $case);
+        }
+    }
+
+    public function testItFindsNothingWhenThereAreNoPages(): void
+    {
+        $repository = $this->repository();
+
+        self::assertSame([], $repository->matching(new Criteria(Criteria::MAX_LIMIT)), 'without criteria');
+        self::assertSame([], $repository->matching(new Criteria(Criteria::MAX_LIMIT, [TitleFilter::matches('guía')])), 'searching the title');
+    }
+
+    public function testItRejectsSortingByAFieldItDoesNotExpose(): void
+    {
+        $this->expectExceptionObject(InvalidCriteria::unknownField('createdAt'));
+
+        $this->repository()->matching(new Criteria(Criteria::MAX_LIMIT, order: new Order('createdAt')));
+    }
+
+    /**
+     * Expected titles for each criteria, in the order they must come back.
+     *
+     * @return iterable<string, array{Criteria, list<string>}>
+     */
+    private static function criteriaCases(): iterable
+    {
+        $oldestFirst = array_values(self::PAGES);
+        $alphabetical = [
+            'Autismo y empleo: guía para empresas',
+            'Cómo empezar a entender el autismo',
+            'Guía para familias recién diagnosticadas de autismo',
+            'Guía rápida de autismo',
+            'Guías y más guías sobre autismo',
+            'Taller de autismo 100% gratis',
+            'Yo también soy TEA: autismo en adultos',
+        ];
+        $byId = new Order('id');
+        $newestFirst = new Order('id', OrderDirection::Descending);
+
+        // Sorting.
+        yield 'sorted by id, oldest first' => [new Criteria(Criteria::MAX_LIMIT, order: $byId), $oldestFirst];
+        yield 'sorted by id, newest first' => [new Criteria(Criteria::MAX_LIMIT, order: $newestFirst), array_reverse($oldestFirst)];
+        yield 'sorted by title, ignoring accents' => [new Criteria(Criteria::MAX_LIMIT, order: new Order('title')), $alphabetical];
+        yield 'sorted by title, descending' => [
+            new Criteria(Criteria::MAX_LIMIT, order: new Order('title', OrderDirection::Descending)),
+            array_reverse($alphabetical),
+        ];
+        yield 'sorted by slug' => [new Criteria(Criteria::MAX_LIMIT, order: new Order('slug')), $oldestFirst];
+
+        // Pagination.
+        yield 'first page' => [new Criteria(3, order: $byId), \array_slice($oldestFirst, 0, 3)];
+        yield 'middle page' => [new Criteria(3, order: $byId, offset: 3), \array_slice($oldestFirst, 3, 3)];
+        yield 'last, incomplete page' => [new Criteria(3, order: $byId, offset: 6), \array_slice($oldestFirst, 6)];
+        yield 'page past the end' => [new Criteria(3, order: $byId, offset: 9), []];
+        yield 'limit larger than the results' => [new Criteria(50, order: $byId), $oldestFirst];
+        yield 'limit of one' => [new Criteria(1, order: $byId), \array_slice($oldestFirst, 0, 1)];
+
+        // Full-text search on the title: by relevance first, newest first on ties.
+        $search = static fn (string $text, int $limit = Criteria::MAX_LIMIT, int $offset = 0): Criteria => new Criteria(
+            $limit,
+            [TitleFilter::matches($text)],
+            $newestFirst,
+            $offset,
+        );
+        $guides = [
+            'Guías y más guías sobre autismo',
+            'Autismo y empleo: guía para empresas',
+            'Guía rápida de autismo',
+            'Guía para familias recién diagnosticadas de autismo',
+        ];
+
+        yield 'search: a single word' => [$search('rápida'), ['Guía rápida de autismo']];
+        yield 'search: ignoring case and accents' => [$search('CÓMO'), ['Cómo empezar a entender el autismo']];
+        yield 'search: without the accents of the title' => [$search('como'), ['Cómo empezar a entender el autismo']];
+        yield 'search: every word, in any order' => [$search('familias guía'), ['Guía para familias recién diagnosticadas de autismo']];
+        yield 'search: words as prefixes' => [$search('famil diagn'), ['Guía para familias recién diagnosticadas de autismo']];
+        yield 'search: every word is required' => [$search('guía inexistente'), []];
+        yield 'search: no page has the word' => [$search('inexistente'), []];
+        yield 'search: more occurrences rank higher, ties newest first' => [$search('guía'), $guides];
+        yield 'search: words shorter than three letters are ignored' => [$search('yo tea'), ['Yo también soy TEA: autismo en adultos']];
+        yield 'search: only short words find nothing' => [$search('yo'), []];
+        yield 'search: numbers are words' => [$search('100%'), ['Taller de autismo 100% gratis']];
+        yield 'search: like wildcards are not wildcards' => [$search('%'), []];
+        yield 'search: boolean operators are not interpreted' => [$search('+-()*"~<>@'), []];
+        yield 'search: operators glued to words are dropped' => [$search('-rápida'), ['Guía rápida de autismo']];
+        yield 'search: a word present in every page, scored close to zero by InnoDB' => [
+            $search('autismo'),
+            array_reverse($oldestFirst),
+        ];
+        yield 'search: paginated' => [$search('guía', 2, 1), \array_slice($guides, 1, 2)];
+    }
+
+    /**
+     * @param array<string, string> $titles titles keyed by page id
+     */
+    private function savePages(array $titles = self::PAGES): void
+    {
+        $repository = $this->repository();
+        $number = 0;
+
+        foreach ($titles as $id => $title) {
+            $repository->save(PageMother::create(id: $id, title: $title, slug: \sprintf('pagina-%d', ++$number)));
+        }
+
+        $this->entityManager()->clear();
+    }
+
+    /**
+     * @param list<Page> $pages
+     *
+     * @return list<string>
+     */
+    private function titles(array $pages): array
+    {
+        return array_map(static fn (Page $page): string => $page->title()->value(), $pages);
+    }
+
+    private function repository(): PageRepository
+    {
+        return self::getContainer()->get(PageRepository::class);
+    }
+
+    private function entityManager(): EntityManagerInterface
+    {
+        return self::getContainer()->get(EntityManagerInterface::class);
     }
 }

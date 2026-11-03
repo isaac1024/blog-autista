@@ -1,2 +1,2 @@
-{% set inputAttributes = type == 'hidden' ? attributes : attributes.defaults({class: 'w-full min-h-12 border-2 border-border bg-surface px-[0.9rem] py-3 text-text placeholder:text-muted placeholder:opacity-100 focus-visible:border-accent'}) %}
+{% set inputAttributes = type == 'hidden' ? attributes : attributes.defaults({class: 'w-full min-h-12 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text placeholder:text-muted placeholder:opacity-100 focus-visible:border-accent'}) %}
 <input{{ inputAttributes }} type="{{ type }}" id="{{ id }}" name="{{ name }}" value="{{ value }}"{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}>
