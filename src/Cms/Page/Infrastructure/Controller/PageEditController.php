@@ -55,7 +55,7 @@ final class PageEditController extends AbstractController
                 ]),
             ])
             ->withMain('Shared:Form', [
-                'action' => $this->generateUrl('cms_pages_edit', ['id' => $page->id]),
+                'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
             ], [
                 new PageComponent('Shared:FormField', [], [
