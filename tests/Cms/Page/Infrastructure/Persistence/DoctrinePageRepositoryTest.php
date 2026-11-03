@@ -60,6 +60,27 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertEquals($page, $entityManager->find(Page::class, $id));
     }
 
+    public function testItFindsThePageWithTheGivenId(): void
+    {
+        $id = PageId::random();
+        $page = PageMother::create(id: $id->value(), title: 'Sobre mí', slug: 'sobre-mi');
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $repository->save($page);
+        $this->entityManager()->clear();
+
+        self::assertEquals($page, $repository->find($id));
+    }
+
+    public function testItFindsNoPageWhenTheIdDoesNotExist(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $this->entityManager()->clear();
+
+        self::assertNull($repository->find(PageId::random()));
+    }
+
     /**
      * The only test that commits its data, which full-text search needs: it
      * saves the pages once and checks every kind of criteria against them, so
