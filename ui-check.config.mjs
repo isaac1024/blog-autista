@@ -60,6 +60,12 @@ if (cmsSession) {
             path: '/pages',
             headers: cmsHeaders,
         },
+        {
+            name: 'cms-page-edit',
+            host: 'cms.blogautista.localhost',
+            path: '/pages/01a19e72-b07f-7d78-889c-fa4a14a4fb95',
+            headers: cmsHeaders,
+        },
     );
 }
 export default {

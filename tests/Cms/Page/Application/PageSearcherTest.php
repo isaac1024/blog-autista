@@ -71,14 +71,16 @@ final class PageSearcherTest extends TestCase
 
     public function testItReturnsTheFoundPagesInTheRepositoryOrder(): void
     {
+        $guideId = PageIdMother::random()->value();
+        $aboutId = PageIdMother::random()->value();
         $repository = self::createStub(PageRepository::class);
         $repository->method('matching')->willReturn([
-            PageMother::create(id: PageIdMother::random()->value(), title: 'Guía rápida', slug: 'guia-rapida'),
-            PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
+            PageMother::create(id: $guideId, title: 'Guía rápida', slug: 'guia-rapida'),
+            PageMother::create(id: $aboutId, title: 'Sobre mí', slug: 'sobre-mi'),
         ]);
 
         self::assertEquals(
-            [new PageResponse('Guía rápida'), new PageResponse('Sobre mí')],
+            [new PageResponse($guideId, 'Guía rápida'), new PageResponse($aboutId, 'Sobre mí')],
             (new PageSearcher('', 1))($repository),
         );
     }

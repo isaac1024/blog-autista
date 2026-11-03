@@ -43,6 +43,11 @@ final readonly class Page
         $pageRepository->save($this);
     }
 
+    public function id(): PageId
+    {
+        return $this->id;
+    }
+
     public function title(): Title
     {
         return $this->title;

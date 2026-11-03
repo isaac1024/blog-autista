@@ -6,7 +6,7 @@
         <a class="block rounded-r-control border-l-4 px-3 py-2 no-underline {{ currentRoute == 'cms_home' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_home') }}"{% if currentRoute == 'cms_home' %} aria-current="page"{% endif %}>{{ 'cms.nav.dashboard'|trans }}</a>
     </li>
     <li>
-        <a class="block rounded-r-control border-l-4 px-3 py-2 no-underline {{ currentRoute == 'cms_pages' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_pages') }}"{% if currentRoute == 'cms_pages' %} aria-current="page"{% endif %}>{{ 'cms.nav.pages'|trans }}</a>
+        <a class="block rounded-r-control border-l-4 px-3 py-2 no-underline {{ currentRoute starts with 'cms_pages' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_pages') }}"{% if currentRoute == 'cms_pages' %} aria-current="page"{% endif %}>{{ 'cms.nav.pages'|trans }}</a>
     </li>
 </ul>
 {% endmacro %}

@@ -123,8 +123,9 @@ final class PageListController extends AbstractController
         return $page->withMain('Shared:CardList', [
             'label' => $this->translator->trans('cms.pages.list.label'),
         ], array_map(
-            static fn (PageResponse $response): PageComponent => new PageComponent('Shared:Card', [
+            fn (PageResponse $response): PageComponent => new PageComponent('Shared:Card', [
                 'title' => $response->title,
+                'url' => $this->generateUrl('cms_pages_edit', ['id' => $response->id]),
             ]),
             $pages,
         ));

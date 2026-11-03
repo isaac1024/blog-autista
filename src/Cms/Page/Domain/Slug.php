@@ -15,7 +15,12 @@ final readonly class Slug
     public const int MIN_LENGTH = 3;
     public const int MAX_LENGTH = 80;
 
-    private const string PATTERN = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    /**
+     * Shape of a valid slug without anchors, so forms can reuse it as an HTML pattern.
+     */
+    public const string SHAPE = '[a-z0-9]+(?:-[a-z0-9]+)*';
+
+    private const string PATTERN = '/^'.self::SHAPE.'$/';
 
     public function __construct(
         #[ORM\Column(name: 'slug', length: self::MAX_LENGTH)]
