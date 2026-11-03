@@ -69,6 +69,25 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         yield 'missing slug' => [['title' => 'Quién soy']];
     }
 
+    public function testItRespondsBadRequestAndKeepsThePageWhenAnotherPageHasTheSlug(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = $this->savePage();
+        self::getContainer()->get(PageRepository::class)->save(
+            PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'),
+        );
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()), ['title' => 'Quién soy', 'slug' => 'contacto']);
+
+        // The request edits the very instance saved above before the slug check
+        // fails, so the stored page is compared against a fresh copy instead.
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertEquals(
+            PageMother::create(id: $page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
+            $this->storedPage($page),
+        );
+    }
+
     public function testItRespondsNotFoundWhenThePageDoesNotExist(): void
     {
         $client = self::createAuthenticatedClient();

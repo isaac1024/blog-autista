@@ -7,8 +7,10 @@ namespace Cms\Tests\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Page\Domain\SlugMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Domain\Criteria\Criteria;
@@ -79,6 +81,40 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $this->entityManager()->clear();
 
         self::assertNull($repository->find(PageId::random()));
+    }
+
+    public function testItFindsThePageWithTheGivenSlug(): void
+    {
+        $page = PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi');
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $repository->save($page);
+        $this->entityManager()->clear();
+
+        self::assertEquals($page, $repository->findBySlug(SlugMother::create('sobre-mi')));
+    }
+
+    public function testItFindsNoPageWhenNoneHasTheSlug(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $this->entityManager()->clear();
+
+        self::assertNull($repository->findBySlug(SlugMother::create('sobre-mi')));
+    }
+
+    /**
+     * Two saves racing past the availability check: the unique index stops the
+     * second one, and the repository reports it as the domain error.
+     */
+    public function testItRejectsSavingAPageWithTheSlugOfAnotherOne(): void
+    {
+        $repository = $this->repository();
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+
+        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
+
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Quién soy', slug: 'sobre-mi'));
     }
 
     public function testItDeletesOnlyTheGivenPage(): void

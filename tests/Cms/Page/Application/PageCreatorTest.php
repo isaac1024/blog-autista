@@ -10,9 +10,11 @@ use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\Slug;
+use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\Title;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -89,5 +91,19 @@ final class PageCreatorTest extends TestCase
         yield 'slug far too short' => [$id, 'C++', InvalidSlug::tooShort(Slug::MIN_LENGTH)];
         yield 'slug one character too short' => [$id, 'Ab!', InvalidSlug::tooShort(Slug::MIN_LENGTH)];
         yield 'slug one character too long' => [$id, str_repeat('a', 81), InvalidSlug::tooLong(Slug::MAX_LENGTH)];
+    }
+
+    public function testItPersistsNothingWhenAnotherPageHasTheSlugDerivedFromTheTitle(): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->expects(self::once())
+            ->method('findBySlug')
+            ->with(self::equalTo(SlugMother::create('sobre-mi')))
+            ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
+
+        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository);
     }
 }

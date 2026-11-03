@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Page\Domain\PageRepository;
+use Cms\Tests\Page\Domain\PageIdMother;
+use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,6 +26,18 @@ final class PageCreateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
 
         $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => ' ']);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testItRespondsBadRequestWhenAnotherPageHasTheSlugDerivedFromTheTitle(): void
+    {
+        $client = self::createAuthenticatedClient();
+        self::getContainer()->get(PageRepository::class)->save(
+            PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
+        );
+
+        $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Sobre mí']);
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
     }

@@ -11,9 +11,11 @@ use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\Slug;
+use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\Title;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -92,6 +94,36 @@ final class PageUpdaterTest extends TestCase
         yield 'slug ending with a hyphen' => ['Quién soy', 'quien-soy-', InvalidSlug::malformed('quien-soy-')];
         yield 'slug one character too short' => ['Quién soy', 'ab', InvalidSlug::tooShort(Slug::MIN_LENGTH)];
         yield 'slug one character too long' => ['Quién soy', str_repeat('a', 81), InvalidSlug::tooLong(Slug::MAX_LENGTH)];
+    }
+
+    public function testItSavesNothingWhenAnotherPageHasTheSlug(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::once())
+            ->method('findBySlug')
+            ->with(self::equalTo(SlugMother::create('contacto')))
+            ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
+
+        (new PageUpdater($id, 'Sobre mí', 'contacto'))($repository);
+    }
+
+    public function testItSavesThePageWhenTheSlugIsAlreadyItsOwn(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        // A separate instance with the same id, as the database would return it.
+        $repository->method('findBySlug')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::create(id: $id, title: 'Quién soy', slug: 'sobre-mi')));
+
+        (new PageUpdater($id, 'Quién soy', 'sobre-mi'))($repository);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
