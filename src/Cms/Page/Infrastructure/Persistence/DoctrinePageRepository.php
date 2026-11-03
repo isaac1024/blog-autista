@@ -7,7 +7,8 @@ namespace Cms\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\Slug;
+use Cms\Page\Domain\PageSlug;
+use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,7 +29,7 @@ final readonly class DoctrinePageRepository implements PageRepository
     private const array CRITERIA_FIELDS = [
         'id' => 'id',
         'title' => 'title.value',
-        'slug' => 'slug.value',
+        'slug' => 'slug',
     ];
 
     public function __construct(private EntityManagerInterface $entityManager) {}
@@ -61,9 +62,15 @@ final readonly class DoctrinePageRepository implements PageRepository
     }
 
     #[\Override]
-    public function findBySlug(Slug $slug): ?Page
+    public function findBySlug(PageSlug $slug): ?Page
     {
-        return $this->entityManager->getRepository(Page::class)->findOneBy(['slug.value' => $slug->value()]);
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['slug' => $slug]);
+    }
+
+    #[\Override]
+    public function findByType(PageType $type): ?Page
+    {
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['type' => $type]);
     }
 
     #[\Override]

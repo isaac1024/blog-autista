@@ -7,6 +7,7 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
+use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -21,6 +22,8 @@ final class PageDeleteController extends AbstractController
             new PageDeleter($id)($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
+        } catch (DomainError) {
+            return new Response(status: Response::HTTP_BAD_REQUEST);
         }
 
         return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);

@@ -20,7 +20,9 @@ interface PageRepository
 
     public function find(PageId $id): ?Page;
 
-    public function findBySlug(Slug $slug): ?Page;
+    public function findBySlug(PageSlug $slug): ?Page;
+
+    public function findByType(PageType $type): ?Page;
 
     /**
      * @return list<Page>

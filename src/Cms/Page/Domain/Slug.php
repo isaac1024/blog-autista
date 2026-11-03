@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
-use Doctrine\ORM\Mapping as ORM;
-
 /**
  * URL path segment of a page: lowercase ASCII letters, digits and single hyphens.
  */
-#[ORM\Embeddable]
-final readonly class Slug
+final readonly class Slug implements PageSlug
 {
     public const int MIN_LENGTH = 3;
     public const int MAX_LENGTH = 80;
@@ -22,10 +19,8 @@ final readonly class Slug
 
     private const string PATTERN = '/^'.self::SHAPE.'$/';
 
-    public function __construct(
-        #[ORM\Column(name: 'slug', length: self::MAX_LENGTH)]
-        private string $value,
-    ) {
+    public function __construct(private string $value)
+    {
         if (1 !== preg_match(self::PATTERN, $value)) {
             throw InvalidSlug::malformed($value);
         }
@@ -39,6 +34,7 @@ final readonly class Slug
         }
     }
 
+    #[\Override]
     public function value(): string
     {
         return $this->value;

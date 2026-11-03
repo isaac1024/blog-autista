@@ -8,7 +8,11 @@ use Cms\Shared\Domain\Slugger;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A CMS page, identified by its id and addressed by its slug.
+ * A CMS page, identified by its id and addressed by its slug, except the home
+ * page, which is served at the root of the site.
+ *
+ * The unique index on the slug also keeps the site to one home page, since
+ * that is the only page stored with an empty slug.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_page')]
@@ -20,34 +24,66 @@ final class Page
         #[ORM\Id]
         #[ORM\Column(type: 'cms_page_id')]
         private readonly PageId $id,
+        #[ORM\Column(length: 20, enumType: PageType::class)]
+        private readonly PageType $type,
         #[ORM\Embedded(class: Title::class, columnPrefix: false)]
         private Title $title,
-        #[ORM\Embedded(class: Slug::class, columnPrefix: false)]
-        private Slug $slug,
-    ) {}
+        #[ORM\Column(type: 'cms_page_slug', length: Slug::MAX_LENGTH)]
+        private PageSlug $slug,
+    ) {
+        if ($type->isHome() && !$slug instanceof HomeSlug) {
+            throw InvalidSlug::onHome($slug->value());
+        }
+
+        if (!$type->isHome() && $slug instanceof HomeSlug) {
+            throw InvalidSlug::missing();
+        }
+    }
 
     /**
-     * Initialises a new page from primitives, deriving its slug from the title.
+     * Initialises a new generic page from primitives, deriving its slug from
+     * the title.
      */
     public static function create(string $id, string $title): self
     {
         return new self(
             new PageId($id),
+            PageType::Standard,
             new Title($title),
             new Slug(new Slugger($title)()),
         );
     }
 
     /**
+     * Initialises one of the unique pages of the site, deriving its slug from
+     * the title unless it is the home page.
+     */
+    public static function createUnique(string $id, PageType $type, string $title): self
+    {
+        if (!$type->isUnique()) {
+            throw InvalidPageType::notUnique($type);
+        }
+
+        return new self(
+            new PageId($id),
+            $type,
+            new Title($title),
+            $type->isHome() ? new HomeSlug() : new Slug(new Slugger($title)()),
+        );
+    }
+
+    /**
      * Replaces the title and the slug; the slug is no longer derived from the
-     * title, so editors can keep a page's address when they retitle it.
+     * title, so editors can keep a page's address when they retitle it. The
+     * home page takes an empty slug, and no other page does, so no page becomes
+     * the home page, nor stops being it, by being edited.
      */
     public function edit(string $title, string $slug): void
     {
         // Both are validated before either is assigned, so an invalid slug
         // doesn't leave the page with only its title changed.
         $newTitle = new Title($title);
-        $newSlug = new Slug($slug);
+        $newSlug = $this->slugFrom($slug);
 
         $this->title = $newTitle;
         $this->slug = $newSlug;
@@ -58,8 +94,15 @@ final class Page
         $pageRepository->save($this);
     }
 
+    /**
+     * Deletes a generic page; unique pages stay for good.
+     */
     public function delete(PageRepository $pageRepository): void
     {
+        if ($this->type->isUnique()) {
+            throw UniquePageCannotBeDeleted::ofType($this->type);
+        }
+
         $pageRepository->delete($this);
     }
 
@@ -68,13 +111,31 @@ final class Page
         return $this->id;
     }
 
+    public function type(): PageType
+    {
+        return $this->type;
+    }
+
     public function title(): Title
     {
         return $this->title;
     }
 
-    public function slug(): Slug
+    public function slug(): PageSlug
     {
         return $this->slug;
+    }
+
+    private function slugFrom(string $slug): PageSlug
+    {
+        if (!$this->type->isHome()) {
+            return new Slug($slug);
+        }
+
+        if ('' !== $slug) {
+            throw InvalidSlug::onHome($slug);
+        }
+
+        return new HomeSlug();
     }
 }

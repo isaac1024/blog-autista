@@ -50,72 +50,89 @@ final class PageEditController extends AbstractController
             ->withMain('Shared:PageTitle', [
                 'title' => $this->translator->trans('cms.pages.edit.title'),
                 'subtitle' => $this->translator->trans('cms.pages.edit.subtitle'),
-            ], [
-                new PageComponent('Shared:Modal', [
-                    'id' => self::DELETE_PAGE_MODAL,
-                    'trigger' => $this->translator->trans('cms.pages.delete.trigger'),
-                    'title' => $this->translator->trans('cms.pages.delete.title'),
-                    'description' => $this->translator->trans('cms.pages.delete.description', ['%title%' => $page->title]),
-                    'variant' => 'danger',
-                ], [
-                    new PageComponent('Shared:Form', [
-                        'action' => $this->generateUrl('cms_pages_delete', ['id' => $page->id]),
-                        'method' => 'post',
-                    ], [
-                        new PageComponent('Shared:FormButton', [
-                            'label' => $this->translator->trans('cms.pages.delete.submit'),
-                            'variant' => 'danger',
-                        ]),
-                    ]),
-                ]),
-            ])
+            ], $page->unique ? [] : [$this->deleteModal($page)])
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
             ], [
-                new PageComponent('Shared:FormField', [], [
-                    new PageComponent('Shared:FormLabel', [
-                        'for' => 'page-title',
-                        'text' => $this->translator->trans('cms.pages.edit.title_label'),
-                    ]),
-                    new PageComponent('Shared:FormInput', [
-                        'name' => 'title',
-                        'id' => 'page-title',
-                        'value' => $page->title,
-                        'attributes' => [
-                            'required' => true,
-                            'minlength' => Title::MIN_LENGTH,
-                            'maxlength' => Title::MAX_LENGTH,
-                        ],
-                    ]),
-                ]),
-                new PageComponent('Shared:FormField', [], [
-                    new PageComponent('Shared:FormLabel', [
-                        'for' => 'page-slug',
-                        'text' => $this->translator->trans('cms.pages.edit.slug_label'),
-                    ]),
-                    new PageComponent('Shared:FormHint', [
-                        'id' => 'page-slug-hint',
-                        'text' => $this->translator->trans('cms.pages.edit.slug_hint'),
-                    ]),
-                    new PageComponent('Shared:FormInput', [
-                        'name' => 'slug',
-                        'id' => 'page-slug',
-                        'value' => $page->slug,
-                        'attributes' => [
-                            'required' => true,
-                            'minlength' => Slug::MIN_LENGTH,
-                            'maxlength' => Slug::MAX_LENGTH,
-                            'pattern' => Slug::SHAPE,
-                            'autocapitalize' => 'none',
-                            'spellcheck' => 'false',
-                            'aria-describedby' => 'page-slug-hint',
-                        ],
-                    ]),
-                ]),
+                $this->titleField($page),
+                // The home page is served at the root of the site, so it has no slug to edit.
+                ...$page->home ? [] : [$this->slugField($page)],
                 new PageComponent('Shared:FormButton', [
                     'label' => $this->translator->trans('cms.pages.edit.submit'),
                 ]),
             ]);
+    }
+
+    /**
+     * Only generic pages can be deleted; unique pages stay for good.
+     */
+    private function deleteModal(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:Modal', [
+            'id' => self::DELETE_PAGE_MODAL,
+            'trigger' => $this->translator->trans('cms.pages.delete.trigger'),
+            'title' => $this->translator->trans('cms.pages.delete.title'),
+            'description' => $this->translator->trans('cms.pages.delete.description', ['%title%' => $page->title]),
+            'variant' => 'danger',
+        ], [
+            new PageComponent('Shared:Form', [
+                'action' => $this->generateUrl('cms_pages_delete', ['id' => $page->id]),
+                'method' => 'post',
+            ], [
+                new PageComponent('Shared:FormButton', [
+                    'label' => $this->translator->trans('cms.pages.delete.submit'),
+                    'variant' => 'danger',
+                ]),
+            ]),
+        ]);
+    }
+
+    private function titleField(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:FormField', [], [
+            new PageComponent('Shared:FormLabel', [
+                'for' => 'page-title',
+                'text' => $this->translator->trans('cms.pages.edit.title_label'),
+            ]),
+            new PageComponent('Shared:FormInput', [
+                'name' => 'title',
+                'id' => 'page-title',
+                'value' => $page->title,
+                'attributes' => [
+                    'required' => true,
+                    'minlength' => Title::MIN_LENGTH,
+                    'maxlength' => Title::MAX_LENGTH,
+                ],
+            ]),
+        ]);
+    }
+
+    private function slugField(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:FormField', [], [
+            new PageComponent('Shared:FormLabel', [
+                'for' => 'page-slug',
+                'text' => $this->translator->trans('cms.pages.edit.slug_label'),
+            ]),
+            new PageComponent('Shared:FormHint', [
+                'id' => 'page-slug-hint',
+                'text' => $this->translator->trans('cms.pages.edit.slug_hint'),
+            ]),
+            new PageComponent('Shared:FormInput', [
+                'name' => 'slug',
+                'id' => 'page-slug',
+                'value' => $page->slug,
+                'attributes' => [
+                    'required' => true,
+                    'minlength' => Slug::MIN_LENGTH,
+                    'maxlength' => Slug::MAX_LENGTH,
+                    'pattern' => Slug::SHAPE,
+                    'autocapitalize' => 'none',
+                    'spellcheck' => 'false',
+                    'aria-describedby' => 'page-slug-hint',
+                ],
+            ]),
+        ]);
     }
 }
