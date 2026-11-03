@@ -7,6 +7,7 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PageSearcher;
 use Cms\Page\Domain\PageRepository;
+use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Ui\CmsLayout;
 use Shared\Ui\Page\Page;
 use Shared\Ui\Page\PageComponent;
@@ -31,11 +32,16 @@ final class PageListController extends AbstractController
         PageRepository $pageRepository,
         #[MapQueryParameter]
         string $title = '',
-        #[MapQueryParameter(options: ['min_range' => 1])]
+        #[MapQueryParameter]
         int $page = 1,
     ): Response {
         $title = trim($title);
-        $pages = new PageSearcher($title, $page)($pageRepository);
+
+        try {
+            $pages = new PageSearcher($title, $page)($pageRepository);
+        } catch (InvalidCriteria $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        }
 
         return $this->pageRenderer->render($this->page($pages, $title));
     }
