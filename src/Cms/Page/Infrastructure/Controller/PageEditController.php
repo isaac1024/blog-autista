@@ -51,10 +51,6 @@ final class PageEditController extends AbstractController
                 'title' => $this->translator->trans('cms.pages.edit.title'),
                 'subtitle' => $this->translator->trans('cms.pages.edit.subtitle'),
             ], [
-                new PageComponent('Shared:ButtonLink', [
-                    'url' => $this->generateUrl('cms_pages'),
-                    'label' => $this->translator->trans('cms.pages.edit.back'),
-                ]),
                 new PageComponent('Shared:Modal', [
                     'id' => self::DELETE_PAGE_MODAL,
                     'trigger' => $this->translator->trans('cms.pages.delete.trigger'),

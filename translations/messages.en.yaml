@@ -27,7 +27,6 @@ cms:
         edit:
             title: 'Edit page'
             subtitle: 'Change the page content and save when you are done.'
-            back: 'Back to pages'
             title_label: 'Title'
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'

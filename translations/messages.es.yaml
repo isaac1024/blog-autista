@@ -27,7 +27,6 @@ cms:
         edit:
             title: 'Editar página'
             subtitle: 'Cambia el contenido de la página y guarda cuando termines.'
-            back: 'Volver a las páginas'
             title_label: 'Título'
             slug_label: 'Dirección web (slug)'
             slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi.'
