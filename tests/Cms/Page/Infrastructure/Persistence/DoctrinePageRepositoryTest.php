@@ -81,6 +81,23 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertNull($repository->find(PageId::random()));
     }
 
+    public function testItDeletesOnlyTheGivenPage(): void
+    {
+        $id = PageId::random();
+        $kept = PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto');
+        $repository = $this->repository();
+        $repository->save($kept);
+        $repository->save(PageMother::create(id: $id->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+        $entityManager = $this->entityManager();
+        $entityManager->clear();
+
+        $repository->delete($repository->find($id) ?? self::fail('The page to delete was not saved.'));
+        $entityManager->clear();
+
+        self::assertNull($repository->find($id));
+        self::assertEquals($kept, $repository->find($kept->id()));
+    }
+
     /**
      * The only test that commits its data, which full-text search needs: it
      * saves the pages once and checks every kind of criteria against them, so
