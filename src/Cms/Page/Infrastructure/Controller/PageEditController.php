@@ -22,6 +22,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class PageEditController extends AbstractController
 {
+    private const string DELETE_PAGE_MODAL = 'delete-page';
+
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
@@ -52,6 +54,23 @@ final class PageEditController extends AbstractController
                 new PageComponent('Shared:ButtonLink', [
                     'url' => $this->generateUrl('cms_pages'),
                     'label' => $this->translator->trans('cms.pages.edit.back'),
+                ]),
+                new PageComponent('Shared:Modal', [
+                    'id' => self::DELETE_PAGE_MODAL,
+                    'trigger' => $this->translator->trans('cms.pages.delete.trigger'),
+                    'title' => $this->translator->trans('cms.pages.delete.title'),
+                    'description' => $this->translator->trans('cms.pages.delete.description', ['%title%' => $page->title]),
+                    'variant' => 'danger',
+                ], [
+                    new PageComponent('Shared:Form', [
+                        'action' => $this->generateUrl('cms_pages_delete', ['id' => $page->id]),
+                        'method' => 'post',
+                    ], [
+                        new PageComponent('Shared:FormButton', [
+                            'label' => $this->translator->trans('cms.pages.delete.submit'),
+                            'variant' => 'danger',
+                        ]),
+                    ]),
                 ]),
             ])
             ->withMain('Shared:Form', [

@@ -38,6 +38,13 @@ final readonly class DoctrinePageRepository implements PageRepository
     }
 
     #[\Override]
+    public function delete(Page $page): void
+    {
+        $this->entityManager->remove($page);
+        $this->entityManager->flush();
+    }
+
+    #[\Override]
     public function find(PageId $id): ?Page
     {
         return $this->entityManager->find(Page::class, $id);

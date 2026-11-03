@@ -19,6 +19,11 @@ final class Modal
     public ?string $description = null;
 
     /**
+     * Variant of the trigger button, see ModalTrigger.
+     */
+    public string $variant = 'primary';
+
+    /**
      * @var list<PageComponent>
      */
     public array $children = [];
@@ -31,12 +36,14 @@ final class Modal
         string $trigger,
         string $title,
         ?string $description = null,
+        string $variant = 'primary',
         array $children = [],
     ): void {
         $this->id = $id;
         $this->trigger = $trigger;
         $this->title = $title;
         $this->description = $description;
+        $this->variant = $variant;
         $this->children = $children;
     }
 }

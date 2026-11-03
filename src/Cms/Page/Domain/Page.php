@@ -58,6 +58,11 @@ final class Page
         $pageRepository->save($this);
     }
 
+    public function delete(PageRepository $pageRepository): void
+    {
+        $pageRepository->delete($this);
+    }
+
     public function id(): PageId
     {
         return $this->id;

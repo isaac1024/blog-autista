@@ -17,9 +17,16 @@ final class ModalTrigger
 
     public string $label = '';
 
-    public function mount(string $target, string $label): void
+    /**
+     * Either 'primary' or 'danger', the latter for modals that confirm a
+     * destructive action.
+     */
+    public string $variant = 'primary';
+
+    public function mount(string $target, string $label, string $variant = 'primary'): void
     {
         $this->target = $target;
         $this->label = $label;
+        $this->variant = $variant;
     }
 }

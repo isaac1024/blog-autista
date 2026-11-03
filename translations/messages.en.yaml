@@ -32,6 +32,11 @@ cms:
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'
             submit: 'Save changes'
+        delete:
+            trigger: 'Delete page'
+            title: 'Delete this page?'
+            description: 'The page “%title%” and its web address will no longer exist. This cannot be undone.'
+            submit: 'Yes, delete the page'
         list:
             label: 'Blog pages'
         add: 'Add page'

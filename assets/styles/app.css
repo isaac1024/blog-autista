@@ -51,7 +51,9 @@
     --color-on-accent: #fff;
 
     --color-danger: #7f1d1d;
+    --color-danger-strong: #5f1515;
     --color-danger-bg: #fbe9e7;
+    --color-on-danger: #fff;
 
     --color-focus: #614092;
     --color-selection-bg: #614092;
@@ -110,7 +112,9 @@
             --color-on-accent: #17151a;
 
             --color-danger: #ffb4ab;
+            --color-danger-strong: #ffcdc6;
             --color-danger-bg: #3d1f1f;
+            --color-on-danger: #17151a;
 
             --color-focus: #c9b6ea;
             --color-selection-bg: #c9b6ea;

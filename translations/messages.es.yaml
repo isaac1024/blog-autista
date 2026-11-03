@@ -32,6 +32,11 @@ cms:
             slug_label: 'Dirección web (slug)'
             slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi.'
             submit: 'Guardar cambios'
+        delete:
+            trigger: 'Borrar página'
+            title: '¿Borrar esta página?'
+            description: 'La página «%title%» y su dirección web dejarán de existir. No se puede deshacer.'
+            submit: 'Sí, borrar la página'
         list:
             label: 'Páginas del blog'
         add: 'Añadir página'
