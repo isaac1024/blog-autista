@@ -44,8 +44,13 @@ final class Page
      */
     public function edit(string $title, string $slug): void
     {
-        $this->title = new Title($title);
-        $this->slug = new Slug($slug);
+        // Both are validated before either is assigned, so an invalid slug
+        // doesn't leave the page with only its title changed.
+        $newTitle = new Title($title);
+        $newSlug = new Slug($slug);
+
+        $this->title = $newTitle;
+        $this->slug = $newSlug;
     }
 
     public function save(PageRepository $pageRepository): void
