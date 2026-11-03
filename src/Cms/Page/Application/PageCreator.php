@@ -6,6 +6,7 @@ namespace Cms\Page\Application;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\SlugAvailability;
 
 /**
  * Creates a page from the submitted title, deriving its slug from it.
@@ -19,6 +20,9 @@ final readonly class PageCreator
 
     public function __invoke(PageRepository $pageRepository): void
     {
-        Page::create($this->id, $this->title)->save($pageRepository);
+        $page = Page::create($this->id, $this->title);
+
+        new SlugAvailability($page)($pageRepository);
+        $page->save($pageRepository);
     }
 }

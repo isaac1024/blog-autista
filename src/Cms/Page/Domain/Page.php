@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_page')]
-#[ORM\Index(name: 'idx_cms_page_slug', columns: ['slug'])]
+#[ORM\UniqueConstraint(name: 'uniq_cms_page_slug', columns: ['slug'])]
 #[ORM\Index(name: 'ftx_cms_page_title', columns: ['title'], flags: ['fulltext'])]
 final class Page
 {

@@ -11,11 +11,16 @@ use Shared\Domain\Criteria\Criteria;
  */
 interface PageRepository
 {
+    /**
+     * @throws SlugAlreadyTaken when another page is saved with the same slug meanwhile
+     */
     public function save(Page $page): void;
 
     public function delete(Page $page): void;
 
     public function find(PageId $id): ?Page;
+
+    public function findBySlug(Slug $slug): ?Page;
 
     /**
      * @return list<Page>

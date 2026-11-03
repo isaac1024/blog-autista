@@ -7,6 +7,9 @@ namespace Cms\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\Slug;
+use Cms\Page\Domain\SlugAlreadyTaken;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Shared\Domain\Criteria\Criteria;
@@ -34,7 +37,14 @@ final readonly class DoctrinePageRepository implements PageRepository
     public function save(Page $page): void
     {
         $this->entityManager->persist($page);
-        $this->entityManager->flush();
+
+        // The slug is the only unique column besides the time-ordered id, so a
+        // violation means another page took the slug since it was checked.
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $exception) {
+            throw SlugAlreadyTaken::bySlug($page->slug(), $exception);
+        }
     }
 
     #[\Override]
@@ -48,6 +58,12 @@ final readonly class DoctrinePageRepository implements PageRepository
     public function find(PageId $id): ?Page
     {
         return $this->entityManager->find(Page::class, $id);
+    }
+
+    #[\Override]
+    public function findBySlug(Slug $slug): ?Page
+    {
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['slug.value' => $slug->value()]);
     }
 
     #[\Override]

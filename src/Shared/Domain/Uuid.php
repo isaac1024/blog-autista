@@ -36,4 +36,12 @@ abstract readonly class Uuid implements \Stringable
     {
         return $this->value;
     }
+
+    /**
+     * Identifiers of different kinds are never equal, even with the same value.
+     */
+    public function equals(self $other): bool
+    {
+        return $other instanceof static && $this->value === $other->value;
+    }
 }
