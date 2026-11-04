@@ -18,10 +18,17 @@ final class FormButton
      */
     public string $variant = 'primary';
 
-    public function mount(string $label, string $type = 'submit', string $variant = 'primary'): void
+    /**
+     * Whether it spans the whole form, as on the login form; otherwise only on
+     * narrow screens, where a wide target is easier to reach.
+     */
+    public bool $fullWidth = false;
+
+    public function mount(string $label, string $type = 'submit', string $variant = 'primary', bool $fullWidth = false): void
     {
         $this->label = $label;
         $this->type = $type;
         $this->variant = $variant;
+        $this->fullWidth = $fullWidth;
     }
 }

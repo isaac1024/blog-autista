@@ -1,0 +1,14 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<section class="flex flex-col gap-5 rounded-card border border-divider bg-surface p-[clamp(1.25rem,3vw,1.75rem)] shadow-panel forced-colors:border-[CanvasText]"{% if title %} aria-labelledby="{{ this.headingId }}"{% endif %}>
+{% if title %}
+    <div class="flex flex-col gap-1">
+        <h2 class="m-0 text-xl font-bold leading-tight text-balance" id="{{ this.headingId }}">{{ title }}</h2>
+{% if description %}
+        <p class="m-0 text-[1rem] text-muted">{{ description }}</p>
+{% endif %}
+    </div>
+{% endif %}
+{% for child in children %}
+    {{ renderer.render(child) }}
+{% endfor %}
+</section>

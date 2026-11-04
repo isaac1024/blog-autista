@@ -17,6 +17,11 @@ final class PageTitle
     public string $variant = 'default';
 
     /**
+     * Short classification shown next to the title, such as the type of a page.
+     */
+    public ?string $badge = null;
+
+    /**
      * @var list<PageComponent>
      */
     public array $children = [];
@@ -29,10 +34,12 @@ final class PageTitle
         ?string $subtitle = null,
         string $variant = 'default',
         array $children = [],
+        ?string $badge = null,
     ): void {
         $this->title = $title;
         $this->subtitle = $subtitle;
         $this->variant = $variant;
         $this->children = $children;
+        $this->badge = $badge;
     }
 }

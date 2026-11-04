@@ -15,8 +15,8 @@
  *            Lighthouse is the de facto standard)
  *
  * Tailwind's generated CSS is not validated by the W3C CSS3 service, which
- * does not understand its modern at-rules; a successful `npm run
- * tailwind:build` is the CSS syntax gate.
+ * does not understand its modern at-rules; a successful
+ * `bin/console tailwind:build` is the CSS syntax gate.
  *
  * Pages, server command, Lighthouse form factors and thresholds live in
  * `ui-check.config.mjs`.

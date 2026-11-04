@@ -10,6 +10,7 @@ doctrine:
         types:
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
             cms_page_slug: Cms\Page\Infrastructure\Persistence\Doctrine\PageSlugType
+            rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
         # have to map to a Doctrine type when the schema is introspected. Any
         # UuidType declares the same "UUID" column, so the schema comparison

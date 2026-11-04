@@ -6,6 +6,7 @@ namespace Cms\Controller;
 
 use Shared\Ui\CmsLayout;
 use Shared\Ui\Page\Page;
+use Shared\Ui\Page\PageComponent;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,6 +37,16 @@ final class HomeController extends AbstractController
             ->withMain('Shared:PageTitle', [
                 'title' => $this->translator->trans('cms.home.title'),
                 'subtitle' => $this->translator->trans('cms.home.subtitle'),
+            ])
+            // One entry point per section of the CMS, so the next step is always in sight.
+            ->withMain('Shared:Panel', [
+                'title' => $this->translator->trans('cms.home.pages.title'),
+                'description' => $this->translator->trans('cms.home.pages.description'),
+            ], [
+                new PageComponent('Shared:ButtonLink', [
+                    'url' => $this->generateUrl('cms_pages'),
+                    'label' => $this->translator->trans('cms.home.pages.action'),
+                ]),
             ]);
     }
 }

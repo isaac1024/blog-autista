@@ -9,9 +9,12 @@
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="{{ asset('images/logo.svg') }}" type="image/svg+xml">
         <link rel="preload" href="{{ asset('fonts/atkinson-hyperlegible-400-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
-        <link rel="stylesheet" href="{{ asset('styles/tailwind.css') }}">
+        {# Built by the Tailwind bundle and served by AssetMapper under a versioned URL, so browsers never keep a stale copy. #}
+        <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
 {% block stylesheets %}{% endblock %}
 {% block javascripts %}{% endblock %}
+{# The public site ships no JavaScript; layouts that need it fill this block. #}
+{% block importmap %}{% endblock %}
     </head>
     <body class="flex min-h-dvh flex-col bg-bg font-sans text-base leading-base tracking-base text-text [word-spacing:0.06em]">
 {% block body %}{% endblock %}

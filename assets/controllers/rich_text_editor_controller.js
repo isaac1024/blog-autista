@@ -1,0 +1,829 @@
+import { Controller } from '@hotwired/stimulus';
+import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
+import { Document } from '@tiptap/extension-document';
+import { Paragraph } from '@tiptap/extension-paragraph';
+import { Text } from '@tiptap/extension-text';
+import { Heading } from '@tiptap/extension-heading';
+import { Bold } from '@tiptap/extension-bold';
+import { Blockquote } from '@tiptap/extension-blockquote';
+import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
+import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
+import { Placeholder, UndoRedo } from '@tiptap/extensions';
+import { Suggestion } from '@tiptap/suggestion';
+import 'prosemirror-view/style/prosemirror.min.css';
+import 'prosemirror-tables/style/tables.min.css';
+
+/*
+ * Mounts the Tiptap editor of the Shared:RichTextEditor component.
+ *
+ * The editor only registers what the module allows, so anything else can't
+ * be written nor pasted: pasted links or images keep just their text. The
+ * server translates the posted document and validates it again; this
+ * controller holds no rules of its own.
+ *
+ * Nothing covers the text: every control lives in one dock at the bottom,
+ * the same on every screen, shown only while editing. Everything also works from the keyboard: Alt+F10 reaches
+ * the controls and Escape leaves them, "/" on an empty line lists the kinds
+ * of block, and Ctrl+Shift+Arrow moves the current block, or its whole
+ * section when the cursor is on a heading. The outline of the headings keeps
+ * long content manageable.
+ */
+
+/** Paragraphs set apart with a visible label, never just a colour. */
+const Callout = Node.create({
+    name: 'callout',
+    group: 'block',
+    content: 'paragraph+',
+    defining: true,
+
+    addOptions() {
+        return { labels: {} };
+    },
+
+    addAttributes() {
+        return {
+            variant: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('data-variant'),
+                renderHTML: (attributes) => ({ 'data-variant': attributes.variant }),
+            },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-callout]' }];
+    },
+
+    renderHTML({ node, HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, {
+            'data-callout': '',
+            'data-label': this.options.labels[node.attrs.variant] ?? '',
+            role: 'note',
+        }), 0];
+    },
+});
+
+/** Top-level blocks of a document, with where each starts and ends. */
+const topLevelBlocks = (doc) => {
+    const blocks = [];
+
+    doc.forEach((node, offset) => blocks.push({ node, from: offset, to: offset + node.nodeSize }));
+
+    return blocks;
+};
+
+const isHeading = (node) => node.type.name === 'heading';
+
+/** Whether the cursor is on a heading, so moving it moves its section. */
+const onHeading = (state) => {
+    const { $from } = state.selection;
+
+    return $from.depth > 0 && isHeading($from.node(1));
+};
+
+/**
+ * What moves together from the block at the index: a heading takes its whole
+ * section, down to the next heading of its level or above; any other block,
+ * only itself. Returns the range of block indexes, end excluded.
+ */
+const unitAt = (blocks, index) => {
+    const { node } = blocks[index];
+
+    if (!isHeading(node)) {
+        return [index, index + 1];
+    }
+
+    let end = index + 1;
+
+    while (end < blocks.length && !(isHeading(blocks[end].node) && blocks[end].node.attrs.level <= node.attrs.level)) {
+        end += 1;
+    }
+
+    return [index, end];
+};
+
+/**
+ * The two neighbouring units to swap for a move, or null when there is
+ * nowhere to go. A section only swaps with a sibling section, so it never
+ * leaves its parent nor lands among the blocks of another one.
+ */
+const movePlan = (doc, index, direction) => {
+    const blocks = topLevelBlocks(doc);
+    const [start, end] = unitAt(blocks, index);
+    const { node } = blocks[start];
+
+    if (direction < 0) {
+        if (start === 0) {
+            return null;
+        }
+
+        let previous = start - 1;
+
+        if (isHeading(node)) {
+            while (previous >= 0 && !(isHeading(blocks[previous].node) && blocks[previous].node.attrs.level <= node.attrs.level)) {
+                previous -= 1;
+            }
+
+            if (previous < 0 || blocks[previous].node.attrs.level !== node.attrs.level) {
+                return null;
+            }
+        }
+
+        return { blocks, first: [previous, start], second: [start, end], moving: 'second' };
+    }
+
+    if (end >= blocks.length) {
+        return null;
+    }
+
+    if (isHeading(node) && !(isHeading(blocks[end].node) && blocks[end].node.attrs.level === node.attrs.level)) {
+        return null;
+    }
+
+    const next = isHeading(node) ? unitAt(blocks, end)[1] : end + 1;
+
+    return { blocks, first: [start, end], second: [end, next], moving: 'first' };
+};
+
+/** Moves the current block, or its section, past its neighbour. */
+const BlockMover = Extension.create({
+    name: 'blockMover',
+
+    addOptions() {
+        return { onMove: () => {}, onControlsRequest: () => {} };
+    },
+
+    addCommands() {
+        return {
+            moveBlock: (direction) => ({ tr, dispatch }) => {
+                const { $from, from } = tr.selection;
+                const plan = $from.depth > 0 ? movePlan(tr.doc, $from.index(0), direction) : null;
+
+                if (plan === null) {
+                    return false;
+                }
+
+                if (dispatch) {
+                    const { blocks, first, second, moving } = plan;
+                    const firstFrom = blocks[first[0]].from;
+                    const middle = blocks[second[0]].from;
+                    const secondTo = blocks[second[1] - 1].to;
+                    const swapped = tr.doc.slice(middle, secondTo).content.append(tr.doc.slice(firstFrom, middle).content);
+                    // The cursor travels with what moves.
+                    const cursor = moving === 'first' ? from + (secondTo - middle) : from - (middle - firstFrom);
+
+                    tr.replaceWith(firstFrom, secondTo, swapped);
+                    tr.setSelection(TextSelection.near(tr.doc.resolve(cursor)));
+                    tr.scrollIntoView();
+                }
+
+                return true;
+            },
+        };
+    },
+
+    addKeyboardShortcuts() {
+        const move = (direction) => {
+            const section = onHeading(this.editor.state);
+
+            return this.editor.commands.moveBlock(direction) && (this.options.onMove(direction, section), true);
+        };
+
+        return {
+            'Mod-Shift-ArrowUp': () => move(-1),
+            'Mod-Shift-ArrowDown': () => move(1),
+            // The usual shortcut of accessible editors to reach their controls.
+            'Alt-F10': () => (this.options.onControlsRequest(), true),
+        };
+    },
+});
+
+/** Lists the kinds of block when "/" starts an empty line. */
+const SlashMenu = Extension.create({
+    name: 'slashMenu',
+
+    addOptions() {
+        return { items: () => [], render: () => ({}) };
+    },
+
+    addProseMirrorPlugins() {
+        return [Suggestion({
+            editor: this.editor,
+            char: '/',
+            startOfLine: true,
+            // Table cells only hold paragraphs, so there is nothing to choose there.
+            allow: ({ editor }) => !editor.isActive('table'),
+            items: ({ query }) => this.options.items(query),
+            command: ({ editor, range, props }) => {
+                editor.chain().focus().deleteRange(range).run();
+                props.apply();
+            },
+            render: this.options.render,
+        })];
+    },
+});
+
+/** What every control runs, given a command chain. */
+const COMMANDS = {
+    bold: (chain) => chain.toggleBold(),
+    moveUp: (chain) => chain.moveBlock(-1),
+    moveDown: (chain) => chain.moveBlock(1),
+    insertTable: (chain) => chain.insertTable({ rows: 3, cols: 2, withHeaderRow: true }),
+    addRowAfter: (chain) => chain.addRowAfter(),
+    addColumnAfter: (chain) => chain.addColumnAfter(),
+    deleteRow: (chain) => chain.deleteRow(),
+    deleteColumn: (chain) => chain.deleteColumn(),
+    deleteTable: (chain) => chain.deleteTable(),
+    undo: (chain) => chain.undo(),
+    redo: (chain) => chain.redo(),
+};
+
+/** Whether a toggle is on for the current selection. */
+const ACTIVE = {
+    bold: (editor) => editor.isActive('bold'),
+};
+
+/** Turns a plain paragraph into each kind of block. */
+const BLOCKS = {
+    paragraph: (chain) => chain,
+    heading: (chain, variant) => chain.setHeading({ level: Number(variant) }),
+    quote: (chain) => chain.wrapIn('blockquote'),
+    bulletList: (chain) => chain.toggleBulletList(),
+    orderedList: (chain) => chain.toggleOrderedList(),
+    callout: (chain, variant) => chain.wrapIn('callout', { variant }),
+};
+
+/** Lower case and without accents, so "parrafo" finds "Párrafo". */
+const normalise = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+export default class extends Controller {
+    static targets = [
+        'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'menu', 'status',
+        'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList',
+    ];
+
+    static values = {
+        id: String,
+        placeholder: String,
+        slashHint: String,
+        blockOptions: Array,
+        movedUp: String,
+        movedDown: String,
+        sectionMovedUp: String,
+        sectionMovedDown: String,
+        features: Object,
+        calloutLabels: Object,
+    };
+
+    connect() {
+        this.menu = null;
+        this.dismiss = null;
+        this.editor = new Editor({
+            element: this.editorTarget,
+            extensions: this.extensions(),
+            content: JSON.parse(this.inputTarget.value),
+            editorProps: {
+                attributes: {
+                    id: this.idValue,
+                    class: 'rich-text rich-text-editable',
+                    role: 'textbox',
+                    'aria-multiline': 'true',
+                    'aria-labelledby': `${this.idValue}-label`,
+                    'aria-describedby': `${this.idValue}-hint`,
+                },
+                // Keep the cursor clear of the dock when scrolling it into view.
+                scrollMargin: { top: 80, bottom: 220 },
+                scrollThreshold: { top: 80, bottom: 220 },
+            },
+            onUpdate: ({ editor }) => {
+                this.inputTarget.value = JSON.stringify(editor.getJSON());
+                this.refreshOutline();
+            },
+            onTransaction: () => this.refreshControls(),
+            onFocus: () => this.refreshControls(),
+        });
+
+        this.frameTarget.hidden = false;
+        this.hintTarget.hidden = false;
+        this.refreshOutline();
+        this.refreshControls();
+    }
+
+    disconnect() {
+        this.closeMenu();
+        this.editor?.destroy();
+    }
+
+    /**
+     * Clicking a control keeps the focus, and the selection, in the editor,
+     * so typing right after a click lands in the text.
+     */
+    keepFocus(event) {
+        event.preventDefault();
+    }
+
+    run(event) {
+        const button = event.currentTarget;
+        const { command } = button.dataset;
+
+        if (button.getAttribute('aria-disabled') === 'true') {
+            return;
+        }
+
+        const section = onHeading(this.editor.state);
+
+        COMMANDS[command](this.editor.chain().focus()).run();
+
+        if (command === 'moveUp' || command === 'moveDown') {
+            this.announceMove(command === 'moveUp' ? -1 : 1, section);
+        }
+    }
+
+    /* Controls: shown while editing, out of the way otherwise. */
+
+    refreshControls() {
+        const editing = this.editor.isFocused || this.canvasTarget.contains(document.activeElement);
+
+        // Only shown here: leave() hides them, once it knows where the focus went.
+        if (editing) {
+            this.dockTarget.hidden = false;
+        }
+
+        const inTable = this.editor.isActive('table');
+        const section = onHeading(this.editor.state);
+
+        for (const button of this.buttonTargets) {
+            const { command } = button.dataset;
+            const pressed = command in ACTIVE && ACTIVE[command](this.editor);
+
+            if (button.hasAttribute('aria-pressed')) {
+                button.setAttribute('aria-pressed', String(pressed));
+            }
+
+            // A toggle that is on stays available, so it reads as on, not as unavailable.
+            button.setAttribute('aria-disabled', String(!pressed && !this.can(command)));
+
+            if (button.dataset.sectionLabel) {
+                this.rename(button, section ? button.dataset.sectionLabel : button.dataset.label);
+            }
+        }
+
+        const kind = this.blockOptionsValue.find((option) => option.value === this.currentBlock())?.label ?? '';
+
+        // Table cells only hold paragraphs.
+        this.blockTypeTarget.setAttribute('aria-disabled', String(inTable));
+        this.rename(this.blockTypeTarget, kind);
+
+        if (this.hasTableToolsTarget) {
+            this.tableToolsTarget.hidden = !inTable;
+        }
+
+        this.markCurrentSection();
+    }
+
+    /** Hides the controls once the focus leaves the text and the controls alike. */
+    leave(event) {
+        if (this.canvasTarget.contains(event.relatedTarget)) {
+            return;
+        }
+
+        this.closeMenu();
+        this.dockTarget.hidden = true;
+    }
+
+    /** Escape, from any control, goes back to the text where the cursor was. */
+    controlsKey(event) {
+        if (event.key === 'Escape' && this.dockTarget.contains(event.target)) {
+            event.preventDefault();
+            this.editor.commands.focus();
+        }
+    }
+
+    /** Alt+F10: the first control of the dock, the kind of the current block. */
+    focusControls() {
+        this.dockTarget.hidden = false;
+        this.blockTypeTarget.focus();
+    }
+
+    rename(button, name) {
+        const label = button.querySelector('[data-role="name"]');
+        const tooltip = button.querySelector('[data-role="tooltip"]');
+
+        if (label) {
+            label.textContent = name;
+        }
+
+        if (tooltip) {
+            tooltip.textContent = name;
+        }
+    }
+
+    can(command) {
+        // The header row names the columns, so it can't be removed on its own.
+        if (command === 'deleteRow' && this.editor.isActive('tableHeader')) {
+            return false;
+        }
+
+        return COMMANDS[command](this.editor.can().chain()).run();
+    }
+
+    currentBlock() {
+        if (this.editor.isActive('callout')) {
+            return `callout:${this.editor.getAttributes('callout').variant}`;
+        }
+
+        if (this.editor.isActive('heading')) {
+            return `heading:${this.editor.getAttributes('heading').level}`;
+        }
+
+        const wrapper = { blockquote: 'quote', bulletList: 'bulletList', orderedList: 'orderedList' };
+        const active = Object.keys(wrapper).find((name) => this.editor.isActive(name));
+
+        return active ? wrapper[active] : 'paragraph';
+    }
+
+    /** Says where the block or the section went, since nothing changes under the cursor. */
+    announceMove(direction, section) {
+        const message = section
+            ? (direction < 0 ? this.sectionMovedUpValue : this.sectionMovedDownValue)
+            : (direction < 0 ? this.movedUpValue : this.movedDownValue);
+
+        this.statusTarget.textContent = '';
+        window.requestAnimationFrame(() => {
+            this.statusTarget.textContent = message;
+        });
+    }
+
+    /* Kinds of block: one menu, opened by "/" or by the block kind button. */
+
+    applyBlock(chain, value) {
+        const [block, variant] = value.split(':');
+
+        if (block === 'table') {
+            COMMANDS.insertTable(chain).run();
+
+            return;
+        }
+
+        // Every kind starts from a plain paragraph, out of whatever wraps it.
+        if (this.editor.isActive('bulletList')) {
+            chain = chain.toggleBulletList();
+        } else if (this.editor.isActive('orderedList')) {
+            chain = chain.toggleOrderedList();
+        }
+
+        for (const wrapper of ['blockquote', 'callout']) {
+            if (this.editor.isActive(wrapper)) {
+                chain = chain.lift(wrapper);
+            }
+        }
+
+        BLOCKS[block](chain.setParagraph(), variant).run();
+    }
+
+    blockItems(query) {
+        const current = this.currentBlock();
+        const items = this.blockOptionsValue.map((option) => ({
+            label: option.label,
+            current: option.value === current,
+            apply: () => this.applyBlock(this.editor.chain().focus(), option.value),
+        }));
+
+        return items.filter((item) => normalise(item.label).includes(normalise(query)));
+    }
+
+    openBlockMenu(event) {
+        const button = event.currentTarget;
+
+        if (button.getAttribute('aria-disabled') === 'true') {
+            return;
+        }
+
+        if (this.menu?.button === button) {
+            this.closeMenu();
+
+            return;
+        }
+
+        const items = this.blockItems('');
+
+        this.menu = { mode: 'button', button, items, index: Math.max(items.findIndex((item) => item.current), 0) };
+        button.setAttribute('aria-expanded', 'true');
+        this.renderMenu(button.getBoundingClientRect());
+        this.menuTarget.focus();
+        this.watchOutside();
+    }
+
+    /**
+     * Like any popup, the menu closes when the pointer goes down anywhere else,
+     * the text included, and when the page scrolls or resizes, which would
+     * leave it floating away from its button.
+     */
+    watchOutside() {
+        this.dismiss = (event) => {
+            const { button } = this.menu ?? {};
+
+            if (this.menuTarget.contains(event.target) || button?.contains(event.target)) {
+                return;
+            }
+
+            this.closeMenu();
+        };
+
+        document.addEventListener('pointerdown', this.dismiss, true);
+        window.addEventListener('scroll', this.dismiss, { capture: true, passive: true });
+        window.addEventListener('resize', this.dismiss);
+    }
+
+    /** The focus left the menu for something else, as Tab does. */
+    menuFocusOut(event) {
+        if (this.menu?.mode !== 'button' || this.menuTarget.contains(event.relatedTarget) || event.relatedTarget === this.menu.button) {
+            return;
+        }
+
+        this.closeMenu();
+    }
+
+    /** Keys of the menu opened from the button, which holds the focus meanwhile. */
+    menuButtonKey(event) {
+        if (this.menu?.mode === 'button' && this.menuKey(event)) {
+            event.preventDefault();
+        }
+    }
+
+    /*
+     * The "/" menu follows the combobox pattern: the focus stays in the text,
+     * which points at the highlighted option through aria-activedescendant.
+     */
+    slashRender() {
+        return {
+            onStart: (props) => this.openSlashMenu(props),
+            onUpdate: (props) => this.openSlashMenu(props),
+            onKeyDown: ({ event }) => this.menuKey(event),
+            onExit: () => this.closeMenu(),
+        };
+    }
+
+    slashItems(query) {
+        const items = this.blockItems(query);
+
+        if (this.featuresValue.blocks.includes('table')) {
+            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertTable').dataset.label;
+
+            if (normalise(label).includes(normalise(query))) {
+                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'table') });
+            }
+        }
+
+        return items;
+    }
+
+    openSlashMenu(props) {
+        if (props.items.length === 0) {
+            this.closeMenu();
+
+            return;
+        }
+
+        const index = this.menu?.mode === 'slash' ? Math.min(this.menu.index, props.items.length - 1) : 0;
+
+        this.menu = { mode: 'slash', props, items: props.items, index };
+        this.editor.view.dom.setAttribute('aria-controls', this.menuTarget.id);
+        this.editor.view.dom.setAttribute('aria-expanded', 'true');
+        this.renderMenu(props.clientRect?.());
+    }
+
+    renderMenu(anchor) {
+        this.menuTarget.replaceChildren(...this.menu.items.map((item, index) => {
+            const option = document.createElement('li');
+
+            option.id = `${this.idValue}-menu-${index}`;
+            option.setAttribute('role', 'option');
+            option.className = 'rich-text-menu-option';
+            option.textContent = item.label;
+            option.addEventListener('mousedown', (event) => event.preventDefault());
+            option.addEventListener('click', () => this.choose(index));
+
+            return option;
+        }));
+
+        this.menuTarget.hidden = false;
+
+        if (anchor) {
+            const height = this.menuTarget.offsetHeight;
+            const below = anchor.bottom + 8 + height <= window.innerHeight;
+            const left = Math.min(anchor.left, window.innerWidth - this.menuTarget.offsetWidth - 16);
+
+            this.menuTarget.style.top = `${below ? anchor.bottom + 8 : Math.max(anchor.top - height - 8, 8)}px`;
+            this.menuTarget.style.left = `${Math.max(left, 16)}px`;
+        }
+
+        this.highlight(this.menu.index);
+    }
+
+    /** Arrow keys move through the kinds; Enter picks one; Escape closes. */
+    menuKey(event) {
+        if (this.menu === null) {
+            return false;
+        }
+
+        const count = this.menu.items.length;
+        const moves = { ArrowDown: 1, ArrowUp: -1 };
+
+        if (event.key in moves) {
+            this.highlight((this.menu.index + moves[event.key] + count) % count);
+
+            return true;
+        }
+
+        if (event.key === 'Home' || event.key === 'End') {
+            this.highlight(event.key === 'Home' ? 0 : count - 1);
+
+            return true;
+        }
+
+        // In the "/" menu Tab picks, as editors do; leaving the button's menu
+        // with Tab must not change the block, so there it just closes it.
+        if (event.key === 'Enter' || (event.key === 'Tab' && this.menu.mode === 'slash')) {
+            this.choose(this.menu.index);
+
+            return true;
+        }
+
+        if (event.key === 'Escape' || event.key === 'Tab') {
+            const { button } = this.menu;
+
+            // Focus first: hiding the menu while it holds the focus would drop it to the page.
+            button?.focus();
+            this.closeMenu();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    highlight(index) {
+        this.menu.index = index;
+
+        for (const [position, option] of [...this.menuTarget.children].entries()) {
+            option.setAttribute('aria-selected', String(position === index));
+        }
+
+        this.menuTarget.children[index]?.scrollIntoView({ block: 'nearest' });
+
+        const owner = this.menu.mode === 'slash' ? this.editor.view.dom : this.menuTarget;
+
+        owner.setAttribute('aria-activedescendant', `${this.idValue}-menu-${index}`);
+    }
+
+    choose(index) {
+        const { mode, props, items } = this.menu;
+
+        if (mode === 'slash') {
+            props.command(items[index]);
+
+            return;
+        }
+
+        // Back to the text before the menu hides, so the focus never falls to
+        // the page, which would read as leaving the editor and hide the dock.
+        this.editor.view.focus();
+        this.closeMenu();
+        items[index].apply();
+    }
+
+    closeMenu() {
+        if (this.menu === null) {
+            return;
+        }
+
+        this.menu.button?.setAttribute('aria-expanded', 'false');
+        this.menu = null;
+        this.menuTarget.hidden = true;
+
+        if (this.dismiss) {
+            document.removeEventListener('pointerdown', this.dismiss, true);
+            window.removeEventListener('scroll', this.dismiss, { capture: true });
+            window.removeEventListener('resize', this.dismiss);
+            this.dismiss = null;
+        }
+
+        this.menuTarget.removeAttribute('aria-activedescendant');
+        this.editor.view.dom.setAttribute('aria-expanded', 'false');
+        this.editor.view.dom.removeAttribute('aria-activedescendant');
+    }
+
+    /* Outline: every section one step away, the current one marked. */
+
+    refreshOutline() {
+        this.sections = topLevelBlocks(this.editor.state.doc)
+            .filter(({ node }) => isHeading(node) && node.textContent.trim() !== '')
+            .map(({ node, from }) => ({ from, level: node.attrs.level, title: node.textContent }));
+
+        for (const list of [this.outlineDialogListTarget]) {
+            list.replaceChildren(...this.sections.map((section) => {
+                const item = document.createElement('li');
+                const link = document.createElement('button');
+
+                link.type = 'button';
+                link.className = `rich-text-outline-item ${section.level > 2 ? 'pl-6' : 'pl-2'}`;
+                link.textContent = section.title;
+                link.addEventListener('click', () => this.jumpTo(section.from));
+                item.append(link);
+
+                return item;
+            }));
+        }
+
+        this.outlineButtonTarget.hidden = this.sections.length === 0;
+        this.markCurrentSection();
+    }
+
+    markCurrentSection() {
+        if (!this.sections) {
+            return;
+        }
+
+        const { from } = this.editor.state.selection;
+        const current = this.sections.findLastIndex((section) => section.from <= from);
+
+        for (const list of [this.outlineDialogListTarget]) {
+            for (const [index, item] of [...list.children].entries()) {
+                if (index === current) {
+                    item.firstElementChild.setAttribute('aria-current', 'location');
+                } else {
+                    item.firstElementChild.removeAttribute('aria-current');
+                }
+            }
+        }
+    }
+
+    /** Opens the section at the top of the screen, with the cursor at its heading. */
+    jumpTo(from) {
+        this.outlineDialogTarget.close();
+        this.editor.chain().setTextSelection(from + 1).focus(null, { scrollIntoView: false }).run();
+        this.editor.view.nodeDOM(from)?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    }
+
+    extensions() {
+        const { blocks, headingLevels, marks } = this.featuresValue;
+        const extensions = [
+            Document,
+            Paragraph,
+            Text,
+            UndoRedo,
+            BlockMover.configure({
+                onMove: (direction, section) => this.announceMove(direction, section),
+                onControlsRequest: () => this.focusControls(),
+            }),
+            SlashMenu.configure({ items: (query) => this.slashItems(query), render: () => this.slashRender() }),
+            // The empty document says what goes in it; an empty line, how to pick a block.
+            Placeholder.configure({
+                placeholder: ({ editor, node }) => {
+                    if (editor.isEmpty) {
+                        return this.placeholderValue;
+                    }
+
+                    return node.type.name === 'paragraph' ? this.slashHintValue : '';
+                },
+            }),
+        ];
+
+        if (marks.includes('bold')) {
+            extensions.push(Bold);
+        }
+
+        if (blocks.includes('heading')) {
+            extensions.push(Heading.configure({ levels: headingLevels }));
+        }
+
+        if (blocks.includes('quote')) {
+            extensions.push(Blockquote.extend({ content: 'paragraph+' }));
+        }
+
+        if (blocks.includes('list')) {
+            // Lists are not nested: every item is a single paragraph.
+            extensions.push(BulletList, OrderedList, ListItem.extend({ content: 'paragraph' }));
+        }
+
+        if (blocks.includes('callout')) {
+            extensions.push(Callout.configure({ labels: this.calloutLabelsValue }));
+        }
+
+        if (blocks.includes('table')) {
+            extensions.push(
+                // Columns keep a readable width; a table wider than the screen scrolls sideways.
+                Table.configure({ resizable: false, cellMinWidth: 144 }),
+                TableRow,
+                TableHeader.extend({ content: 'paragraph' }),
+                TableCell.extend({ content: 'paragraph' }),
+            );
+        }
+
+        return extensions;
+    }
+}

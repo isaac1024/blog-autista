@@ -1,5 +1,9 @@
 cms:
     home:
+        pages:
+            title: 'Pages'
+            description: 'The fixed content of the blog: the home page, contact, search and the legal texts, plus the pages you create.'
+            action: 'See the pages'
         title: 'Dashboard'
         subtitle: 'Manage the blog content from here.'
     nav:
@@ -26,8 +30,10 @@ cms:
                 action: 'See all pages'
         edit:
             title: 'Edit page'
-            subtitle: 'Change the page content and save when you are done.'
             title_label: 'Title'
+            home_address: 'The home page is served at the root of the site (/), so it has no address of its own.'
+            content_title: 'Content'
+            content_placeholder: 'Write the content of the page here…'
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'
             submit: 'Save changes'
@@ -36,6 +42,13 @@ cms:
             title: 'Delete this page?'
             description: 'The page “%title%” and its web address will no longer exist. This cannot be undone.'
             submit: 'Yes, delete the page'
+        types:
+            home: 'Home page'
+            contact: 'Contact'
+            search: 'Search'
+            legal_notice: 'Legal notice'
+            privacy_policy: 'Privacy policy'
+            cookie_policy: 'Cookie policy'
         list:
             label: 'Blog pages'
         add: 'Add page'
@@ -56,3 +69,39 @@ cms:
 ui:
     close: 'Close'
     primary_navigation: 'Primary navigation'
+    editor:
+        move_up: 'Move block up'
+        move_down: 'Move block down'
+        moved_up: 'Block moved up.'
+        moved_down: 'Block moved down.'
+        slash_hint: 'Type “/” to pick a kind of block'
+        slash_menu: 'Kinds of block'
+        outline: 'Outline'
+        hint: 'Type “/” on an empty line to pick a block. Ctrl+Shift+↑/↓ moves the block, or the whole section on a heading; Alt+F10 reaches its controls.'
+        move_section_up: 'Move section up'
+        move_section_down: 'Move section down'
+        section_moved_up: 'Section moved up.'
+        section_moved_down: 'Section moved down.'
+        block_type: 'Block type'
+        toolbar: 'Block formatting'
+        noscript: 'Editing the content needs JavaScript. The title and the web address are saved anyway.'
+        groups:
+            table: 'Table'
+        paragraph: 'Paragraph'
+        heading: 'Heading %level%'
+        bold: 'Bold'
+        quote: 'Quote'
+        bullet_list: 'Bulleted list'
+        ordered_list: 'Numbered list'
+        callout:
+            note: 'Note'
+            important: 'Important'
+        table:
+            insert: 'Insert table'
+            add_row: 'Add row'
+            add_column: 'Add column'
+            delete_row: 'Remove row'
+            delete_column: 'Remove column'
+            delete: 'Remove table'
+        undo: 'Undo'
+        redo: 'Redo'

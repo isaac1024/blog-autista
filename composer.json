@@ -13,6 +13,7 @@
         "doctrine/orm": "^3.7",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "8.1.*",
+        "symfony/asset-mapper": "8.1.*",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
         "symfony/flex": "^2",
@@ -21,11 +22,13 @@
         "symfony/runtime": "8.1.*",
         "symfony/scheduler": "8.1.*",
         "symfony/security-bundle": "8.1.*",
+        "symfony/stimulus-bundle": "^3.6",
         "symfony/translation": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/uid": "8.1.*",
         "symfony/ux-twig-component": "^3.6",
-        "symfony/yaml": "8.1.*"
+        "symfony/yaml": "8.1.*",
+        "symfonycasts/tailwind-bundle": "^1.0"
     },
     "require-dev": {
         "brianium/paratest": "^7.27",
@@ -84,7 +87,8 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"

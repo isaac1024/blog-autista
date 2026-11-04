@@ -1,0 +1,19 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+    <div class="flex min-w-0 flex-1 flex-col gap-2">
+{% if badge %}
+        <div><twig:Shared:Badge :label="badge" variant="accent" /></div>
+{% endif %}
+        <label class="text-[1rem] font-bold text-muted" for="{{ id }}">{{ label }}</label>
+        <h1 class="m-0">
+            <input{{ attributes.defaults({class: 'w-full min-w-0 rounded-control border-2 border-border bg-surface px-3 py-2 text-[clamp(1.75rem,4vw,2.25rem)] font-bold leading-tight text-text focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} type="text" id="{{ id }}" name="{{ name }}" value="{{ value }}" form="{{ form }}">
+        </h1>
+    </div>
+{% if children is not empty %}
+    <div class="flex flex-none flex-wrap items-center gap-3">
+{% for child in children %}
+        {{ renderer.render(child) }}
+{% endfor %}
+    </div>
+{% endif %}
+</header>

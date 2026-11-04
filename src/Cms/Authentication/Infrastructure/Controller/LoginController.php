@@ -37,24 +37,10 @@ final class LoginController extends AbstractController
     {
         $error = $authenticationUtils->getLastAuthenticationError();
 
-        $page = Page::create(\sprintf(
-            '%s · %s',
-            $this->translator->trans('cms.login.title'),
-            $this->translator->trans('cms.login.brand'),
-        ))
-            ->withMainClass('grid min-h-dvh content-center justify-items-center gap-6 bg-bg p-[clamp(1.5rem,5vw,3rem)] [&>*]:w-[min(100%,26rem)]')
-            ->withMain('Shared:Brand', [
-                'brand' => $this->translator->trans('cms.login.brand'),
-                'attributes' => ['class' => 'text-accent'],
-            ])
-            ->withMain('Shared:PageTitle', [
-                'title' => $this->translator->trans('cms.login.title'),
-                'subtitle' => $this->translator->trans('cms.login.subtitle'),
-                'variant' => 'login',
-            ]);
+        $fields = [];
 
         if (null !== $error) {
-            $page = $page->withMain('Shared:Alert', [
+            $fields[] = new PageComponent('Shared:Alert', [
                 'title' => $this->translator->trans('cms.login.error'),
                 'message' => $this->translator->trans(
                     $error->getMessageKey(),
@@ -64,7 +50,7 @@ final class LoginController extends AbstractController
             ]);
         }
 
-        return $page->withMain('Shared:Form', [
+        $fields[] = new PageComponent('Shared:Form', [
             'action' => $this->generateUrl('cms_login_check'),
             'method' => 'post',
         ], [
@@ -106,7 +92,28 @@ final class LoginController extends AbstractController
             ]),
             new PageComponent('Shared:FormButton', [
                 'label' => $this->translator->trans('cms.login.submit'),
+                'fullWidth' => true,
             ]),
         ]);
+
+        // A single card in the middle of the screen: nothing else asks for attention.
+        return Page::create(\sprintf(
+            '%s · %s',
+            $this->translator->trans('cms.login.title'),
+            $this->translator->trans('cms.login.brand'),
+        ))
+            ->withMainClass('grid min-h-dvh content-center justify-items-center bg-bg p-[clamp(1rem,5vw,3rem)] [&>*]:w-[min(100%,28rem)]')
+            ->withMain('Shared:Panel', [], [
+                new PageComponent('Shared:Brand', [
+                    'brand' => $this->translator->trans('cms.login.brand'),
+                    'attributes' => ['class' => 'text-lg text-accent'],
+                ]),
+                new PageComponent('Shared:PageTitle', [
+                    'title' => $this->translator->trans('cms.login.title'),
+                    'subtitle' => $this->translator->trans('cms.login.subtitle'),
+                    'variant' => 'login',
+                ]),
+                ...$fields,
+            ]);
     }
 }

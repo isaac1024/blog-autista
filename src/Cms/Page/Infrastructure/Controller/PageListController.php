@@ -25,6 +25,7 @@ final class PageListController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
+        private readonly PageRole $pageRole,
     ) {}
 
     #[Route('/pages', name: 'cms_pages', methods: ['GET'])]
@@ -126,14 +127,22 @@ final class PageListController extends AbstractController
             ]);
         }
 
-        return $page->withMain('Shared:CardList', [
+        return $page->withMain('Shared:ResourceList', [
             'label' => $this->translator->trans('cms.pages.list.label'),
-        ], array_map(
-            fn (PageResponse $response): PageComponent => new PageComponent('Shared:Card', [
-                'title' => $response->title,
-                'url' => $this->generateUrl('cms_pages_edit', ['id' => $response->id]),
-            ]),
-            $pages,
-        ));
+        ], array_map($this->row(...), $pages));
+    }
+
+    /**
+     * A page with its public address, and the role of the unique ones, so
+     * editors can tell the home or the legal pages apart from the rest.
+     */
+    private function row(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:ResourceRow', [
+            'title' => $page->title,
+            'url' => $this->generateUrl('cms_pages_edit', ['id' => $page->id]),
+            'meta' => $page->home ? '/' : \sprintf('/%s.html', $page->slug),
+            'badge' => ($this->pageRole)($page),
+        ]);
     }
 }

@@ -19,17 +19,29 @@ final class FormInput
 
     public ?string $autocomplete = null;
 
+    /**
+     * Fixed text shown before and after the value, such as the parts of an
+     * address around a slug.
+     */
+    public ?string $prefix = null;
+
+    public ?string $suffix = null;
+
     public function mount(
         string $name,
         string $id = '',
         string $type = 'text',
         string $value = '',
         ?string $autocomplete = null,
+        ?string $prefix = null,
+        ?string $suffix = null,
     ): void {
         $this->name = $name;
         $this->id = '' !== $id ? $id : $name;
         $this->type = $type;
         $this->value = $value;
         $this->autocomplete = $autocomplete;
+        $this->prefix = $prefix;
+        $this->suffix = $suffix;
     }
 }

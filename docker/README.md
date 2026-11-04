@@ -21,6 +21,7 @@ docker compose up -d --build            # http://www.blogautista.localhost
 docker compose exec -u www-data php bin/console about
 docker compose exec -u www-data php php bin/phpunit
 docker compose exec -u www-data php bin/console doctrine:migrations:migrate
+docker compose exec -u www-data php bin/console tailwind:build --watch
 docker compose exec -u www-data php bin/console messenger:consume scheduler_default -vv
 docker compose exec -u www-data php composer require symfony/twig-bundle
 docker compose run --rm -u www-data php bin/console cache:clear
@@ -125,6 +126,27 @@ not, add these entries to `/etc/hosts`:
 
 ```
 127.0.0.1 www.blogautista.localhost cms.blogautista.localhost
+```
+
+## Assets
+
+Stylesheets and scripts go through AssetMapper, which serves them under
+versioned URLs, so browsers never keep a stale copy. In development it
+compiles them on each request; only the stylesheet needs a build, which the
+Tailwind bundle does from `assets/styles/app.css`. Keep the watcher above
+running while changing templates or styles: in the dev environment the
+bundle fails on purpose when there is no built stylesheet.
+
+Shared hosting can't run the Tailwind binary, so build the assets before
+uploading and deploy `public/assets/` with the code. Delete that directory
+locally afterwards: while it exists, development serves those compiled copies
+instead of the current files.
+
+```bash
+docker compose exec -u www-data php bin/console importmap:install
+docker compose exec -u www-data php bin/console tailwind:build --minify
+docker compose exec -u www-data php bin/console cache:clear --env=prod
+docker compose exec -u www-data php bin/console asset-map:compile --env=prod
 ```
 
 ## Differences from production (on purpose)

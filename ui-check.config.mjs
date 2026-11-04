@@ -14,8 +14,8 @@
  *            facto standard there.
  *
  * Tailwind's generated CSS is not checked by the W3C CSS3 validator because
- * it does not understand modern at-rules; a successful `npm run
- * tailwind:build` is the CSS syntax gate.
+ * it does not understand modern at-rules; a successful
+ * `bin/console tailwind:build` is the CSS syntax gate.
  *
  * Each page accepts:
  *   - name:        unique identifier used in reports and `--page=` filters
@@ -107,6 +107,8 @@ export default {
             { foreground: '--color-danger', background: '--color-surface', minimum: 7 },
             { foreground: '--color-on-danger', background: '--color-danger', minimum: 7 },
             { foreground: '--color-on-danger', background: '--color-danger-strong', minimum: 7 },
+            { foreground: '--color-accent', background: '--color-accent-soft', minimum: 7 },
+            { foreground: '--color-text', background: '--color-accent-soft', minimum: 7 },
             { foreground: '--color-border', background: '--color-surface', minimum: 3 },
             { foreground: '--color-focus', background: '--color-bg', minimum: 3 },
         ],

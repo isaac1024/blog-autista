@@ -12,16 +12,20 @@ use Cms\Page\Domain\Page;
 final readonly class PageResponse
 {
     /**
-     * @param string $slug   empty for the home page
-     * @param bool   $home   whether it is the home page, which has no slug
-     * @param bool   $unique whether it is one of the unique pages, which can't be deleted
+     * @param string                                                  $slug    empty for the home page
+     * @param string                                                  $type    one of the PageType values
+     * @param bool                                                    $home    whether it is the home page, which has no slug
+     * @param bool                                                    $unique  whether it is one of the unique pages, which can't be deleted
+     * @param array{version: int, blocks: list<array<string, mixed>>} $content in the stored rich text format
      */
     public function __construct(
         public string $id,
         public string $title,
         public string $slug,
+        public string $type,
         public bool $home,
         public bool $unique,
+        public array $content,
     ) {}
 
     public static function fromPage(Page $page): self
@@ -30,8 +34,10 @@ final readonly class PageResponse
             $page->id()->value(),
             $page->title()->value(),
             $page->slug()->value(),
+            $page->type()->value,
             $page->type()->isHome(),
             $page->type()->isUnique(),
+            $page->content()->toArray(),
         );
     }
 }

@@ -1,0 +1,3 @@
+symfonycasts_tailwind:
+    # Pinned, so every build, local or before a deploy, produces the same CSS.
+    binary_version: 'v4.3.4'

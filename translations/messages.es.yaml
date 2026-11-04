@@ -2,6 +2,10 @@ cms:
     home:
         title: 'Panel'
         subtitle: 'Desde aquí gestionas el contenido del blog.'
+        pages:
+            title: 'Páginas'
+            description: 'El contenido fijo del blog: la portada, el contacto, el buscador y los textos legales, además de las páginas que crees.'
+            action: 'Ver las páginas'
     nav:
         account: 'Cuenta'
         administration: 'Administración'
@@ -26,16 +30,25 @@ cms:
                 action: 'Ver todas las páginas'
         edit:
             title: 'Editar página'
-            subtitle: 'Cambia el contenido de la página y guarda cuando termines.'
             title_label: 'Título'
             slug_label: 'Dirección web (slug)'
             slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi.'
+            home_address: 'La portada se sirve en la raíz del sitio (/), así que no tiene dirección propia.'
+            content_title: 'Contenido'
+            content_placeholder: 'Escribe aquí el contenido de la página…'
             submit: 'Guardar cambios'
         delete:
             trigger: 'Borrar página'
             title: '¿Borrar esta página?'
             description: 'La página «%title%» y su dirección web dejarán de existir. No se puede deshacer.'
             submit: 'Sí, borrar la página'
+        types:
+            home: 'Portada'
+            contact: 'Contacto'
+            search: 'Buscador'
+            legal_notice: 'Aviso legal'
+            privacy_policy: 'Política de privacidad'
+            cookie_policy: 'Política de cookies'
         list:
             label: 'Páginas del blog'
         add: 'Añadir página'
@@ -56,3 +69,39 @@ cms:
 ui:
     close: 'Cerrar'
     primary_navigation: 'Navegación principal'
+    editor:
+        move_up: 'Subir bloque'
+        move_down: 'Bajar bloque'
+        moved_up: 'Bloque movido hacia arriba.'
+        moved_down: 'Bloque movido hacia abajo.'
+        slash_hint: 'Escribe «/» para elegir un tipo de bloque'
+        slash_menu: 'Tipos de bloque'
+        outline: 'Esquema'
+        hint: 'Escribe «/» en una línea vacía para elegir un bloque. Ctrl+Mayús+↑/↓ mueve el bloque, o la sección entera si estás en un encabezado; Alt+F10 lleva a sus controles.'
+        move_section_up: 'Subir sección'
+        move_section_down: 'Bajar sección'
+        section_moved_up: 'Sección movida hacia arriba.'
+        section_moved_down: 'Sección movida hacia abajo.'
+        block_type: 'Tipo de bloque'
+        toolbar: 'Formato del bloque'
+        noscript: 'Para editar el contenido hace falta JavaScript. El título y la dirección web se guardan igualmente.'
+        groups:
+            table: 'Tabla'
+        paragraph: 'Párrafo'
+        heading: 'Encabezado %level%'
+        bold: 'Negrita'
+        quote: 'Cita'
+        bullet_list: 'Lista con viñetas'
+        ordered_list: 'Lista numerada'
+        callout:
+            note: 'Nota'
+            important: 'Importante'
+        table:
+            insert: 'Insertar tabla'
+            add_row: 'Añadir fila'
+            add_column: 'Añadir columna'
+            delete_row: 'Quitar fila'
+            delete_column: 'Quitar columna'
+            delete: 'Quitar tabla'
+        undo: 'Deshacer'
+        redo: 'Rehacer'

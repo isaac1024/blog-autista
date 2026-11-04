@@ -1,25 +1,50 @@
 {% extends 'page.html.twig' %}
 
+{#
+    Icons only accompany the text of each item, which names it: they help
+    recognise the item at a glance, never replace its label.
+#}
+{% macro icon(name) %}
+<svg class="h-5 w-5 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'dashboard' %}
+    <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+{% elseif name == 'pages' %}
+    <path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z" /><path d="M14 3.5v5h5M9 13h6M9 16.5h4" />
+{% elseif name == 'logout' %}
+    <path d="M10 20.5H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4M16 16.5l4.5-4.5L16 7.5M20.5 12H9.5" />
+{% endif %}
+</svg>
+{% endmacro %}
+
+{% macro item(label, url, icon, current) %}
+<a class="flex min-h-11 items-center gap-3 rounded-control border-l-4 px-3 py-2 no-underline transition-colors duration-150 motion-reduce:transition-none {{ current ? 'border-accent bg-accent-soft font-bold text-text' : 'border-transparent text-text hover:bg-bg' }} forced-colors:border-[CanvasText]" href="{{ url }}"{% if current %} aria-current="page"{% endif %}>
+    {{ _self.icon(icon) }}
+    <span>{{ label }}</span>
+</a>
+{% endmacro %}
+
 {% macro navigation(currentRoute) %}
 <ul class="m-0 flex list-none flex-col gap-1 p-0">
-    <li>
-        <a class="block rounded-r-control border-l-4 px-3 py-2 no-underline {{ currentRoute == 'cms_home' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_home') }}"{% if currentRoute == 'cms_home' %} aria-current="page"{% endif %}>{{ 'cms.nav.dashboard'|trans }}</a>
-    </li>
-    <li>
-        <a class="block rounded-r-control border-l-4 px-3 py-2 no-underline {{ currentRoute starts with 'cms_pages' ? 'border-accent bg-bg font-bold text-text' : 'border-transparent text-muted hover:border-border hover:bg-bg hover:text-text' }}" href="{{ path('cms_pages') }}"{% if currentRoute == 'cms_pages' %} aria-current="page"{% endif %}>{{ 'cms.nav.pages'|trans }}</a>
-    </li>
+    <li>{{ _self.item('cms.nav.dashboard'|trans, path('cms_home'), 'dashboard', currentRoute == 'cms_home') }}</li>
+    <li>{{ _self.item('cms.nav.pages'|trans, path('cms_pages'), 'pages', currentRoute starts with 'cms_pages') }}</li>
 </ul>
+{% endmacro %}
+
+{% macro account() %}
+<nav aria-label="{{ 'cms.nav.account'|trans }}">
+    {{ _self.item('cms.nav.logout'|trans, path('cms_logout'), 'logout', false) }}
+</nav>
 {% endmacro %}
 
 {% block regions %}
 {% set currentRoute = app.request.attributes.get('_route') %}
     <div class="h-1 flex-none bg-spectrum" aria-hidden="true"></div>
     <div class="flex flex-1 flex-col md:flex-row">
-        <aside class="relative flex items-center justify-between gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 md:w-64 md:flex-none md:flex-col md:items-stretch md:justify-start md:gap-6 md:border-b-0 md:border-r-2 md:py-5">
-            <twig:Shared:Brand brand="blog autista" :homeUrl="path('cms_home')" />
+        <aside class="relative flex items-center justify-between gap-4 border-b border-divider bg-surface px-[clamp(1rem,4vw,1.5rem)] py-3 md:sticky md:top-0 md:h-dvh md:w-72 md:flex-none md:flex-col md:items-stretch md:justify-start md:gap-8 md:border-b-0 md:border-r md:px-4 md:py-6">
+            <twig:Shared:Brand brand="blog autista" :homeUrl="path('cms_home')" class="px-1 text-lg md:px-3" />
 
             <details class="group md:hidden">
-                <summary class="flex h-11 w-11 cursor-pointer list-none rounded-control items-center justify-center border-2 border-border bg-surface text-text hover:border-accent hover:text-accent group-open:border-accent group-open:text-accent [&::-webkit-details-marker]:hidden">
+                <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent group-open:border-accent group-open:text-accent [&::-webkit-details-marker]:hidden">
                     <span class="sr-only">{{ 'cms.nav.menu'|trans }}</span>
                     <svg class="h-6 w-6 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                         <path d="M4 6h16M4 12h16M4 18h16" />
@@ -29,24 +54,24 @@
                     </svg>
                 </summary>
 
-                <div class="absolute inset-x-0 top-full z-50 flex flex-col gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 shadow-card">
+                <div class="absolute inset-x-0 top-full z-50 flex flex-col gap-4 border-b border-divider bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 shadow-card">
                     <nav aria-label="{{ 'cms.nav.administration'|trans }}">
-                        <p class="m-0 mb-3 text-[0.8rem] font-bold uppercase tracking-[0.12em] text-muted">{{ 'cms.nav.content'|trans }}</p>
+                        <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.content'|trans }}</p>
                         {{ _self.navigation(currentRoute) }}
                     </nav>
-                    <div class="border-t-2 border-border pt-4">
-                        <twig:Shared:Nav :label="'cms.nav.account'|trans" :links="[{label: 'cms.nav.logout'|trans, url: path('cms_logout')}]" />
+                    <div class="border-t border-divider pt-4">
+                        {{ _self.account() }}
                     </div>
                 </div>
             </details>
 
             <nav class="hidden md:block" aria-label="{{ 'cms.nav.administration'|trans }}">
-                <p class="m-0 mb-3 text-[0.8rem] font-bold uppercase tracking-[0.12em] text-muted">{{ 'cms.nav.content'|trans }}</p>
+                <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.content'|trans }}</p>
                 {{ _self.navigation(currentRoute) }}
             </nav>
 
-            <div class="hidden md:mt-auto md:block">
-                <twig:Shared:Nav :label="'cms.nav.account'|trans" :links="[{label: 'cms.nav.logout'|trans, url: path('cms_logout')}]" />
+            <div class="hidden border-t border-divider pt-4 md:mt-auto md:block">
+                {{ _self.account() }}
             </div>
         </aside>
 
@@ -59,3 +84,6 @@
 {# The CMS chrome lives in the sidebar: no separate top bar or footer. #}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
+
+{# Only the CMS ships JavaScript: the Stimulus controllers of its editors. #}
+{% block importmap %}{{ importmap('cms') }}{% endblock %}

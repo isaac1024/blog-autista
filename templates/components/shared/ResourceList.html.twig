@@ -1,0 +1,6 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<ul class="m-0 list-none divide-y divide-divider overflow-hidden rounded-card border border-divider bg-surface p-0 shadow-panel forced-colors:border-[CanvasText]" aria-label="{{ label }}">
+{% for child in children %}
+    {{ renderer.render(child) }}
+{% endfor %}
+</ul>

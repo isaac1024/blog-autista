@@ -8,6 +8,7 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
+use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,11 +17,19 @@ use Symfony\Component\Routing\Requirement\Requirement;
 
 final class PageUpdateController extends AbstractController
 {
+    public function __construct(private readonly TiptapRichText $tiptapRichText) {}
+
     #[Route('/pages/{id}', name: 'cms_pages_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     public function __invoke(string $id, Request $request, PageRepository $pageRepository): Response
     {
         try {
-            new PageUpdater($id, $request->request->getString('title'), $request->request->getString('slug'))($pageRepository);
+            new PageUpdater(
+                $id,
+                $request->request->getString('title'),
+                $request->request->getString('slug'),
+                // The editor posts its own document, which only this adapter knows.
+                $this->tiptapRichText->toStored($request->request->getString('content')),
+            )($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError) {
