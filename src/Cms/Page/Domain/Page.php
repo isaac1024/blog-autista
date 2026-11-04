@@ -37,6 +37,8 @@ final class Page
         private PageSlug $slug,
         #[ORM\Column(type: 'rich_text')]
         private RichText $content,
+        #[ORM\Embedded(class: Seo::class, columnPrefix: false)]
+        private Seo $seo,
     ) {
         self::contentFeatures()->assertAllows($content);
 
@@ -61,6 +63,7 @@ final class Page
             new Title($title),
             new Slug(new Slugger($title)()),
             RichText::empty(),
+            Seo::initialFor(PageType::Standard),
         );
     }
 
@@ -80,6 +83,7 @@ final class Page
             new Title($title),
             $type->isHome() ? new HomeSlug() : new Slug(new Slugger($title)()),
             RichText::empty(),
+            Seo::initialFor($type),
         );
     }
 
@@ -98,25 +102,35 @@ final class Page
     }
 
     /**
-     * Replaces the title, the slug and the content; the slug is no longer
-     * derived from the title, so editors can keep a page's address when they
-     * retitle it. The home page takes an empty slug, and no other page does,
-     * so no page becomes the home page, nor stops being it, by being edited.
+     * Replaces everything an editor writes: the title, the slug, the content
+     * and how the page presents itself to search engines. The slug is no
+     * longer derived from the title, so editors can keep a page's address when
+     * they retitle it. The home page takes an empty slug, and no other page
+     * does, so no page becomes the home page, nor stops being it, by being
+     * edited.
      *
      * @param array<array-key, mixed> $content in the stored rich text format
      */
-    public function edit(string $title, string $slug, array $content): void
-    {
+    public function edit(
+        string $title,
+        string $slug,
+        array $content,
+        string $metaDescription,
+        string $robots,
+        string $canonicalUrl,
+    ): void {
         // Everything is validated before anything is assigned, so an invalid
         // field doesn't leave the page with only part of the edit.
         $newTitle = new Title($title);
         $newSlug = $this->slugFrom($slug);
         $newContent = RichText::fromArray($content);
         self::contentFeatures()->assertAllows($newContent);
+        $newSeo = Seo::fromPrimitives($metaDescription, $robots, $canonicalUrl);
 
         $this->title = $newTitle;
         $this->slug = $newSlug;
         $this->content = $newContent;
+        $this->seo = $newSeo;
     }
 
     public function save(PageRepository $pageRepository): void
@@ -159,6 +173,11 @@ final class Page
     public function content(): RichText
     {
         return $this->content;
+    }
+
+    public function seo(): Seo
+    {
+        return $this->seo;
     }
 
     private function slugFrom(string $slug): PageSlug

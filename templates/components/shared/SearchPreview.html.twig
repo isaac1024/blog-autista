@@ -1,0 +1,8 @@
+<figure class="m-0 grid gap-2" data-controller="search-preview" data-search-preview-sources-value="{{ sources|json_encode }}" data-search-preview-base-value="{{ baseUrl }}" data-search-preview-title-limit-value="{{ constant('TITLE_LIMIT', this) }}" data-search-preview-description-limit-value="{{ constant('DESCRIPTION_LIMIT', this) }}" data-search-preview-empty-value="{{ emptyDescription }}">
+    <figcaption class="text-[1rem] font-bold">{{ label }}</figcaption>
+    <div class="grid gap-1 rounded-control border border-divider bg-bg p-4">
+        <p class="m-0 truncate text-[0.9375rem] text-muted" data-search-preview-target="url">{{ url }}</p>
+        <p class="m-0 text-[1.25rem] font-bold leading-snug text-accent" data-search-preview-target="title">{{ this.shownTitle }}</p>
+        <p class="m-0 text-[1rem] text-text" data-search-preview-target="description">{{ this.shownDescription }}</p>
+    </div>
+</figure>

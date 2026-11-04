@@ -9,14 +9,18 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\Page as PageAggregate;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\Robots;
+use Cms\Page\Domain\Seo;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
 use Shared\Infrastructure\RichText\TiptapRichText;
+use Shared\Twig\Components\SearchPreview;
 use Shared\Ui\CmsLayout;
 use Shared\Ui\Page\Page;
 use Shared\Ui\Page\PageComponent;
 use Shared\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -33,6 +37,8 @@ final class PageEditController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly TiptapRichText $tiptapRichText,
         private readonly PageRole $pageRole,
+        #[Autowire('%env(WEB_HOST)%')]
+        private readonly string $webHost,
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -62,6 +68,8 @@ final class PageEditController extends AbstractController
                 'value' => $page->title,
                 'form' => self::FORM,
                 'badge' => ($this->pageRole)($page),
+                // The title of the page is also its title in search results, cut around there.
+                'recommendedMax' => SearchPreview::TITLE_LIMIT,
                 'attributes' => [
                     'required' => true,
                     'minlength' => Title::MIN_LENGTH,
@@ -83,12 +91,96 @@ final class PageEditController extends AbstractController
                     'value' => json_encode($this->tiptapRichText->toTiptap($page->content), \JSON_THROW_ON_ERROR),
                     'features' => PageAggregate::contentFeatures()->toArray(),
                 ]),
+                $this->seoPanel($page),
                 new PageComponent('Shared:ActionBar', [], [
                     new PageComponent('Shared:FormButton', [
                         'label' => $this->translator->trans('cms.pages.edit.submit'),
                     ]),
                 ]),
             ]);
+    }
+
+    /**
+     * How the page shows in search results, previewed above the settings that
+     * shape it, so every change is seen where it lands.
+     */
+    private function seoPanel(PageResponse $page): PageComponent
+    {
+        $baseUrl = 'https://'.$this->webHost;
+
+        return new PageComponent('Shared:Panel', [
+            'title' => $this->translator->trans('cms.pages.edit.seo.title'),
+            'description' => $this->translator->trans('cms.pages.edit.seo.description'),
+        ], [
+            new PageComponent('Shared:SearchPreview', [
+                'label' => $this->translator->trans('cms.pages.edit.seo.preview'),
+                'title' => $page->title,
+                'url' => $page->home ? $baseUrl.'/' : \sprintf('%s/%s.html', $baseUrl, $page->slug),
+                'baseUrl' => $baseUrl,
+                'description' => $page->metaDescription,
+                'emptyDescription' => $this->translator->trans('cms.pages.edit.seo.preview_empty'),
+                'sources' => $page->home
+                    ? ['title' => 'page-title', 'description' => 'page-meta-description']
+                    : ['title' => 'page-title', 'description' => 'page-meta-description', 'slug' => 'page-slug'],
+            ]),
+            new PageComponent('Shared:FormField', [], [
+                new PageComponent('Shared:FormLabel', [
+                    'for' => 'page-meta-description',
+                    'text' => $this->translator->trans('cms.pages.edit.seo.meta_description_label'),
+                ]),
+                new PageComponent('Shared:FormHint', [
+                    'id' => 'page-meta-description-hint',
+                    'text' => $this->translator->trans('cms.pages.edit.seo.meta_description_hint'),
+                ]),
+                new PageComponent('Shared:FormTextarea', [
+                    'name' => 'meta_description',
+                    'id' => 'page-meta-description',
+                    'value' => $page->metaDescription,
+                    'recommendedMin' => Seo::DESCRIPTION_RECOMMENDED_MIN_LENGTH,
+                    'recommendedMax' => Seo::DESCRIPTION_RECOMMENDED_MAX_LENGTH,
+                    'attributes' => [
+                        'maxlength' => Seo::DESCRIPTION_MAX_LENGTH,
+                        'aria-describedby' => 'page-meta-description-hint page-meta-description-count',
+                    ],
+                ]),
+            ]),
+            new PageComponent('Shared:FormRadioGroup', [
+                'name' => 'robots',
+                'id' => 'page-robots',
+                'legend' => $this->translator->trans('cms.pages.edit.seo.robots_legend'),
+                'value' => $page->robots,
+                'options' => array_map(fn (Robots $robots): array => [
+                    'value' => $robots->value,
+                    'label' => $this->translator->trans('cms.pages.edit.seo.robots.'.$robots->value.'.label'),
+                    'hint' => $this->translator->trans('cms.pages.edit.seo.robots.'.$robots->value.'.hint'),
+                ], Robots::cases()),
+            ]),
+            new PageComponent('Shared:Disclosure', [
+                'summary' => $this->translator->trans('cms.pages.edit.seo.advanced'),
+            ], [
+                new PageComponent('Shared:FormField', [], [
+                    new PageComponent('Shared:FormLabel', [
+                        'for' => 'page-canonical-url',
+                        'text' => $this->translator->trans('cms.pages.edit.seo.canonical_label'),
+                    ]),
+                    new PageComponent('Shared:FormHint', [
+                        'id' => 'page-canonical-url-hint',
+                        'text' => $this->translator->trans('cms.pages.edit.seo.canonical_hint'),
+                    ]),
+                    new PageComponent('Shared:FormInput', [
+                        'name' => 'canonical_url',
+                        'id' => 'page-canonical-url',
+                        'type' => 'url',
+                        'value' => $page->canonicalUrl,
+                        'attributes' => [
+                            'maxlength' => Seo::CANONICAL_URL_MAX_LENGTH,
+                            'inputmode' => 'url',
+                            'aria-describedby' => 'page-canonical-url-hint',
+                        ],
+                    ]),
+                ]),
+            ]),
+        ]);
     }
 
     private function homeAddress(): PageComponent

@@ -1,0 +1,11 @@
+{#
+    Character count against a recommended length, run by the character-count
+    controller: the attributes go on an element that holds both the field and
+    the output. Without a minimum, only running long is pointed out.
+#}
+{% macro attributes(min, max) %} data-controller="character-count" data-character-count-min-value="{{ min ?? 0 }}" data-character-count-max-value="{{ max }}" data-character-count-short-value="{{ 'ui.counter.short'|trans }}" data-character-count-fits-value="{{ 'ui.counter.fits'|trans }}" data-character-count-long-value="{{ 'ui.counter.long'|trans }}"{% endmacro %}
+
+{% macro output(id, count, min, max) %}
+{# Not a live region: announcing every keystroke would drown the typing. #}
+<p class="m-0 text-[1rem] text-muted" id="{{ id }}" data-character-count-target="output">{{ (min is null ? 'ui.counter.static_max' : 'ui.counter.static')|trans({'%count%': count, '%min%': min, '%max%': max}) }}</p>
+{% endmacro %}

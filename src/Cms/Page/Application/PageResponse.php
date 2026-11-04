@@ -12,11 +12,14 @@ use Cms\Page\Domain\Page;
 final readonly class PageResponse
 {
     /**
-     * @param string                                                  $slug    empty for the home page
-     * @param string                                                  $type    one of the PageType values
-     * @param bool                                                    $home    whether it is the home page, which has no slug
-     * @param bool                                                    $unique  whether it is one of the unique pages, which can't be deleted
-     * @param array{version: int, blocks: list<array<string, mixed>>} $content in the stored rich text format
+     * @param string                                                  $slug            empty for the home page
+     * @param string                                                  $type            one of the PageType values
+     * @param bool                                                    $home            whether it is the home page, which has no slug
+     * @param bool                                                    $unique          whether it is one of the unique pages, which can't be deleted
+     * @param array{version: int, blocks: list<array<string, mixed>>} $content         in the stored rich text format
+     * @param string                                                  $metaDescription empty when there is none
+     * @param string                                                  $robots          one of the Robots values
+     * @param string                                                  $canonicalUrl    empty when the page's own address is canonical
      */
     public function __construct(
         public string $id,
@@ -26,6 +29,9 @@ final readonly class PageResponse
         public bool $home,
         public bool $unique,
         public array $content,
+        public string $metaDescription,
+        public string $robots,
+        public string $canonicalUrl,
     ) {}
 
     public static function fromPage(Page $page): self
@@ -38,6 +44,9 @@ final readonly class PageResponse
             $page->type()->isHome(),
             $page->type()->isUnique(),
             $page->content()->toArray(),
+            $page->seo()->description() ?? '',
+            $page->seo()->robots()->value,
+            $page->seo()->canonicalUrl() ?? '',
         );
     }
 }

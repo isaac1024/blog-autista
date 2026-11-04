@@ -37,6 +37,27 @@ cms:
             content_title: 'Contenido'
             content_placeholder: 'Escribe aquí el contenido de la página…'
             submit: 'Guardar cambios'
+            seo:
+                title: 'Buscadores'
+                description: 'Cómo aparece la página en Google y en otros buscadores. El título del resultado es el de la página.'
+                preview: 'Vista previa del resultado'
+                preview_empty: 'Sin meta descripción: el buscador mostrará el fragmento del texto que elija.'
+                meta_description_label: 'Meta descripción'
+                meta_description_hint: 'El resumen que aparece bajo el título en los resultados: una o dos frases que cuenten qué hay en la página.'
+                robots_legend: 'Visibilidad en los buscadores'
+                robots:
+                    'index,follow':
+                        label: 'Mostrar en los buscadores'
+                        hint: 'La página puede aparecer en los resultados y se siguen sus enlaces. Es lo habitual.'
+                    'noindex,follow':
+                        label: 'No mostrar, pero seguir sus enlaces'
+                        hint: 'No aparece en los resultados, pero los buscadores descubren las páginas a las que enlaza. Es lo indicado para el buscador interno.'
+                    'noindex,nofollow':
+                        label: 'Ocultar del todo'
+                        hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
+                advanced: 'Avanzado'
+                canonical_label: 'URL canónica'
+                canonical_hint: 'Solo si este contenido se publicó antes en otra dirección: escribe aquí la original. Vacía, la canónica es la dirección de esta página.'
         delete:
             trigger: 'Borrar página'
             title: '¿Borrar esta página?'
@@ -69,6 +90,12 @@ cms:
 ui:
     close: 'Cerrar'
     primary_navigation: 'Navegación principal'
+    counter:
+        static: '%count% caracteres. Se recomiendan entre %min% y %max%.'
+        static_max: '%count% caracteres. Se recomiendan como mucho %max%.'
+        short: '%count% caracteres: por debajo de los %min% recomendados.'
+        fits: '%count% caracteres: dentro de lo recomendado.'
+        long: '%count% caracteres: por encima de %max%, los buscadores pueden cortar el texto.'
     editor:
         move_up: 'Subir bloque'
         move_down: 'Bajar bloque'

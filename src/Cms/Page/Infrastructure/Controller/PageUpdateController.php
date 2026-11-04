@@ -29,6 +29,9 @@ final class PageUpdateController extends AbstractController
                 $request->request->getString('slug'),
                 // The editor posts its own document, which only this adapter knows.
                 $this->tiptapRichText->toStored($request->request->getString('content')),
+                $request->request->getString('meta_description'),
+                $request->request->getString('robots'),
+                $request->request->getString('canonical_url'),
             )($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);

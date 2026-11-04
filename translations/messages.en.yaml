@@ -37,6 +37,27 @@ cms:
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'
             submit: 'Save changes'
+            seo:
+                title: 'Search engines'
+                description: 'How the page shows in Google and other search engines. The title of the result is the title of the page.'
+                preview: 'Result preview'
+                preview_empty: 'No meta description: the search engine will show the excerpt of the text it picks.'
+                meta_description_label: 'Meta description'
+                meta_description_hint: 'The summary under the title in the results: one or two sentences that tell what the page holds.'
+                robots_legend: 'Visibility in search engines'
+                robots:
+                    'index,follow':
+                        label: 'Show in search engines'
+                        hint: 'The page may appear in the results and its links are followed. This is the usual choice.'
+                    'noindex,follow':
+                        label: 'Do not show, but follow its links'
+                        hint: 'It does not appear in the results, but search engines discover the pages it links to. Right for the internal search page.'
+                    'noindex,nofollow':
+                        label: 'Hide entirely'
+                        hint: 'It neither appears in the results nor are its links followed.'
+                advanced: 'Advanced'
+                canonical_label: 'Canonical URL'
+                canonical_hint: 'Only if this content was first published at another address: write the original here. Left empty, the canonical is the address of this page.'
         delete:
             trigger: 'Delete page'
             title: 'Delete this page?'
@@ -69,6 +90,12 @@ cms:
 ui:
     close: 'Close'
     primary_navigation: 'Primary navigation'
+    counter:
+        static: '%count% characters. Between %min% and %max% are recommended.'
+        static_max: '%count% characters. At most %max% are recommended.'
+        short: '%count% characters: under the recommended %min%.'
+        fits: '%count% characters: within the recommendation.'
+        long: '%count% characters: over %max%, search engines may cut the text.'
     editor:
         move_up: 'Move block up'
         move_down: 'Move block down'

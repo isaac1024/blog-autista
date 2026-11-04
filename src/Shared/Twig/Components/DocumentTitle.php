@@ -29,6 +29,12 @@ final class DocumentTitle
     public ?string $badge = null;
 
     /**
+     * Length past which the title may be cut, e.g. in search results; null
+     * leaves it uncounted.
+     */
+    public ?int $recommendedMax = null;
+
+    /**
      * @var list<\Shared\Ui\Page\PageComponent>
      */
     public array $children = [];
@@ -44,6 +50,7 @@ final class DocumentTitle
         string $form,
         ?string $badge = null,
         array $children = [],
+        ?int $recommendedMax = null,
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -52,5 +59,11 @@ final class DocumentTitle
         $this->form = $form;
         $this->badge = $badge;
         $this->children = $children;
+        $this->recommendedMax = $recommendedMax;
+    }
+
+    public function length(): int
+    {
+        return mb_strlen($this->value);
     }
 }

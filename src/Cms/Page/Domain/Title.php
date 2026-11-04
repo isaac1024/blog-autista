@@ -7,7 +7,8 @@ namespace Cms\Page\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Human-readable title of a page, without surrounding whitespace.
+ * Human-readable title of a page: a single line, with its whitespace
+ * collapsed to single spaces and none around it.
  */
 #[ORM\Embeddable]
 final readonly class Title
@@ -20,7 +21,7 @@ final readonly class Title
 
     public function __construct(string $value)
     {
-        $this->value = trim($value);
+        $this->value = trim((string) preg_replace('/\s+/u', ' ', $value));
 
         if (mb_strlen($this->value) < self::MIN_LENGTH) {
             throw InvalidTitle::tooShort(self::MIN_LENGTH);

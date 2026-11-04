@@ -1,0 +1,17 @@
+<fieldset class="m-0 grid gap-2 border-0 p-0">
+    <legend class="mb-2 p-0 text-[1rem] font-bold">{{ legend }}</legend>
+{% for option in options %}
+{% set optionId = id ~ '-' ~ loop.index %}
+    {#
+        The label only holds the name of the option, so the hint is read once,
+        as its description; it still covers the whole card for the pointer.
+    #}
+    <div class="relative flex items-start gap-3 rounded-control border-2 border-border bg-surface p-3 hover:border-accent has-[:checked]:border-accent has-[:checked]:shadow-[inset_4px_0_0_var(--color-accent)] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-focus forced-colors:border-[ButtonText]">
+        <input class="mt-1 h-5 w-5 flex-none accent-[var(--color-accent)] focus-visible:outline-none" type="radio" id="{{ optionId }}" name="{{ name }}" value="{{ option.value }}" aria-describedby="{{ optionId }}-hint"{% if option.value == value %} checked{% endif %}>
+        <span class="grid gap-0.5">
+            <label class="cursor-pointer font-bold after:absolute after:inset-0 after:content-['']" for="{{ optionId }}">{{ option.label }}</label>
+            <span class="text-[1rem] text-muted" id="{{ optionId }}-hint">{{ option.hint }}</span>
+        </span>
+    </div>
+{% endfor %}
+</fieldset>

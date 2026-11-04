@@ -1,13 +1,22 @@
 {% import 'shared/render_component.html.twig' as renderer %}
+{% import 'shared/character_count.html.twig' as counter %}
 <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-    <div class="flex min-w-0 flex-1 flex-col gap-2">
+    {# The whole row on narrow screens, so the title never shares it with the actions. #}
+    <div class="flex min-w-0 basis-full flex-col gap-2 sm:basis-0 sm:flex-1"{% if recommendedMax %}{{ counter.attributes(null, recommendedMax) }}{% endif %}>
 {% if badge %}
         <div><twig:Shared:Badge :label="badge" variant="accent" /></div>
 {% endif %}
         <label class="text-[1rem] font-bold text-muted" for="{{ id }}">{{ label }}</label>
         <h1 class="m-0">
-            <input{{ attributes.defaults({class: 'w-full min-w-0 rounded-control border-2 border-border bg-surface px-3 py-2 text-[clamp(1.75rem,4vw,2.25rem)] font-bold leading-tight text-text focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} type="text" id="{{ id }}" name="{{ name }}" value="{{ value }}" form="{{ form }}">
+            {#
+                Grows to show the whole title, however long, yet holds a single
+                line: the single-line controller turns line breaks into spaces.
+            #}
+            <textarea{{ attributes.defaults({class: 'block w-full min-w-0 resize-none overflow-hidden rounded-control border-2 border-border bg-surface px-3 py-2 text-[clamp(1.75rem,4vw,2.25rem)] font-bold leading-tight text-text [field-sizing:content] focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} id="{{ id }}" name="{{ name }}" form="{{ form }}" rows="1" data-controller="single-line" data-action="keydown->single-line#preventBreak input->single-line#flatten{% if recommendedMax %} input->character-count#update{% endif %}"{% if recommendedMax %} aria-describedby="{{ id }}-count" data-character-count-target="field"{% endif %}>{{ value }}</textarea>
         </h1>
+{% if recommendedMax %}
+        {{ counter.output(id ~ '-count', this.length, null, recommendedMax) }}
+{% endif %}
     </div>
 {% if children is not empty %}
     <div class="flex flex-none flex-wrap items-center gap-3">

@@ -1,0 +1,9 @@
+{% import 'shared/character_count.html.twig' as counter %}
+{% if this.counted %}
+<div class="grid gap-2"{{ counter.attributes(recommendedMin, recommendedMax) }}>
+{% endif %}
+    <textarea{{ attributes.defaults({class: 'w-full rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} id="{{ id }}" name="{{ name }}" rows="{{ rows }}"{% if this.counted %} data-character-count-target="field" data-action="input->character-count#update"{% endif %}>{{ value }}</textarea>
+{% if this.counted %}
+    {{ counter.output(id ~ '-count', this.length, recommendedMin, recommendedMax) }}
+</div>
+{% endif %}
