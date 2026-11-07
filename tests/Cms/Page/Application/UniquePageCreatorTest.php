@@ -23,11 +23,13 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class UniquePageCreatorTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
 
     #[\Override]
     protected function setUp(): void
@@ -149,5 +151,37 @@ final class UniquePageCreatorTest extends TestCase
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
         (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, self::createStub(EventBus::class));
+    }
+
+    /**
+     * @param array<string, int|string> $parameters
+     */
+    #[DataProvider('refusals')]
+    public function testItTellsWhyTheTypeIsRefused(string $type, string $key, array $parameters): void
+    {
+        self::assertTells($key, $parameters, static fn () => (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, 'Sobre mí'))(
+            self::createStub(PageRepository::class),
+            self::createStub(EventBus::class),
+        ));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, array<string, int|string>}>
+     */
+    public static function refusals(): iterable
+    {
+        yield 'generic pages are created from the CMS' => ['standard', 'errors.page.type.not_unique', ['%type%' => 'standard']];
+        yield 'unknown type' => ['about', 'errors.page.type.unknown', ['%type%' => 'about']];
+    }
+
+    public function testItTellsWhichUniquePageTheSiteAlreadyHas(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('findByType')->willReturn(PageMother::home());
+
+        self::assertTells('errors.page.unique_already_exists', ['%type%' => 'home'], static fn () => (new UniquePageCreator(PageIdMother::random()->value(), 'home', 'Otra página'))(
+            $repository,
+            self::createStub(EventBus::class),
+        ));
     }
 }

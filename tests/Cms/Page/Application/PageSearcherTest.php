@@ -17,10 +17,13 @@ use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Shared\Tests\Domain\RichText\RichTextMother;
 
 final class PageSearcherTest extends TestCase
 {
+    use DomainErrorAssertions;
+
     #[DataProvider('searches')]
     public function testItAsksTheRepositoryForTheRequestedSliceOfPages(PageSearcher $searcher, Criteria $expected): void
     {
@@ -116,5 +119,12 @@ final class PageSearcherTest extends TestCase
     {
         yield 'zero' => [0];
         yield 'negative' => [-1];
+    }
+
+    public function testItTellsWhichPageNumberIsRefused(): void
+    {
+        self::assertTells('errors.criteria.non_positive_page', ['%page%' => 0], static fn () => (new PageSearcher('', 0))(
+            self::createStub(PageRepository::class),
+        ));
     }
 }

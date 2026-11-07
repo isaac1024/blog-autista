@@ -21,11 +21,13 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageCreatorTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
 
     #[\Override]
     protected function setUp(): void
@@ -117,5 +119,41 @@ final class PageCreatorTest extends TestCase
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
         (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, self::createStub(EventBus::class));
+    }
+
+    /**
+     * @param array<string, int|string> $parameters
+     */
+    #[DataProvider('refusals')]
+    public function testItTellsWhyTheInputIsRefused(string $title, string $key, array $parameters): void
+    {
+        self::assertTells($key, $parameters, static fn () => (new PageCreator(PageIdMother::DEFAULT_VALUE, $title))(
+            self::createStub(PageRepository::class),
+            self::createStub(EventBus::class),
+        ));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, array<string, int|string>}>
+     */
+    public static function refusals(): iterable
+    {
+        yield 'title too short' => ['Sí', 'errors.page.title.too_short', ['%min%' => 3]];
+        yield 'title too long' => [str_repeat('a', 101), 'errors.page.title.too_long', ['%max%' => 100]];
+        yield 'title without sluggable characters' => ['¡!?', 'errors.page.slug.malformed', ['%slug%' => '']];
+        yield 'slug too short' => ['C++', 'errors.page.slug.too_short', ['%min%' => 3]];
+        yield 'slug too long' => [str_repeat('a', 81), 'errors.page.slug.too_long', ['%max%' => 80]];
+    }
+
+    public function testItTellsWhichSlugAnotherPageHas(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('findBySlug')
+            ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+
+        self::assertTells('errors.page.slug.taken', ['%slug%' => 'sobre-mi'], static fn () => (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))(
+            $repository,
+            self::createStub(EventBus::class),
+        ));
     }
 }

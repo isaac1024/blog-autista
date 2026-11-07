@@ -27,12 +27,14 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageUpdaterTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
 
     private const string BEFORE = '2026-10-01 09:00:00';
 
@@ -471,6 +473,46 @@ final class PageUpdaterTest extends TestCase
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
         self::updater('page-id', 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class));
+    }
+
+    /**
+     * @param array<array-key, mixed>   $content
+     * @param array<string, int|string> $parameters
+     */
+    #[DataProvider('refusals')]
+    public function testItTellsWhyTheEditIsRefused(array $content, string $metaDescription, string $robots, string $key, array $parameters): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+
+        self::assertTells($key, $parameters, static fn () => self::updater($id, 'Quién soy', 'quien-soy', $content, $metaDescription, $robots)(
+            $repository,
+            self::createStub(EventBus::class),
+        ));
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string, string, string, array<string, int|string>}>
+     */
+    public static function refusals(): iterable
+    {
+        yield 'heading skipping a level' => [
+            Text::stored(Text::heading(3, 'Detalle')),
+            '',
+            'index,follow',
+            'errors.rich_text.skipped_heading_level',
+            ['%level%' => 3, '%previous%' => 1],
+        ];
+        yield 'table with uneven rows' => [
+            Text::stored(Text::table(['Nombre', 'Finalidad'], [['PHPSESSID']])),
+            '',
+            'index,follow',
+            'errors.rich_text.uneven_table',
+            ['%columns%' => 2],
+        ];
+        yield 'meta description too long' => [Text::EMPTY, str_repeat('a', 201), 'index,follow', 'errors.page.seo.description_too_long', ['%max%' => 200]];
+        yield 'unknown robots directive' => [Text::EMPTY, '', 'noindex', 'errors.page.seo.unknown_robots', ['%robots%' => 'noindex']];
     }
 
     /**
