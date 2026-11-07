@@ -15,6 +15,7 @@ use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -62,6 +63,38 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
         $entityManager->clear();
 
         self::assertEquals($image, $entityManager->find(Image::class, $id));
+    }
+
+    public function testItSavesTheCaptionSoItCanBeReadBack(): void
+    {
+        $id = ImageIdMother::random();
+        $image = ImageMother::create(id: $id->value(), caption: Text::stored(Text::paragraph(str_repeat('é', 200))), updatedAt: '2026-12-01 08:00:00');
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($image);
+        $entityManager->clear();
+
+        self::assertEquals($image, $entityManager->find(Image::class, $id));
+    }
+
+    public function testItFindsTheImageWithTheGivenId(): void
+    {
+        $id = ImageIdMother::random();
+        $image = ImageMother::create(id: $id->value(), alt: 'Círculo naranja sobre fondo azul');
+        $repository = $this->repository();
+        $repository->save(ImageMother::create(id: ImageIdMother::random()->value(), alt: 'Cuadrado blanco sobre fondo verde'));
+        $repository->save($image);
+        $this->entityManager()->clear();
+
+        self::assertEquals($image, $repository->find($id));
+    }
+
+    public function testItFindsNoImageWhenTheIdDoesNotExist(): void
+    {
+        $repository = $this->repository();
+        $repository->save(ImageMother::create(id: ImageIdMother::random()->value()));
+
+        self::assertNull($repository->find(ImageIdMother::random()));
     }
 
     /**
