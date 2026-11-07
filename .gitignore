@@ -1,4 +1,7 @@
 
+# Files of the images uploaded to the CMS: they live on the server only.
+/media/
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php

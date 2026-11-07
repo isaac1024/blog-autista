@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Image\Infrastructure\Controller;
 
+use Cms\Image\Domain\Alt;
+use Cms\Image\Domain\Image;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -22,13 +24,8 @@ final class ImageListController extends AbstractController
     private const string UPLOAD_MODAL = 'upload-image';
 
     /**
-     * What the browser sends of every image: a 16:9 crop, 1200 pixels wide,
-     * as WebP. The quality stays at 0.85, where the loss doesn't show.
+     * Quality of the WebP the browser encodes: 0.85, where the loss doesn't show.
      */
-    private const int WIDTH = 1200;
-
-    private const int HEIGHT = 675;
-
     private const float QUALITY = 0.85;
 
     public function __construct(
@@ -87,8 +84,8 @@ final class ImageListController extends AbstractController
                     'name' => 'image',
                     'id' => 'image-file',
                     'label' => $this->translator->trans('cms.images.upload.image_label'),
-                    'width' => self::WIDTH,
-                    'height' => self::HEIGHT,
+                    'width' => Image::WIDTH,
+                    'height' => Image::HEIGHT,
                     'quality' => self::QUALITY,
                 ]),
                 new PageComponent('Shared:FormField', [], [
@@ -104,9 +101,11 @@ final class ImageListController extends AbstractController
                         'name' => 'alt',
                         'id' => 'image-alt',
                         'rows' => 2,
+                        'recommendedMax' => Alt::MAX_LENGTH,
                         'attributes' => [
                             'required' => true,
-                            'aria-describedby' => 'image-alt-hint',
+                            'maxlength' => Alt::MAX_LENGTH,
+                            'aria-describedby' => 'image-alt-hint image-alt-count',
                         ],
                     ]),
                 ]),

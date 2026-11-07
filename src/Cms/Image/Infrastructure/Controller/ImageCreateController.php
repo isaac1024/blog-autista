@@ -4,19 +4,42 @@ declare(strict_types=1);
 
 namespace Cms\Image\Infrastructure\Controller;
 
+use Cms\Image\Application\ImageUploader;
+use Cms\Image\Domain\ImageId;
+use Cms\Image\Domain\ImageRepository;
+use Cms\Image\Domain\ImageStorage;
+use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
- * Where the upload form sends the image and its alternative text. A shell for
- * now: it keeps nothing and goes back to the library.
+ * Uploads an image, cropped and encoded by the browser, with its alternative
+ * text. When a rule refuses them, the library tells why.
  */
 final class ImageCreateController extends AbstractController
 {
     #[Route('/images', name: 'cms_images_create', methods: ['POST'])]
-    public function __invoke(): Response
+    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage): Response
     {
+        $image = $request->files->get('image');
+
+        try {
+            new ImageUploader(
+                ImageId::random()->value(),
+                $request->request->getString('alt'),
+                // The domain refuses an image without its file.
+                $image instanceof UploadedFile && $image->isValid() ? $image->getPathname() : '',
+            )($imageRepository, $imageStorage);
+        } catch (DomainError $error) {
+            // Told on the page it goes back to.
+            $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
+        }
+
         return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
     }
 }
