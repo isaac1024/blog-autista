@@ -75,9 +75,8 @@
     --color-selection-text: #fff;
 
     /*
-     * Muted spectrum inspired by the neurodiversity infinity symbol. Purely
-     * decorative: low saturation to avoid sensory overload, and never the only
-     * carrier of meaning.
+     * Muted spectrum of colours. Purely decorative: low saturation to avoid
+     * sensory overload, and never the only carrier of meaning.
      */
     --color-spectrum-1: #614092;
     --color-spectrum-2: #3e6ea6;

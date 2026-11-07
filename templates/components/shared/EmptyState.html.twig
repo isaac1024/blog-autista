@@ -1,18 +1,5 @@
 {% import 'shared/render_component.html.twig' as renderer %}
 <div class="flex flex-col items-center gap-4 rounded-card border border-divider bg-surface px-5 py-10 text-center shadow-panel sm:px-10 sm:py-14 forced-colors:border-[CanvasText]">
-    <svg class="h-auto w-20" viewBox="0 0 60 40" fill="none" aria-hidden="true">
-        <defs>
-            <linearGradient id="empty-state-spectrum" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" style="stop-color: var(--color-spectrum-1)" />
-                <stop offset="0.2" style="stop-color: var(--color-spectrum-2)" />
-                <stop offset="0.4" style="stop-color: var(--color-spectrum-3)" />
-                <stop offset="0.6" style="stop-color: var(--color-spectrum-4)" />
-                <stop offset="0.8" style="stop-color: var(--color-spectrum-5)" />
-                <stop offset="1" style="stop-color: var(--color-spectrum-6)" />
-            </linearGradient>
-        </defs>
-        <path d="M30 20C25 10 10 9 10 20s15 10 20 0 20-11 20 0-15 10-20 0Z" stroke="url(#empty-state-spectrum)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-    </svg>
     <h2 class="m-0 text-xl font-bold leading-tight text-balance">{{ title }}</h2>
     <p class="m-0 max-w-[45ch] text-[1rem] text-muted">{{ message }}</p>
 {% if children is not empty %}
