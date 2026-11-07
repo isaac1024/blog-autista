@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Image\Infrastructure\Storage;
 
+use Cms\Image\Domain\ImageFile;
 use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageStorage;
 use Cms\Tests\Image\Domain\ImageFileMother;
@@ -35,6 +36,21 @@ final class FilesystemImageStorageTest extends KernelTestCase
             ImageFileMother::path(),
             self::directory().'/2026/11/'.ImageIdMother::DEFAULT_VALUE.'.webp',
         );
+    }
+
+    /**
+     * An upload only its owner can read is kept readable by everyone, so the
+     * web server can serve it.
+     */
+    public function testItKeepsTheFileReadableByTheWebServer(): void
+    {
+        $upload = self::directory().'/upload.webp';
+        new Filesystem()->copy(ImageFileMother::path(), $upload);
+        chmod($upload, 0o600);
+
+        self::storage()->save(ImageMother::path(), new ImageFile($upload));
+
+        self::assertSame(0o644, fileperms(self::directory().'/2026/11/'.ImageIdMother::DEFAULT_VALUE.'.webp') & 0o777);
     }
 
     public function testItLeavesTheFileUploadedWhereItWas(): void
