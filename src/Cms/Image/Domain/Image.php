@@ -7,6 +7,7 @@ namespace Cms\Image\Domain;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
+use Shared\Domain\RichText\RichText;
 
 /**
  * An image of the library: a 16:9 crop, 1200 by 675 pixels, as WebP, cropped
@@ -36,6 +37,11 @@ final class Image extends AggregateRoot
         private Alt $alt,
         #[ORM\Embedded(class: ImagePath::class, columnPrefix: false)]
         private readonly ImagePath $path,
+        /*
+         * Its caption, kept as checked by Caption; null while it has none.
+         */
+        #[ORM\Column(name: 'caption', type: 'rich_text', nullable: true)]
+        private ?RichText $caption,
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
     ) {}
@@ -49,7 +55,31 @@ final class Image extends AggregateRoot
         $timeline = Timeline::start(Clock::now());
         $imageId = new ImageId($id);
 
-        return new self($imageId, new Alt($alt), ImagePath::for($imageId, $timeline->createdAt()), $timeline);
+        return new self($imageId, new Alt($alt), ImagePath::for($imageId, $timeline->createdAt()), null, $timeline);
+    }
+
+    /**
+     * Replaces what an editor writes: the alternative text and the caption,
+     * which may be left empty until the image is published. Its file never
+     * changes: a new crop is a new image.
+     *
+     * @param array<array-key, mixed> $caption in the stored rich text format
+     */
+    public function edit(string $alt, array $caption): void
+    {
+        // Everything is validated before anything is assigned, so an invalid
+        // field doesn't leave the image with only part of the edit.
+        $newAlt = new Alt($alt);
+        $newCaption = Caption::fromStored($caption)?->text();
+
+        // The update date only moves when what is written changes.
+        if ($newAlt->value() === $this->alt->value() && $newCaption?->toArray() === $this->caption?->toArray()) {
+            return;
+        }
+
+        $this->alt = $newAlt;
+        $this->caption = $newCaption;
+        $this->timeline = $this->timeline->updated(Clock::now());
     }
 
     /**
@@ -76,9 +106,19 @@ final class Image extends AggregateRoot
         $imageRepository->save($this);
     }
 
+    public function id(): ImageId
+    {
+        return $this->id;
+    }
+
     public function alt(): Alt
     {
         return $this->alt;
+    }
+
+    public function caption(): ?RichText
+    {
+        return $this->caption;
     }
 
     public function path(): ImagePath

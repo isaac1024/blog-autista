@@ -364,6 +364,12 @@
             max-width: 70ch;
         }
 
+        /* A single paragraph, such as a caption, needs a few lines, not a page. */
+        &.rich-text-single {
+            min-height: 0;
+            padding-bottom: clamp(1rem, 3vw, 1.5rem);
+        }
+
         /* Hints of the empty document and of an empty line, which Tiptap's Placeholder sets. */
         & p.is-empty::before {
             content: attr(data-placeholder);

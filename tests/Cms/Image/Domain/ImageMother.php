@@ -33,7 +33,7 @@ final class ImageMother
         $imageId = ImageIdMother::create($id);
         $date = ClockMother::now($createdAt);
 
-        return new Image($imageId, new Alt($alt), self::path($id, $createdAt), new Timeline($date, $date));
+        return new Image($imageId, new Alt($alt), self::path($id, $createdAt), null, new Timeline($date, $date));
     }
 
     /**

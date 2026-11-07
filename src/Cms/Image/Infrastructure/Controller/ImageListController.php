@@ -122,7 +122,7 @@ final class ImageListController extends AbstractController
 
     /**
      * An image by its thumbnail, its alternative text and when it was
-     * uploaded. It opens nothing until images can be edited.
+     * uploaded; it opens its editor.
      */
     private function row(ImageResponse $image): PageComponent
     {
@@ -130,6 +130,7 @@ final class ImageListController extends AbstractController
 
         return new PageComponent('Shared:ResourceRow', [
             'title' => $image->alt,
+            'url' => $this->generateUrl('cms_images_edit', ['id' => $image->id]),
             'meta' => $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
             'thumbnail' => self::MEDIA_URL.$image->path,
         ]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Image\Infrastructure\Persistence;
 
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -33,6 +34,12 @@ final readonly class DoctrineImageRepository implements ImageRepository
     {
         $this->entityManager->persist($image);
         $this->entityManager->flush();
+    }
+
+    #[\Override]
+    public function find(ImageId $id): ?Image
+    {
+        return $this->entityManager->find(Image::class, $id);
     }
 
     #[\Override]

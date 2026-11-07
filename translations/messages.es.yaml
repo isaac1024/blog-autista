@@ -25,6 +25,13 @@ cms:
         list:
             label: 'Imágenes del blog'
             uploaded_at: 'Subida el %date%'
+        edit:
+            title: 'Editar imagen'
+            dates: 'Subida el %uploaded% · Modificada el %updated%'
+            caption_label: 'Pie de foto'
+            caption_hint: 'Contexto que leen todos bajo la imagen: qué es, de dónde viene o a quién se debe. No repitas el texto alternativo. Un solo párrafo, sin formato. Puedes dejarlo vacío hasta publicarla.'
+            caption_placeholder: 'Escribe aquí el pie de foto…'
+            submit: 'Guardar'
         upload:
             title: 'Subir una imagen'
             description: 'Elige una imagen y el trozo de ella que quieres mostrar.'
@@ -160,6 +167,8 @@ ui:
         moved_up: 'Bloque movido hacia arriba.'
         moved_down: 'Bloque movido hacia abajo.'
         slash_hint: 'Escribe «/» para elegir un tipo de bloque'
+        count: '%count% de %max% caracteres.'
+        count_over: '%count% de %max% caracteres: sobran %over%.'
         slash_menu: 'Tipos de bloque'
         outline: 'Esquema'
         hint: 'Escribe «/» en una línea vacía para elegir un bloque.'
@@ -252,3 +261,6 @@ errors:
             missing: 'No ha llegado ninguna imagen. Vuelve a elegirla.'
             not_webp: 'La imagen no ha llegado en formato WebP. Vuelve a elegirla.'
             wrong_size: 'La imagen debe medir %width% × %height% píxeles. Vuelve a elegirla.'
+        caption:
+            not_a_single_paragraph: 'El pie de foto debe ser un solo párrafo.'
+            too_long: 'El pie de foto no puede pasar de %max% caracteres.'

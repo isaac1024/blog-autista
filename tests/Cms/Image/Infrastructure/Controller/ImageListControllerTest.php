@@ -168,8 +168,8 @@ final class ImageListControllerTest extends CmsWebTestCase
      */
     private function rowAlts(Crawler $crawler): array
     {
-        // Every row of the list is named after the alternative text of its image.
-        return $crawler->filter('main ul[aria-label] > li span.font-bold')->each(static fn (Crawler $alt): string => $alt->text());
+        // Every row of the list opens its image through a link named after its alternative text.
+        return $crawler->filter('main ul[aria-label] > li a')->each(static fn (Crawler $alt): string => $alt->text());
     }
 
     private function emptyStateTitle(Crawler $crawler): ?string

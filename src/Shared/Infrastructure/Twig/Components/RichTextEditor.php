@@ -41,6 +41,24 @@ final class RichTextEditor
     public string $placeholder = '';
 
     /**
+     * Whether it holds a single paragraph, such as a caption: no kinds of
+     * block to pick, no blocks to move, no outline, and Enter adds nothing.
+     */
+    public bool $singleParagraph = false;
+
+    /**
+     * Characters of text it takes at most, counted as the editor types; null
+     * for no limit.
+     */
+    public ?int $maxLength = null;
+
+    /**
+     * What to write and how, under the label; null for the default help on
+     * picking blocks.
+     */
+    public ?string $hint = null;
+
+    /**
      * The Tiptap document, as JSON.
      */
     public string $value = '';
@@ -61,6 +79,9 @@ final class RichTextEditor
         array $features,
         bool $hideLabel = false,
         string $placeholder = '',
+        bool $singleParagraph = false,
+        ?int $maxLength = null,
+        ?string $hint = null,
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -69,6 +90,9 @@ final class RichTextEditor
         $this->features = $features;
         $this->hideLabel = $hideLabel;
         $this->placeholder = $placeholder;
+        $this->singleParagraph = $singleParagraph;
+        $this->maxLength = $maxLength;
+        $this->hint = $hint;
     }
 
     /**

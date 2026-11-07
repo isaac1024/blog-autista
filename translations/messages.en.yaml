@@ -25,6 +25,13 @@ cms:
         list:
             label: 'Images of the blog'
             uploaded_at: 'Uploaded on %date%'
+        edit:
+            title: 'Edit image'
+            dates: 'Uploaded on %uploaded% · Changed on %updated%'
+            caption_label: 'Caption'
+            caption_hint: 'Context everyone reads under the image: what it is, where it comes from or whom it is credited to. Don’t repeat the alternative text. A single paragraph, without formatting. You can leave it empty until it is published.'
+            caption_placeholder: 'Write the caption here…'
+            submit: 'Save'
         upload:
             title: 'Upload an image'
             description: 'Choose an image and the part of it you want to show.'
@@ -160,6 +167,8 @@ ui:
         moved_up: 'Block moved up.'
         moved_down: 'Block moved down.'
         slash_hint: 'Type “/” to pick a kind of block'
+        count: '%count% of %max% characters.'
+        count_over: '%count% of %max% characters: %over% too many.'
         slash_menu: 'Kinds of block'
         outline: 'Outline'
         hint: 'Type “/” on an empty line to pick a block.'
@@ -252,3 +261,6 @@ errors:
             missing: 'No image arrived. Choose it again.'
             not_webp: 'The image didn’t arrive as WebP. Choose it again.'
             wrong_size: 'The image must be %width% × %height% pixels. Choose it again.'
+        caption:
+            not_a_single_paragraph: 'The caption must be a single paragraph.'
+            too_long: 'The caption can’t be longer than %max% characters.'

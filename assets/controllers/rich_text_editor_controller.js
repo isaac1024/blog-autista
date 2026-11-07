@@ -368,7 +368,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 export default class extends Controller {
     static targets = [
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
-        'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList',
+        'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
     ];
 
     static values = {
@@ -383,6 +383,10 @@ export default class extends Controller {
         sectionMovedDown: String,
         features: Object,
         calloutLabels: Object,
+        singleParagraph: Boolean,
+        maxLength: Number,
+        count: String,
+        countOver: String,
     };
 
     connect() {
@@ -395,11 +399,11 @@ export default class extends Controller {
             editorProps: {
                 attributes: {
                     id: this.idValue,
-                    class: 'rich-text rich-text-editable',
+                    class: this.singleParagraphValue ? 'rich-text rich-text-editable rich-text-single' : 'rich-text rich-text-editable',
                     role: 'textbox',
-                    'aria-multiline': 'true',
+                    'aria-multiline': String(!this.singleParagraphValue),
                     'aria-labelledby': `${this.idValue}-label`,
-                    'aria-describedby': `${this.idValue}-hint`,
+                    'aria-describedby': this.hasCountTarget ? `${this.idValue}-hint ${this.idValue}-count` : `${this.idValue}-hint`,
                 },
                 // Keep the cursor clear of the dock when scrolling it into view.
                 scrollMargin: { top: 80, bottom: 220 },
@@ -410,6 +414,7 @@ export default class extends Controller {
                 // Setting the value fires no event, so tell whoever watches the form.
                 this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
                 this.refreshOutline();
+                this.refreshCount();
             },
             onTransaction: () => this.refreshControls(),
             onFocus: () => this.refreshControls(),
@@ -419,6 +424,25 @@ export default class extends Controller {
         this.hintTarget.hidden = false;
         this.refreshOutline();
         this.refreshControls();
+        this.refreshCount();
+    }
+
+    /**
+     * Characters written against the most it takes, said in words. Not a live
+     * region: announcing every keystroke would drown the typing.
+     */
+    refreshCount() {
+        if (!this.hasCountTarget) {
+            return;
+        }
+
+        const count = [...this.editor.state.doc.textContent].length;
+        const message = count > this.maxLengthValue ? this.countOverValue : this.countValue;
+
+        this.countTarget.textContent = message
+            .replace('%count%', String(count))
+            .replace('%max%', String(this.maxLengthValue))
+            .replace('%over%', String(count - this.maxLengthValue));
     }
 
     disconnect() {
@@ -480,11 +504,14 @@ export default class extends Controller {
             }
         }
 
-        const kind = this.blockOptionsValue.find((option) => option.value === this.currentBlock())?.label ?? '';
+        // A single paragraph has no kind of block to pick.
+        if (this.hasBlockTypeTarget) {
+            const kind = this.blockOptionsValue.find((option) => option.value === this.currentBlock())?.label ?? '';
 
-        // Table cells only hold paragraphs.
-        this.blockTypeTarget.setAttribute('aria-disabled', String(inTable));
-        this.rename(this.blockTypeTarget, kind);
+            // Table cells only hold paragraphs.
+            this.blockTypeTarget.setAttribute('aria-disabled', String(inTable));
+            this.rename(this.blockTypeTarget, kind);
+        }
 
         if (this.hasTableToolsTarget) {
             this.tableToolsTarget.hidden = !inTable;
@@ -515,10 +542,10 @@ export default class extends Controller {
         }
     }
 
-    /** Alt+F10: the first control of the dock, the kind of the current block. */
+    /** Alt+F10: the first control of the dock, the kind of the current block when there is one. */
     focusControls() {
         this.dockTarget.hidden = false;
-        this.blockTypeTarget.focus();
+        (this.hasBlockTypeTarget ? this.blockTypeTarget : this.buttonTargets[0])?.focus();
     }
 
     rename(button, name) {
@@ -833,6 +860,13 @@ export default class extends Controller {
     /* Outline: every section one step away, the current one marked. */
 
     refreshOutline() {
+        // A single paragraph has no sections.
+        if (!this.hasOutlineDialogListTarget) {
+            this.sections = [];
+
+            return;
+        }
+
         this.sections = topLevelBlocks(this.editor.state.doc)
             .filter(({ node }) => isHeading(node) && node.textContent.trim() !== '')
             .map(({ node, from }) => ({ from, level: node.attrs.level, title: node.textContent }));
@@ -857,7 +891,7 @@ export default class extends Controller {
     }
 
     markCurrentSection() {
-        if (!this.sections) {
+        if (!this.sections || !this.hasOutlineDialogListTarget) {
             return;
         }
 
@@ -884,6 +918,24 @@ export default class extends Controller {
 
     extensions() {
         const { blocks, headingLevels, marks } = this.featuresValue;
+
+        if (this.singleParagraphValue) {
+            // The document is one paragraph, so Enter has nowhere to split it.
+            const extensions = [
+                Document.extend({ content: 'paragraph' }),
+                Paragraph,
+                Text,
+                UndoRedo,
+                Placeholder.configure({ placeholder: this.placeholderValue }),
+            ];
+
+            if (marks.includes('bold')) {
+                extensions.push(Bold);
+            }
+
+            return extensions;
+        }
+
         const extensions = [
             Document,
             Paragraph,

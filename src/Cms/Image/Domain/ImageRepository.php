@@ -13,6 +13,8 @@ interface ImageRepository
 {
     public function save(Image $image): void;
 
+    public function find(ImageId $id): ?Image;
+
     /**
      * @return list<Image>
      */
