@@ -141,18 +141,23 @@ final class PageListController extends AbstractController
      */
     private function row(PageResponse $page): PageComponent
     {
-        $slug = $page->publishedSlug ?? $page->slug;
-
         return new PageComponent('Shared:ResourceRow', [
             'title' => $page->title,
             'url' => $this->generateUrl('cms_pages_edit', ['id' => $page->id]),
-            'meta' => \sprintf(
-                '%s · %s',
-                $page->home ? '/' : \sprintf('/%s.html', $slug),
-                $this->pageState->lastUpdate($page),
-            ),
+            'meta' => \sprintf('%s · %s', $this->address($page), $this->pageState->lastUpdate($page)),
             'badge' => ($this->pageRole)($page),
             'status' => $this->pageState->label($page),
         ]);
+    }
+
+    private function address(PageResponse $page): string
+    {
+        if ($page->home) {
+            return '/';
+        }
+
+        $slug = $page->publishedSlug ?? $page->slug;
+
+        return null === $slug ? $this->translator->trans('cms.pages.list.no_slug') : \sprintf('/%s.html', $slug);
     }
 }

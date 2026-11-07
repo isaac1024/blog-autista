@@ -31,7 +31,7 @@ final class PageControllerTest extends WebTestCase
     public function testItServesThePublishedHomePageAtTheRoot(): void
     {
         $client = self::createClient();
-        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Inicio', slug: '', type: PageType::Home)));
+        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Inicio', slug: null, type: PageType::Home)));
 
         $client->request('GET', self::HOST.'/');
 

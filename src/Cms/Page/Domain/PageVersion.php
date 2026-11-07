@@ -18,8 +18,8 @@ final readonly class PageVersion
     public function __construct(
         #[ORM\Embedded(class: Title::class, columnPrefix: false)]
         private Title $title,
-        #[ORM\Column(name: 'slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH)]
-        private PageSlug $slug,
+        #[ORM\Column(name: 'slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
+        private ?Slug $slug,
         #[ORM\Column(name: 'content', type: 'rich_text')]
         private RichText $content,
         #[ORM\Embedded(class: Seo::class, columnPrefix: false)]
@@ -27,12 +27,17 @@ final readonly class PageVersion
     ) {}
 
     /**
-     * Whether it has everything the site shows: content, and a meta
+     * Whether it has everything the site shows of a page of the type: a slug
+     * to be addressed by, unless it is the home page, content, and a meta
      * description to summarise it in search results and shared links. The
      * title and the robots directive always have a value.
      */
-    public function assertPublishable(): void
+    public function assertPublishableAs(PageType $type): void
     {
+        if (null === $this->slug && !$type->isHome()) {
+            throw InvalidPublication::withoutSlug();
+        }
+
         if ([] === $this->content->blocks()) {
             throw InvalidPublication::withoutContent();
         }
@@ -45,7 +50,7 @@ final readonly class PageVersion
     public function equals(self $other): bool
     {
         return $this->title->value() === $other->title->value()
-            && $this->slug->value() === $other->slug->value()
+            && $this->slug?->value() === $other->slug?->value()
             && $this->content->toArray() === $other->content->toArray()
             && $this->seo->description() === $other->seo->description()
             && $this->seo->robots() === $other->seo->robots();
@@ -56,7 +61,10 @@ final readonly class PageVersion
         return $this->title;
     }
 
-    public function slug(): PageSlug
+    /**
+     * Null for the home page, and for any other page left without one.
+     */
+    public function slug(): ?Slug
     {
         return $this->slug;
     }

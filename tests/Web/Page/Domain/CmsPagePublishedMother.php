@@ -35,7 +35,7 @@ final class CmsPagePublishedMother
      *
      * @return array<string, mixed>
      */
-    public static function body(string $title = 'Sobre mí', string $slug = 'sobre-mi', string $type = 'standard'): array
+    public static function body(string $title = 'Sobre mí', ?string $slug = 'sobre-mi', string $type = 'standard'): array
     {
         return [
             'type' => $type,
@@ -52,7 +52,7 @@ final class CmsPagePublishedMother
     public static function create(
         string $id = PageIdMother::DEFAULT_VALUE,
         string $title = 'Sobre mí',
-        string $slug = 'sobre-mi',
+        ?string $slug = 'sobre-mi',
         PageType $type = PageType::Standard,
         ?string $metaDescription = 'Quién escribe este blog sobre autismo y por qué.',
         Robots $robots = Robots::IndexFollow,

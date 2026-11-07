@@ -14,13 +14,13 @@ use Web\Page\Domain\Page;
 final readonly class PageResponse
 {
     /**
-     * @param string  $slug            empty for the home page
+     * @param ?string $slug            null for the home page
      * @param ?string $metaDescription null when there is none
      * @param string  $robots          one of the Robots values
      */
     public function __construct(
         public string $title,
-        public string $slug,
+        public ?string $slug,
         public RichText $content,
         public ?string $metaDescription,
         public string $robots,

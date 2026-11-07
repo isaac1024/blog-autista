@@ -7,7 +7,7 @@ namespace Web\Page\Application;
 use Web\Page\Domain\PageRepository;
 
 /**
- * Finds the page on the site at a slug; an empty slug is the home page.
+ * Finds the page on the site at a slug.
  */
 final readonly class PageFinder
 {

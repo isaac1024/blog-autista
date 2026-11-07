@@ -23,7 +23,7 @@ final readonly class CmsPagePublished extends DomainEvent
         string $aggregateId,
         private PageType $type,
         private string $title,
-        private string $slug,
+        private ?string $slug,
         private RichText $content,
         private ?string $metaDescription,
         private Robots $robots,
@@ -51,7 +51,7 @@ final readonly class CmsPagePublished extends DomainEvent
             $aggregateId,
             PageType::from($body->string('type')),
             $body->string('title'),
-            $body->string('slug'),
+            $body->nullableString('slug'),
             RichText::fromArray($body->array('content')),
             '' === $metaDescription ? null : $metaDescription,
             Robots::from($body->string('robots')),
@@ -88,9 +88,9 @@ final readonly class CmsPagePublished extends DomainEvent
     }
 
     /**
-     * Empty for the home page.
+     * Null for the home page.
      */
-    public function slug(): string
+    public function slug(): ?string
     {
         return $this->slug;
     }

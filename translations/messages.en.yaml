@@ -27,7 +27,7 @@ cms:
             content_title: 'Content'
             content_placeholder: 'Write the content of the page here…'
             slug_label: 'Web address (slug)'
-            slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'
+            slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me. You can leave it blank until you publish the page.'
             submit: 'Save'
             publish: 'Publish'
             republish: 'Republish'
@@ -88,6 +88,7 @@ cms:
         list:
             label: 'Blog pages'
             updated_at: 'Changed on %date%'
+            no_slug: 'No address'
         add: 'Add page'
         modal:
             title: 'New page'

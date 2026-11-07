@@ -24,7 +24,7 @@ final readonly class PublishedPage
 
     public function __invoke(PageResponse $page): Page
     {
-        $canonical = '' === $page->slug
+        $canonical = null === $page->slug
             ? $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
             : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 

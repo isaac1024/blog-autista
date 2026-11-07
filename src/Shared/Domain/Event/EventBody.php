@@ -26,6 +26,17 @@ final readonly class EventBody
         return $value;
     }
 
+    public function nullableString(string $key): ?string
+    {
+        $value = $this->body[$key] ?? null;
+
+        if (null !== $value && !\is_string($value)) {
+            throw new \UnexpectedValueException(\sprintf('The event body has no "%s" string or null.', $key));
+        }
+
+        return $value;
+    }
+
     /**
      * @return array<array-key, mixed>
      */

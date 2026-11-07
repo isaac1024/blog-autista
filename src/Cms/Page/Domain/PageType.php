@@ -40,4 +40,18 @@ enum PageType: string
     {
         return self::Home === $this;
     }
+
+    /**
+     * The slug a page of this type takes from what an editor writes, blank
+     * for none: the home page never has one, and any other page may be left
+     * without one until it is published.
+     */
+    public function slugFrom(string $slug): ?Slug
+    {
+        if ($this->isHome() && '' !== $slug) {
+            throw InvalidSlug::onHome($slug);
+        }
+
+        return '' === $slug ? null : new Slug($slug);
+    }
 }

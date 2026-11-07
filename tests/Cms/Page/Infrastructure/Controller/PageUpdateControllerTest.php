@@ -118,7 +118,6 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         yield 'invalid title' => [self::fields(['title' => ' '])];
         yield 'invalid slug' => [self::fields(['slug' => 'Quién Soy'])];
         yield 'missing title' => [self::fields(without: ['title'])];
-        yield 'missing slug' => [self::fields(without: ['slug'])];
         yield 'missing content' => [self::fields(without: ['content'])];
         yield 'content that is not JSON' => [self::fields(['content' => '<p>Hola</p>'])];
         yield 'content with a block the editor does not offer' => [self::fields(['content' => '{"type":"doc","content":[{"type":"image","attrs":{"src":"x.png"}}]}'])];

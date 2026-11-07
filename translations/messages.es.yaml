@@ -24,7 +24,7 @@ cms:
             title: 'Editar página'
             title_label: 'Título'
             slug_label: 'Dirección web (slug)'
-            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi.'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi. Puedes dejarla vacía hasta publicar la página.'
             home_address: 'La portada se sirve en la raíz del sitio (/), así que no tiene dirección propia.'
             content_title: 'Contenido'
             content_placeholder: 'Escribe aquí el contenido de la página…'
@@ -88,6 +88,7 @@ cms:
         list:
             label: 'Páginas del blog'
             updated_at: 'Modificada el %date%'
+            no_slug: 'Sin dirección'
         add: 'Añadir página'
         modal:
             title: 'Nueva página'

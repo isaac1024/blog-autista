@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Domain;
 
-use Cms\Page\Domain\HomeSlug;
 use Cms\Page\Domain\Page;
-use Cms\Page\Domain\PageSlug;
 use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\PageVersion;
@@ -33,7 +31,7 @@ use Shared\Tests\Domain\RichText\RichTextMother;
  *
  * Without a robots directive, a page gets the one it starts with. Pages are
  * created at ClockMother::NOW, and changed and published then unless a test
- * says otherwise. The home page takes an empty slug.
+ * says otherwise. The home page, and any page given a blank slug, has none.
  */
 final class PageMother
 {
@@ -188,8 +186,8 @@ final class PageMother
         );
     }
 
-    private static function slug(PageType $type, string $slug): PageSlug
+    private static function slug(PageType $type, string $slug): ?Slug
     {
-        return $type->isHome() ? new HomeSlug() : new Slug($slug);
+        return $type->isHome() || '' === $slug ? null : new Slug($slug);
     }
 }

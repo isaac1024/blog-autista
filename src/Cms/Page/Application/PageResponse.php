@@ -16,7 +16,7 @@ use Cms\Page\Domain\Page;
 final readonly class PageResponse
 {
     /**
-     * @param string                                                  $slug            empty for the home page
+     * @param ?string                                                 $slug            null for the home page, and for any other page left without one
      * @param string                                                  $type            one of the PageType values
      * @param bool                                                    $home            whether it is the home page, which has no slug
      * @param bool                                                    $unique          whether it is one of the unique pages, which can't be deleted
@@ -30,7 +30,7 @@ final readonly class PageResponse
     public function __construct(
         public string $id,
         public string $title,
-        public string $slug,
+        public ?string $slug,
         public string $type,
         public bool $home,
         public bool $unique,
@@ -48,7 +48,7 @@ final readonly class PageResponse
         return new self(
             $page->id()->value(),
             $page->title()->value(),
-            $page->slug()->value(),
+            $page->slug()?->value(),
             $page->type()->value,
             $page->type()->isHome(),
             $page->type()->isUnique(),

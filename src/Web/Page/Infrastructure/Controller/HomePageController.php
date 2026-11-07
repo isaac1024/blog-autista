@@ -8,7 +8,7 @@ use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Web\Page\Application\PageFinder;
+use Web\Page\Application\HomePageFinder;
 use Web\Page\Application\PageNotFound;
 use Web\Page\Domain\PageRepository;
 
@@ -26,7 +26,7 @@ final class HomePageController extends AbstractController
     public function __invoke(PageRepository $pageRepository): Response
     {
         try {
-            $page = new PageFinder('')($pageRepository);
+            $page = new HomePageFinder()($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

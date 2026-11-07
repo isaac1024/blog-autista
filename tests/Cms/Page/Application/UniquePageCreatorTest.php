@@ -43,7 +43,8 @@ final class UniquePageCreatorTest extends TestCase
             ->method('findByType')
             ->with(self::identicalTo(PageType::from($type)))
             ->willReturn(null);
-        $repository->expects(self::once())
+        // The home page has no slug to check.
+        $repository->expects(null === $expected->slug() ? self::never() : self::once())
             ->method('findBySlug')
             ->with(self::equalTo($expected->slug()))
             ->willReturn(null);

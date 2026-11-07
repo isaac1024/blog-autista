@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Cms\Page\Infrastructure\Persistence\Doctrine;
 
-use Cms\Page\Domain\HomeSlug;
-use Cms\Page\Domain\PageSlug;
 use Cms\Page\Domain\Slug;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Exception\InvalidType;
 use Doctrine\DBAL\Types\Type;
 
 /**
- * Maps the address of a page to a string column: the home page is stored with
- * an empty slug, every other page with its own.
+ * Maps the slug of a page to a string column, null for pages without one,
+ * such as the home page.
  */
 final class PageSlugType extends Type
 {
@@ -24,7 +22,7 @@ final class PageSlugType extends Type
     }
 
     #[\Override]
-    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?PageSlug
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?Slug
     {
         if (null === $value) {
             return null;
@@ -34,7 +32,7 @@ final class PageSlugType extends Type
             throw InvalidType::new($value, self::class, ['null', 'string']);
         }
 
-        return '' === $value ? new HomeSlug() : new Slug($value);
+        return new Slug($value);
     }
 
     #[\Override]
@@ -44,8 +42,8 @@ final class PageSlugType extends Type
             return null;
         }
 
-        if (!$value instanceof PageSlug) {
-            throw InvalidType::new($value, self::class, ['null', PageSlug::class]);
+        if (!$value instanceof Slug) {
+            throw InvalidType::new($value, self::class, ['null', Slug::class]);
         }
 
         return $value->value();

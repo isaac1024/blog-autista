@@ -105,7 +105,6 @@ final class PageUpdaterTest extends TestCase
         yield 'empty title' => ['   ', 'quien-soy', InvalidTitle::tooShort(Title::MIN_LENGTH)];
         yield 'title one character too short' => ['Sí', 'quien-soy', InvalidTitle::tooShort(Title::MIN_LENGTH)];
         yield 'title one character too long' => [str_repeat('a', 101), 'quien-soy', InvalidTitle::tooLong(Title::MAX_LENGTH)];
-        yield 'empty slug' => ['Quién soy', '', InvalidSlug::malformed('')];
         yield 'slug with uppercase letters' => ['Quién soy', 'Quien-Soy', InvalidSlug::malformed('Quien-Soy')];
         yield 'slug with accents' => ['Quién soy', 'quién-soy', InvalidSlug::malformed('quién-soy')];
         yield 'slug with spaces' => ['Quién soy', 'quien soy', InvalidSlug::malformed('quien soy')];
@@ -363,14 +362,15 @@ final class PageUpdaterTest extends TestCase
         self::updater($id, 'Escríbeme', 'escribeme')($repository);
     }
 
-    public function testItSavesNothingWhenAPageOtherThanTheHomeIsLeftWithoutASlug(): void
+    public function testItSavesAPageLeftWithoutASlug(): void
     {
         $id = PageIdMother::DEFAULT_VALUE;
         $repository = $this->createMock(PageRepository::class);
         $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
-        $repository->expects(self::never())->method('save');
-
-        $this->expectExceptionObject(InvalidSlug::malformed(''));
+        $repository->expects(self::never())->method('findBySlug');
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::create(id: $id, title: 'Contacto', slug: '', type: PageType::Contact)));
 
         self::updater($id, 'Contacto', '')($repository);
     }

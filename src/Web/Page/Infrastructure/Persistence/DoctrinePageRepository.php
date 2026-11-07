@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageId;
 use Web\Page\Domain\PageRepository;
+use Web\Page\Domain\PageType;
 
 /**
  * Outbound adapter that persists and reads the pages on the site through
@@ -43,5 +44,12 @@ final readonly class DoctrinePageRepository implements PageRepository
     public function findBySlug(string $slug): ?Page
     {
         return $this->entityManager->getRepository(Page::class)->findOneBy(['slug' => $slug]);
+    }
+
+    #[\Override]
+    public function findHome(): ?Page
+    {
+        // The CMS keeps the site to one home page.
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['type' => PageType::Home]);
     }
 }

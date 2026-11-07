@@ -231,11 +231,11 @@ final class PageEditController extends AbstractController
             new PageComponent('Shared:FormInput', [
                 'name' => 'slug',
                 'id' => 'page-slug',
-                'value' => $page->slug,
+                'value' => $page->slug ?? '',
                 'prefix' => '/',
                 'suffix' => '.html',
+                // It may be left blank until the page is published.
                 'attributes' => [
-                    'required' => true,
                     'minlength' => Slug::MIN_LENGTH,
                     'maxlength' => Slug::MAX_LENGTH,
                     'pattern' => Slug::SHAPE,
@@ -263,7 +263,7 @@ final class PageEditController extends AbstractController
             new PageComponent('Shared:SearchPreview', [
                 'label' => $this->translator->trans('cms.pages.edit.seo.preview'),
                 'title' => $page->title,
-                'url' => $page->home ? $baseUrl.'/' : \sprintf('%s/%s.html', $baseUrl, $page->slug),
+                'url' => $page->home ? $baseUrl.'/' : \sprintf('%s/%s.html', $baseUrl, $page->slug ?? ''),
                 'baseUrl' => $baseUrl,
                 'description' => $page->metaDescription,
                 'emptyDescription' => $this->translator->trans('cms.pages.edit.seo.preview_empty'),

@@ -35,12 +35,21 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findBySlug('aviso-legal'));
     }
 
-    public function testItFindsTheHomePageByItsEmptySlug(): void
+    public function testItFindsTheHomePageByItsType(): void
     {
-        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Inicio', slug: '', type: PageType::Home)));
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), slug: 'sobre-mi')));
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Inicio', slug: null, type: PageType::Home)));
         $this->entityManager()->clear();
 
-        self::assertSame('Inicio', $this->repository()->findBySlug('')?->title());
+        self::assertSame('Inicio', $this->repository()->findHome()?->title());
+    }
+
+    public function testItFindsNoHomePageUntilItIsOnTheSite(): void
+    {
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), slug: 'sobre-mi')));
+        $this->entityManager()->clear();
+
+        self::assertNull($this->repository()->findHome());
     }
 
     public function testItDeletesOnlyTheGivenPage(): void

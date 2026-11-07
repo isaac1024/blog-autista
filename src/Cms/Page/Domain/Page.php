@@ -17,7 +17,8 @@ use Shared\Domain\RichText\RichTextFeatures;
 
 /**
  * A CMS page, identified by its id and addressed by its slug, except the home
- * page, which is served at the root of the site.
+ * page, which is served at the root of the site and so has none. Any other
+ * page may be saved without a slug, and needs one to be published.
  *
  * Editors work on its version in the CMS; once published, the site serves a
  * copy of it, which only changes when the page is published again. So a
@@ -25,15 +26,16 @@ use Shared\Domain\RichText\RichTextFeatures;
  * without the site showing them halfway.
  *
  * - Editing saves whatever valid fields an editor writes, complete or not.
- * - A page is published only with everything the site shows: content and a
- *   meta description. Publishing is what checks it, so a published page can
- *   be saved without them, and the site keeps its version meanwhile.
+ * - A page is published only with everything the site shows: a slug, unless
+ *   it is the home page, content and a meta description. Publishing is what
+ *   checks it, so a published page can be saved without them, and the site
+ *   keeps its version meanwhile.
  * - A published page is unpublished before it is deleted, and unique pages
  *   are never unpublished nor deleted.
  *
  * The unique indexes on the slugs keep two pages from sharing an address,
- * the one being edited or the one on the site. They also keep the site to
- * one home page, since that is the only page stored with an empty slug.
+ * the one being edited or the one on the site; pages without one share none.
+ * The one on the unique type keeps the site to one page of each unique type.
  *
  * Its rules reach every value object, error and event of the page, so its
  * coupling grows with what a page is rather than with how it is designed.
@@ -44,15 +46,24 @@ use Shared\Domain\RichText\RichTextFeatures;
 #[ORM\Table(name: 'cms_page')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_page_slug', columns: ['slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_cms_page_published_slug', columns: ['published_slug'])]
+#[ORM\UniqueConstraint(name: 'uniq_cms_page_unique_type', columns: ['unique_type'])]
 #[ORM\Index(name: 'ftx_cms_page_title', columns: ['title'], flags: ['fulltext'])]
 final class Page extends AggregateRoot
 {
     /**
      * The slug of the version on the site, apart from that version so it can
-     * be indexed and kept unique. Null while the page isn't on the site.
+     * be indexed and kept unique. Null while the page isn't on the site, and
+     * for the home page, which has no slug.
      */
     #[ORM\Column(name: 'published_slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
-    private ?PageSlug $publishedSlug;
+    private ?Slug $publishedSlug;
+
+    /**
+     * The type of a unique page, apart from it so it can be indexed and kept
+     * unique. Null for generic pages, of which there are any number.
+     */
+    #[ORM\Column(name: 'unique_type', length: 20, nullable: true, enumType: PageType::class)]
+    private ?PageType $uniqueType;
 
     public function __construct(
         #[ORM\Id]
@@ -73,6 +84,7 @@ final class Page extends AggregateRoot
         private Timeline $timeline,
     ) {
         $this->publishedSlug = PageStatus::Published === $status ? $published?->slug() : null;
+        $this->uniqueType = $type->isUnique() ? $type : null;
     }
 
     /**
@@ -111,7 +123,7 @@ final class Page extends AggregateRoot
             $type,
             new PageVersion(
                 new Title($title),
-                $type->isHome() ? new HomeSlug() : new Slug(new Slugger($title)()),
+                $type->isHome() ? null : new Slug(new Slugger($title)()),
                 RichText::empty(),
                 Seo::initialFor($type),
             ),
@@ -139,9 +151,8 @@ final class Page extends AggregateRoot
      * Replaces everything an editor writes: the title, the slug, the content
      * and how the page presents itself to search engines. The slug is no
      * longer derived from the title, so editors can keep a page's address when
-     * they retitle it. The home page takes an empty slug, and no other page
-     * does, so no page becomes the home page, nor stops being it, by being
-     * edited.
+     * they retitle it, and a blank one leaves the page without any, freeing
+     * it for another page once it is off the site. The home page takes none.
      *
      * On a published page, it only changes the version being edited: the site
      * keeps its version until the page is published again.
@@ -159,7 +170,7 @@ final class Page extends AggregateRoot
         // field doesn't leave the page with only part of the edit.
         $version = new PageVersion(
             new Title($title),
-            $this->slugFrom($slug),
+            $this->type->slugFrom($slug),
             RichText::fromArray($content),
             Seo::fromPrimitives($metaDescription, $robots),
         );
@@ -175,7 +186,7 @@ final class Page extends AggregateRoot
     public function publish(): void
     {
         $now = Clock::now();
-        $this->version->assertPublishable();
+        $this->version->assertPublishableAs($this->type);
 
         if (PageStatus::Published === $this->status && !$this->hasUnpublishedChanges()) {
             throw InvalidPublication::nothingToPublish();
@@ -190,7 +201,7 @@ final class Page extends AggregateRoot
             $this->id->value(),
             $this->type->value,
             $this->version->title()->value(),
-            $this->version->slug()->value(),
+            $this->version->slug()?->value(),
             $this->version->content()->toArray(),
             (string) $this->version->seo()->description(),
             $this->version->seo()->robots()->value,
@@ -280,7 +291,10 @@ final class Page extends AggregateRoot
         return $this->version->title();
     }
 
-    public function slug(): PageSlug
+    /**
+     * Null for the home page, and for any other page left without one.
+     */
+    public function slug(): ?Slug
     {
         return $this->version->slug();
     }
@@ -301,9 +315,10 @@ final class Page extends AggregateRoot
     }
 
     /**
-     * The slug the page has on the site, null while it isn't there.
+     * The slug the page has on the site, null while it isn't there and for
+     * the home page.
      */
-    public function publishedSlug(): ?PageSlug
+    public function publishedSlug(): ?Slug
     {
         return $this->publishedSlug;
     }
@@ -320,18 +335,5 @@ final class Page extends AggregateRoot
         }
 
         $this->version = $version;
-    }
-
-    private function slugFrom(string $slug): PageSlug
-    {
-        if (!$this->type->isHome()) {
-            return new Slug($slug);
-        }
-
-        if ('' !== $slug) {
-            throw InvalidSlug::onHome($slug);
-        }
-
-        return new HomeSlug();
     }
 }

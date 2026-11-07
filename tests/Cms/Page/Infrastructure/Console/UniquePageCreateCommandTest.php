@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Console;
 
-use Cms\Page\Domain\HomeSlug;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
@@ -31,8 +30,9 @@ final class UniquePageCreateCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $exitCode);
         $home = $this->storedPage(PageType::Home);
-        self::assertEquals(new Title('Portada'), $home?->title());
-        self::assertEquals(new HomeSlug(), $home?->slug());
+        self::assertNotNull($home);
+        self::assertEquals(new Title('Portada'), $home->title());
+        self::assertNull($home->slug());
     }
 
     public function testItCreatesAUniquePageWithTheSlugDerivedFromTheTitle(): void

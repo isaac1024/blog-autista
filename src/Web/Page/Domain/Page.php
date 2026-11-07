@@ -32,8 +32,8 @@ final class Page
         private PageType $type,
         #[ORM\Column(length: 100)]
         private string $title,
-        #[ORM\Column(length: 80)]
-        private string $slug,
+        #[ORM\Column(length: 80, nullable: true)]
+        private ?string $slug,
         #[ORM\Column(type: 'rich_text')]
         private RichText $content,
         #[ORM\Column(length: 200, nullable: true)]
@@ -109,9 +109,9 @@ final class Page
     }
 
     /**
-     * Empty for the home page.
+     * Null for the home page.
      */
-    public function slug(): string
+    public function slug(): ?string
     {
         return $this->slug;
     }

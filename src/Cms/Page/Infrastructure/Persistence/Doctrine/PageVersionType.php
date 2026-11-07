@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Page\Infrastructure\Persistence\Doctrine;
 
-use Cms\Page\Domain\HomeSlug;
 use Cms\Page\Domain\PageVersion;
 use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\Seo;
@@ -47,12 +46,12 @@ final class PageVersionType extends Type
         }
 
         $data = self::decode($value);
-        $slug = self::string($data, 'slug', $value);
+        $slug = $data['slug'] ?? null;
         $description = $data['meta_description'] ?? null;
 
         return new PageVersion(
             new Title(self::string($data, 'title', $value)),
-            '' === $slug ? new HomeSlug() : new Slug($slug),
+            \is_string($slug) ? new Slug($slug) : null,
             RichText::fromArray(\is_array($data['content'] ?? null) ? $data['content'] : []),
             new Seo(\is_string($description) ? $description : null, Robots::from(self::string($data, 'robots', $value))),
         );
@@ -71,7 +70,7 @@ final class PageVersionType extends Type
 
         return json_encode([
             'title' => $value->title()->value(),
-            'slug' => $value->slug()->value(),
+            'slug' => $value->slug()?->value(),
             'content' => $value->content()->toArray(),
             'meta_description' => $value->seo()->description(),
             'robots' => $value->seo()->robots()->value,

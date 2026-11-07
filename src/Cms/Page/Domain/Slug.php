@@ -7,7 +7,7 @@ namespace Cms\Page\Domain;
 /**
  * URL path segment of a page: lowercase ASCII letters, digits and single hyphens.
  */
-final readonly class Slug implements PageSlug
+final readonly class Slug
 {
     public const int MIN_LENGTH = 3;
     public const int MAX_LENGTH = 80;
@@ -34,7 +34,6 @@ final readonly class Slug implements PageSlug
         }
     }
 
-    #[\Override]
     public function value(): string
     {
         return $this->value;

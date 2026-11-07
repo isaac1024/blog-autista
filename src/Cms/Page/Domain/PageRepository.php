@@ -12,7 +12,8 @@ use Shared\Domain\Criteria\Criteria;
 interface PageRepository
 {
     /**
-     * @throws SlugAlreadyTaken when another page is saved with the same slug meanwhile
+     * @throws SlugAlreadyTaken        when another page is saved with the same slug meanwhile
+     * @throws UniquePageAlreadyExists when another page of the same unique type is saved meanwhile
      */
     public function save(Page $page): void;
 
@@ -23,7 +24,7 @@ interface PageRepository
     /**
      * The page edited with the slug, or on the site with it.
      */
-    public function findBySlug(PageSlug $slug): ?Page;
+    public function findBySlug(Slug $slug): ?Page;
 
     public function findByType(PageType $type): ?Page;
 

@@ -8,8 +8,8 @@ use Shared\Domain\DomainError;
 
 final class UniquePageAlreadyExists extends DomainError
 {
-    public static function ofType(PageType $type): self
+    public static function ofType(PageType $type, ?\Throwable $previous = null): self
     {
-        return new self(\sprintf('The site already has its "%s" page.', $type->value));
+        return new self(\sprintf('The site already has its "%s" page.', $type->value), previous: $previous);
     }
 }

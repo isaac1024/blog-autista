@@ -7,9 +7,10 @@ namespace Cms\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\PageSlug;
 use Cms\Page\Domain\PageType;
+use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
+use Cms\Page\Domain\UniquePageAlreadyExists;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -39,12 +40,10 @@ final readonly class DoctrinePageRepository implements PageRepository
     {
         $this->entityManager->persist($page);
 
-        // The slugs are the only unique columns besides the time-ordered id, so
-        // a violation means another page took the slug since it was checked.
         try {
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException $exception) {
-            throw SlugAlreadyTaken::bySlug($page->slug(), $exception);
+            throw self::taken($page, $exception);
         }
     }
 
@@ -62,7 +61,7 @@ final readonly class DoctrinePageRepository implements PageRepository
     }
 
     #[\Override]
-    public function findBySlug(PageSlug $slug): ?Page
+    public function findBySlug(Slug $slug): ?Page
     {
         // Pages never share a slug, being edited or on the site, so at most
         // one page has it.
@@ -97,5 +96,23 @@ final readonly class DoctrinePageRepository implements PageRepository
             ->getQuery();
 
         return $query->getResult();
+    }
+
+    /**
+     * Besides the time-ordered id, the slugs and the unique type are the only
+     * unique columns, so a violation means another page took one of them
+     * since it was checked. The index it names tells which.
+     */
+    private static function taken(Page $page, UniqueConstraintViolationException $exception): \Throwable
+    {
+        $message = $exception->getMessage();
+
+        if (str_contains($message, 'uniq_cms_page_unique_type')) {
+            return UniquePageAlreadyExists::ofType($page->type(), $exception);
+        }
+
+        $slug = str_contains($message, 'uniq_cms_page_published_slug') ? $page->publishedSlug() : $page->slug();
+
+        return null === $slug ? $exception : SlugAlreadyTaken::bySlug($slug, $exception);
     }
 }

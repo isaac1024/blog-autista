@@ -13,6 +13,11 @@ final class InvalidPublication extends DomainError
         return new self('A page cannot be published without content.');
     }
 
+    public static function withoutSlug(): self
+    {
+        return new self('A page cannot be published without a slug, except the home page.');
+    }
+
     public static function withoutMetaDescription(): self
     {
         return new self('A page cannot be published without a meta description.');

@@ -16,7 +16,12 @@ interface PageRepository
     public function find(PageId $id): ?Page;
 
     /**
-     * The page served at the slug; an empty slug is the home page.
+     * The page served at the slug.
      */
     public function findBySlug(string $slug): ?Page;
+
+    /**
+     * The page served at the root of the site, which has no slug.
+     */
+    public function findHome(): ?Page;
 }

@@ -45,14 +45,4 @@ final class PageFinderTest extends TestCase
 
         (new PageFinder('sobre-mi'))($repository);
     }
-
-    public function testItThrowsWhenTheHomePageIsNotOnTheSite(): void
-    {
-        $repository = self::createStub(PageRepository::class);
-        $repository->method('findBySlug')->willReturn(null);
-
-        $this->expectExceptionObject(PageNotFound::withSlug(''));
-
-        (new PageFinder(''))($repository);
-    }
 }

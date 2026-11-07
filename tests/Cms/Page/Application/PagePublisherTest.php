@@ -61,6 +61,10 @@ final class PagePublisherTest extends TestCase
             PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', publishedTitle: 'Quién soy', updatedAt: self::BEFORE, firstPublishedAt: self::BEFORE, lastPublishedAt: self::BEFORE),
             PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', updatedAt: self::BEFORE, firstPublishedAt: self::BEFORE),
         ];
+        yield 'the home page, which has no slug' => [
+            PageMother::home(id: $id, content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION),
+            PageMother::published(id: $id, title: 'Portada', slug: '', type: PageType::Home),
+        ];
         yield 'an unpublished page' => [
             PageMother::unpublished(id: $id, title: 'Sobre mí', slug: 'sobre-mi'),
             PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi'),
@@ -119,6 +123,10 @@ final class PagePublisherTest extends TestCase
      */
     public static function unpublishablePages(): iterable
     {
+        yield 'a draft without a slug' => [
+            PageMother::create(slug: '', content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION),
+            InvalidPublication::withoutSlug(),
+        ];
         yield 'a draft without content' => [
             PageMother::create(metaDescription: PageMother::META_DESCRIPTION),
             InvalidPublication::withoutContent(),

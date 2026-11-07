@@ -12,7 +12,8 @@ use Shared\Domain\RichText\RichText;
  * A page went on the site, or its version there was replaced, with all the
  * site needs to serve it.
  *
- * It carries what the site shows, one parameter each.
+ * It carries what the site shows, one parameter each. The home page has no
+ * slug.
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
@@ -25,7 +26,7 @@ final readonly class PagePublished extends DomainEvent
         string $aggregateId,
         private string $type,
         private string $title,
-        private string $slug,
+        private ?string $slug,
         private array $content,
         private string $metaDescription,
         private string $robots,
@@ -52,7 +53,7 @@ final readonly class PagePublished extends DomainEvent
             $aggregateId,
             $body->string('type'),
             $body->string('title'),
-            $body->string('slug'),
+            $body->nullableString('slug'),
             RichText::fromArray($body->array('content'))->toArray(),
             $body->string('meta_description'),
             $body->string('robots'),

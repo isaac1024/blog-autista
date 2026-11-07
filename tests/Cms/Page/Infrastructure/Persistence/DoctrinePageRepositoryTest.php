@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Persistence;
 
-use Cms\Page\Domain\HomeSlug;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
@@ -12,6 +11,7 @@ use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\TitleFilter;
+use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Page\Domain\SlugMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
@@ -241,24 +241,15 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $this->repository()->save($other);
     }
 
-    public function testItFindsTheHomePageByItsEmptySlug(): void
-    {
-        $home = PageMother::home(id: PageId::random()->value());
-        $repository = $this->repository();
-        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
-        $repository->save($home);
-        $this->entityManager()->clear();
-
-        self::assertEquals($home, $repository->findBySlug(new HomeSlug()));
-    }
-
-    public function testItFindsNoPageAtTheRootWithoutAHomePage(): void
+    public function testItKeepsPagesWithoutASlugApart(): void
     {
         $repository = $this->repository();
-        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto'));
+        $repository->save(PageMother::home(id: PageId::random()->value()));
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Borrador', slug: ''));
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Otro borrador', slug: ''));
         $this->entityManager()->clear();
 
-        self::assertNull($repository->findBySlug(new HomeSlug()));
+        self::assertCount(3, $repository->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: null, offset: 0)));
     }
 
     public function testItFindsThePageOfTheGivenType(): void
@@ -283,18 +274,30 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertNull($repository->findByType(PageType::Contact));
     }
 
-    /**
-     * The home page is the only one stored with an empty slug, so the unique
-     * index also keeps the site to a single home page.
-     */
-    public function testItRejectsSavingASecondHomePage(): void
+    #[DataProvider('secondUniquePages')]
+    public function testItRejectsSavingASecondPageOfAUniqueType(Page $first, Page $second): void
     {
         $repository = $this->repository();
-        $repository->save(PageMother::home(id: PageId::random()->value()));
+        $repository->save($first);
 
-        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(new HomeSlug()));
+        $this->expectExceptionObject(UniquePageAlreadyExists::ofType($second->type()));
 
-        $repository->save(PageMother::home(id: PageId::random()->value(), title: 'Otra portada'));
+        $repository->save($second);
+    }
+
+    /**
+     * @return iterable<string, array{Page, Page}>
+     */
+    public static function secondUniquePages(): iterable
+    {
+        yield 'the home page' => [
+            PageMother::home(id: PageId::random()->value()),
+            PageMother::home(id: PageId::random()->value(), title: 'Otra portada'),
+        ];
+        yield 'the contact page, with another slug' => [
+            PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto', type: PageType::Contact),
+            PageMother::create(id: PageId::random()->value(), title: 'Escríbeme', slug: 'escribeme', type: PageType::Contact),
+        ];
     }
 
     public function testItDeletesOnlyTheGivenPage(): void
