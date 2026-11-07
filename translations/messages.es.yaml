@@ -140,10 +140,13 @@ ui:
         noscript: 'Para editar el contenido hace falta JavaScript. El título y la dirección web se guardan igualmente.'
         groups:
             table: 'Tabla'
+            quote: 'Cita'
         paragraph: 'Párrafo'
         heading: 'Encabezado %level%'
         bold: 'Negrita'
         quote: 'Cita'
+        quote_source: 'Fuente de la cita'
+        quote_source_hint: 'Autor o procedencia de la cita'
         bullet_list: 'Lista con viñetas'
         ordered_list: 'Lista numerada'
         callout:

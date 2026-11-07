@@ -79,7 +79,7 @@ final readonly class TiptapRichText
         return match ($type) {
             'paragraph' => self::nonEmpty(['type' => 'paragraph', 'text' => self::inline($node, $path)], 'text'),
             'heading' => self::nonEmpty(['type' => 'heading', 'level' => $attrs['level'] ?? null, 'text' => self::inline($node, $path)], 'text'),
-            'blockquote' => self::nonEmpty(['type' => 'quote', 'paragraphs' => self::paragraphs($node, $path)], 'paragraphs'),
+            'blockquote' => self::quote($node, $path),
             'callout' => self::nonEmpty(['type' => 'callout', 'variant' => $attrs['variant'] ?? null, 'paragraphs' => self::paragraphs($node, $path)], 'paragraphs'),
             'bulletList' => self::nonEmpty(['type' => 'list', 'style' => ListStyle::Unordered->value, 'items' => self::items($node, $path)], 'items'),
             'orderedList' => self::nonEmpty(['type' => 'list', 'style' => ListStyle::Ordered->value, 'items' => self::items($node, $path)], 'items'),
@@ -96,6 +96,57 @@ final readonly class TiptapRichText
     private static function nonEmpty(array $block, string $key): ?array
     {
         return [] === $block[$key] ? null : $block;
+    }
+
+    /**
+     * A quote ends with its source, when it has one. A source left empty is
+     * none; a quote left with only its source is empty, so it is left out.
+     *
+     * @param array<array-key, mixed> $node
+     *
+     * @return null|array<string, mixed>
+     */
+    private static function quote(array $node, string $path): ?array
+    {
+        $content = self::content($node, $path);
+        $last = array_key_last($content);
+        $source = null;
+
+        if (null !== $last && 'quoteSource' === self::type($content[$last], $sourcePath = \sprintf('%s.content[%d]', $path, $last))) {
+            $source = self::plainText(self::node($content[$last], 'quoteSource', $sourcePath), $sourcePath);
+            $node['content'] = \array_slice($content, 0, $last);
+        }
+
+        $quote = self::nonEmpty(['type' => 'quote', 'paragraphs' => self::paragraphs($node, $path)], 'paragraphs');
+
+        if (null !== $quote && null !== $source && '' !== $source) {
+            $quote['source'] = $source;
+        }
+
+        return $quote;
+    }
+
+    /**
+     * Text of a node that takes no marks, trimmed.
+     *
+     * @param array<array-key, mixed> $node
+     */
+    private static function plainText(array $node, string $path): string
+    {
+        $text = '';
+
+        foreach (self::content($node, $path) as $index => $child) {
+            $childPath = \sprintf('%s.content[%d]', $path, $index);
+            $child = self::node($child, 'text', $childPath);
+
+            if ([] !== ($child['marks'] ?? [])) {
+                throw InvalidRichText::malformed($childPath.'.marks', 'empty: this text takes no marks');
+            }
+
+            $text .= self::string($child['text'] ?? null, $childPath.'.text');
+        }
+
+        return trim($text);
     }
 
     /**
@@ -232,7 +283,10 @@ final readonly class TiptapRichText
         return match (true) {
             $block instanceof Paragraph => self::tiptapParagraph($block->text()),
             $block instanceof Heading => ['type' => 'heading', 'attrs' => ['level' => $block->level()], 'content' => self::tiptapInline($block->text())],
-            $block instanceof Quote => ['type' => 'blockquote', 'content' => array_map(self::tiptapParagraph(...), $block->paragraphs())],
+            $block instanceof Quote => ['type' => 'blockquote', 'content' => [
+                ...array_map(self::tiptapParagraph(...), $block->paragraphs()),
+                ...(null === $block->source() ? [] : [['type' => 'quoteSource', 'content' => [['type' => 'text', 'text' => $block->source()]]]]),
+            ]],
             $block instanceof Callout => ['type' => 'callout', 'attrs' => ['variant' => $block->variant()->value], 'content' => array_map(self::tiptapParagraph(...), $block->paragraphs())],
             $block instanceof ItemList => [
                 'type' => ListStyle::Ordered === $block->style() ? 'orderedList' : 'bulletList',
@@ -330,6 +384,15 @@ final readonly class TiptapRichText
     private static function content(array $node, string $path): array
     {
         return self::list($node['content'] ?? [], $path.'.content');
+    }
+
+    private static function string(mixed $value, string $path): string
+    {
+        if (!\is_string($value)) {
+            throw InvalidRichText::malformed($path, 'a string');
+        }
+
+        return $value;
     }
 
     /**

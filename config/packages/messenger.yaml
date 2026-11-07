@@ -8,6 +8,10 @@ framework:
             # Domain events, consumed by cron with messenger:consume async.
             async:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    # A Doctrine transport option: how long a message taken by a
+                    # worker that died stays held before it is delivered again.
+                    redeliver_timeout: '%env(int:MESSENGER_REDELIVER_TIMEOUT)%'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000

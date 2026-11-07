@@ -89,6 +89,9 @@ services:
     environment:
       DATABASE_URL: "mysql://app:app@database:3306/app?serverVersion=11.8.9-MariaDB&charset=utf8mb4"
       REDIS_URL: "redis://redis:6379"
+      # Editing code rebuilds the dev cache, which can kill the worker mid
+      # message; this delivers that message again within a minute, not an hour.
+      MESSENGER_REDELIVER_TIMEOUT: "60"
     volumes:
       - .:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz-app.ini:ro

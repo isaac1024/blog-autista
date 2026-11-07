@@ -140,10 +140,13 @@ ui:
         noscript: 'Editing the content needs JavaScript. The title and the web address are saved anyway.'
         groups:
             table: 'Table'
+            quote: 'Quote'
         paragraph: 'Paragraph'
         heading: 'Heading %level%'
         bold: 'Bold'
         quote: 'Quote'
+        quote_source: 'Quote source'
+        quote_source_hint: 'Who said it, or where it comes from'
         bullet_list: 'Bulleted list'
         ordered_list: 'Numbered list'
         callout:

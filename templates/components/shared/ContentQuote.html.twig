@@ -1,6 +1,17 @@
 {% import 'shared/inline_text.html.twig' as inline %}
+{% set quote %}
 <blockquote>
 {% for paragraph in paragraphs %}
     <p>{{ inline.render(paragraph) }}</p>
 {% endfor %}
 </blockquote>
+{% endset %}
+{# The source is the caption of the figure, so it reads as the quote's, not as part of it. #}
+{% if source is null %}
+{{ quote }}
+{% else %}
+<figure data-quote>
+{{ quote }}
+    <figcaption>{{ source }}</figcaption>
+</figure>
+{% endif %}

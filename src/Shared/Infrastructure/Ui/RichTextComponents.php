@@ -45,6 +45,7 @@ final readonly class RichTextComponents
             ]),
             $block instanceof Quote => new PageComponent('Shared:ContentQuote', [
                 'paragraphs' => array_map(self::runs(...), $block->paragraphs()),
+                'source' => $block->source(),
             ]),
             $block instanceof ItemList => new PageComponent('Shared:ContentList', [
                 'ordered' => ListStyle::Ordered === $block->style(),

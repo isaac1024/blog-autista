@@ -54,6 +54,15 @@
     /* Tint of the current navigation item and of badges; accent text keeps 7:1 on it. */
     --color-accent-soft: #f4f0fa;
     --color-accent-strong: #4e3176;
+    /*
+     * Label and tint of each kind of callout; the label keeps 7:1 on its tint.
+     * The edge comes from a stretch of the spectrum: the cool end for a note,
+     * the warmer one for what the reader should not miss.
+     */
+    --color-note: #2c5080;
+    --color-note-soft: #edf2f8;
+    --color-important: #863526;
+    --color-important-soft: #fbefeb;
     --color-on-accent: #fff;
 
     --color-danger: #7f1d1d;
@@ -102,12 +111,27 @@
 }
 
 @layer base {
+    /*
+     * Icons of the callouts, painted with the same stretch of the spectrum as
+     * their edge. A background image can't take a colour from a token, so
+     * each theme has its own.
+     */
     :root {
         color-scheme: light dark;
+        --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23614092'/%3E%3Cstop offset='1' stop-color='%232e8277'/%3E%3C/linearGradient%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
+        --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23cc9433'/%3E%3Cstop offset='1' stop-color='%23c0604f'/%3E%3C/linearGradient%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
+            --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23c9b6ea'/%3E%3Cstop offset='1' stop-color='%238ccbc1'/%3E%3C/linearGradient%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
+            --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23e8c483'/%3E%3Cstop offset='1' stop-color='%23eba597'/%3E%3C/linearGradient%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
+
+            --color-note: #a9c6ea;
+            --color-note-soft: #1c232d;
+            --color-important: #f0b4a7;
+            --color-important-soft: #2c1f1e;
+
             --color-bg: #17151a;
             --color-surface: #211f25;
             --color-text: #eeeaf4;
@@ -223,25 +247,77 @@
             padding-left: 1rem;
         }
 
+        /*
+         * Where a quote comes from, under it and set apart by a dash. The
+         * site captions the quote with it; the editor writes it inside it.
+         */
+        & figure[data-quote] {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        & figure[data-quote] figcaption,
+        & [data-quote-source] {
+            color: var(--color-muted);
+        }
+
+        /* Lined up with the text of the quote, past its border. */
+        & figure[data-quote] figcaption {
+            padding-left: calc(1rem + 4px);
+        }
+
+        /* The dash is only drawn: assistive technology reads the source alone. */
+        & figure[data-quote] figcaption::before,
+        & [data-quote-source]::before {
+            content: "— " / "";
+        }
+
+        /*
+         * Square, like the other blocks of the text. The edge is drawn under a
+         * transparent border, which forced colours turn into a visible line.
+         */
         & [data-callout] {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            border: 2px solid var(--color-border);
-            border-left-width: 6px;
-            border-radius: var(--radius-control);
-            background-color: var(--color-bg);
-            padding: 1rem;
-        }
-
-        /* The variant is named in words, so it never depends on colour alone. */
-        & [data-callout]::before {
-            content: attr(data-label);
-            font-weight: 700;
+            border-left: 6px solid transparent;
+            background:
+                linear-gradient(var(--color-spectrum-1), var(--color-spectrum-2), var(--color-spectrum-3)) left / 6px 100% no-repeat border-box,
+                var(--color-note-soft);
+            padding: 1rem 1rem 1rem 1.125rem;
         }
 
         & [data-callout][data-variant="important"] {
-            border-color: var(--color-accent);
+            background:
+                linear-gradient(var(--color-spectrum-5), var(--color-spectrum-6)) left / 6px 100% no-repeat border-box,
+                var(--color-important-soft);
+        }
+
+        /*
+         * The variant is named in words, so it never depends on colour alone:
+         * the site writes it in the markup; the editor, which can't add text
+         * to what is being edited, shows it from its data-label. The icon
+         * before the name is only decoration, drawn as a background.
+         */
+        & [data-callout-label],
+        & [data-callout][data-label]::before {
+            min-height: 1.5rem;
+            padding-left: 2rem;
+            background: no-repeat left center / 1.5rem 1.5rem var(--icon-note);
+            color: var(--color-note);
+            font-weight: 700;
+        }
+
+        & [data-callout][data-label]::before {
+            content: attr(data-label);
+        }
+
+        & [data-callout][data-variant="important"] [data-callout-label],
+        & [data-callout][data-variant="important"][data-label]::before {
+            background-image: var(--icon-important);
+            color: var(--color-important);
         }
 
         /*
@@ -295,6 +371,27 @@
             float: left;
             height: 0;
             color: var(--color-muted);
+            pointer-events: none;
+        }
+
+        /*
+         * An empty source still shows where it goes, right after its dash,
+         * which takes a fixed width so the hint lines up with the text.
+         */
+        & [data-quote-source] {
+            position: relative;
+        }
+
+        & [data-quote-source]::before {
+            display: inline-block;
+            width: 1.25em;
+        }
+
+        & [data-quote-source]:has(> .ProseMirror-trailingBreak:only-child)::after {
+            content: attr(data-placeholder);
+            position: absolute;
+            top: 0;
+            left: 1.25em;
             pointer-events: none;
         }
 

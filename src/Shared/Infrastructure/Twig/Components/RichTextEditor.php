@@ -115,6 +115,11 @@ final class RichTextEditor
         return $this->allows('table');
     }
 
+    public function allowsQuotes(): bool
+    {
+        return $this->allows('quote');
+    }
+
     /**
      * Labels of the callout variants, which the editor shows on each callout.
      *

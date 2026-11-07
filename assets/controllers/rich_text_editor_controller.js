@@ -64,6 +64,111 @@ const Callout = Node.create({
     },
 });
 
+/**
+ * Where a quote comes from, written as plain text at its end. Enter leaves
+ * the quote for a new paragraph; Backspace on an empty source removes it.
+ */
+const QuoteSource = Node.create({
+    name: 'quoteSource',
+    content: 'text*',
+    marks: '',
+    defining: true,
+
+    addOptions() {
+        return { hint: '' };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-quote-source]' }];
+    },
+
+    // Tiptap's Placeholder only marks top-level blocks, so the source carries its own hint.
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes, { 'data-quote-source': '', 'data-placeholder': this.options.hint }), 0];
+    },
+
+    addCommands() {
+        return {
+            /** Takes the cursor to the source of the current quote, adding it if it has none. */
+            focusQuoteSource: () => ({ tr, state, dispatch }) => {
+                const quote = currentQuote(state);
+
+                if (quote === null) {
+                    return false;
+                }
+
+                if (dispatch) {
+                    const { node, pos } = quote;
+                    let end = pos + node.nodeSize - 1;
+
+                    if (node.lastChild.type.name !== this.name) {
+                        tr.insert(end, this.type.create());
+                        end += 2;
+                    }
+
+                    tr.setSelection(TextSelection.create(tr.doc, end - 1));
+                    tr.scrollIntoView();
+                }
+
+                return true;
+            },
+        };
+    },
+
+    addKeyboardShortcuts() {
+        const inSource = () => this.editor.state.selection.$from.parent.type.name === this.name;
+
+        return {
+            Enter: () => {
+                if (!inSource()) {
+                    return false;
+                }
+
+                const { pos, node } = currentQuote(this.editor.state);
+                const after = pos + node.nodeSize;
+
+                return this.editor.chain()
+                    .insertContentAt(after, { type: 'paragraph' })
+                    .setTextSelection(after + 1)
+                    .scrollIntoView()
+                    .run();
+            },
+            Backspace: () => {
+                const { $from, empty } = this.editor.state.selection;
+
+                if (!inSource() || !empty || $from.parentOffset > 0) {
+                    return false;
+                }
+
+                // At the start of a source with text, it stays a source rather than joining the quote.
+                if ($from.parent.content.size > 0) {
+                    return true;
+                }
+
+                const from = $from.before();
+
+                return this.editor.chain()
+                    .deleteRange({ from, to: from + $from.parent.nodeSize })
+                    .setTextSelection(from - 1)
+                    .run();
+            },
+        };
+    },
+});
+
+/** The quote around the cursor, with where it starts, or null outside of one. */
+const currentQuote = (state) => {
+    const { $from } = state.selection;
+
+    for (let depth = $from.depth; depth > 0; depth -= 1) {
+        if ($from.node(depth).type.name === 'blockquote') {
+            return { node: $from.node(depth), pos: $from.before(depth) };
+        }
+    }
+
+    return null;
+};
+
 /** Top-level blocks of a document, with where each starts and ends. */
 const topLevelBlocks = (doc) => {
     const blocks = [];
@@ -212,8 +317,8 @@ const SlashMenu = Extension.create({
             editor: this.editor,
             char: '/',
             startOfLine: true,
-            // Table cells only hold paragraphs, so there is nothing to choose there.
-            allow: ({ editor }) => !editor.isActive('table'),
+            // Table cells and the source of a quote only hold text, so there is nothing to choose there.
+            allow: ({ editor }) => !editor.isActive('table') && !editor.isActive('quoteSource'),
             items: ({ query }) => this.options.items(query),
             command: ({ editor, range, props }) => {
                 editor.chain().focus().deleteRange(range).run();
@@ -235,6 +340,7 @@ const COMMANDS = {
     deleteRow: (chain) => chain.deleteRow(),
     deleteColumn: (chain) => chain.deleteColumn(),
     deleteTable: (chain) => chain.deleteTable(),
+    quoteSource: (chain) => chain.focusQuoteSource(),
     undo: (chain) => chain.undo(),
     redo: (chain) => chain.redo(),
 };
@@ -261,7 +367,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
 
 export default class extends Controller {
     static targets = [
-        'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'menu', 'status',
+        'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList',
     ];
 
@@ -269,6 +375,7 @@ export default class extends Controller {
         id: String,
         placeholder: String,
         slashHint: String,
+        quoteSourceHint: String,
         blockOptions: Array,
         movedUp: String,
         movedDown: String,
@@ -381,6 +488,10 @@ export default class extends Controller {
 
         if (this.hasTableToolsTarget) {
             this.tableToolsTarget.hidden = !inTable;
+        }
+
+        if (this.hasQuoteToolsTarget) {
+            this.quoteToolsTarget.hidden = !this.editor.isActive('blockquote');
         }
 
         this.markCurrentSection();
@@ -804,7 +915,7 @@ export default class extends Controller {
         }
 
         if (blocks.includes('quote')) {
-            extensions.push(Blockquote.extend({ content: 'paragraph+' }));
+            extensions.push(Blockquote.extend({ content: 'paragraph+ quoteSource?' }), QuoteSource.configure({ hint: this.quoteSourceHintValue }));
         }
 
         if (blocks.includes('list')) {

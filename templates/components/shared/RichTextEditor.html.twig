@@ -68,7 +68,7 @@
 {% macro separator() %}
 <span class="mx-0.5 h-7 w-0.5 flex-none rounded-full bg-divider" aria-hidden="true"></span>
 {% endmacro %}
-<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}">
+<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-quote-source-hint-value="{{ 'ui.editor.quote_source_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}">
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span class="{{ hideLabel ? 'sr-only' : 'text-[1rem] font-bold' }}" id="{{ id }}-label">{{ label }}</span>
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint" data-rich-text-editor-target="hint" hidden>{{ 'ui.editor.hint'|trans }}</p>
@@ -109,6 +109,12 @@
                     {{ _self.button('deleteRow', 'ui.editor.table.delete_row'|trans) }}
                     {{ _self.button('deleteColumn', 'ui.editor.table.delete_column'|trans) }}
                     {{ _self.button('deleteTable', 'ui.editor.table.delete'|trans) }}
+                </div>
+{% endif %}
+{% if this.allowsQuotes %}
+                {# Only while the cursor is in a quote. #}
+                <div class="flex flex-wrap items-center gap-1 border-t border-divider pt-1" role="group" aria-label="{{ 'ui.editor.groups.quote'|trans }}" data-rich-text-editor-target="quoteTools" hidden>
+                    {{ _self.button('quoteSource', 'ui.editor.quote_source'|trans, {icon: false}) }}
                 </div>
 {% endif %}
             </div>

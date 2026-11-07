@@ -1,5 +1,6 @@
 {% import 'shared/inline_text.html.twig' as inline %}
-<div data-callout data-variant="{{ variant }}" data-label="{{ ('content.callout.' ~ variant)|trans }}">
+<div role="note" data-callout data-variant="{{ variant }}">
+    <p data-callout-label>{{ ('content.callout.' ~ variant)|trans }}</p>
 {% for paragraph in paragraphs %}
     <p>{{ inline.render(paragraph) }}</p>
 {% endfor %}
