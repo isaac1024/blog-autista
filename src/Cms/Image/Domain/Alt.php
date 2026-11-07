@@ -34,4 +34,9 @@ final readonly class Alt
             throw InvalidAlt::tooLong(self::MAX_LENGTH);
         }
     }
+
+    public function value(): string
+    {
+        return $this->value;
+    }
 }

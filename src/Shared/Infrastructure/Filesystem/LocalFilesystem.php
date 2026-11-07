@@ -15,11 +15,14 @@ final readonly class LocalFilesystem
     public function __construct(private Filesystem $filesystem) {}
 
     /**
-     * Copies a file, creating the directories of the target it lacks.
+     * Copies a file, creating the directories of the target it lacks, and
+     * gives the copy its permissions, such as 0o644: a copy otherwise keeps
+     * those of its source, which for an upload only its owner can read.
      */
-    public function copy(string $source, string $target): void
+    public function copy(string $source, string $target, int $permissions): void
     {
         $this->filesystem->copy($source, $target);
+        $this->filesystem->chmod($target, $permissions);
     }
 
     /**

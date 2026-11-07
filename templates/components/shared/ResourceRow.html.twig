@@ -1,7 +1,15 @@
-<li class="relative flex items-center gap-4 px-[clamp(1rem,3vw,1.5rem)] py-4 transition-colors duration-150 hover:bg-bg has-[:focus-visible]:outline-3 has-[:focus-visible]:-outline-offset-3 has-[:focus-visible]:outline-focus motion-reduce:transition-none">
+<li class="relative flex items-center gap-4 px-[clamp(1rem,3vw,1.5rem)] py-4{% if url %} transition-colors duration-150 hover:bg-bg has-[:focus-visible]:outline-3 has-[:focus-visible]:-outline-offset-3 has-[:focus-visible]:outline-focus motion-reduce:transition-none{% endif %}">
+{% if thumbnail %}
+    {# The title names the resource, so the thumbnail says nothing of its own. #}
+    <img class="block aspect-video w-20 flex-none rounded-control border border-divider bg-bg object-cover sm:w-28" src="{{ thumbnail }}" width="112" height="63" alt="" loading="lazy" decoding="async">
+{% endif %}
     <div class="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+{% if url %}
             <a class="font-bold text-text no-underline break-words after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:outline-none" href="{{ url }}">{{ title }}</a>
+{% else %}
+            <span class="font-bold text-text break-words">{{ title }}</span>
+{% endif %}
 {% if meta %}
             <span class="text-[1rem] text-muted break-all">{{ meta }}</span>
 {% endif %}
@@ -17,7 +25,9 @@
         </div>
 {% endif %}
     </div>
+{% if url %}
     <svg class="h-5 w-5 flex-none text-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M7.5 4.5l5.5 5.5-5.5 5.5" />
     </svg>
+{% endif %}
 </li>

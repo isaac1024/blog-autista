@@ -15,6 +15,16 @@ cms:
             title: 'No images yet'
             message: 'When you upload an image, it will show up here.'
             action: 'Upload the first image'
+        search:
+            label: 'Search by alternative text'
+            submit: 'Search'
+            empty:
+                title: 'No results'
+                message: 'No image has “%alt%” in its alternative text.'
+                action: 'See all images'
+        list:
+            label: 'Images of the blog'
+            uploaded_at: 'Uploaded on %date%'
         upload:
             title: 'Upload an image'
             description: 'Choose an image and the part of it you want to show.'

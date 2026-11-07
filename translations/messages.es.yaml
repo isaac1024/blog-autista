@@ -15,6 +15,16 @@ cms:
             title: 'Todavía no hay imágenes'
             message: 'Cuando subas una imagen, aparecerá aquí.'
             action: 'Subir la primera imagen'
+        search:
+            label: 'Buscar por texto alternativo'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+                message: 'Ninguna imagen tiene «%alt%» en su texto alternativo.'
+                action: 'Ver todas las imágenes'
+        list:
+            label: 'Imágenes del blog'
+            uploaded_at: 'Subida el %date%'
         upload:
             title: 'Subir una imagen'
             description: 'Elige una imagen y el trozo de ella que quieres mostrar.'

@@ -27,7 +27,8 @@ final readonly class FilesystemImageStorage implements ImageStorage
     #[\Override]
     public function save(ImagePath $path, ImageFile $file): void
     {
-        $this->filesystem->copy($file->path(), $this->absolute($path));
+        // Readable by everyone, so the web server can serve it to the CMS.
+        $this->filesystem->copy($file->path(), $this->absolute($path), 0o644);
     }
 
     #[\Override]

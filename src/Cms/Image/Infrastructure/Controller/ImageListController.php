@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace Cms\Image\Infrastructure\Controller;
 
+use Cms\Image\Application\ImageResponse;
+use Cms\Image\Application\ImageSearcher;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageRepository;
+use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * The image library, where images are uploaded. There are no images to list
- * yet, so it always invites to upload the first one.
+ * The image library, where images are uploaded, listed newest first and
+ * searched by their alternative text.
  */
 final class ImageListController extends AbstractController
 {
@@ -28,20 +33,46 @@ final class ImageListController extends AbstractController
      */
     private const float QUALITY = 0.85;
 
+    /**
+     * Where the CMS host serves the files of the images: the web server maps
+     * it onto the image storage.
+     */
+    private const string MEDIA_URL = '/media/';
+
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
     ) {}
 
     #[Route('/images', name: 'cms_images', methods: ['GET'])]
-    public function __invoke(): Response
-    {
-        return $this->pageRenderer->render($this->page());
+    public function __invoke(
+        ImageRepository $imageRepository,
+        #[MapQueryParameter]
+        string $alt = '',
+        #[MapQueryParameter]
+        int $page = 1,
+    ): Response {
+        $alt = trim($alt);
+
+        try {
+            $images = new ImageSearcher($alt, $page)($imageRepository);
+        } catch (InvalidCriteria $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        }
+
+        return $this->pageRenderer->render($this->page($images, $alt));
     }
 
-    private function page(): Page
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @param list<ImageResponse> $images
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
+    private function page(array $images, string $alt): Page
     {
-        return CmsLayout::page(\sprintf(
+        $page = CmsLayout::page(\sprintf(
             '%s · blog autista',
             $this->translator->trans('cms.images.title'),
         ))
@@ -51,7 +82,17 @@ final class ImageListController extends AbstractController
             ], [
                 $this->uploadModal(),
             ])
-            ->withMain('Shared:EmptyState', [
+            ->withMain('Shared:SearchForm', [
+                'action' => $this->generateUrl('cms_images'),
+                'name' => 'alt',
+                'id' => 'image-search',
+                'label' => $this->translator->trans('cms.images.search.label'),
+                'submit' => $this->translator->trans('cms.images.search.submit'),
+                'value' => $alt,
+            ]);
+
+        if ([] === $images && '' === $alt) {
+            return $page->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans('cms.images.empty.title'),
                 'message' => $this->translator->trans('cms.images.empty.message'),
             ], [
@@ -60,6 +101,38 @@ final class ImageListController extends AbstractController
                     'label' => $this->translator->trans('cms.images.empty.action'),
                 ]),
             ]);
+        }
+
+        if ([] === $images) {
+            return $page->withMain('Shared:EmptyState', [
+                'title' => $this->translator->trans('cms.images.search.empty.title'),
+                'message' => $this->translator->trans('cms.images.search.empty.message', ['%alt%' => $alt]),
+            ], [
+                new PageComponent('Shared:ButtonLink', [
+                    'url' => $this->generateUrl('cms_images'),
+                    'label' => $this->translator->trans('cms.images.search.empty.action'),
+                ]),
+            ]);
+        }
+
+        return $page->withMain('Shared:ResourceList', [
+            'label' => $this->translator->trans('cms.images.list.label'),
+        ], array_map($this->row(...), $images));
+    }
+
+    /**
+     * An image by its thumbnail, its alternative text and when it was
+     * uploaded. It opens nothing until images can be edited.
+     */
+    private function row(ImageResponse $image): PageComponent
+    {
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+
+        return new PageComponent('Shared:ResourceRow', [
+            'title' => $image->alt,
+            'meta' => $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
+            'thumbnail' => self::MEDIA_URL.$image->path,
+        ]);
     }
 
     /**

@@ -18,6 +18,7 @@ use Shared\Domain\Clock;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_image')]
+#[ORM\Index(name: 'ftx_cms_image_alt', columns: ['alt'], flags: ['fulltext'])]
 final class Image extends AggregateRoot
 {
     /**
@@ -73,5 +74,20 @@ final class Image extends AggregateRoot
     public function save(ImageRepository $imageRepository): void
     {
         $imageRepository->save($this);
+    }
+
+    public function alt(): Alt
+    {
+        return $this->alt;
+    }
+
+    public function path(): ImagePath
+    {
+        return $this->path;
+    }
+
+    public function timeline(): Timeline
+    {
+        return $this->timeline;
     }
 }
