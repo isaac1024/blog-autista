@@ -8,6 +8,8 @@
 <svg class="h-5 w-5 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 {% if name == 'pages' %}
     <path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z" /><path d="M14 3.5v5h5M9 13h6M9 16.5h4" />
+{% elseif name == 'images' %}
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.75" /><path d="M20.5 15.5l-5-5-9 9" />
 {% elseif name == 'logout' %}
     <path d="M10 20.5H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4M16 16.5l4.5-4.5L16 7.5M20.5 12H9.5" />
 {% endif %}
@@ -24,6 +26,7 @@
 {% macro navigation(currentRoute) %}
 <ul class="m-0 flex list-none flex-col gap-1 p-0">
     <li>{{ _self.item('cms.nav.pages'|trans, path('cms_pages'), 'pages', currentRoute starts with 'cms_pages') }}</li>
+    <li>{{ _self.item('cms.nav.images'|trans, path('cms_images'), 'images', currentRoute starts with 'cms_images') }}</li>
 </ul>
 {% endmacro %}
 

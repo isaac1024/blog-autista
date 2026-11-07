@@ -5,7 +5,19 @@ cms:
         content: 'Content'
         menu: 'Menu'
         pages: 'Pages'
+        images: 'Images'
         logout: 'Sign out'
+    images:
+        title: 'Images'
+        subtitle: 'The images the pages of the blog show, cropped to 16:9.'
+        add: 'Add image'
+        empty:
+            title: 'No images yet'
+            message: 'When you add an image, it will show up here.'
+            action: 'Add the first image'
+        new:
+            title: 'New image'
+            subtitle: 'Choose an image and the part of it you want to show.'
     pages:
         title: 'Pages'
         subtitle: 'Pages are the fixed content of the blog, like “About me” or “Contact”.'

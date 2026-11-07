@@ -5,7 +5,19 @@ cms:
         content: 'Contenido'
         menu: 'Menú'
         pages: 'Páginas'
+        images: 'Imágenes'
         logout: 'Cerrar sesión'
+    images:
+        title: 'Imágenes'
+        subtitle: 'Las imágenes que muestran las páginas del blog, recortadas en 16:9.'
+        add: 'Añadir imagen'
+        empty:
+            title: 'Todavía no hay imágenes'
+            message: 'Cuando añadas una imagen, aparecerá aquí.'
+            action: 'Añadir la primera imagen'
+        new:
+            title: 'Nueva imagen'
+            subtitle: 'Elige una imagen y el trozo de ella que quieres mostrar.'
     pages:
         title: 'Páginas'
         subtitle: 'Las páginas son el contenido fijo del blog, como «Sobre mí» o «Contacto».'
