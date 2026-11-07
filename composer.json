@@ -107,6 +107,7 @@
             "phpstan analyse --memory-limit=1G"
         ],
         "complexity": "phpmd analyze src --ruleset phpmd.xml --exclude '*Migrations*' --cache --cache-file var/phpmd.result-cache.php --no-progress",
+        "schema": "bin/console doctrine:schema:validate",
         "test": "paratest",
         "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
@@ -117,6 +118,7 @@
             "@twig:cs:check",
             "@complexity",
             "@stan",
+            "@schema",
             "@test"
         ],
         "check:full": [
