@@ -23,10 +23,13 @@ final readonly class LocalFilesystem
     }
 
     /**
-     * Removes a file, if it is there.
+     * Removes a file, if it is there. Directories are left alone, so a wrong
+     * path can never take a whole tree with it.
      */
     public function remove(string $path): void
     {
-        $this->filesystem->remove($path);
+        if (is_file($path)) {
+            $this->filesystem->remove($path);
+        }
     }
 }

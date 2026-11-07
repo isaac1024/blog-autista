@@ -20,7 +20,7 @@ final readonly class FilesystemImageStorage implements ImageStorage
 {
     public function __construct(
         private LocalFilesystem $filesystem,
-        #[Autowire('%kernel.project_dir%/media')]
+        #[Autowire(param: 'cms.image.storage_directory')]
         private string $directory,
     ) {}
 

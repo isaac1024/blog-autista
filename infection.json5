@@ -28,7 +28,8 @@
             "*\\Controller\\*::searchEngineSection",
             "*\\Controller\\*::pageActions",
             "*\\Controller\\*::formActions",
-            "*\\Controller\\*::confirmModal"
+            "*\\Controller\\*::confirmModal",
+            "*\\Controller\\*::uploadModal"
         ]
     },
     "timeout": 60,

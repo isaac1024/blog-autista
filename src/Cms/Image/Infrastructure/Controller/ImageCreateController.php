@@ -34,10 +34,8 @@ final class ImageCreateController extends AbstractController
                 $image instanceof UploadedFile && $image->isValid() ? $image->getPathname() : '',
             )($imageRepository, $imageStorage);
         } catch (DomainError $error) {
-            // Told on the page it goes back to.
+            // Told in the library, where it goes back to all the same.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
-
-            return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
         }
 
         return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
