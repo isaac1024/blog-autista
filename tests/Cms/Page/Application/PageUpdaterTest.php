@@ -23,6 +23,7 @@ use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
@@ -55,7 +56,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, $title, $slug)($repository);
+        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -94,7 +95,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, $title, $slug)($repository);
+        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -128,7 +129,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content)));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository);
+        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -163,7 +164,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository);
+        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -237,7 +238,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository);
+        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -271,7 +272,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository);
+        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -297,7 +298,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        self::updater($id, 'Sobre mí', 'contacto')($repository);
+        self::updater($id, 'Sobre mí', 'contacto')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesThePageWhenTheSlugIsAlreadyItsOwn(): void
@@ -311,7 +312,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Quién soy', slug: 'sobre-mi')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi')($repository);
+        self::updater($id, 'Quién soy', 'sobre-mi')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesTheHomePageWithTheEditedTitleAndStillNoSlug(): void
@@ -323,7 +324,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::home(id: $id, title: 'Inicio')));
 
-        self::updater($id, 'Inicio', '')($repository);
+        self::updater($id, 'Inicio', '')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesNothingWhenTheHomePageIsGivenASlug(): void
@@ -335,7 +336,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidSlug::onHome('inicio'));
 
-        self::updater($id, 'Inicio', 'inicio')($repository);
+        self::updater($id, 'Inicio', 'inicio')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesNothingWhenTheHomePageEditIsInvalid(): void
@@ -347,7 +348,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidTitle::tooShort(Title::MIN_LENGTH));
 
-        self::updater($id, 'Sí', '')($repository);
+        self::updater($id, 'Sí', '')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesAUniquePageWithTheEditedTitleAndSlugKeepingItsType(): void
@@ -359,7 +360,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Escríbeme', slug: 'escribeme', type: PageType::Contact)));
 
-        self::updater($id, 'Escríbeme', 'escribeme')($repository);
+        self::updater($id, 'Escríbeme', 'escribeme')($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesAPageLeftWithoutASlug(): void
@@ -372,7 +373,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Contacto', slug: '', type: PageType::Contact)));
 
-        self::updater($id, 'Contacto', '')($repository);
+        self::updater($id, 'Contacto', '')($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -402,7 +403,7 @@ final class PageUpdaterTest extends TestCase
                 updatedAt: $updatedAt,
             )));
 
-        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository);
+        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -426,7 +427,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::published(id: $id, title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository);
+        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository, self::createStub(EventBus::class));
     }
 
     public function testItSavesAPublishedPageWithoutWhatItNeedsToBePublishedAgain(): void
@@ -446,7 +447,7 @@ final class PageUpdaterTest extends TestCase
                 publishedMetaDescription: PageMother::META_DESCRIPTION,
             )));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', Text::EMPTY, '')($repository);
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::EMPTY, '')($repository, self::createStub(EventBus::class));
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -458,7 +459,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        self::updater($id, 'Quién soy', 'quien-soy')($repository);
+        self::updater($id, 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -469,7 +470,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        self::updater('page-id', 'Quién soy', 'quien-soy')($repository);
+        self::updater('page-id', 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class));
     }
 
     /**

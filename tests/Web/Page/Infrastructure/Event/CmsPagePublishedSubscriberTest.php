@@ -12,6 +12,7 @@ use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
+use Web\Page\Domain\PageType;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 
@@ -26,6 +27,13 @@ final class CmsPagePublishedSubscriberTest extends KernelTestCase
         $this->handle(CmsPagePublishedMother::body());
 
         self::assertEquals(Page::publish(CmsPagePublishedMother::create()), $this->storedPage());
+    }
+
+    public function testItPutsTheHomePageOnTheSiteWithoutASlug(): void
+    {
+        $this->handle(CmsPagePublishedMother::body(title: 'Inicio', slug: null, type: 'home'));
+
+        self::assertEquals(Page::publish(CmsPagePublishedMother::create(title: 'Inicio', slug: null, type: PageType::Home)), $this->storedPage());
     }
 
     public function testItReplacesThePageWithTheVersionTheCmsPublishesLater(): void

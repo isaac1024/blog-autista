@@ -8,6 +8,7 @@ use Cms\Shared\Domain\Slugger;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
@@ -281,9 +282,16 @@ final class Page extends AggregateRoot
         return !$this->type->isUnique() && PageStatus::Published !== $this->status;
     }
 
-    public function save(PageRepository $pageRepository): void
+    /**
+     * Saves the page, then tells the rest of the system what happened to it
+     * since it was loaded. It takes its events before saving, so the saved
+     * page holds none, and none is told twice.
+     */
+    public function save(PageRepository $pageRepository, EventBus $eventBus): void
     {
+        $events = $this->pullDomainEvents();
         $pageRepository->save($this);
+        $eventBus->publish(...$events);
     }
 
     /**

@@ -106,7 +106,7 @@ final class PageFinderTest extends TestCase
     }
 
     #[DataProvider('pagesAndTheirActions')]
-    public function testItTellsWhatCanBeDoneToThePage(Page $page, bool $hasSomethingToPublish, bool $canBeUnpublished, bool $canBeDeleted): void
+    public function testItTellsWhatCanBeDoneToThePage(Page $page, bool $hasSomethingToPublish, bool $canBeUnpublished, bool $canBeDeleted, bool $changed): void
     {
         $repository = self::createStub(PageRepository::class);
         $repository->method('find')->willReturn($page);
@@ -114,22 +114,26 @@ final class PageFinderTest extends TestCase
         $response = (new PageFinder(PageIdMother::DEFAULT_VALUE))($repository);
 
         self::assertSame(
-            [$hasSomethingToPublish, $canBeUnpublished, $canBeDeleted],
-            [$response->hasSomethingToPublish, $response->canBeUnpublished, $response->canBeDeleted],
+            [$hasSomethingToPublish, $canBeUnpublished, $canBeDeleted, $changed],
+            [$response->hasSomethingToPublish, $response->canBeUnpublished, $response->canBeDeleted, $response->changed],
         );
     }
 
     /**
-     * @return iterable<string, array{Page, bool, bool, bool}>
+     * Publishing, unpublishing, deleting, and discarding changes, which only
+     * a page on the site with another version has.
+     *
+     * @return iterable<string, array{Page, bool, bool, bool, bool}>
      */
     public static function pagesAndTheirActions(): iterable
     {
-        yield 'a draft' => [PageMother::create(), true, false, true];
-        yield 'a published page as it is on the site' => [PageMother::published(), false, true, false];
-        yield 'a published page with changes' => [PageMother::published(title: 'Quién soy', publishedTitle: 'Sobre mí'), true, true, false];
-        yield 'an unpublished page' => [PageMother::unpublished(), true, false, true];
-        yield 'a unique draft' => [PageMother::create(type: PageType::Contact), true, false, false];
-        yield 'a unique published page' => [PageMother::published(type: PageType::Contact), false, false, false];
+        yield 'a draft' => [PageMother::create(), true, false, true, false];
+        yield 'a published page as it is on the site' => [PageMother::published(), false, true, false, false];
+        yield 'a published page with changes' => [PageMother::published(title: 'Quién soy', publishedTitle: 'Sobre mí'), true, true, false, true];
+        yield 'an unpublished page' => [PageMother::unpublished(), true, false, true, false];
+        yield 'an unpublished page edited since' => [PageMother::unpublished(title: 'Quién soy', publishedTitle: 'Sobre mí'), true, false, true, false];
+        yield 'a unique draft' => [PageMother::create(type: PageType::Contact), true, false, false, false];
+        yield 'a unique published page' => [PageMother::published(type: PageType::Contact), false, false, false, false];
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

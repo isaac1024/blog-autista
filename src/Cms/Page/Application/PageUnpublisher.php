@@ -21,8 +21,6 @@ final readonly class PageUnpublisher
 
         $page->unpublish();
 
-        $events = $page->pullDomainEvents();
-        $page->save($pageRepository);
-        $eventBus->publish(...$events);
+        $page->save($pageRepository, $eventBus);
     }
 }

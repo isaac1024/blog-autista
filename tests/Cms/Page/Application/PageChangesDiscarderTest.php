@@ -13,6 +13,7 @@ use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
@@ -37,7 +38,7 @@ final class PageChangesDiscarderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Quién soy', publishedTitle: 'Sobre mí', updatedAt: self::BEFORE));
         $repository->expects(self::once())->method('save')->with(self::equalTo(PageMother::published(id: $id, title: 'Sobre mí')));
 
-        (new PageChangesDiscarder($id))($repository);
+        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class));
     }
 
     #[DataProvider('pagesWithoutChanges')]
@@ -49,7 +50,7 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidPublication::noChangesToDiscard());
 
-        (new PageChangesDiscarder($page->id()->value()))($repository);
+        (new PageChangesDiscarder($page->id()->value()))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -70,13 +71,13 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageChangesDiscarder($id))($repository);
+        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class));
+        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class));
     }
 }

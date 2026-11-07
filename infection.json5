@@ -22,6 +22,7 @@
         "global-ignore": [
             "*\\Controller\\*::page",
             "*\\Controller\\*::row",
+            "*\\Controller\\*::address",
             "*\\Controller\\*::slugField",
             "*\\Controller\\*::homeAddress",
             "*\\Controller\\*::searchEngineSection",

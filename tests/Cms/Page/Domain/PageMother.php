@@ -146,7 +146,8 @@ final class PageMother
     }
 
     /**
-     * A generic page taken off the site, which keeps the version it had there.
+     * A generic page taken off the site, which keeps the version it had there;
+     * with another published title, it was edited since.
      *
      * @param array<array-key, mixed> $content in the stored rich text format
      */
@@ -156,13 +157,14 @@ final class PageMother
         string $slug = SlugMother::DEFAULT_VALUE,
         array $content = self::CONTENT,
         string $metaDescription = self::META_DESCRIPTION,
+        ?string $publishedTitle = null,
     ): Page {
         return new Page(
             PageIdMother::create($id),
             PageType::Standard,
             self::version(PageType::Standard, $title, $slug, $content, $metaDescription, null),
             PageStatus::Unpublished,
-            self::version(PageType::Standard, $title, $slug, $content, $metaDescription, null),
+            self::version(PageType::Standard, $publishedTitle ?? $title, $slug, $content, $metaDescription, null),
             new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
         );
     }

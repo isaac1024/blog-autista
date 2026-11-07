@@ -18,6 +18,7 @@ use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
@@ -41,7 +42,7 @@ final class PageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new PageCreator($id, $title))($repository);
+        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -84,7 +85,7 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageCreator($id, $title))($repository);
+        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -115,6 +116,6 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
-        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository);
+        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, self::createStub(EventBus::class));
     }
 }

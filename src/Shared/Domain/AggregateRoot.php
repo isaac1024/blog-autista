@@ -7,8 +7,9 @@ namespace Shared\Domain;
 use Shared\Domain\Event\DomainEvent;
 
 /**
- * Base of aggregates that record what happens to them, so the application
- * publishes it once the aggregate is saved.
+ * Base of aggregates that record what happens to them, and tell it to the
+ * rest of the system themselves once they are saved, so no event leaves
+ * them any other way.
  */
 abstract class AggregateRoot
 {
@@ -24,7 +25,7 @@ abstract class AggregateRoot
      *
      * @return list<DomainEvent>
      */
-    final public function pullDomainEvents(): array
+    final protected function pullDomainEvents(): array
     {
         $events = $this->domainEvents;
         $this->domainEvents = [];

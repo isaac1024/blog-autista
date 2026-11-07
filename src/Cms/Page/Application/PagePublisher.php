@@ -25,8 +25,6 @@ final readonly class PagePublisher
 
         $page->publish();
 
-        $events = $page->pullDomainEvents();
-        $page->save($pageRepository);
-        $eventBus->publish(...$events);
+        $page->save($pageRepository, $eventBus);
     }
 }
