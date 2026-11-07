@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Page\Infrastructure\Controller;
+
+use Cms\Page\Application\PageNotFound;
+use Cms\Page\Application\PagePublisher;
+use Cms\Page\Domain\PageRepository;
+use Shared\Domain\Clock;
+use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\RichText\TiptapRichText;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+
+/**
+ * Takes the same fields as the update, since the editor publishes what is in
+ * the form, saved or not.
+ */
+final class PagePublishController extends AbstractController
+{
+    public function __construct(private readonly TiptapRichText $tiptapRichText) {}
+
+    #[Route('/pages/{id}/publish', name: 'cms_pages_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    public function __invoke(
+        string $id,
+        Request $request,
+        PageRepository $pageRepository,
+        Clock $clock,
+        EventBus $eventBus,
+    ): Response {
+        try {
+            new PagePublisher(
+                $id,
+                $request->request->getString('title'),
+                $request->request->getString('slug'),
+                $this->tiptapRichText->toStored($request->request->getString('content')),
+                $request->request->getString('meta_description'),
+                $request->request->getString('robots'),
+            )($pageRepository, $clock, $eventBus);
+        } catch (PageNotFound $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        } catch (DomainError) {
+            return new Response(status: Response::HTTP_BAD_REQUEST);
+        }
+
+        return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
+    }
+}

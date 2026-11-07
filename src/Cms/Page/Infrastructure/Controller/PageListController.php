@@ -8,10 +8,10 @@ use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PageSearcher;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\Criteria\InvalidCriteria;
-use Shared\Ui\CmsLayout;
-use Shared\Ui\Page\Page;
-use Shared\Ui\Page\PageComponent;
-use Shared\Ui\Page\PageRenderer;
+use Shared\Infrastructure\Ui\CmsLayout;
+use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
+use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
@@ -26,6 +26,7 @@ final class PageListController extends AbstractController
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
         private readonly PageRole $pageRole,
+        private readonly PageState $pageState,
     ) {}
 
     #[Route('/pages', name: 'cms_pages', methods: ['GET'])]
@@ -133,16 +134,25 @@ final class PageListController extends AbstractController
     }
 
     /**
-     * A page with its public address, and the role of the unique ones, so
-     * editors can tell the home or the legal pages apart from the rest.
+     * A page with its address, when it last changed, where it stands, and the
+     * role of the unique ones, so editors can tell the home or the legal pages
+     * apart from the rest. A published page shows the address it has on the
+     * site, which changes only when it is published again.
      */
     private function row(PageResponse $page): PageComponent
     {
+        $slug = $page->publishedSlug ?? $page->slug;
+
         return new PageComponent('Shared:ResourceRow', [
             'title' => $page->title,
             'url' => $this->generateUrl('cms_pages_edit', ['id' => $page->id]),
-            'meta' => $page->home ? '/' : \sprintf('/%s.html', $page->slug),
+            'meta' => \sprintf(
+                '%s · %s',
+                $page->home ? '/' : \sprintf('/%s.html', $slug),
+                $this->pageState->lastUpdate($page),
+            ),
             'badge' => ($this->pageRole)($page),
+            'status' => $this->pageState->label($page),
         ]);
     }
 }

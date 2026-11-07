@@ -9,6 +9,7 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
+use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageMother;
@@ -19,6 +20,7 @@ use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -135,6 +137,33 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     {
         $id = PageId::random();
         $page = PageMother::create(id: $id->value(), title: 'Política de cookies', slug: 'politica-cookies', type: PageType::CookiePolicy);
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($page);
+        $entityManager->clear();
+
+        self::assertEquals($page, $entityManager->find(Page::class, $id));
+    }
+
+    public function testItSavesTheContentAndTheSearchEngineSettingsSoTheyCanBeReadBack(): void
+    {
+        $id = PageId::random();
+        $page = PageMother::create(
+            id: $id->value(),
+            title: 'Política de cookies',
+            slug: 'politica-cookies',
+            content: Text::stored(
+                Text::heading(2, 'Qué cookies usamos'),
+                Text::paragraph('Solo usamos cookies ', '**técnicas**', '.'),
+                Text::heading(3, 'Detalle'),
+                ['type' => 'quote', 'paragraphs' => [Text::text('Una cita')]],
+                ['type' => 'list', 'style' => 'ordered', 'items' => [Text::text('Sesión'), Text::text('Idioma')]],
+                Text::callout('important', 'Puedes borrarlas desde tu navegador.'),
+                Text::table(['Nombre', 'Finalidad'], [['PHPSESSID', '']]),
+            ),
+            metaDescription: 'Qué cookies usa el blog y para qué.',
+            robots: Robots::NoindexFollow,
+        );
         $entityManager = $this->entityManager();
 
         $this->repository()->save($page);

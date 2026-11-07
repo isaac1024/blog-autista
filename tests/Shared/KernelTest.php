@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Tests;
 
-use Shared\Kernel;
+use Shared\Infrastructure\Kernel;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class KernelTest extends KernelTestCase

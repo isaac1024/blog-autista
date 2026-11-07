@@ -9,6 +9,7 @@ use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\HttpFoundation\Response;
 
 final class PageEditControllerTest extends CmsWebTestCase
@@ -54,6 +55,23 @@ final class PageEditControllerTest extends CmsWebTestCase
         self::getContainer()->get(PageRepository::class)->save(
             PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact),
         );
+
+        $client->request('GET', \sprintf(self::URL, $id));
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testItOpensTheEditorOfAPageWithContentAndSearchEngineSettings(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PageIdMother::random()->value();
+        self::getContainer()->get(PageRepository::class)->save(PageMother::create(
+            id: $id,
+            title: 'Política de cookies',
+            slug: 'politica-cookies',
+            content: Text::stored(Text::heading(2, 'Qué cookies usamos'), Text::table(['Nombre'], [['PHPSESSID']])),
+            metaDescription: 'Qué cookies usa el blog.',
+        ));
 
         $client->request('GET', \sprintf(self::URL, $id));
 

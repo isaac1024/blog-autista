@@ -15,11 +15,11 @@ parameters:
         analyse:
             # Bootstrap script and generated migrations are not application code.
             - tests/bootstrap.php
-            - src/Shared/Migrations/*
+            - src/Shared/Infrastructure/Persistence/Doctrine/Migrations/*
     tmpDir: var/phpstan
     checkMissingOverrideMethodAttribute: true
     symfony:
-        containerXmlPath: var/cache/dev/Shared_KernelDevDebugContainer.xml
+        containerXmlPath: var/cache/dev/Shared_Infrastructure_KernelDevDebugContainer.xml
     phpat:
         show_rule_names: true
     shipmonkDeadCode:

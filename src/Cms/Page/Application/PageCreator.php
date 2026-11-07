@@ -7,6 +7,7 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\SlugAvailability;
+use Shared\Domain\Clock;
 
 /**
  * Creates a page from the submitted title, deriving its slug from it.
@@ -18,9 +19,9 @@ final readonly class PageCreator
         private string $title,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository): void
+    public function __invoke(PageRepository $pageRepository, Clock $clock): void
     {
-        $page = Page::create($this->id, $this->title);
+        $page = Page::create($this->id, $this->title, $clock->now());
 
         new SlugAvailability($page)($pageRepository);
         $page->save($pageRepository);

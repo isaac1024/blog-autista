@@ -20,6 +20,9 @@ interface PageRepository
 
     public function find(PageId $id): ?Page;
 
+    /**
+     * The page edited with the slug, or on the site with it.
+     */
     public function findBySlug(PageSlug $slug): ?Page;
 
     public function findByType(PageType $type): ?Page;

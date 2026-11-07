@@ -8,6 +8,7 @@ use Cms\Page\Application\UniquePageCreator;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
+use Shared\Domain\Clock;
 use Shared\Domain\DomainError;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -20,7 +21,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final readonly class UniquePageCreateCommand
 {
-    public function __construct(private PageRepository $pageRepository) {}
+    public function __construct(
+        private PageRepository $pageRepository,
+        private Clock $clock,
+    ) {}
 
     public function __invoke(
         SymfonyStyle $style,
@@ -30,7 +34,7 @@ final readonly class UniquePageCreateCommand
         string $title,
     ): int {
         try {
-            new UniquePageCreator(PageId::random()->value(), $type, $title)($this->pageRepository);
+            new UniquePageCreator(PageId::random()->value(), $type, $title)($this->pageRepository, $this->clock);
         } catch (DomainError $error) {
             $style->error($error->getMessage());
 

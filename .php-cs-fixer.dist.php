@@ -5,7 +5,7 @@ declare(strict_types=1);
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__)
     ->exclude(['var', 'vendor', 'node_modules'])
-    ->notPath('#^src/Shared/Migrations/#')
+    ->notPath('#^src/Shared/Infrastructure/Persistence/Doctrine/Migrations/#')
     ->notPath([
         'config/bundles.php',
         'config/reference.php',

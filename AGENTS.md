@@ -47,9 +47,9 @@ Symfony:
 - Before hand-writing infrastructure (locks, queues, caches, HTTP clients,
   mailers, schedulers) or reaching for a third-party library, check whether a
   Symfony component covers it. It usually does.
-- All Twig components live in `Shared\Twig\Components`, with their templates
+- All Twig components live in `Shared\Infrastructure\Twig\Components`, with their templates
   under `templates/components/shared/` and the `Shared:` prefix. Layouts live in
-  `Shared\Ui` and `templates/shared/`. Contexts (`Cms`, `Web`) must not declare
+  `Shared\Infrastructure\Ui` and `templates/shared/`. Contexts (`Cms`, `Web`) must not declare
   their own components or layouts; they compose the shared ones.
 
 Three specifics worth spelling out, because they are easy to get wrong:

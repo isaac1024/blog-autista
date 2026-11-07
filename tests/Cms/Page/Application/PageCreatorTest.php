@@ -19,6 +19,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
 use Shared\Domain\InvalidUuid;
+use Shared\Tests\Domain\ClockMother;
 
 final class PageCreatorTest extends TestCase
 {
@@ -30,7 +31,7 @@ final class PageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new PageCreator($id, $title))($repository);
+        (new PageCreator($id, $title))($repository, ClockMother::create());
     }
 
     /**
@@ -73,7 +74,7 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageCreator($id, $title))($repository);
+        (new PageCreator($id, $title))($repository, ClockMother::create());
     }
 
     /**
@@ -104,6 +105,6 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
-        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository);
+        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, ClockMother::create());
     }
 }

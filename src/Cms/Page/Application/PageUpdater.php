@@ -7,10 +7,12 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\SlugAvailability;
+use Shared\Domain\Clock;
 
 /**
  * Saves everything edited on an existing page: its title, slug, content and
- * search engine settings.
+ * search engine settings. A published page stays on the site as it was until
+ * it is published again.
  */
 final readonly class PageUpdater
 {
@@ -24,14 +26,13 @@ final readonly class PageUpdater
         private array $content,
         private string $metaDescription,
         private string $robots,
-        private string $canonicalUrl,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository): void
+    public function __invoke(PageRepository $pageRepository, Clock $clock): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
 
-        $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots, $this->canonicalUrl);
+        $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots, $clock->now());
 
         new SlugAvailability($page)($pageRepository);
         $page->save($pageRepository);

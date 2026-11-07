@@ -48,7 +48,7 @@ final class PageListControllerTest extends CmsWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertRouteSame('cms_pages');
-        self::assertSame([], $this->cardTitles($crawler));
+        self::assertSame([], $this->rowTitles($crawler));
         self::assertSame($this->trans('cms.pages.empty.title'), $this->emptyStateTitle($crawler));
     }
 
@@ -84,7 +84,7 @@ final class PageListControllerTest extends CmsWebTestCase
             $crawler = $client->request('GET', self::URL.$query);
 
             self::assertResponseIsSuccessful($case);
-            self::assertSame($expected, $this->cardTitles($crawler), $case);
+            self::assertSame($expected, $this->rowTitles($crawler), $case);
         }
 
         foreach ([
@@ -95,7 +95,7 @@ final class PageListControllerTest extends CmsWebTestCase
             $crawler = $client->request('GET', self::URL.$query);
 
             self::assertResponseIsSuccessful($case);
-            self::assertSame([], $this->cardTitles($crawler), $case);
+            self::assertSame([], $this->rowTitles($crawler), $case);
             self::assertSame($this->trans($emptyState), $this->emptyStateTitle($crawler), $case);
         }
 
@@ -171,15 +171,16 @@ final class PageListControllerTest extends CmsWebTestCase
     /**
      * @return list<string>
      */
-    private function cardTitles(Crawler $crawler): array
+    private function rowTitles(Crawler $crawler): array
     {
-        return $crawler->filter('main article h2')->each(static fn (Crawler $title): string => $title->text());
+        // Every row of the list opens its page through a link named after its title.
+        return $crawler->filter('main ul[aria-label] > li a')->each(static fn (Crawler $title): string => $title->text());
     }
 
     private function emptyStateTitle(Crawler $crawler): ?string
     {
-        // The empty state's heading is the only one outside the modal and the cards.
-        $title = $crawler->filter('main h2')->reduce(static fn (Crawler $node): bool => null === $node->closest('dialog, article'));
+        // The empty state's heading is the only one outside the modal.
+        $title = $crawler->filter('main h2')->reduce(static fn (Crawler $node): bool => null === $node->closest('dialog'));
 
         return 0 === $title->count() ? null : $title->text();
     }

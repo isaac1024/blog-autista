@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Web\Controller;
 
-use Shared\Ui\Page\Page;
-use Shared\Ui\Page\PageRenderer;
+use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

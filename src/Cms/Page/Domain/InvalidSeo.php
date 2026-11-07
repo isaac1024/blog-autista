@@ -22,14 +22,4 @@ final class InvalidSeo extends DomainError
     {
         return new self(\sprintf('"%s" is not a robots directive.', $value));
     }
-
-    public static function malformedCanonicalUrl(string $value): self
-    {
-        return new self(\sprintf('"%s" is not an absolute http or https URL.', $value));
-    }
-
-    public static function canonicalUrlTooLong(int $maxLength): self
-    {
-        return new self(\sprintf('The canonical URL must not exceed %d characters.', $maxLength));
-    }
 }

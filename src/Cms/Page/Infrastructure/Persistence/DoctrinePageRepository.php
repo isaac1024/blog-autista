@@ -28,8 +28,8 @@ final readonly class DoctrinePageRepository implements PageRepository
      */
     private const array CRITERIA_FIELDS = [
         'id' => 'id',
-        'title' => 'title.value',
-        'slug' => 'slug',
+        'title' => 'version.title.value',
+        'slug' => 'version.slug',
     ];
 
     public function __construct(private EntityManagerInterface $entityManager) {}
@@ -39,8 +39,8 @@ final readonly class DoctrinePageRepository implements PageRepository
     {
         $this->entityManager->persist($page);
 
-        // The slug is the only unique column besides the time-ordered id, so a
-        // violation means another page took the slug since it was checked.
+        // The slugs are the only unique columns besides the time-ordered id, so
+        // a violation means another page took the slug since it was checked.
         try {
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException $exception) {
@@ -64,7 +64,18 @@ final readonly class DoctrinePageRepository implements PageRepository
     #[\Override]
     public function findBySlug(PageSlug $slug): ?Page
     {
-        return $this->entityManager->getRepository(Page::class)->findOneBy(['slug' => $slug]);
+        // Pages never share a slug, being edited or on the site, so at most
+        // one page has it.
+        /** @var Query<null, Page> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('page')
+            ->from(Page::class, 'page')
+            ->where('page.version.slug = :slug OR page.publishedSlug = :slug')
+            ->setParameter('slug', $slug, 'cms_page_slug')
+            ->setMaxResults(1)
+            ->getQuery();
+
+        return $query->getResult()[0] ?? null;
     }
 
     #[\Override]

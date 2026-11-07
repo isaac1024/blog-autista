@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Cms\Controller;
 
-use Shared\Ui\CmsLayout;
-use Shared\Ui\Page\Page;
-use Shared\Ui\Page\PageComponent;
-use Shared\Ui\Page\PageRenderer;
+use Shared\Infrastructure\Ui\CmsLayout;
+use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
+use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;

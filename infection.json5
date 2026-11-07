@@ -6,10 +6,10 @@
         ],
         // Paths are relative to the source directories above.
         "excludes": [
-            "Shared/Kernel.php",
-            "Shared/Migrations",
-            "Shared/Twig",
-            "Shared/Ui"
+            "Shared/Infrastructure/Kernel.php",
+            "Shared/Infrastructure/Persistence/Doctrine/Migrations",
+            "Shared/Infrastructure/Twig",
+            "Shared/Infrastructure/Ui"
         ]
     },
     "mutators": {

@@ -41,18 +41,20 @@ Messenger commands through `docker compose exec`. To inspect it, use
 | Need | Package | Notes |
 | --- | --- | --- |
 | Database | `symfony/orm-pack` | Doctrine ORM + migrations, MariaDB 11.8 |
-| Events | `symfony/messenger` | Sync bus active; the Doctrine `async` transport is ready to enable in `config/packages/messenger.yaml` |
-| Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Schedule.php`; consume with `messenger:consume scheduler_default` |
+| Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; consume with `messenger:consume async` |
+| Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`; consume with `messenger:consume scheduler_default` |
 | Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |
 
-Doctrine mappings are split per context (`src/Web/Entity`, `src/Cms/Entity`,
-`src/Shared/Entity`) and migrations live in `src/Shared/Migrations`. The
+Doctrine mappings are split per context and module (`src/Web/Entity`,
+`src/Cms/Entity`, `src/Cms/Page/Domain`) and migrations live in
+`src/Shared/Infrastructure/Persistence/Doctrine/Migrations`. The
 `app_test` database is created by `docker/mariadb/init/01-test-database.sql`.
 
 On Webhosting L, wire the 10 available cron jobs to a short-lived consumer, for
 example `php bin/console messenger:consume scheduler_default --time-limit=50`
-every minute.
+every minute, and another one to `php bin/console messenger:consume async
+--time-limit=50` for domain events, such as publishing a page.
 
 ## Code quality (DDD / SOLID / clean code)
 
@@ -97,7 +99,7 @@ only), so run it inside the container, where the database is reachable:
 Architecture rules live in `tests/Shared/Architecture/ContextIndependenceRules.php`
 and are registered in PHPStan with the `phpat.test` tag. Since selectors include
 subnamespaces, the boundaries also apply to `Web\Tests` and `Cms\Tests`.
-`src/Shared/Migrations` is generated code and is excluded from PHPStan, PHPMD,
+`src/Shared/Infrastructure/Persistence/Doctrine/Migrations` is generated code and is excluded from PHPStan, PHPMD,
 PHP-CS-Fixer and Infection.
 
 These are guardrails, not dogma: adjust the thresholds in `phpmd.xml`, the level

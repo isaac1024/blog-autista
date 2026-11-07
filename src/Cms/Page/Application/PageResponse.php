@@ -8,6 +8,10 @@ use Cms\Page\Domain\Page;
 
 /**
  * Read model of a page handed to the adapters, so they don't touch the aggregate.
+ *
+ * It carries everything an editor shows, one parameter each.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class PageResponse
 {
@@ -19,7 +23,9 @@ final readonly class PageResponse
      * @param array{version: int, blocks: list<array<string, mixed>>} $content         in the stored rich text format
      * @param string                                                  $metaDescription empty when there is none
      * @param string                                                  $robots          one of the Robots values
-     * @param string                                                  $canonicalUrl    empty when the page's own address is canonical
+     * @param string                                                  $status          one of the PageStatus values
+     * @param bool                                                    $changed         whether it is published with changes not on the site yet
+     * @param ?string                                                 $publishedSlug   the slug it has on the site, null while it isn't there
      */
     public function __construct(
         public string $id,
@@ -31,7 +37,10 @@ final readonly class PageResponse
         public array $content,
         public string $metaDescription,
         public string $robots,
-        public string $canonicalUrl,
+        public string $status,
+        public bool $changed,
+        public ?string $publishedSlug,
+        public \DateTimeImmutable $updatedAt,
     ) {}
 
     public static function fromPage(Page $page): self
@@ -46,7 +55,10 @@ final readonly class PageResponse
             $page->content()->toArray(),
             $page->seo()->description() ?? '',
             $page->seo()->robots()->value,
-            $page->seo()->canonicalUrl() ?? '',
+            $page->status()->value,
+            $page->hasUnpublishedChanges(),
+            $page->publishedSlug()?->value(),
+            $page->timeline()->updatedAt(),
         );
     }
 }

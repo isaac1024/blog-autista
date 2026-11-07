@@ -6,8 +6,15 @@
             <span class="text-[1rem] text-muted break-all">{{ meta }}</span>
 {% endif %}
         </div>
+{% if badge or status %}
+        <div class="flex flex-wrap gap-2">
 {% if badge %}
-        <div><twig:Shared:Badge :label="badge" /></div>
+            <twig:Shared:Badge :label="badge" />
+{% endif %}
+{% if status %}
+            <twig:Shared:Badge :label="status" />
+{% endif %}
+        </div>
 {% endif %}
     </div>
     <svg class="h-5 w-5 flex-none text-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

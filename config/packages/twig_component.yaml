@@ -1,6 +1,6 @@
 twig_component:
     anonymous_template_directory: 'components/'
     defaults:
-        Shared\Twig\Components\:
+        Shared\Infrastructure\Twig\Components\:
             template_directory: 'components/shared/'
             name_prefix: 'Shared'

@@ -9,16 +9,17 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\Page as PageAggregate;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\Seo;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
 use Shared\Infrastructure\RichText\TiptapRichText;
-use Shared\Twig\Components\SearchPreview;
-use Shared\Ui\CmsLayout;
-use Shared\Ui\Page\Page;
-use Shared\Ui\Page\PageComponent;
-use Shared\Ui\Page\PageRenderer;
+use Shared\Infrastructure\Twig\Components\SearchPreview;
+use Shared\Infrastructure\Ui\CmsLayout;
+use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
+use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,9 +27,19 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
+/**
+ * Composing a page reaches every component it is made of, so its coupling
+ * grows with the page and says nothing about its design.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ */
 final class PageEditController extends AbstractController
 {
     private const string DELETE_PAGE_MODAL = 'delete-page';
+
+    private const string UNPUBLISH_PAGE_MODAL = 'unpublish-page';
+
+    private const string DISCARD_CHANGES_MODAL = 'discard-changes';
 
     private const string FORM = 'page-form';
 
@@ -37,6 +48,7 @@ final class PageEditController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly TiptapRichText $tiptapRichText,
         private readonly PageRole $pageRole,
+        private readonly PageState $pageState,
         #[Autowire('%env(WEB_HOST)%')]
         private readonly string $webHost,
     ) {}
@@ -53,6 +65,11 @@ final class PageEditController extends AbstractController
         return $this->pageRenderer->render($this->page($page));
     }
 
+    /**
+     * Composes the whole page from Twig components, so it is long by design.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
+     */
     private function page(PageResponse $page): Page
     {
         return CmsLayout::page(\sprintf(
@@ -68,6 +85,7 @@ final class PageEditController extends AbstractController
                 'value' => $page->title,
                 'form' => self::FORM,
                 'badge' => ($this->pageRole)($page),
+                'status' => $this->pageState->label($page),
                 // The title of the page is also its title in search results, cut around there.
                 'recommendedMax' => SearchPreview::TITLE_LIMIT,
                 'attributes' => [
@@ -75,7 +93,7 @@ final class PageEditController extends AbstractController
                     'minlength' => Title::MIN_LENGTH,
                     'maxlength' => Title::MAX_LENGTH,
                 ],
-            ], $page->unique ? [] : [$this->deleteModal($page)])
+            ], $this->pageActions($page))
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
@@ -91,26 +109,143 @@ final class PageEditController extends AbstractController
                     'value' => json_encode($this->tiptapRichText->toTiptap($page->content), \JSON_THROW_ON_ERROR),
                     'features' => PageAggregate::contentFeatures()->toArray(),
                 ]),
-                $this->seoPanel($page),
-                new PageComponent('Shared:ActionBar', [], [
-                    new PageComponent('Shared:FormButton', [
-                        'label' => $this->translator->trans('cms.pages.edit.submit'),
-                    ]),
-                ]),
+                $this->searchEngineSection($page),
+                new PageComponent('Shared:ActionBar', [
+                    'status' => $this->pageState->description($page),
+                ], $this->formActions($page)),
             ]);
+    }
+
+    /**
+     * What is done to the page apart from editing it, each confirmed first:
+     * discarding its unpublished changes, taking it off the site, or deleting
+     * it once it is off. Unique pages are never taken off nor deleted.
+     *
+     * @return list<PageComponent>
+     */
+    private function pageActions(PageResponse $page): array
+    {
+        $published = PageStatus::Published->value === $page->status;
+        $actions = [];
+
+        if ($page->changed) {
+            $actions[] = $this->confirmModal($page, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_pages_discard', 'secondary');
+        }
+
+        if ($published && !$page->unique) {
+            $actions[] = $this->confirmModal($page, self::UNPUBLISH_PAGE_MODAL, 'unpublish', 'cms_pages_unpublish', 'secondary');
+        }
+
+        if (!$published && !$page->unique) {
+            $actions[] = $this->confirmModal($page, self::DELETE_PAGE_MODAL, 'delete', 'cms_pages_delete', 'danger');
+        }
+
+        return $actions;
+    }
+
+    /**
+     * Saving comes first, so it is what Enter in a field does. Publishing
+     * submits the same form, so what is in it goes on the site, saved or not;
+     * a published page offers it again only once it has changes to publish.
+     *
+     * @return list<PageComponent>
+     */
+    private function formActions(PageResponse $page): array
+    {
+        $published = PageStatus::Published->value === $page->status;
+        $publishable = !$published || $page->changed;
+        $actions = [
+            new PageComponent('Shared:FormButton', [
+                'label' => $this->translator->trans('cms.pages.edit.submit'),
+                'variant' => $publishable ? 'secondary' : 'primary',
+            ]),
+        ];
+
+        if ($publishable) {
+            $actions[] = new PageComponent('Shared:FormButton', [
+                'label' => $this->translator->trans($published ? 'cms.pages.edit.republish' : 'cms.pages.edit.publish'),
+                'formaction' => $this->generateUrl('cms_pages_publish', ['id' => $page->id]),
+            ]);
+        }
+
+        return $actions;
+    }
+
+    private function homeAddress(): PageComponent
+    {
+        return new PageComponent('Shared:FormHint', [
+            'id' => 'page-home-address',
+            'text' => $this->translator->trans('cms.pages.edit.home_address'),
+        ]);
+    }
+
+    /**
+     * A modal that confirms an action on the page, with its texts under
+     * cms.pages.{action}.
+     */
+    private function confirmModal(PageResponse $page, string $id, string $action, string $route, string $variant): PageComponent
+    {
+        return new PageComponent('Shared:Modal', [
+            'id' => $id,
+            'trigger' => $this->translator->trans(\sprintf('cms.pages.%s.trigger', $action)),
+            'title' => $this->translator->trans(\sprintf('cms.pages.%s.title', $action)),
+            'description' => $this->translator->trans(\sprintf('cms.pages.%s.description', $action), ['%title%' => $page->title]),
+            'variant' => $variant,
+        ], [
+            new PageComponent('Shared:Form', [
+                'action' => $this->generateUrl($route, ['id' => $page->id]),
+                'method' => 'post',
+            ], [
+                new PageComponent('Shared:FormButton', [
+                    'label' => $this->translator->trans(\sprintf('cms.pages.%s.submit', $action)),
+                    'variant' => 'danger',
+                ]),
+            ]),
+        ]);
+    }
+
+    private function slugField(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:FormField', [], [
+            new PageComponent('Shared:FormLabel', [
+                'for' => 'page-slug',
+                'text' => $this->translator->trans('cms.pages.edit.slug_label'),
+            ]),
+            new PageComponent('Shared:FormHint', [
+                'id' => 'page-slug-hint',
+                'text' => $this->translator->trans('cms.pages.edit.slug_hint'),
+            ]),
+            new PageComponent('Shared:FormInput', [
+                'name' => 'slug',
+                'id' => 'page-slug',
+                'value' => $page->slug,
+                'prefix' => '/',
+                'suffix' => '.html',
+                'attributes' => [
+                    'required' => true,
+                    'minlength' => Slug::MIN_LENGTH,
+                    'maxlength' => Slug::MAX_LENGTH,
+                    'pattern' => Slug::SHAPE,
+                    'autocapitalize' => 'none',
+                    'spellcheck' => 'false',
+                    'aria-describedby' => 'page-slug-hint',
+                ],
+            ]),
+        ]);
     }
 
     /**
      * How the page shows in search results, previewed above the settings that
      * shape it, so every change is seen where it lands.
      */
-    private function seoPanel(PageResponse $page): PageComponent
+    private function searchEngineSection(PageResponse $page): PageComponent
     {
         $baseUrl = 'https://'.$this->webHost;
 
         return new PageComponent('Shared:Panel', [
             'title' => $this->translator->trans('cms.pages.edit.seo.title'),
             'description' => $this->translator->trans('cms.pages.edit.seo.description'),
+            'variant' => 'disclosure',
         ], [
             new PageComponent('Shared:SearchPreview', [
                 'label' => $this->translator->trans('cms.pages.edit.seo.preview'),
@@ -154,93 +289,6 @@ final class PageEditController extends AbstractController
                     'label' => $this->translator->trans('cms.pages.edit.seo.robots.'.$robots->value.'.label'),
                     'hint' => $this->translator->trans('cms.pages.edit.seo.robots.'.$robots->value.'.hint'),
                 ], Robots::cases()),
-            ]),
-            new PageComponent('Shared:Disclosure', [
-                'summary' => $this->translator->trans('cms.pages.edit.seo.advanced'),
-            ], [
-                new PageComponent('Shared:FormField', [], [
-                    new PageComponent('Shared:FormLabel', [
-                        'for' => 'page-canonical-url',
-                        'text' => $this->translator->trans('cms.pages.edit.seo.canonical_label'),
-                    ]),
-                    new PageComponent('Shared:FormHint', [
-                        'id' => 'page-canonical-url-hint',
-                        'text' => $this->translator->trans('cms.pages.edit.seo.canonical_hint'),
-                    ]),
-                    new PageComponent('Shared:FormInput', [
-                        'name' => 'canonical_url',
-                        'id' => 'page-canonical-url',
-                        'type' => 'url',
-                        'value' => $page->canonicalUrl,
-                        'attributes' => [
-                            'maxlength' => Seo::CANONICAL_URL_MAX_LENGTH,
-                            'inputmode' => 'url',
-                            'aria-describedby' => 'page-canonical-url-hint',
-                        ],
-                    ]),
-                ]),
-            ]),
-        ]);
-    }
-
-    private function homeAddress(): PageComponent
-    {
-        return new PageComponent('Shared:FormHint', [
-            'id' => 'page-home-address',
-            'text' => $this->translator->trans('cms.pages.edit.home_address'),
-        ]);
-    }
-
-    /**
-     * Only generic pages can be deleted; unique pages stay for good.
-     */
-    private function deleteModal(PageResponse $page): PageComponent
-    {
-        return new PageComponent('Shared:Modal', [
-            'id' => self::DELETE_PAGE_MODAL,
-            'trigger' => $this->translator->trans('cms.pages.delete.trigger'),
-            'title' => $this->translator->trans('cms.pages.delete.title'),
-            'description' => $this->translator->trans('cms.pages.delete.description', ['%title%' => $page->title]),
-            'variant' => 'danger',
-        ], [
-            new PageComponent('Shared:Form', [
-                'action' => $this->generateUrl('cms_pages_delete', ['id' => $page->id]),
-                'method' => 'post',
-            ], [
-                new PageComponent('Shared:FormButton', [
-                    'label' => $this->translator->trans('cms.pages.delete.submit'),
-                    'variant' => 'danger',
-                ]),
-            ]),
-        ]);
-    }
-
-    private function slugField(PageResponse $page): PageComponent
-    {
-        return new PageComponent('Shared:FormField', [], [
-            new PageComponent('Shared:FormLabel', [
-                'for' => 'page-slug',
-                'text' => $this->translator->trans('cms.pages.edit.slug_label'),
-            ]),
-            new PageComponent('Shared:FormHint', [
-                'id' => 'page-slug-hint',
-                'text' => $this->translator->trans('cms.pages.edit.slug_hint'),
-            ]),
-            new PageComponent('Shared:FormInput', [
-                'name' => 'slug',
-                'id' => 'page-slug',
-                'value' => $page->slug,
-                'prefix' => '/',
-                'suffix' => '.html',
-                'attributes' => [
-                    'required' => true,
-                    'minlength' => Slug::MIN_LENGTH,
-                    'maxlength' => Slug::MAX_LENGTH,
-                    'pattern' => Slug::SHAPE,
-                    'autocapitalize' => 'none',
-                    'spellcheck' => 'false',
-                    'aria-describedby' => 'page-slug-hint',
-                ],
             ]),
         ]);
     }

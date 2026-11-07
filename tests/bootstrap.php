@@ -20,7 +20,7 @@ new Dotenv()->bootEnv(dirname(__DIR__).'/.env');
 // as every Infection mutant process, skip the work.
 (static function (string $projectDir): void {
     $token = (string) ($_SERVER['TEST_TOKEN'] ?? '');
-    $migrations = array_map('basename', glob($projectDir.'/src/Shared/Migrations/*.php') ?: []);
+    $migrations = array_map('basename', glob($projectDir.'/src/Shared/Infrastructure/Persistence/Doctrine/Migrations/*.php') ?: []);
     $marker = sprintf(
         '%s/var/test-databases/%s-%s',
         $projectDir,

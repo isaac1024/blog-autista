@@ -36,7 +36,9 @@ cms:
             content_placeholder: 'Write the content of the page here…'
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. For example: about-me.'
-            submit: 'Save changes'
+            submit: 'Save'
+            publish: 'Publish'
+            republish: 'Republish'
             seo:
                 title: 'Search engines'
                 description: 'How the page shows in Google and other search engines. The title of the result is the title of the page.'
@@ -55,9 +57,29 @@ cms:
                     'noindex,nofollow':
                         label: 'Hide entirely'
                         hint: 'It neither appears in the results nor are its links followed.'
-                advanced: 'Advanced'
-                canonical_label: 'Canonical URL'
-                canonical_hint: 'Only if this content was first published at another address: write the original here. Left empty, the canonical is the address of this page.'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The page “%title%” will go back to the version published on the site. The changes saved since then will be lost. This cannot be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish this page?'
+            description: 'The page “%title%” will be taken off the site and its address will stop working. You can publish it again.'
+            submit: 'Yes, unpublish the page'
+        status:
+            draft:
+                label: 'Draft'
+                description: 'Draft: not on the site yet.'
+            published:
+                label: 'Published'
+                description: 'Published: the site shows this version.'
+            changed:
+                label: 'Published with changes'
+                description: 'Published with changes: the site shows the previous version until you republish.'
+            unpublished:
+                label: 'Unpublished'
+                description: 'Unpublished: no longer on the site.'
         delete:
             trigger: 'Delete page'
             title: 'Delete this page?'
@@ -72,6 +94,7 @@ cms:
             cookie_policy: 'Cookie policy'
         list:
             label: 'Blog pages'
+            updated_at: 'Changed on %date%'
         add: 'Add page'
         modal:
             title: 'New page'
@@ -104,7 +127,10 @@ ui:
         slash_hint: 'Type “/” to pick a kind of block'
         slash_menu: 'Kinds of block'
         outline: 'Outline'
-        hint: 'Type “/” on an empty line to pick a block. Ctrl+Shift+↑/↓ moves the block, or the whole section on a heading; Alt+F10 reaches its controls.'
+        hint: 'Type “/” on an empty line to pick a block.'
+        help_summary: 'Help and shortcuts'
+        help_controls: 'The controls appear while you write. “Block type” changes the current block and the arrows move it up or down. On a heading, the arrows move its whole section. “Outline” opens the heading index.'
+        help_keyboard: 'With a keyboard: Ctrl+Shift+↑/↓ moves the block or section, Alt+F10 reaches the controls and Escape returns to the text.'
         move_section_up: 'Move section up'
         move_section_down: 'Move section down'
         section_moved_up: 'Section moved up.'

@@ -36,7 +36,9 @@ cms:
             home_address: 'La portada se sirve en la raíz del sitio (/), así que no tiene dirección propia.'
             content_title: 'Contenido'
             content_placeholder: 'Escribe aquí el contenido de la página…'
-            submit: 'Guardar cambios'
+            submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
             seo:
                 title: 'Buscadores'
                 description: 'Cómo aparece la página en Google y en otros buscadores. El título del resultado es el de la página.'
@@ -55,9 +57,29 @@ cms:
                     'noindex,nofollow':
                         label: 'Ocultar del todo'
                         hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
-                advanced: 'Avanzado'
-                canonical_label: 'URL canónica'
-                canonical_hint: 'Solo si este contenido se publicó antes en otra dirección: escribe aquí la original. Vacía, la canónica es la dirección de esta página.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'La página «%title%» volverá a ser la que está publicada en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar esta página?'
+            description: 'La página «%title%» dejará de estar en la web y su dirección dejará de funcionar. Podrás volver a publicarla.'
+            submit: 'Sí, despublicar la página'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicada'
+                description: 'Publicada: la web muestra esta versión.'
+            changed:
+                label: 'Publicada con cambios'
+                description: 'Publicada con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicada'
+                description: 'Despublicada: ya no está en la web.'
         delete:
             trigger: 'Borrar página'
             title: '¿Borrar esta página?'
@@ -72,6 +94,7 @@ cms:
             cookie_policy: 'Política de cookies'
         list:
             label: 'Páginas del blog'
+            updated_at: 'Modificada el %date%'
         add: 'Añadir página'
         modal:
             title: 'Nueva página'
@@ -104,7 +127,10 @@ ui:
         slash_hint: 'Escribe «/» para elegir un tipo de bloque'
         slash_menu: 'Tipos de bloque'
         outline: 'Esquema'
-        hint: 'Escribe «/» en una línea vacía para elegir un bloque. Ctrl+Mayús+↑/↓ mueve el bloque, o la sección entera si estás en un encabezado; Alt+F10 lleva a sus controles.'
+        hint: 'Escribe «/» en una línea vacía para elegir un bloque.'
+        help_summary: 'Ayuda y atajos'
+        help_controls: 'Los controles aparecen mientras escribes. «Tipo de bloque» cambia el bloque actual y las flechas lo suben o lo bajan. Si estás en un encabezado, las flechas mueven la sección entera. «Esquema» abre el índice de encabezados.'
+        help_keyboard: 'Con teclado: Ctrl+Mayús+↑/↓ mueve el bloque o la sección, Alt+F10 lleva a los controles y Escape vuelve al texto.'
         move_section_up: 'Subir sección'
         move_section_down: 'Bajar sección'
         section_moved_up: 'Sección movida hacia arriba.'

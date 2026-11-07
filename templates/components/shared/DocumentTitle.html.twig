@@ -3,8 +3,15 @@
 <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
     {# The whole row on narrow screens, so the title never shares it with the actions. #}
     <div class="flex min-w-0 basis-full flex-col gap-2 sm:basis-0 sm:flex-1"{% if recommendedMax %}{{ counter.attributes(null, recommendedMax) }}{% endif %}>
+{% if badge or status %}
+        <div class="flex flex-wrap gap-2">
 {% if badge %}
-        <div><twig:Shared:Badge :label="badge" variant="accent" /></div>
+            <twig:Shared:Badge :label="badge" variant="accent" />
+{% endif %}
+{% if status %}
+            <twig:Shared:Badge :label="status" />
+{% endif %}
+        </div>
 {% endif %}
         <label class="text-[1rem] font-bold text-muted" for="{{ id }}">{{ label }}</label>
         <h1 class="m-0">

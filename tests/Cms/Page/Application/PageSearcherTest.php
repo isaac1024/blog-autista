@@ -16,6 +16,8 @@ use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
+use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RichText\RichTextMother;
 
 final class PageSearcherTest extends TestCase
 {
@@ -81,8 +83,8 @@ final class PageSearcherTest extends TestCase
 
         self::assertEquals(
             [
-                new PageResponse($guideId, 'Guía rápida', 'guia-rapida', home: false, unique: false),
-                new PageResponse($aboutId, 'Sobre mí', 'sobre-mi', home: false, unique: false),
+                new PageResponse($guideId, 'Guía rápida', 'guia-rapida', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
+                new PageResponse($aboutId, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
             ],
             (new PageSearcher('', 1))($repository),
         );

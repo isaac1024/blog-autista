@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Page\Domain;
+
+use Doctrine\ORM\Mapping as ORM;
+use Shared\Domain\RichText\RichText;
+
+/**
+ * Everything an editor writes on a page: its title, address, content and how
+ * it presents itself to search engines. A page holds the version being
+ * edited and, once published, the version on the site.
+ */
+#[ORM\Embeddable]
+final readonly class PageVersion
+{
+    public function __construct(
+        #[ORM\Embedded(class: Title::class, columnPrefix: false)]
+        private Title $title,
+        #[ORM\Column(name: 'slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH)]
+        private PageSlug $slug,
+        #[ORM\Column(name: 'content', type: 'rich_text')]
+        private RichText $content,
+        #[ORM\Embedded(class: Seo::class, columnPrefix: false)]
+        private Seo $seo,
+    ) {}
+
+    /**
+     * Whether it has everything the site shows: content, and a meta
+     * description to summarise it in search results and shared links. The
+     * title and the robots directive always have a value.
+     */
+    public function assertPublishable(): void
+    {
+        if ([] === $this->content->blocks()) {
+            throw InvalidPublication::withoutContent();
+        }
+
+        if (null === $this->seo->description()) {
+            throw InvalidPublication::withoutMetaDescription();
+        }
+    }
+
+    public function equals(self $other): bool
+    {
+        return $this->title->value() === $other->title->value()
+            && $this->slug->value() === $other->slug->value()
+            && $this->content->toArray() === $other->content->toArray()
+            && $this->seo->description() === $other->seo->description()
+            && $this->seo->robots() === $other->seo->robots();
+    }
+
+    public function title(): Title
+    {
+        return $this->title;
+    }
+
+    public function slug(): PageSlug
+    {
+        return $this->slug;
+    }
+
+    public function content(): RichText
+    {
+        return $this->content;
+    }
+
+    public function seo(): Seo
+    {
+        return $this->seo;
+    }
+}

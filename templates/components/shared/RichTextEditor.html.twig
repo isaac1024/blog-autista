@@ -76,7 +76,7 @@
     <noscript>
         <p class="m-0 rounded-control border-2 border-border bg-surface p-4 text-[1rem] text-muted">{{ 'ui.editor.noscript'|trans }}</p>
     </noscript>
-    <div class="grid" data-rich-text-editor-target="frame" hidden>
+    <div class="grid gap-3" data-rich-text-editor-target="frame" hidden>
         <div class="relative min-w-0 rounded-card border-2 border-border bg-surface has-[.ProseMirror-focused]:border-accent has-[.ProseMirror-focused]:outline-3 has-[.ProseMirror-focused]:outline-offset-3 has-[.ProseMirror-focused]:outline-focus forced-colors:border-[ButtonText]" data-rich-text-editor-target="canvas" data-action="focusout->rich-text-editor#leave keydown->rich-text-editor#controlsKey">
             <div data-rich-text-editor-target="editor"></div>
 
@@ -116,6 +116,18 @@
             {# Menu of block kinds, opened by "/" or by the block kind button. #}
             <ul class="fixed z-40 m-0 max-h-72 w-64 list-none overflow-y-auto rounded-control border-2 border-border bg-surface p-1 shadow-card" id="{{ id }}-menu" role="listbox" tabindex="-1" aria-label="{{ 'ui.editor.slash_menu'|trans }}" data-rich-text-editor-target="menu" data-action="keydown->rich-text-editor#menuButtonKey focusout->rich-text-editor#menuFocusOut" hidden></ul>
         </div>
+        <details class="group rounded-control border border-divider bg-surface">
+            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-control px-4 py-2 text-[1rem] font-bold hover:text-accent [&::-webkit-details-marker]:hidden">
+                <span>{{ 'ui.editor.help_summary'|trans }}</span>
+                <svg class="h-5 w-5 flex-none transition-transform group-open:rotate-180 motion-reduce:transition-none" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 7.5l5 5 5-5" />
+                </svg>
+            </summary>
+            <div class="grid gap-2 border-t border-divider px-4 py-3 text-[1rem] text-muted">
+                <p class="m-0">{{ 'ui.editor.help_controls'|trans }}</p>
+                <p class="m-0">{{ 'ui.editor.help_keyboard'|trans }}</p>
+            </div>
+        </details>
     </div>
 
     {# The outline of the headings, in a dialog opened from the dock: every section one step away. #}

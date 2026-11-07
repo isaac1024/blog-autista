@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
 use Shared\Domain\InvalidUuid;
+use Shared\Tests\Domain\ClockMother;
 
 final class UniquePageCreatorTest extends TestCase
 {
@@ -40,7 +41,7 @@ final class UniquePageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository);
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository, ClockMother::create());
     }
 
     /**
@@ -76,7 +77,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new UniquePageCreator($id, $type, $title))($repository);
+        (new UniquePageCreator($id, $type, $title))($repository, ClockMother::create());
     }
 
     /**
@@ -108,7 +109,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(UniquePageAlreadyExists::ofType(PageType::from($type)));
 
-        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository);
+        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository, ClockMother::create());
     }
 
     /**
@@ -135,6 +136,6 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository);
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, ClockMother::create());
     }
 }

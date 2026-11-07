@@ -10,6 +10,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\SlugAvailability;
 use Cms\Page\Domain\UniquePageAlreadyExists;
+use Shared\Domain\Clock;
 
 /**
  * Creates one of the unique pages of the site, failing when it already exists.
@@ -22,10 +23,10 @@ final readonly class UniquePageCreator
         private string $title,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository): void
+    public function __invoke(PageRepository $pageRepository, Clock $clock): void
     {
         $type = PageType::tryFrom($this->type) ?? throw InvalidPageType::unknown($this->type);
-        $page = Page::createUnique($this->id, $type, $this->title);
+        $page = Page::createUnique($this->id, $type, $this->title, $clock->now());
 
         if (null !== $pageRepository->findByType($type)) {
             throw UniquePageAlreadyExists::ofType($type);
