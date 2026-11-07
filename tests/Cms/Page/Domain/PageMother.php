@@ -111,10 +111,12 @@ final class PageMother
     }
 
     /**
-     * A page on the site. With another published title, it is published with
-     * changes: the site has the page with that title, and the rest as edited.
+     * A page on the site. With another published title, content or meta
+     * description, it is published with changes: the site has the page with
+     * those, and the rest as edited.
      *
-     * @param array<array-key, mixed> $content in the stored rich text format
+     * @param array<array-key, mixed>      $content          in the stored rich text format
+     * @param null|array<array-key, mixed> $publishedContent in the stored rich text format
      */
     public static function published(
         string $id = PageIdMother::DEFAULT_VALUE,
@@ -122,18 +124,20 @@ final class PageMother
         string $slug = SlugMother::DEFAULT_VALUE,
         PageType $type = PageType::Standard,
         array $content = self::CONTENT,
-        string $metaDescription = self::META_DESCRIPTION,
+        ?string $metaDescription = self::META_DESCRIPTION,
         ?string $publishedTitle = null,
         string $updatedAt = ClockMother::NOW,
         string $firstPublishedAt = ClockMother::NOW,
         string $lastPublishedAt = ClockMother::NOW,
+        ?array $publishedContent = null,
+        ?string $publishedMetaDescription = null,
     ): Page {
         return new Page(
             PageIdMother::create($id),
             $type,
             self::version($type, $title, $slug, $content, $metaDescription, null),
             PageStatus::Published,
-            self::version($type, $publishedTitle ?? $title, $slug, $content, $metaDescription, null),
+            self::version($type, $publishedTitle ?? $title, $slug, $publishedContent ?? $content, $publishedMetaDescription ?? $metaDescription, null),
             new Timeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),

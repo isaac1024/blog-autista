@@ -31,6 +31,7 @@ cms:
             submit: 'Save'
             publish: 'Publish'
             republish: 'Republish'
+            publish_unsaved: 'Save your changes to publish them.'
             seo:
                 title: 'Search engines'
                 description: 'How the page shows in Google and other search engines. The title of the result is the title of the page.'

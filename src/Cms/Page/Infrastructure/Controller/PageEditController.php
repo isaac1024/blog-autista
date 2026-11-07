@@ -43,6 +43,8 @@ final class PageEditController extends AbstractController
 
     private const string FORM = 'page-form';
 
+    private const string PUBLISH_FORM = 'page-publish-form';
+
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
@@ -113,6 +115,14 @@ final class PageEditController extends AbstractController
                 new PageComponent('Shared:ActionBar', [
                     'status' => $this->pageState->description($page),
                 ], $this->formActions($page)),
+            ])
+            // Publishing takes what is saved, not what the edit form holds, so
+            // it is a form of its own, which its button in the bar submits.
+            ->withMain('Shared:Form', [
+                'action' => $this->generateUrl('cms_pages_publish', ['id' => $page->id]),
+                'method' => 'post',
+                'id' => self::PUBLISH_FORM,
+                'hidden' => true,
             ]);
     }
 
@@ -144,9 +154,10 @@ final class PageEditController extends AbstractController
     }
 
     /**
-     * Saving comes first, so it is what Enter in a field does. Publishing
-     * submits the same form, so what is in it goes on the site, saved or not;
-     * a published page offers it again only once it has changes to publish.
+     * Saving comes first, so it is what Enter in a field does. Publishing puts
+     * what is saved on the site, so it waits while the form holds unsaved
+     * changes; a published page offers it again only once it has changes to
+     * publish.
      *
      * @return list<PageComponent>
      */
@@ -164,7 +175,9 @@ final class PageEditController extends AbstractController
         if ($publishable) {
             $actions[] = new PageComponent('Shared:FormButton', [
                 'label' => $this->translator->trans($published ? 'cms.pages.edit.republish' : 'cms.pages.edit.publish'),
-                'formaction' => $this->generateUrl('cms_pages_publish', ['id' => $page->id]),
+                'form' => self::PUBLISH_FORM,
+                'waitsFor' => self::FORM,
+                'waitingHint' => $this->translator->trans('cms.pages.edit.publish_unsaved'),
             ]);
         }
 

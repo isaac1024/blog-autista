@@ -300,6 +300,8 @@ export default class extends Controller {
             },
             onUpdate: ({ editor }) => {
                 this.inputTarget.value = JSON.stringify(editor.getJSON());
+                // Setting the value fires no event, so tell whoever watches the form.
+                this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
                 this.refreshOutline();
             },
             onTransaction: () => this.refreshControls(),

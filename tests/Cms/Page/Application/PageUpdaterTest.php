@@ -6,7 +6,6 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
-use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\InvalidSeo;
 use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
@@ -430,28 +429,24 @@ final class PageUpdaterTest extends TestCase
         self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository);
     }
 
-    /**
-     * @param array<array-key, mixed> $content
-     */
-    #[DataProvider('unpublishableEdits')]
-    public function testItSavesNothingThatAPublishedPageCouldNotBePublishedWith(array $content, string $metaDescription, DomainError $error): void
+    public function testItSavesAPublishedPageWithoutWhatItNeedsToBePublishedAgain(): void
     {
+        $id = PageIdMother::DEFAULT_VALUE;
         $repository = $this->createMock(PageRepository::class);
-        $repository->method('find')->willReturn(PageMother::published(title: 'Sobre mí', slug: 'sobre-mi'));
-        $repository->expects(self::never())->method('save');
+        $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', updatedAt: self::BEFORE));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::published(
+                id: $id,
+                title: 'Sobre mí',
+                slug: 'sobre-mi',
+                content: Text::EMPTY,
+                metaDescription: null,
+                publishedContent: PageMother::CONTENT,
+                publishedMetaDescription: PageMother::META_DESCRIPTION,
+            )));
 
-        $this->expectExceptionObject($error);
-
-        self::updater(PageIdMother::DEFAULT_VALUE, 'Sobre mí', 'sobre-mi', $content, $metaDescription)($repository);
-    }
-
-    /**
-     * @return iterable<string, array{array<array-key, mixed>, string, DomainError}>
-     */
-    public static function unpublishableEdits(): iterable
-    {
-        yield 'without content' => [Text::EMPTY, PageMother::META_DESCRIPTION, InvalidPublication::withoutContent()];
-        yield 'without a meta description' => [PageMother::CONTENT, '', InvalidPublication::withoutMetaDescription()];
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::EMPTY, '')($repository);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

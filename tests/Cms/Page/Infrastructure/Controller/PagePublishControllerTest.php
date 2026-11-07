@@ -24,11 +24,6 @@ final class PagePublishControllerTest extends CmsWebTestCase
 
     private const string URL = 'http://cms.blogautista.localhost/pages/%s/publish';
 
-    /**
-     * The document the editor posts for PageMother::CONTENT.
-     */
-    private const string DOCUMENT = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Escribo sobre autismo en primera persona."}]}]}';
-
     #[\Override]
     protected function setUp(): void
     {
@@ -41,20 +36,20 @@ final class PagePublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage(PageMother::create(id: PageIdMother::random()->value()));
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields());
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
         self::assertSame([], $this->queuedEvents());
     }
 
-    public function testItPublishesWhatTheFormHoldsAndGoesBackToTheList(): void
+    public function testItPublishesTheSavedVersionAndGoesBackToTheList(): void
     {
         $client = self::createAuthenticatedClient();
         $id = PageIdMother::random()->value();
-        $page = $this->savePage(PageMother::create(id: $id, title: 'Borrador', slug: 'borrador'));
+        $page = $this->savePage(self::publishableDraft($id));
 
-        $client->request('POST', \sprintf(self::URL, $id), self::fields());
+        $client->request('POST', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi'), $this->storedPage($page));
@@ -64,9 +59,9 @@ final class PagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
         $id = PageIdMother::random()->value();
-        $this->savePage(PageMother::create(id: $id, title: 'Borrador', slug: 'borrador'));
+        $this->savePage(self::publishableDraft($id));
 
-        $client->request('POST', \sprintf(self::URL, $id), self::fields());
+        $client->request('POST', \sprintf(self::URL, $id));
 
         $events = $this->queuedEvents();
         self::assertCount(1, $events);
@@ -76,18 +71,14 @@ final class PagePublishControllerTest extends CmsWebTestCase
         self::assertSame(PageMother::CONTENT, $events[0]->body['content']);
     }
 
-    /**
-     * @param array<string, string> $fields
-     */
-    #[DataProvider('unpublishableInputs')]
-    public function testItRespondsBadRequestAndKeepsThePageWhenItCannotBePublished(Page $page, array $fields): void
+    #[DataProvider('unpublishablePages')]
+    public function testItRespondsBadRequestAndKeepsThePageWhenItCannotBePublished(Page $page): void
     {
         $client = self::createAuthenticatedClient();
         $this->savePage($page);
-        // The request edits the same instance in memory before it fails.
         $expected = clone $page;
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), $fields);
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
         self::assertEquals($expected, $this->storedPage($page));
@@ -95,28 +86,13 @@ final class PagePublishControllerTest extends CmsWebTestCase
     }
 
     /**
-     * @return iterable<string, array{Page, array<string, string>}>
+     * @return iterable<string, array{Page}>
      */
-    public static function unpublishableInputs(): iterable
+    public static function unpublishablePages(): iterable
     {
-        yield 'without content' => [PageMother::create(id: PageIdMother::random()->value()), self::fields(['content' => '{"type":"doc","content":[{"type":"paragraph"}]}'])];
-        yield 'without a meta description' => [PageMother::create(id: PageIdMother::random()->value()), self::fields(['meta_description' => ''])];
-        yield 'with an invalid title' => [PageMother::create(id: PageIdMother::random()->value()), self::fields(['title' => ' '])];
-        yield 'already published as it is' => [PageMother::published(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'), self::fields()];
-    }
-
-    public function testItRespondsBadRequestWhenAnotherPageIsOnTheSiteWithTheSlug(): void
-    {
-        $client = self::createAuthenticatedClient();
-        // The other page is edited with another slug, but keeps "sobre-mi" on the site.
-        $this->savePage(PageMother::published(id: PageIdMother::random()->value(), title: 'Quién soy', slug: 'sobre-mi'));
-        $page = $this->savePage(PageMother::create(id: PageIdMother::random()->value(), title: 'Borrador', slug: 'borrador'));
-        $expected = clone $page;
-
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields());
-
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
-        self::assertEquals($expected, $this->storedPage($page));
+        yield 'without content' => [PageMother::create(id: PageIdMother::random()->value(), metaDescription: PageMother::META_DESCRIPTION)];
+        yield 'without a meta description' => [PageMother::create(id: PageIdMother::random()->value(), content: PageMother::CONTENT)];
+        yield 'already published as it is' => [PageMother::published(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi')];
     }
 
     public function testItOnlyAcceptsPost(): void
@@ -132,7 +108,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()), self::fields());
+        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -150,22 +126,9 @@ final class PagePublishControllerTest extends CmsWebTestCase
         return $client;
     }
 
-    /**
-     * Everything a page needs to be published, unless a test says otherwise.
-     *
-     * @param array<string, string> $overrides
-     *
-     * @return array<string, string>
-     */
-    private static function fields(array $overrides = []): array
+    private static function publishableDraft(string $id): Page
     {
-        return array_merge([
-            'title' => 'Sobre mí',
-            'slug' => 'sobre-mi',
-            'content' => self::DOCUMENT,
-            'meta_description' => PageMother::META_DESCRIPTION,
-            'robots' => 'index,follow',
-        ], $overrides);
+        return PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION);
     }
 
     private function savePage(Page $page): Page

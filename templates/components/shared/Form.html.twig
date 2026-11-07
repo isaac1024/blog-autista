@@ -1,5 +1,5 @@
 {% import 'shared/render_component.html.twig' as renderer %}
-<form class="grid gap-6" method="{{ method }}" action="{{ action }}"{% if id %} id="{{ id }}"{% endif %}>
+<form class="grid gap-6" method="{{ method }}" action="{{ action }}"{% if id %} id="{{ id }}"{% endif %}{% if hidden %} hidden{% endif %}>
 {% for child in children %}
     {{ renderer.render(child) }}
 {% endfor %}

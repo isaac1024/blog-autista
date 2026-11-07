@@ -24,10 +24,10 @@ use Shared\Domain\RichText\RichTextFeatures;
  * published page can be edited, and its changes published or discarded,
  * without the site showing them halfway.
  *
- * - A page starts as a draft, and is published only with everything the site
- *   shows: content and a meta description.
- * - A published page keeps both while it is published, so it can always be
- *   published again.
+ * - Editing saves whatever valid fields an editor writes, complete or not.
+ * - A page is published only with everything the site shows: content and a
+ *   meta description. Publishing is what checks it, so a published page can
+ *   be saved without them, and the site keeps its version meanwhile.
  * - A published page is unpublished before it is deleted, and unique pages
  *   are never unpublished nor deleted.
  *
@@ -165,16 +165,12 @@ final class Page extends AggregateRoot
         );
         self::contentFeatures()->assertAllows($version->content());
 
-        if (PageStatus::Published === $this->status) {
-            $version->assertPublishable();
-        }
-
         $this->replaceVersion($version);
     }
 
     /**
-     * Puts the version being edited on the site, for the first time or in
-     * place of the one there.
+     * Puts the version last saved on the site, for the first time or in place
+     * of the one there, once it has everything the site shows.
      */
     public function publish(): void
     {

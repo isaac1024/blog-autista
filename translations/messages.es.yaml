@@ -31,6 +31,7 @@ cms:
             submit: 'Guardar'
             publish: 'Publicar'
             republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
             seo:
                 title: 'Buscadores'
                 description: 'Cómo aparece la página en Google y en otros buscadores. El título del resultado es el de la página.'
