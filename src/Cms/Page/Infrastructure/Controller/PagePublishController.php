@@ -7,7 +7,6 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PagePublisher;
 use Cms\Page\Domain\PageRepository;
-use Shared\Domain\Clock;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Infrastructure\RichText\TiptapRichText;
@@ -30,7 +29,6 @@ final class PagePublishController extends AbstractController
         string $id,
         Request $request,
         PageRepository $pageRepository,
-        Clock $clock,
         EventBus $eventBus,
     ): Response {
         try {
@@ -41,7 +39,7 @@ final class PagePublishController extends AbstractController
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($pageRepository, $clock, $eventBus);
+            )($pageRepository, $eventBus);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError) {

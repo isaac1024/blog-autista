@@ -28,10 +28,20 @@ use Shared\Domain\InvalidUuid;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageUpdaterTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
     private const string BEFORE = '2026-10-01 09:00:00';
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
 
     #[DataProvider('validEdits')]
     public function testItSavesThePageWithTheEditedTitleAndSlug(string $title, string $slug, Page $expected): void
@@ -46,7 +56,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, $title, $slug)($repository, ClockMother::create());
+        self::updater($id, $title, $slug)($repository);
     }
 
     /**
@@ -85,7 +95,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, $title, $slug)($repository, ClockMother::create());
+        self::updater($id, $title, $slug)($repository);
     }
 
     /**
@@ -120,7 +130,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content)));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, ClockMother::create());
+        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository);
     }
 
     /**
@@ -155,7 +165,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository, ClockMother::create());
+        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository);
     }
 
     /**
@@ -229,7 +239,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository, ClockMother::create());
+        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository);
     }
 
     /**
@@ -263,7 +273,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository, ClockMother::create());
+        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository);
     }
 
     /**
@@ -289,7 +299,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        self::updater($id, 'Sobre mí', 'contacto')($repository, ClockMother::create());
+        self::updater($id, 'Sobre mí', 'contacto')($repository);
     }
 
     public function testItSavesThePageWhenTheSlugIsAlreadyItsOwn(): void
@@ -303,7 +313,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Quién soy', slug: 'sobre-mi')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi')($repository, ClockMother::create());
+        self::updater($id, 'Quién soy', 'sobre-mi')($repository);
     }
 
     public function testItSavesTheHomePageWithTheEditedTitleAndStillNoSlug(): void
@@ -315,7 +325,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::home(id: $id, title: 'Inicio')));
 
-        self::updater($id, 'Inicio', '')($repository, ClockMother::create());
+        self::updater($id, 'Inicio', '')($repository);
     }
 
     public function testItSavesNothingWhenTheHomePageIsGivenASlug(): void
@@ -327,7 +337,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidSlug::onHome('inicio'));
 
-        self::updater($id, 'Inicio', 'inicio')($repository, ClockMother::create());
+        self::updater($id, 'Inicio', 'inicio')($repository);
     }
 
     public function testItSavesNothingWhenTheHomePageEditIsInvalid(): void
@@ -339,7 +349,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidTitle::tooShort(Title::MIN_LENGTH));
 
-        self::updater($id, 'Sí', '')($repository, ClockMother::create());
+        self::updater($id, 'Sí', '')($repository);
     }
 
     public function testItSavesAUniquePageWithTheEditedTitleAndSlugKeepingItsType(): void
@@ -351,7 +361,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Escríbeme', slug: 'escribeme', type: PageType::Contact)));
 
-        self::updater($id, 'Escríbeme', 'escribeme')($repository, ClockMother::create());
+        self::updater($id, 'Escríbeme', 'escribeme')($repository);
     }
 
     public function testItSavesNothingWhenAPageOtherThanTheHomeIsLeftWithoutASlug(): void
@@ -363,7 +373,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidSlug::malformed(''));
 
-        self::updater($id, 'Contacto', '')($repository, ClockMother::create());
+        self::updater($id, 'Contacto', '')($repository);
     }
 
     /**
@@ -393,7 +403,7 @@ final class PageUpdaterTest extends TestCase
                 updatedAt: $updatedAt,
             )));
 
-        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository, ClockMother::create());
+        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository);
     }
 
     /**
@@ -417,7 +427,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::published(id: $id, title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository, ClockMother::create());
+        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository);
     }
 
     /**
@@ -432,7 +442,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater(PageIdMother::DEFAULT_VALUE, 'Sobre mí', 'sobre-mi', $content, $metaDescription)($repository, ClockMother::create());
+        self::updater(PageIdMother::DEFAULT_VALUE, 'Sobre mí', 'sobre-mi', $content, $metaDescription)($repository);
     }
 
     /**
@@ -453,7 +463,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        self::updater($id, 'Quién soy', 'quien-soy')($repository, ClockMother::create());
+        self::updater($id, 'Quién soy', 'quien-soy')($repository);
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -464,7 +474,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        self::updater('page-id', 'Quién soy', 'quien-soy')($repository, ClockMother::create());
+        self::updater('page-id', 'Quién soy', 'quien-soy')($repository);
     }
 
     /**

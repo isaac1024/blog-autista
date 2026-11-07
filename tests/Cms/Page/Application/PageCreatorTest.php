@@ -20,9 +20,19 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageCreatorTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
+
     #[DataProvider('validInputs')]
     public function testItPersistsThePageBuiltFromValidInput(string $id, string $title, Page $expected): void
     {
@@ -31,7 +41,7 @@ final class PageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new PageCreator($id, $title))($repository, ClockMother::create());
+        (new PageCreator($id, $title))($repository);
     }
 
     /**
@@ -74,7 +84,7 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageCreator($id, $title))($repository, ClockMother::create());
+        (new PageCreator($id, $title))($repository);
     }
 
     /**
@@ -105,6 +115,6 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
-        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, ClockMother::create());
+        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository);
     }
 }

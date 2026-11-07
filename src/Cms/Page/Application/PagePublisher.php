@@ -7,7 +7,6 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\SlugAvailability;
-use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 
 /**
@@ -29,13 +28,12 @@ final readonly class PagePublisher
         private string $robots,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository, Clock $clock, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
-        $now = $clock->now();
 
-        $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots, $now);
-        $page->publish($now);
+        $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots);
+        $page->publish();
 
         new SlugAvailability($page)($pageRepository);
         $events = $page->pullDomainEvents();

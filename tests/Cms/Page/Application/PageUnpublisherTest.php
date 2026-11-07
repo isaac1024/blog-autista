@@ -20,9 +20,19 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageUnpublisherTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
+
     #[DataProvider('publishedPages')]
     public function testItTakesThePageOffTheSite(Page $page): void
     {
@@ -38,7 +48,7 @@ final class PageUnpublisherTest extends TestCase
                 && [] === $event->toPrimitives(),
         ));
 
-        (new PageUnpublisher($id))($repository, ClockMother::create(), $eventBus);
+        (new PageUnpublisher($id))($repository, $eventBus);
     }
 
     /**
@@ -60,7 +70,7 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageUnpublisher($page->id()->value()))($repository, ClockMother::create(), $eventBus);
+        (new PageUnpublisher($page->id()->value()))($repository, $eventBus);
     }
 
     /**
@@ -90,13 +100,13 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageUnpublisher($id))($repository, ClockMother::create(), self::createStub(EventBus::class));
+        (new PageUnpublisher($id))($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), ClockMother::create(), self::createStub(EventBus::class));
+        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class));
     }
 }

@@ -7,7 +7,6 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageCreator;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
-use Shared\Domain\Clock;
 use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,10 +16,10 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PageCreateController extends AbstractController
 {
     #[Route('/pages', name: 'cms_pages_create', methods: ['POST'])]
-    public function __invoke(Request $request, PageRepository $pageRepository, Clock $clock): Response
+    public function __invoke(Request $request, PageRepository $pageRepository): Response
     {
         try {
-            new PageCreator(PageId::random()->value(), $request->request->getString('title'))($pageRepository, $clock);
+            new PageCreator(PageId::random()->value(), $request->request->getString('title'))($pageRepository);
         } catch (DomainError) {
             return new Response(status: Response::HTTP_BAD_REQUEST);
         }

@@ -7,7 +7,6 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageChangesDiscarder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
-use Shared\Domain\Clock;
 use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,10 +19,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PageDiscardChangesController extends AbstractController
 {
     #[Route('/pages/{id}/discard', name: 'cms_pages_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, PageRepository $pageRepository, Clock $clock): Response
+    public function __invoke(string $id, PageRepository $pageRepository): Response
     {
         try {
-            new PageChangesDiscarder($id)($pageRepository, $clock);
+            new PageChangesDiscarder($id)($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError) {

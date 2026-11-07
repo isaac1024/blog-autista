@@ -15,10 +15,20 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageChangesDiscarderTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
     private const string BEFORE = '2026-10-01 09:00:00';
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
 
     public function testItBringsThePageBackToItsVersionOnTheSite(): void
     {
@@ -27,7 +37,7 @@ final class PageChangesDiscarderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Quién soy', publishedTitle: 'Sobre mí', updatedAt: self::BEFORE));
         $repository->expects(self::once())->method('save')->with(self::equalTo(PageMother::published(id: $id, title: 'Sobre mí')));
 
-        (new PageChangesDiscarder($id))($repository, ClockMother::create());
+        (new PageChangesDiscarder($id))($repository);
     }
 
     #[DataProvider('pagesWithoutChanges')]
@@ -39,7 +49,7 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidPublication::noChangesToDiscard());
 
-        (new PageChangesDiscarder($page->id()->value()))($repository, ClockMother::create());
+        (new PageChangesDiscarder($page->id()->value()))($repository);
     }
 
     /**
@@ -60,13 +70,13 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageChangesDiscarder($id))($repository, ClockMother::create());
+        (new PageChangesDiscarder($id))($repository);
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class), ClockMother::create());
+        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class));
     }
 }

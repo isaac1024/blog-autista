@@ -23,10 +23,20 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PagePublisherTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
     private const string BEFORE = '2026-10-01 09:00:00';
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
 
     #[DataProvider('publishablePages')]
     public function testItPutsWhatTheFormHoldsOnTheSite(Page $page, Page $expected): void
@@ -35,7 +45,7 @@ final class PagePublisherTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        self::publisher($page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi')($repository, ClockMother::create(), self::createStub(EventBus::class));
+        self::publisher($page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi')($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -93,7 +103,7 @@ final class PagePublisherTest extends TestCase
                 ] === $event->toPrimitives(),
         ));
 
-        self::publisher($id, title: 'Contacto', slug: 'contacto')($repository, ClockMother::create(), $eventBus);
+        self::publisher($id, title: 'Contacto', slug: 'contacto')($repository, $eventBus);
     }
 
     /**
@@ -110,7 +120,7 @@ final class PagePublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::publisher($page->id()->value(), $title, 'sobre-mi', $content, $metaDescription)($repository, ClockMother::create(), $eventBus);
+        self::publisher($page->id()->value(), $title, 'sobre-mi', $content, $metaDescription)($repository, $eventBus);
     }
 
     /**
@@ -145,7 +155,7 @@ final class PagePublisherTest extends TestCase
 
         $this->expectException(SlugAlreadyTaken::class);
 
-        self::publisher($page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi')($repository, ClockMother::create(), $eventBus);
+        self::publisher($page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi')($repository, $eventBus);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -156,14 +166,14 @@ final class PagePublisherTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        self::publisher($id, title: 'Sobre mí', slug: 'sobre-mi')($repository, ClockMother::create(), self::createStub(EventBus::class));
+        self::publisher($id, title: 'Sobre mí', slug: 'sobre-mi')($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        self::publisher('sobre-mi', title: 'Sobre mí', slug: 'sobre-mi')(self::createStub(PageRepository::class), ClockMother::create(), self::createStub(EventBus::class));
+        self::publisher('sobre-mi', title: 'Sobre mí', slug: 'sobre-mi')(self::createStub(PageRepository::class), self::createStub(EventBus::class));
     }
 
     /**

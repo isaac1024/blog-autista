@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Shared\Domain;
 
+use Symfony\Component\Clock\Clock as SymfonyClock;
+
 /**
- * Tells the current time, so the domain records when things happen without
- * reading the system clock itself.
+ * Tells the domain the current time, so it dates what happens itself.
+ *
+ * It reads the global Symfony clock, which tests freeze with
+ * ClockSensitiveTrait::mockTime().
  */
-interface Clock
+final class Clock
 {
-    public function now(): \DateTimeImmutable;
+    public static function now(): \DateTimeImmutable
+    {
+        return SymfonyClock::get()->now();
+    }
 }

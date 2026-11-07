@@ -22,9 +22,19 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class UniquePageCreatorTest extends TestCase
 {
+    use ClockSensitiveTrait;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        // The domain dates what happens, so it is dated as the pages compared with.
+        self::mockTime(ClockMother::now());
+    }
+
     #[DataProvider('uniquePages')]
     public function testItPersistsTheUniquePage(string $type, string $title, Page $expected): void
     {
@@ -41,7 +51,7 @@ final class UniquePageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository, ClockMother::create());
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository);
     }
 
     /**
@@ -77,7 +87,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new UniquePageCreator($id, $type, $title))($repository, ClockMother::create());
+        (new UniquePageCreator($id, $type, $title))($repository);
     }
 
     /**
@@ -109,7 +119,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(UniquePageAlreadyExists::ofType(PageType::from($type)));
 
-        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository, ClockMother::create());
+        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository);
     }
 
     /**
@@ -136,6 +146,6 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, ClockMother::create());
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository);
     }
 }

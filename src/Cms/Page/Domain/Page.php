@@ -7,6 +7,7 @@ namespace Cms\Page\Domain;
 use Cms\Shared\Domain\Slugger;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
+use Shared\Domain\Clock;
 use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
@@ -78,7 +79,7 @@ final class Page extends AggregateRoot
      * Initialises a new generic page from primitives, deriving its slug from
      * the title.
      */
-    public static function create(string $id, string $title, \DateTimeImmutable $now): self
+    public static function create(string $id, string $title): self
     {
         return new self(
             new PageId($id),
@@ -91,7 +92,7 @@ final class Page extends AggregateRoot
             ),
             PageStatus::Draft,
             null,
-            Timeline::start($now),
+            Timeline::start(Clock::now()),
         );
     }
 
@@ -99,7 +100,7 @@ final class Page extends AggregateRoot
      * Initialises one of the unique pages of the site, deriving its slug from
      * the title unless it is the home page.
      */
-    public static function createUnique(string $id, PageType $type, string $title, \DateTimeImmutable $now): self
+    public static function createUnique(string $id, PageType $type, string $title): self
     {
         if (!$type->isUnique()) {
             throw InvalidPageType::notUnique($type);
@@ -116,7 +117,7 @@ final class Page extends AggregateRoot
             ),
             PageStatus::Draft,
             null,
-            Timeline::start($now),
+            Timeline::start(Clock::now()),
         );
     }
 
@@ -153,7 +154,6 @@ final class Page extends AggregateRoot
         array $content,
         string $metaDescription,
         string $robots,
-        \DateTimeImmutable $now,
     ): void {
         // Everything is validated before anything is assigned, so an invalid
         // field doesn't leave the page with only part of the edit.
@@ -169,15 +169,16 @@ final class Page extends AggregateRoot
             $version->assertPublishable();
         }
 
-        $this->replaceVersion($version, $now);
+        $this->replaceVersion($version);
     }
 
     /**
      * Puts the version being edited on the site, for the first time or in
      * place of the one there.
      */
-    public function publish(\DateTimeImmutable $now): void
+    public function publish(): void
     {
+        $now = Clock::now();
         $this->version->assertPublishable();
 
         if (PageStatus::Published === $this->status && !$this->hasUnpublishedChanges()) {
@@ -208,7 +209,7 @@ final class Page extends AggregateRoot
      * Takes the page off the site, freeing its address there. Unique pages
      * stay on the site once published, since other parts of it rely on them.
      */
-    public function unpublish(\DateTimeImmutable $now): void
+    public function unpublish(): void
     {
         if ($this->type->isUnique()) {
             throw InvalidPublication::uniquePage($this->type);
@@ -221,19 +222,19 @@ final class Page extends AggregateRoot
         $this->status = PageStatus::Unpublished;
         $this->publishedSlug = null;
 
-        $this->record(new PageUnpublished($this->id->value(), EventId::random()->value(), $now));
+        $this->record(new PageUnpublished($this->id->value(), EventId::random()->value(), Clock::now()));
     }
 
     /**
      * Brings the version being edited back to the one on the site.
      */
-    public function discardChanges(\DateTimeImmutable $now): void
+    public function discardChanges(): void
     {
         if (null === $this->published || !$this->hasUnpublishedChanges()) {
             throw InvalidPublication::noChangesToDiscard();
         }
 
-        $this->replaceVersion($this->published, $now);
+        $this->replaceVersion($this->published);
     }
 
     /**
@@ -316,10 +317,10 @@ final class Page extends AggregateRoot
         return $this->timeline;
     }
 
-    private function replaceVersion(PageVersion $version, \DateTimeImmutable $now): void
+    private function replaceVersion(PageVersion $version): void
     {
         if (!$version->equals($this->version)) {
-            $this->timeline = $this->timeline->updated($now);
+            $this->timeline = $this->timeline->updated(Clock::now());
         }
 
         $this->version = $version;

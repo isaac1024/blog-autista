@@ -7,7 +7,6 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\PageRepository;
-use Shared\Domain\Clock;
 use Shared\Domain\DomainError;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,7 +20,7 @@ final class PageUpdateController extends AbstractController
     public function __construct(private readonly TiptapRichText $tiptapRichText) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PageRepository $pageRepository, Clock $clock): Response
+    public function __invoke(string $id, Request $request, PageRepository $pageRepository): Response
     {
         try {
             new PageUpdater(
@@ -32,7 +31,7 @@ final class PageUpdateController extends AbstractController
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($pageRepository, $clock);
+            )($pageRepository);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError) {

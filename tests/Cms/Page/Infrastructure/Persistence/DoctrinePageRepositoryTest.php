@@ -21,7 +21,6 @@ use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
-use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -209,7 +208,7 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     public function testItFindsThePageOnTheSiteWithTheGivenSlugWhileItIsEditedWithAnother(): void
     {
         $page = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
-        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
         $this->repository()->save($page);
         $this->entityManager()->clear();
 
@@ -220,8 +219,8 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     public function testItFindsNoPageWithTheSlugAnUnpublishedPageHadOnTheSite(): void
     {
         $page = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
-        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
-        $page->unpublish(ClockMother::now());
+        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
+        $page->unpublish();
         $this->repository()->save($page);
         $this->entityManager()->clear();
 
@@ -231,14 +230,14 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     public function testItRejectsSavingAPageWithTheSlugAnotherOneHasOnTheSite(): void
     {
         $published = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
-        $published->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $published->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
         $this->repository()->save($published);
 
         $this->expectException(SlugAlreadyTaken::class);
 
         $other = PageMother::published(id: PageId::random()->value(), title: 'Otra', slug: 'otra');
-        $other->edit('Otra', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
-        $other->publish(ClockMother::now());
+        $other->edit('Otra', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
+        $other->publish();
         $this->repository()->save($other);
     }
 
