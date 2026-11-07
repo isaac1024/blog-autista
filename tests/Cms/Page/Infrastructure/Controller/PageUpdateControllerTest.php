@@ -99,14 +99,14 @@ final class PageUpdateControllerTest extends CmsWebTestCase
      * @param array<string, string> $fields
      */
     #[DataProvider('invalidFields')]
-    public function testItRespondsBadRequestAndKeepsThePageWhenTheInputIsInvalid(array $fields): void
+    public function testItGoesBackAndKeepsThePageWhenTheInputIsInvalid(array $fields): void
     {
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
 
         $client->request('POST', \sprintf(self::URL, $page->id()->value()), $fields);
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
     }
 
@@ -131,7 +131,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         yield 'missing robots directive' => [self::fields(without: ['robots'])];
     }
 
-    public function testItRespondsBadRequestAndKeepsThePageWhenAnotherPageHasTheSlug(): void
+    public function testItGoesBackAndKeepsThePageWhenAnotherPageHasTheSlug(): void
     {
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
@@ -143,7 +143,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
 
         // The request edits the very instance saved above before the slug check
         // fails, so the stored page is compared against a fresh copy instead.
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(
             PageMother::create(id: $page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
             $this->storedPage($page),
@@ -163,7 +163,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Inicio'), $this->storedPage($home));
     }
 
-    public function testItRespondsBadRequestAndKeepsTheHomePageWhenItIsGivenASlug(): void
+    public function testItGoesBackAndKeepsTheHomePageWhenItIsGivenASlug(): void
     {
         $client = self::createAuthenticatedClient();
         $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
@@ -171,7 +171,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
 
         $client->request('POST', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio', 'slug' => 'inicio']));
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Portada'), $this->storedPage($home));
     }
 

@@ -21,8 +21,11 @@ final class PageCreateController extends AbstractController
     {
         try {
             new PageCreator(PageId::random()->value(), $request->request->getString('title'))($pageRepository, $eventBus);
-        } catch (DomainError) {
-            return new Response(status: Response::HTTP_BAD_REQUEST);
+        } catch (DomainError $error) {
+            // Told on the page it goes back to.
+            $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
         }
 
         return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);

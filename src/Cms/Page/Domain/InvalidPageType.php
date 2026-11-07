@@ -10,11 +10,11 @@ final class InvalidPageType extends DomainError
 {
     public static function unknown(string $value): self
     {
-        return new self(\sprintf('"%s" is not a page type.', $value));
+        return new self(\sprintf('"%s" is not a page type.', $value), 'errors.page.type.unknown', ['%type%' => $value]);
     }
 
     public static function notUnique(PageType $type): self
     {
-        return new self(\sprintf('"%s" pages are not unique, so they are created from the CMS.', $type->value));
+        return new self(\sprintf('"%s" pages are not unique, so they are created from the CMS.', $type->value), 'errors.page.type.not_unique', ['%type%' => $type->value]);
     }
 }

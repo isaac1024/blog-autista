@@ -35,8 +35,11 @@ final class PageUpdateController extends AbstractController
             )($pageRepository, $eventBus);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
-        } catch (DomainError) {
-            return new Response(status: Response::HTTP_BAD_REQUEST);
+        } catch (DomainError $error) {
+            // Told on the page it goes back to.
+            $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
         return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);

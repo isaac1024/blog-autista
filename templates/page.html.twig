@@ -25,6 +25,7 @@
 {% endblock %}
 {% block main %}
     <main id="main" class="{{ page.mainClass }} grow">
+{% block notices %}{% endblock %}
 {% for component in page.main %}
         {{ renderer.render(component) }}
 {% endfor %}

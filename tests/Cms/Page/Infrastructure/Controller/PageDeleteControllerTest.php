@@ -41,14 +41,14 @@ final class PageDeleteControllerTest extends CmsWebTestCase
     }
 
     #[DataProvider('uniquePages')]
-    public function testItRespondsBadRequestAndKeepsAUniquePage(Page $page): void
+    public function testItGoesBackAndKeepsAUniquePage(Page $page): void
     {
         $client = self::createAuthenticatedClient();
         self::getContainer()->get(PageRepository::class)->save($page);
 
         $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
     }
 
@@ -64,7 +64,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         }
     }
 
-    public function testItRespondsBadRequestAndKeepsAPublishedPage(): void
+    public function testItGoesBackAndKeepsAPublishedPage(): void
     {
         $client = self::createAuthenticatedClient();
         $page = PageMother::published(id: PageIdMother::random()->value());
@@ -72,7 +72,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
 
         $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
     }
 

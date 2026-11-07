@@ -10,6 +10,6 @@ final class SlugAlreadyTaken extends DomainError
 {
     public static function bySlug(Slug $slug, ?\Throwable $previous = null): self
     {
-        return new self(\sprintf('Another page is already addressed by "%s".', $slug->value()), previous: $previous);
+        return new self(\sprintf('Another page is already addressed by "%s".', $slug->value()), 'errors.page.slug.taken', ['%slug%' => $slug->value()], $previous);
     }
 }

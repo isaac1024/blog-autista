@@ -72,7 +72,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
     }
 
     #[DataProvider('unpublishablePages')]
-    public function testItRespondsBadRequestAndKeepsThePageWhenItCannotBePublished(Page $page): void
+    public function testItGoesBackAndKeepsThePageWhenItCannotBePublished(Page $page): void
     {
         $client = self::createAuthenticatedClient();
         $this->savePage($page);
@@ -80,7 +80,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
 
         $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($expected, $this->storedPage($page));
         self::assertSame([], $this->queuedEvents());
     }

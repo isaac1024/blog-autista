@@ -81,6 +81,16 @@
     </div>
 {% endblock %}
 
+{#
+    What went wrong with the last action, such as a rule the server refused,
+    told at the top of the page it came back to.
+#}
+{% block notices %}
+{% for error in app.flashes('error') %}
+        <twig:Shared:Alert :title="'errors.title'|trans" :message="error.key|trans(error.parameters)" />
+{% endfor %}
+{% endblock %}
+
 {# The CMS chrome lives in the sidebar: no separate top bar or footer. #}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}

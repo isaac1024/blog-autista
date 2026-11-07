@@ -21,16 +21,16 @@ final class PageCreateControllerTest extends CmsWebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_SEE_OTHER);
     }
 
-    public function testItRespondsBadRequestWhenTheTitleIsInvalid(): void
+    public function testItGoesBackWhenTheTitleIsInvalid(): void
     {
         $client = self::createAuthenticatedClient();
 
         $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => ' ']);
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages', Response::HTTP_SEE_OTHER);
     }
 
-    public function testItRespondsBadRequestWhenAnotherPageHasTheSlugDerivedFromTheTitle(): void
+    public function testItGoesBackWhenAnotherPageHasTheSlugDerivedFromTheTitle(): void
     {
         $client = self::createAuthenticatedClient();
         self::getContainer()->get(PageRepository::class)->save(
@@ -39,6 +39,6 @@ final class PageCreateControllerTest extends CmsWebTestCase
 
         $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Sobre mí']);
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages', Response::HTTP_SEE_OTHER);
     }
 }

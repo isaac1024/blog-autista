@@ -53,14 +53,14 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
     }
 
     #[DataProvider('pagesWithoutChanges')]
-    public function testItRespondsBadRequestAndKeepsAPageWithoutChanges(Page $page): void
+    public function testItGoesBackAndKeepsAPageWithoutChanges(Page $page): void
     {
         $client = self::createAuthenticatedClient();
         $this->savePage($page);
 
         $client->request('POST', \sprintf(self::URL, $page->id()->value()));
 
-        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
     }
 

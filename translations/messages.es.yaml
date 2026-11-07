@@ -186,3 +186,59 @@ ui:
             delete: 'Quitar tabla'
         undo: 'Deshacer'
         redo: 'Rehacer'
+errors:
+    title: 'No se ha podido completar.'
+    uuid:
+        invalid: 'El identificador «%value%» no es válido.'
+    criteria:
+        non_positive_limit: 'El número de resultados debe ser mayor que cero.'
+        limit_too_high: 'No se pueden pedir más de %max% resultados.'
+        negative_offset: 'La posición de los resultados no puede ser negativa.'
+        non_positive_page: 'El número de página debe ser mayor que cero.'
+        unknown_field: 'No se puede filtrar ni ordenar por «%field%».'
+    rich_text:
+        malformed: 'El contenido no tiene un formato válido. Recarga la página y vuelve a intentarlo.'
+        unsupported_version: 'El contenido está guardado en un formato que ya no se admite.'
+        empty: 'Hay un bloque vacío en el contenido.'
+        skipped_heading_level: 'Un título de nivel %level% no puede ir después de uno de nivel %previous%: los niveles bajan de uno en uno.'
+        uneven_table: 'Todas las filas de la tabla deben tener %columns% celdas, tantas como su cabecera.'
+        not_allowed: 'El contenido usa algo que aquí no está permitido.'
+    page:
+        not_found: 'No hay ninguna página en «%slug%».'
+        home_not_found: 'La portada no está publicada.'
+        title:
+            too_short: 'El título debe tener al menos %min% caracteres.'
+            too_long: 'El título no puede pasar de %max% caracteres.'
+        slug:
+            malformed: '«%slug%» no es una dirección válida: usa solo minúsculas sin tildes, números y guiones.'
+            too_short: 'La dirección debe tener al menos %min% caracteres.'
+            too_long: 'La dirección no puede pasar de %max% caracteres.'
+            on_home: 'La portada se sirve en la raíz del sitio, así que no lleva dirección.'
+            taken: 'Ya hay otra página con la dirección «%slug%».'
+        type:
+            unknown: '«%type%» no es un tipo de página.'
+            not_unique: 'Las páginas de tipo «%type%» no son únicas: se crean desde el CMS.'
+        unique_cannot_be_deleted: 'Esta página es única, así que no se puede borrar.'
+        unique_already_exists: 'El sitio ya tiene su página de tipo «%type%».'
+        seo:
+            description_too_long: 'La meta descripción no puede pasar de %max% caracteres.'
+            empty_description: 'La meta descripción no puede estar vacía.'
+            unknown_robots: '«%robots%» no es una indicación válida para los buscadores.'
+        publication:
+            without_content: 'La página no se puede publicar sin contenido.'
+            without_slug: 'La página no se puede publicar sin dirección.'
+            without_meta_description: 'La página no se puede publicar sin meta descripción.'
+            nothing_to_publish: 'La página ya está publicada tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar una página publicada.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            unique_page: 'Esta página es única, así que no se puede despublicar.'
+            published_page: 'Una página publicada no se puede borrar: despublícala antes.'
+            incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
+    image:
+        alt:
+            empty: 'El texto alternativo no puede estar vacío.'
+            too_long: 'El texto alternativo no puede pasar de %max% caracteres.'
+        file:
+            missing: 'No ha llegado ninguna imagen. Vuelve a elegirla.'
+            not_webp: 'La imagen no ha llegado en formato WebP. Vuelve a elegirla.'
+            wrong_size: 'La imagen debe medir %width% × %height% píxeles. Vuelve a elegirla.'
