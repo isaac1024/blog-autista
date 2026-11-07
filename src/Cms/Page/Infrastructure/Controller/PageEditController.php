@@ -127,26 +127,25 @@ final class PageEditController extends AbstractController
     }
 
     /**
-     * What is done to the page apart from editing it, each confirmed first:
-     * discarding its unpublished changes, taking it off the site, or deleting
-     * it once it is off. Unique pages are never taken off nor deleted.
+     * What is done to the page apart from editing it, each confirmed first and
+     * offered only when the page allows it: discarding its unpublished
+     * changes, taking it off the site, or deleting it.
      *
      * @return list<PageComponent>
      */
     private function pageActions(PageResponse $page): array
     {
-        $published = PageStatus::Published->value === $page->status;
         $actions = [];
 
         if ($page->changed) {
             $actions[] = $this->confirmModal($page, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_pages_discard', 'secondary');
         }
 
-        if ($published && !$page->unique) {
+        if ($page->canBeUnpublished) {
             $actions[] = $this->confirmModal($page, self::UNPUBLISH_PAGE_MODAL, 'unpublish', 'cms_pages_unpublish', 'secondary');
         }
 
-        if (!$published && !$page->unique) {
+        if ($page->canBeDeleted) {
             $actions[] = $this->confirmModal($page, self::DELETE_PAGE_MODAL, 'delete', 'cms_pages_delete', 'danger');
         }
 
@@ -164,7 +163,7 @@ final class PageEditController extends AbstractController
     private function formActions(PageResponse $page): array
     {
         $published = PageStatus::Published->value === $page->status;
-        $publishable = !$published || $page->changed;
+        $publishable = $page->hasSomethingToPublish;
         $actions = [
             new PageComponent('Shared:FormButton', [
                 'label' => $this->translator->trans('cms.pages.edit.submit'),

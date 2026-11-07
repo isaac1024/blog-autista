@@ -188,7 +188,7 @@ final class Page extends AggregateRoot
         $now = Clock::now();
         $this->version->assertPublishableAs($this->type);
 
-        if (PageStatus::Published === $this->status && !$this->hasUnpublishedChanges()) {
+        if (!$this->hasSomethingToPublish()) {
             throw InvalidPublication::nothingToPublish();
         }
 
@@ -246,13 +246,39 @@ final class Page extends AggregateRoot
 
     /**
      * Whether the page is on the site with a version other than the one being
-     * edited.
+     * edited, so its changes can be discarded.
      */
     public function hasUnpublishedChanges(): bool
     {
         return PageStatus::Published === $this->status
             && null !== $this->published
             && !$this->published->equals($this->version);
+    }
+
+    /**
+     * Whether publishing has something to put on the site: the page isn't
+     * there, or it is with another version. Whether that version has all the
+     * site shows is only known by publishing it.
+     */
+    public function hasSomethingToPublish(): bool
+    {
+        return PageStatus::Published !== $this->status || $this->hasUnpublishedChanges();
+    }
+
+    /**
+     * Whether it can be taken off the site: it is on it, and isn't unique.
+     */
+    public function canBeUnpublished(): bool
+    {
+        return !$this->type->isUnique() && PageStatus::Published === $this->status;
+    }
+
+    /**
+     * Whether it can be deleted: it is off the site, and isn't unique.
+     */
+    public function canBeDeleted(): bool
+    {
+        return !$this->type->isUnique() && PageStatus::Published !== $this->status;
     }
 
     public function save(PageRepository $pageRepository): void

@@ -7,10 +7,12 @@ namespace Cms\Tests\Page\Application;
 use Cms\Page\Application\PageFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageResponse;
+use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
@@ -28,7 +30,7 @@ final class PageFinderTest extends TestCase
             ->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
 
         self::assertEquals(
-            new PageResponse($id, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
+            new PageResponse($id, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: true),
             (new PageFinder($id))($repository),
         );
     }
@@ -40,7 +42,7 @@ final class PageFinderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
 
         self::assertEquals(
-            new PageResponse($id, 'Portada', '', type: 'home', home: true, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
+            new PageResponse($id, 'Portada', null, type: 'home', home: true, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }
@@ -52,7 +54,7 @@ final class PageFinderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
 
         self::assertEquals(
-            new PageResponse($id, 'Contacto', 'contacto', type: 'contact', home: false, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
+            new PageResponse($id, 'Contacto', 'contacto', type: 'contact', home: false, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }
@@ -72,7 +74,7 @@ final class PageFinderTest extends TestCase
         ));
 
         self::assertEquals(
-            new PageResponse($id, 'Buscar', 'buscar', type: 'search', home: false, unique: true, content: $content, metaDescription: 'Busca en todo el blog.', robots: 'noindex,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now()),
+            new PageResponse($id, 'Buscar', 'buscar', type: 'search', home: false, unique: true, content: $content, metaDescription: 'Busca en todo el blog.', robots: 'noindex,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }
@@ -101,6 +103,33 @@ final class PageFinderTest extends TestCase
         self::assertSame('unpublished', $response->status);
         self::assertFalse($response->changed);
         self::assertNull($response->publishedSlug);
+    }
+
+    #[DataProvider('pagesAndTheirActions')]
+    public function testItTellsWhatCanBeDoneToThePage(Page $page, bool $hasSomethingToPublish, bool $canBeUnpublished, bool $canBeDeleted): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+
+        $response = (new PageFinder(PageIdMother::DEFAULT_VALUE))($repository);
+
+        self::assertSame(
+            [$hasSomethingToPublish, $canBeUnpublished, $canBeDeleted],
+            [$response->hasSomethingToPublish, $response->canBeUnpublished, $response->canBeDeleted],
+        );
+    }
+
+    /**
+     * @return iterable<string, array{Page, bool, bool, bool}>
+     */
+    public static function pagesAndTheirActions(): iterable
+    {
+        yield 'a draft' => [PageMother::create(), true, false, true];
+        yield 'a published page as it is on the site' => [PageMother::published(), false, true, false];
+        yield 'a published page with changes' => [PageMother::published(title: 'Quién soy', publishedTitle: 'Sobre mí'), true, true, false];
+        yield 'an unpublished page' => [PageMother::unpublished(), true, false, true];
+        yield 'a unique draft' => [PageMother::create(type: PageType::Contact), true, false, false];
+        yield 'a unique published page' => [PageMother::published(type: PageType::Contact), false, false, false];
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
