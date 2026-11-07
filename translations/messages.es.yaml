@@ -10,14 +10,18 @@ cms:
     images:
         title: 'Imágenes'
         subtitle: 'Las imágenes que muestran las páginas del blog, recortadas en 16:9.'
-        add: 'Añadir imagen'
+        add: 'Subir imagen'
         empty:
             title: 'Todavía no hay imágenes'
-            message: 'Cuando añadas una imagen, aparecerá aquí.'
-            action: 'Añadir la primera imagen'
-        new:
-            title: 'Nueva imagen'
-            subtitle: 'Elige una imagen y el trozo de ella que quieres mostrar.'
+            message: 'Cuando subas una imagen, aparecerá aquí.'
+            action: 'Subir la primera imagen'
+        upload:
+            title: 'Subir una imagen'
+            description: 'Elige una imagen y el trozo de ella que quieres mostrar.'
+            image_label: 'Imagen'
+            alt_label: 'Texto alternativo'
+            alt_hint: 'Describe lo que muestra la imagen para quien no puede verla, como lo contarías en voz alta.'
+            submit: 'Subir imagen'
     pages:
         title: 'Páginas'
         subtitle: 'Las páginas son el contenido fijo del blog, como «Sobre mí» o «Contacto».'
@@ -124,6 +128,15 @@ content:
         label: 'Tabla'
 ui:
     close: 'Cerrar'
+    cropper:
+        hint: 'Cualquier formato y proporción, de al menos %width% × %height% píxeles. Se guarda en WebP a %width% × %height%.'
+        too_small: 'La imagen es demasiado pequeña: necesita al menos %width% × %height% píxeles.'
+        unreadable: 'No se ha podido leer el fichero como imagen. Prueba con otro.'
+        unsupported: 'Este navegador no sabe guardar imágenes en WebP. Usa Chrome o Firefox.'
+        area: 'Zona recortada'
+        area_hint: 'Arrastra la zona para moverla y usa el tirador de la esquina para cambiar su tamaño. Con el teclado: las flechas la mueven y + y - cambian su tamaño (con Mayúsculas, a pasos más largos).'
+        size_text: '%width% × %height% píxeles'
+        preview: 'Vista previa (%width% × %height%)'
     primary_navigation: 'Navegación principal'
     counter:
         static: '%count% caracteres. Se recomiendan entre %min% y %max%.'

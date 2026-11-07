@@ -1,0 +1,31 @@
+{#
+    The file chosen has no name, so the form never sends it: on submit, the
+    controller puts the crop in the hidden field, which does.
+#}
+<div class="grid gap-4" data-controller="image-cropper" data-image-cropper-width-value="{{ width }}" data-image-cropper-height-value="{{ height }}" data-image-cropper-quality-value="{{ quality }}" data-image-cropper-too-small-value="{{ 'ui.cropper.too_small'|trans({'%width%': width, '%height%': height}) }}" data-image-cropper-unreadable-value="{{ 'ui.cropper.unreadable'|trans }}" data-image-cropper-unsupported-value="{{ 'ui.cropper.unsupported'|trans }}" data-image-cropper-size-text-value="{{ 'ui.cropper.size_text'|trans }}">
+    <div class="grid gap-2">
+        <label class="text-[1rem] font-bold" for="{{ id }}">{{ label }}</label>
+        <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ 'ui.cropper.hint'|trans({'%width%': width, '%height%': height}) }}</p>
+        <input class="w-full min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-[0.9rem] py-2.5 text-text file:mr-4 file:cursor-pointer file:rounded-control file:border-0 file:bg-accent file:px-4 file:py-2 file:font-bold file:text-on-accent focus-visible:border-accent forced-colors:border-[ButtonText]" type="file" id="{{ id }}" accept="image/*" required aria-describedby="{{ id }}-hint {{ id }}-error" data-image-cropper-target="source" data-action="change->image-cropper#load">
+        <p class="m-0 text-[1rem] font-bold text-danger" id="{{ id }}-error" role="alert" data-image-cropper-target="error" hidden></p>
+    </div>
+
+    <input type="file" name="{{ name }}" hidden data-image-cropper-target="output">
+
+    <div class="grid gap-4" data-image-cropper-target="editor" hidden>
+        {# The shadow of the area darkens what is left out; the stage clips it to the image. #}
+        <div class="relative mx-auto w-fit max-w-full overflow-hidden select-none" data-image-cropper-target="stage">
+            <img class="block h-auto max-h-[55dvh] w-auto max-w-full" alt="" data-image-cropper-target="image">
+            <div class="absolute cursor-move touch-none outline-2 -outline-offset-2 outline-white shadow-[0_0_0_100vmax_rgb(0_0_0/0.6)] focus-visible:outline-4 focus-visible:outline-focus forced-colors:outline-[Highlight]" tabindex="0" role="group" aria-label="{{ 'ui.cropper.area'|trans }}" aria-describedby="{{ id }}-area-hint" data-image-cropper-target="area" data-action="pointerdown->image-cropper#startMove pointermove->image-cropper#drag pointerup->image-cropper#endDrag pointercancel->image-cropper#endDrag keydown->image-cropper#nudge">
+                <span class="absolute right-0 bottom-0 h-8 w-8 cursor-nwse-resize touch-none border-white bg-accent [border-width:3px_0_0_3px] forced-colors:bg-[Highlight]" aria-hidden="true" data-action="pointerdown->image-cropper#startResize"></span>
+            </div>
+        </div>
+        <p class="m-0 text-[1rem] text-muted" id="{{ id }}-area-hint">{{ 'ui.cropper.area_hint'|trans }}</p>
+        <p class="sr-only" role="status" data-image-cropper-target="status"></p>
+
+        <figure class="m-0 grid gap-2">
+            <figcaption class="text-[1rem] font-bold">{{ 'ui.cropper.preview'|trans({'%width%': width, '%height%': height}) }}</figcaption>
+            <canvas class="block h-auto w-full max-w-[30rem] rounded-control border border-divider" aria-hidden="true" data-image-cropper-target="preview"></canvas>
+        </figure>
+    </div>
+</div>

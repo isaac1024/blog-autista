@@ -10,14 +10,18 @@ cms:
     images:
         title: 'Images'
         subtitle: 'The images the pages of the blog show, cropped to 16:9.'
-        add: 'Add image'
+        add: 'Upload image'
         empty:
             title: 'No images yet'
-            message: 'When you add an image, it will show up here.'
-            action: 'Add the first image'
-        new:
-            title: 'New image'
-            subtitle: 'Choose an image and the part of it you want to show.'
+            message: 'When you upload an image, it will show up here.'
+            action: 'Upload the first image'
+        upload:
+            title: 'Upload an image'
+            description: 'Choose an image and the part of it you want to show.'
+            image_label: 'Image'
+            alt_label: 'Alternative text'
+            alt_hint: 'Describe what the image shows for those who can’t see it, as you would say it out loud.'
+            submit: 'Upload image'
     pages:
         title: 'Pages'
         subtitle: 'Pages are the fixed content of the blog, like “About me” or “Contact”.'
@@ -124,6 +128,15 @@ content:
         label: 'Table'
 ui:
     close: 'Close'
+    cropper:
+        hint: 'Any format and aspect ratio, at least %width% × %height% pixels. It is saved as WebP at %width% × %height%.'
+        too_small: 'The image is too small: it needs at least %width% × %height% pixels.'
+        unreadable: 'The file could not be read as an image. Try another one.'
+        unsupported: 'This browser can’t save images as WebP. Use Chrome or Firefox.'
+        area: 'Cropped area'
+        area_hint: 'Drag the area to move it and use the corner handle to resize it. With the keyboard, the arrow keys move it and + and - resize it (with Shift, in longer steps).'
+        size_text: '%width% × %height% pixels'
+        preview: 'Preview (%width% × %height%)'
     primary_navigation: 'Primary navigation'
     counter:
         static: '%count% characters. Between %min% and %max% are recommended.'

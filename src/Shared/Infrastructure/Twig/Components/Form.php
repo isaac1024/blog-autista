@@ -32,6 +32,11 @@ final class Form
     public bool $hidden = false;
 
     /**
+     * 'multipart/form-data' for a form that sends files.
+     */
+    public ?string $enctype = null;
+
+    /**
      * @var list<PageComponent>
      */
     public array $children = [];
@@ -39,12 +44,13 @@ final class Form
     /**
      * @param list<PageComponent> $children
      */
-    public function mount(string $action, string $method = 'post', array $children = [], ?string $id = null, bool $hidden = false): void
+    public function mount(string $action, string $method = 'post', array $children = [], ?string $id = null, bool $hidden = false, ?string $enctype = null): void
     {
         $this->action = $action;
         $this->method = $method;
         $this->children = $children;
         $this->id = $id;
         $this->hidden = $hidden;
+        $this->enctype = $enctype;
     }
 }

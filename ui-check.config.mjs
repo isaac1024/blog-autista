@@ -56,6 +56,12 @@ if (cmsSession) {
             path: '/pages',
             headers: cmsHeaders,
         },
+        {
+            name: 'cms-images',
+            host: 'cms.blogautista.localhost',
+            path: '/images',
+            headers: cmsHeaders,
+        },
     );
 }
 
