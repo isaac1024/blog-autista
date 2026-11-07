@@ -102,6 +102,12 @@ cms:
         password: 'Contraseña'
         submit: 'Entrar'
 
+content:
+    callout:
+        note: 'Nota'
+        important: 'Importante'
+    table:
+        label: 'Tabla'
 ui:
     close: 'Cerrar'
     primary_navigation: 'Navegación principal'

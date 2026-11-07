@@ -1,0 +1,6 @@
+{% import 'shared/render_component.html.twig' as renderer %}
+<div class="rich-text">
+{% for child in children %}
+    {{ renderer.render(child) }}
+{% endfor %}
+</div>

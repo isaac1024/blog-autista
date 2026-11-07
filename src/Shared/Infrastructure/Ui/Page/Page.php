@@ -9,6 +9,11 @@ namespace Shared\Infrastructure\Ui\Page;
  *
  * Controllers compose the regions with Twig components and pick the layout
  * that paints them, so every context can provide its own chrome.
+ *
+ * Its private constructor takes all of its state, one parameter each, for
+ * the methods that copy it with one part changed.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class Page
 {
@@ -28,11 +33,14 @@ final readonly class Page
         public array $footer,
         public string $mainClass,
         public string $layout,
+        public ?string $description,
+        public ?string $robots,
+        public ?string $canonical,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null);
     }
 
     /**
@@ -73,6 +81,26 @@ final readonly class Page
     }
 
     /**
+     * How the page presents itself to search engines: its summary in search
+     * results, whether they may list it and follow its links, and the address
+     * they should know it by.
+     */
+    public function withSearchEngineMetadata(?string $description, string $robots, string $canonical): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $description,
+            $robots,
+            $canonical,
+        );
+    }
+
+    /**
      * @param null|list<PageComponent> $header
      * @param null|list<PageComponent> $main
      * @param null|list<PageComponent> $footer
@@ -91,6 +119,9 @@ final readonly class Page
             $footer ?? $this->footer,
             $mainClass ?? $this->mainClass,
             $layout ?? $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
         );
     }
 }

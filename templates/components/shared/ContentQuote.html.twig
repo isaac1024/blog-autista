@@ -1,0 +1,6 @@
+{% import 'shared/inline_text.html.twig' as inline %}
+<blockquote>
+{% for paragraph in paragraphs %}
+    <p>{{ inline.render(paragraph) }}</p>
+{% endfor %}
+</blockquote>

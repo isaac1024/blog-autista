@@ -20,8 +20,10 @@ return static function (RoutingConfigurator $routes): void {
         return \is_string($value) && '' !== $value ? $value : $default;
     };
 
+    // The public site is only in Spanish, whatever language the browser asks for.
     $routes->import(['path' => '../src/Web/', 'namespace' => 'Web'], 'attribute')
-        ->host($host('WEB_HOST', 'www.blogautista.localhost'));
+        ->host($host('WEB_HOST', 'www.blogautista.localhost'))
+        ->defaults(['_locale' => 'es']);
 
     $routes->import(['path' => '../src/Cms/', 'namespace' => 'Cms'], 'attribute')
         ->host($host('CMS_HOST', 'cms.blogautista.localhost'));

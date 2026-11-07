@@ -4,6 +4,18 @@
 
 {% block title %}{{ page.title }}{% endblock %}
 
+{% block meta %}
+{% if page.description %}
+        <meta name="description" content="{{ page.description }}">
+{% endif %}
+{% if page.robots %}
+        <meta name="robots" content="{{ page.robots }}">
+{% endif %}
+{% if page.canonical %}
+        <link rel="canonical" href="{{ page.canonical }}">
+{% endif %}
+{% endblock %}
+
 {% block body %}
 {% block regions %}
 {% block header %}

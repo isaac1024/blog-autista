@@ -41,7 +41,7 @@ Messenger commands through `docker compose exec`. To inspect it, use
 | Need | Package | Notes |
 | --- | --- | --- |
 | Database | `symfony/orm-pack` | Doctrine ORM + migrations, MariaDB 11.8 |
-| Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; consume with `messenger:consume async` |
+| Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; the `worker` service consumes it in development (`docker compose logs -f worker`), cron in production |
 | Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`; consume with `messenger:consume scheduler_default` |
 | Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |

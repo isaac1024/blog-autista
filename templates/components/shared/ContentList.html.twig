@@ -1,0 +1,7 @@
+{% import 'shared/inline_text.html.twig' as inline %}
+{% set tag = ordered ? 'ol' : 'ul' %}
+<{{ tag }}>
+{% for item in items %}
+    <li>{{ inline.render(item) }}</li>
+{% endfor %}
+</{{ tag }}>

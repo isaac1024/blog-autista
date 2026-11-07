@@ -73,6 +73,34 @@ services:
       - app
     restart: unless-stopped
 
+  # Consumes the domain events queued by the application, such as the CMS
+  # publishing a page, so the site follows without running the consumer by
+  # hand. Production runs the same command from cron. It stops every hour, or
+  # when it grows too big, and Docker starts it again with fresh code.
+  worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: www-data
+    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    environment:
+      DATABASE_URL: "mysql://app:app@database:3306/app?serverVersion=11.8.9-MariaDB&charset=utf8mb4"
+      REDIS_URL: "redis://redis:6379"
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz-app.ini:ro
+    depends_on:
+      database:
+        condition: service_healthy
+      php:
+        condition: service_started
+    networks:
+      - app
+    restart: unless-stopped
+
   # Webhosting L was migrated from MariaDB 10.11 to 11.8.
   database:
     image: mariadb:11.8

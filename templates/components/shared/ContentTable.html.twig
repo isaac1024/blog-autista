@@ -1,0 +1,21 @@
+{% import 'shared/inline_text.html.twig' as inline %}
+<div class="overflow-x-auto rounded-control focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus" tabindex="0" role="region" aria-label="{{ 'content.table.label'|trans }}">
+    <table>
+        <thead>
+            <tr>
+{% for cell in header %}
+                <th scope="col">{{ inline.render(cell) }}</th>
+{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+{% for row in rows %}
+            <tr>
+{% for cell in row %}
+                <td>{{ inline.render(cell) }}</td>
+{% endfor %}
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>

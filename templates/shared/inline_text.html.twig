@@ -1,0 +1,5 @@
+{#
+    Runs of text of a content block, as the RichText adapter hands them over:
+    bold runs become strong, and everything is escaped.
+#}
+{% macro render(runs) %}{% for run in runs %}{% if run.bold %}<strong>{{ run.text }}</strong>{% else %}{{ run.text }}{% endif %}{% endfor %}{% endmacro %}

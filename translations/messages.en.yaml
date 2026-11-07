@@ -102,6 +102,12 @@ cms:
         password: 'Password'
         submit: 'Sign in'
 
+content:
+    callout:
+        note: 'Note'
+        important: 'Important'
+    table:
+        label: 'Table'
 ui:
     close: 'Close'
     primary_navigation: 'Primary navigation'

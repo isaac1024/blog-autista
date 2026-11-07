@@ -29,7 +29,8 @@
  *
  * Authenticated CMS pages are included when `CMS_SESSION_COOKIE` holds a valid
  * PHPSESSID from a logged-in development session; the page editor also needs
- * `CMS_PAGE_ID`, the id of an existing page.
+ * `CMS_PAGE_ID`, the id of an existing page. Pages of the site are included
+ * with `WEB_PAGE_SLUG` and `WEB_HOME`, once published.
  *
  * `server.command` supports `{bind}` and `{port}` placeholders. The default
  * checks are HTML, contrast and Lighthouse; run a subset with
@@ -50,12 +51,6 @@ const pages = [
 if (cmsSession) {
     pages.push(
         {
-            name: 'cms-home',
-            host: 'cms.blogautista.localhost',
-            path: '/',
-            headers: cmsHeaders,
-        },
-        {
             name: 'cms-pages',
             host: 'cms.blogautista.localhost',
             path: '/pages',
@@ -73,6 +68,25 @@ if (cmsSession && process.env.CMS_PAGE_ID) {
         headers: cmsHeaders,
     });
 }
+// The site only serves published pages: set WEB_PAGE_SLUG to the slug of one
+// published in the dev database, and WEB_HOME to check the home page once it
+// is published.
+if (process.env.WEB_PAGE_SLUG) {
+    pages.push({
+        name: 'web-page',
+        host: 'www.blogautista.localhost',
+        path: `/${process.env.WEB_PAGE_SLUG}.html`,
+    });
+}
+
+if (process.env.WEB_HOME) {
+    pages.push({
+        name: 'web-home',
+        host: 'www.blogautista.localhost',
+        path: '/',
+    });
+}
+
 export default {
     server: {
         bind: '127.0.0.1',
