@@ -22,7 +22,7 @@ security:
             form_login:
                 login_path: cms_login
                 check_path: cms_login_check
-                default_target_path: cms_home
+                default_target_path: cms_pages
                 enable_csrf: true
             logout:
                 path: cms_logout

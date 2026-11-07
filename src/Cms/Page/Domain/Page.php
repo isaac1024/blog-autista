@@ -71,8 +71,6 @@ final class Page extends AggregateRoot
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
     ) {
-        $this->assertFits($version);
-        $this->assertConsistent();
         $this->publishedSlug = PageStatus::Published === $status ? $published?->slug() : null;
     }
 
@@ -165,7 +163,7 @@ final class Page extends AggregateRoot
             RichText::fromArray($content),
             Seo::fromPrimitives($metaDescription, $robots),
         );
-        $this->assertFits($version);
+        self::contentFeatures()->assertAllows($version->content());
 
         if (PageStatus::Published === $this->status) {
             $version->assertPublishable();
@@ -316,47 +314,6 @@ final class Page extends AggregateRoot
     public function timeline(): Timeline
     {
         return $this->timeline;
-    }
-
-    /**
-     * The version must fit the page: the content allowed on pages, and an
-     * empty slug only on the home page.
-     */
-    private function assertFits(PageVersion $version): void
-    {
-        self::contentFeatures()->assertAllows($version->content());
-
-        if ($this->type->isHome() && !$version->slug() instanceof HomeSlug) {
-            throw InvalidSlug::onHome($version->slug()->value());
-        }
-
-        if (!$this->type->isHome() && $version->slug() instanceof HomeSlug) {
-            throw InvalidSlug::missing();
-        }
-    }
-
-    /**
-     * A draft has never been published; a published page has its version on
-     * the site, complete; unique pages are never unpublished.
-     */
-    private function assertConsistent(): void
-    {
-        $consistent = match ($this->status) {
-            PageStatus::Draft => null === $this->published && null === $this->timeline->firstPublishedAt(),
-            PageStatus::Published => null !== $this->published && null !== $this->timeline->firstPublishedAt(),
-            PageStatus::Unpublished => null !== $this->published
-                && null !== $this->timeline->firstPublishedAt()
-                && !$this->type->isUnique(),
-        };
-
-        if (!$consistent) {
-            throw InvalidPublication::inconsistentState($this->status);
-        }
-
-        if (PageStatus::Published === $this->status) {
-            $this->published?->assertPublishable();
-            $this->version->assertPublishable();
-        }
     }
 
     private function replaceVersion(PageVersion $version, \DateTimeImmutable $now): void

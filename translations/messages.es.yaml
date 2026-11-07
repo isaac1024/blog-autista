@@ -1,16 +1,8 @@
 cms:
-    home:
-        title: 'Panel'
-        subtitle: 'Desde aquí gestionas el contenido del blog.'
-        pages:
-            title: 'Páginas'
-            description: 'El contenido fijo del blog: la portada, el contacto, el buscador y los textos legales, además de las páginas que crees.'
-            action: 'Ver las páginas'
     nav:
         account: 'Cuenta'
         administration: 'Administración'
         content: 'Contenido'
-        dashboard: 'Panel'
         menu: 'Menú'
         pages: 'Páginas'
         logout: 'Cerrar sesión'

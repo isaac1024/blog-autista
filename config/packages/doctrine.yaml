@@ -26,16 +26,6 @@ doctrine:
             numeric_functions:
                 MATCH_AGAINST: Shared\Infrastructure\Persistence\Doctrine\MatchAgainstFunction
         mappings:
-            Web:
-                type: attribute
-                is_bundle: false
-                dir: '%kernel.project_dir%/src/Web/Entity'
-                prefix: 'Web\Entity'
-            Cms:
-                type: attribute
-                is_bundle: false
-                dir: '%kernel.project_dir%/src/Cms/Entity'
-                prefix: 'Cms\Entity'
             CmsPage:
                 type: attribute
                 is_bundle: false

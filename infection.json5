@@ -14,19 +14,21 @@
     },
     "mutators": {
         "@default": true,
-        // Controllers compose their page from Twig components in a private
-        // page() method. That composition is checked by the ui-check harness,
-        // not by PHPUnit, so mutating its arrays only yields unkillable mutants.
-        // The rest of the controller keeps every mutator.
-        "ArrayItem": {
-            "ignore": ["*\\Controller\\*::page"]
-        },
-        "ArrayItemRemoval": {
-            "ignore": ["*\\Controller\\*::page"]
-        },
-        "TrueValue": {
-            "ignore": ["*\\Controller\\*::page"]
-        }
+        // Controllers compose their page from Twig components in page() and
+        // the private methods that build its parts. That composition is
+        // checked by the ui-check harness, not by PHPUnit, so mutating it only
+        // yields unkillable mutants. The action that handles the request keeps
+        // every mutator.
+        "global-ignore": [
+            "*\\Controller\\*::page",
+            "*\\Controller\\*::row",
+            "*\\Controller\\*::slugField",
+            "*\\Controller\\*::homeAddress",
+            "*\\Controller\\*::searchEngineSection",
+            "*\\Controller\\*::pageActions",
+            "*\\Controller\\*::formActions",
+            "*\\Controller\\*::confirmModal"
+        ]
     },
     "timeout": 60,
     "threads": "auto",

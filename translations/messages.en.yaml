@@ -1,16 +1,8 @@
 cms:
-    home:
-        pages:
-            title: 'Pages'
-            description: 'The fixed content of the blog: the home page, contact, search and the legal texts, plus the pages you create.'
-            action: 'See the pages'
-        title: 'Dashboard'
-        subtitle: 'Manage the blog content from here.'
     nav:
         account: 'Account'
         administration: 'Administration'
         content: 'Content'
-        dashboard: 'Dashboard'
         menu: 'Menu'
         pages: 'Pages'
         logout: 'Sign out'

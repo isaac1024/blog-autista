@@ -16,10 +16,12 @@ use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Page\Domain\SlugMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
+use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -170,6 +172,74 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $entityManager->clear();
 
         self::assertEquals($page, $entityManager->find(Page::class, $id));
+    }
+
+    /**
+     * The version on the site is stored apart, so it is read back as it was
+     * published, whatever the page was edited into since.
+     */
+    #[DataProvider('pagesOnTheSite')]
+    public function testItSavesThePublicationSoItCanBeReadBack(Page $page): void
+    {
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($page);
+        $entityManager->clear();
+
+        self::assertEquals($page, $entityManager->find(Page::class, $page->id()));
+    }
+
+    /**
+     * @return iterable<string, array{Page}>
+     */
+    public static function pagesOnTheSite(): iterable
+    {
+        yield 'published' => [PageMother::published(
+            id: PageId::random()->value(),
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            firstPublishedAt: '2026-10-01 09:00:00',
+            lastPublishedAt: '2026-10-15 18:30:00',
+        )];
+        yield 'published with changes' => [PageMother::published(id: PageId::random()->value(), title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí')];
+        yield 'the published home page' => [PageMother::published(id: PageId::random()->value(), type: PageType::Home)];
+        yield 'unpublished' => [PageMother::unpublished(id: PageId::random()->value())];
+    }
+
+    public function testItFindsThePageOnTheSiteWithTheGivenSlugWhileItIsEditedWithAnother(): void
+    {
+        $page = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
+        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $this->repository()->save($page);
+        $this->entityManager()->clear();
+
+        self::assertEquals($page->id(), $this->repository()->findBySlug(SlugMother::create('sobre-mi'))?->id());
+        self::assertEquals($page->id(), $this->repository()->findBySlug(SlugMother::create('quien-soy'))?->id());
+    }
+
+    public function testItFindsNoPageWithTheSlugAnUnpublishedPageHadOnTheSite(): void
+    {
+        $page = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
+        $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $page->unpublish(ClockMother::now());
+        $this->repository()->save($page);
+        $this->entityManager()->clear();
+
+        self::assertNull($this->repository()->findBySlug(SlugMother::create('sobre-mi')));
+    }
+
+    public function testItRejectsSavingAPageWithTheSlugAnotherOneHasOnTheSite(): void
+    {
+        $published = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
+        $published->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $this->repository()->save($published);
+
+        $this->expectException(SlugAlreadyTaken::class);
+
+        $other = PageMother::published(id: PageId::random()->value(), title: 'Otra', slug: 'otra');
+        $other->edit('Otra', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow', ClockMother::now());
+        $other->publish(ClockMother::now());
+        $this->repository()->save($other);
     }
 
     public function testItFindsTheHomePageByItsEmptySlug(): void

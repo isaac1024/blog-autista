@@ -46,8 +46,8 @@ Messenger commands through `docker compose exec`. To inspect it, use
 | Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |
 
-Doctrine mappings are split per context and module (`src/Web/Entity`,
-`src/Cms/Entity`, `src/Cms/Page/Domain`) and migrations live in
+Doctrine mappings are declared per module (`src/Cms/Page/Domain`) and
+migrations live in
 `src/Shared/Infrastructure/Persistence/Doctrine/Migrations`. The
 `app_test` database is created by `docker/mariadb/init/01-test-database.sql`.
 

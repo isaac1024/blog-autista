@@ -27,9 +27,4 @@ final class InvalidSlug extends DomainError
     {
         return new self(\sprintf('The home page is served at the root of the site, so it takes no slug, not "%s".', $value));
     }
-
-    public static function missing(): self
-    {
-        return new self('Every page but the home page needs a slug.');
-    }
 }

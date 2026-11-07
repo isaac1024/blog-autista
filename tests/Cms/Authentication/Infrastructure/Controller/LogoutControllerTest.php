@@ -23,7 +23,7 @@ final class LogoutControllerTest extends WebTestCase
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
 
-        $client->request('GET', 'http://cms.blogautista.localhost/');
+        $client->request('GET', 'http://cms.blogautista.localhost/pages');
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
     }
 }

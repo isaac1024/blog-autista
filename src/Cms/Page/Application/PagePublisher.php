@@ -38,7 +38,8 @@ final readonly class PagePublisher
         $page->publish($now);
 
         new SlugAvailability($page)($pageRepository);
+        $events = $page->pullDomainEvents();
         $page->save($pageRepository);
-        $eventBus->publish(...$page->pullDomainEvents());
+        $eventBus->publish(...$events);
     }
 }

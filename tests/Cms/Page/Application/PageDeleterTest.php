@@ -6,6 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
+use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\UniquePageCannotBeDeleted;
@@ -55,6 +56,28 @@ final class PageDeleterTest extends TestCase
         foreach (PageMother::uniqueButHome() as $type => $page) {
             yield $type => [$page];
         }
+    }
+
+    public function testItDeletesAnUnpublishedPage(): void
+    {
+        $page = PageMother::unpublished();
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::once())->method('delete')->with(self::identicalTo($page));
+
+        (new PageDeleter($page->id()->value()))($repository);
+    }
+
+    public function testItNeverDeletesAPublishedPage(): void
+    {
+        $page = PageMother::published();
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::never())->method('delete');
+
+        $this->expectExceptionObject(InvalidPublication::publishedPage());
+
+        (new PageDeleter($page->id()->value()))($repository);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

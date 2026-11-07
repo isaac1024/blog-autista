@@ -43,11 +43,6 @@ final class InvalidPublication extends DomainError
         return new self('A published page cannot be deleted; unpublish it first.');
     }
 
-    public static function inconsistentState(PageStatus $status): self
-    {
-        return new self(\sprintf('A %s page cannot be in that state.', $status->value));
-    }
-
     public static function incompleteDates(): self
     {
         return new self('A page published once has both a first and a last publication date.');

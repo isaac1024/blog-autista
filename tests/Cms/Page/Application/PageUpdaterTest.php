@@ -6,6 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
+use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\InvalidSeo;
 use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
@@ -30,6 +31,8 @@ use Shared\Tests\Domain\RichText\RichTextMother as Text;
 
 final class PageUpdaterTest extends TestCase
 {
+    private const string BEFORE = '2026-10-01 09:00:00';
+
     #[DataProvider('validEdits')]
     public function testItSavesThePageWithTheEditedTitleAndSlug(string $title, string $slug, Page $expected): void
     {
@@ -361,6 +364,84 @@ final class PageUpdaterTest extends TestCase
         $this->expectExceptionObject(InvalidSlug::malformed(''));
 
         self::updater($id, 'Contacto', '')($repository, ClockMother::create());
+    }
+
+    /**
+     * @param array<array-key, mixed> $content
+     */
+    #[DataProvider('datedEdits')]
+    public function testItDatesThePageOnlyWhenSomethingChanges(string $title, array $content, string $metaDescription, string $updatedAt): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: PageMother::CONTENT,
+            metaDescription: PageMother::META_DESCRIPTION,
+            updatedAt: self::BEFORE,
+        ));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::create(
+                id: $id,
+                title: $title,
+                slug: 'sobre-mi',
+                content: $content,
+                metaDescription: '' === trim($metaDescription) ? null : trim($metaDescription),
+                updatedAt: $updatedAt,
+            )));
+
+        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository, ClockMother::create());
+    }
+
+    /**
+     * @return iterable<string, array{string, array<array-key, mixed>, string, string}>
+     */
+    public static function datedEdits(): iterable
+    {
+        yield 'nothing changed' => ['Sobre mí', PageMother::CONTENT, PageMother::META_DESCRIPTION, self::BEFORE];
+        yield 'only whitespace changed' => ['  Sobre   mí ', PageMother::CONTENT, ' '.PageMother::META_DESCRIPTION, self::BEFORE];
+        yield 'the title changed' => ['Quién soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, ClockMother::NOW];
+        yield 'the content changed' => ['Sobre mí', Text::stored(Text::paragraph('Otro texto.')), PageMother::META_DESCRIPTION, ClockMother::NOW];
+        yield 'the meta description changed' => ['Sobre mí', PageMother::CONTENT, '', ClockMother::NOW];
+    }
+
+    public function testItLeavesThePublishedVersionOnTheSiteAndMarksThePageAsChanged(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', updatedAt: self::BEFORE));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::published(id: $id, title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí')));
+
+        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository, ClockMother::create());
+    }
+
+    /**
+     * @param array<array-key, mixed> $content
+     */
+    #[DataProvider('unpublishableEdits')]
+    public function testItSavesNothingThatAPublishedPageCouldNotBePublishedWith(array $content, string $metaDescription, DomainError $error): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject($error);
+
+        self::updater(PageIdMother::DEFAULT_VALUE, 'Sobre mí', 'sobre-mi', $content, $metaDescription)($repository, ClockMother::create());
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>, string, DomainError}>
+     */
+    public static function unpublishableEdits(): iterable
+    {
+        yield 'without content' => [Text::EMPTY, PageMother::META_DESCRIPTION, InvalidPublication::withoutContent()];
+        yield 'without a meta description' => [PageMother::CONTENT, '', InvalidPublication::withoutMetaDescription()];
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void

@@ -64,6 +64,18 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         }
     }
 
+    public function testItRespondsBadRequestAndKeepsAPublishedPage(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = PageMother::published(id: PageIdMother::random()->value());
+        self::getContainer()->get(PageRepository::class)->save($page);
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+        self::assertEquals($page, $this->storedPage($page));
+    }
+
     public function testItOnlyAcceptsPost(): void
     {
         $client = self::createAuthenticatedClient();

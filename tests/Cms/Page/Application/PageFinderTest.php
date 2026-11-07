@@ -77,6 +77,32 @@ final class PageFinderTest extends TestCase
         );
     }
 
+    public function testItTellsWhereThePageStandsOnTheSite(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí', updatedAt: '2026-11-08 12:00:00'));
+
+        $response = (new PageFinder($id))($repository);
+
+        self::assertSame('published', $response->status);
+        self::assertTrue($response->changed);
+        self::assertSame('sobre-mi', $response->publishedSlug);
+        self::assertEquals(new \DateTimeImmutable('2026-11-08 12:00:00'), $response->updatedAt);
+    }
+
+    public function testItTellsAnUnpublishedPageHasNoAddressOnTheSite(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::unpublished());
+
+        $response = (new PageFinder(PageIdMother::DEFAULT_VALUE))($repository);
+
+        self::assertSame('unpublished', $response->status);
+        self::assertFalse($response->changed);
+        self::assertNull($response->publishedSlug);
+    }
+
     public function testItThrowsWhenThePageDoesNotExist(): void
     {
         $id = PageIdMother::DEFAULT_VALUE;
