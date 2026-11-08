@@ -44,11 +44,13 @@ final readonly class PublishedPage
             ? $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
             : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 
+        $images = $this->images($page);
+
         // Search engines may show its images large, in results and Discover.
         return $this->siteLayout->page($page->title)
             ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
             ->withMain('Shared:PageTitle', ['title' => $page->title])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $this->images($page), $this->links($page)));
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $images, $this->links($page, $images)));
     }
 
     /**
@@ -73,17 +75,26 @@ final readonly class PublishedPage
     }
 
     /**
-     * Current addresses of the published pages the content links to, keyed by
-     * id. A target not on the site has no address, so its text stays unlinked.
+     * Current addresses of the published pages the content and the captions
+     * of its images link to, keyed by id. A target not on the site has no
+     * address, so its text stays unlinked.
+     *
+     * @param array<string, array{caption: RichText}> $images
      *
      * @return array<string, string>
      */
-    private function links(PageResponse $page): array
+    private function links(PageResponse $page, array $images): array
     {
+        $pageIds = $page->content->pageIds();
+
+        foreach ($images as $image) {
+            array_push($pageIds, ...$image['caption']->pageIds());
+        }
+
         return array_map(function (PageResponse $target): string {
             return null === $target->slug
                 ? $this->urlGenerator->generate('web_home')
                 : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]);
-        }, new PublishedPagesFinder($page->content->pageIds())($this->pageRepository));
+        }, new PublishedPagesFinder(array_values(array_unique($pageIds)))($this->pageRepository));
     }
 }

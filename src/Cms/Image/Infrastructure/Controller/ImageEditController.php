@@ -131,6 +131,8 @@ final class ImageEditController extends AbstractController
                     'features' => Caption::features()->toArray(),
                     'singleParagraph' => true,
                     'maxLength' => Caption::MAX_LENGTH,
+                    'pageSearchUrl' => $this->generateUrl('cms_pages_search'),
+                    'pageLookupUrl' => $this->generateUrl('cms_pages_lookup'),
                 ]),
                 new PageComponent('Shared:ActionBar', [
                     'status' => $this->imageState->description($image),

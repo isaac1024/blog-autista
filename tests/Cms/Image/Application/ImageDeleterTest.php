@@ -15,6 +15,7 @@ use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\DomainErrorAssertions;
 
 final class ImageDeleterTest extends TestCase
@@ -41,7 +42,7 @@ final class ImageDeleterTest extends TestCase
                 $steps[] = 'file';
             });
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class));
 
         self::assertSame(['image', 'file'], $steps);
     }
@@ -66,7 +67,7 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class));
     }
 
     public function testItDeletesNothingWhileTheImageIsOnTheSite(): void
@@ -77,7 +78,7 @@ final class ImageDeleterTest extends TestCase
         $storage = $this->createMock(ImageStorage::class);
         $storage->expects(self::never())->method('delete');
 
-        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false)));
+        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class)));
     }
 
     /**
@@ -93,7 +94,7 @@ final class ImageDeleterTest extends TestCase
         $usage = $this->createMock(ImageUsage::class);
         $usage->expects(self::once())->method('isInUse')->with(self::equalTo(ImageIdMother::create()))->willReturn(true);
 
-        self::assertTells('errors.image.publication.in_use', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, $usage));
+        self::assertTells('errors.image.publication.in_use', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, $usage, self::createStub(EventBus::class)));
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void
@@ -103,7 +104,7 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), self::createStub(EventBus::class));
     }
 
     private static function usage(bool $inUse): ImageUsage

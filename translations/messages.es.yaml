@@ -58,7 +58,7 @@ cms:
             title: 'Editar imagen'
             dates: 'Subida el %uploaded% · Modificada el %updated%'
             caption_label: 'Pie de foto'
-            caption_hint: 'Contexto que leen todos bajo la imagen: qué es, de dónde viene o a quién se debe. No repitas el texto alternativo. Un solo párrafo, sin formato. Puedes dejarlo vacío hasta publicarla.'
+            caption_hint: 'Contexto que leen todos bajo la imagen: qué es, de dónde viene o a quién se debe. No repitas el texto alternativo. Un solo párrafo, sin formato, que puede enlazar a páginas. Puedes dejarlo vacío hasta publicarla.'
             caption_placeholder: 'Escribe aquí el pie de foto…'
             submit: 'Guardar'
             publish: 'Publicar'
@@ -406,7 +406,7 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
-            linked_page: 'Otras páginas o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
+            linked_page: 'Otras páginas, pies de foto o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
             incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'

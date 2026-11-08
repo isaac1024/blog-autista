@@ -35,7 +35,7 @@ final readonly class EditorImage
     }
 
     /**
-     * The text of a caption, which takes no marks.
+     * The text of a caption, without its links.
      *
      * @param ?array{version: int, blocks: list<array<string, mixed>>} $caption
      */

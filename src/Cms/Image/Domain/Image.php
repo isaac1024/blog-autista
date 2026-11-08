@@ -27,6 +27,7 @@ use Shared\Domain\RichText\RichText;
  * - An image is published only with a caption.
  * - A published image is unpublished before it is deleted, and an image in
  *   use is never deleted; it can be unpublished, and the site leaves it out.
+ * - Its caption may link to pages, which then aren't deleted while it does.
  *
  * Its rules reach every value object, error and event of the image, so its
  * coupling grows with what an image is rather than with how it is designed.
@@ -94,7 +95,8 @@ final class Image extends AggregateRoot
      */
     public function edit(string $alt, array $caption): void
     {
-        $this->replaceVersion(ImageVersion::fromPrimitives($alt, $caption));
+        $version = ImageVersion::fromPrimitives($alt, $caption);
+        $this->changePagesLinked(fn () => $this->replaceVersion($version));
     }
 
     /**
@@ -110,7 +112,9 @@ final class Image extends AggregateRoot
         }
 
         $this->status = ImageStatus::Published;
-        $this->published = $this->version;
+        $this->changePagesLinked(function (): void {
+            $this->published = $this->version;
+        });
 
         $this->record(new ImagePublished(
             $this->id->value(),
@@ -146,7 +150,8 @@ final class Image extends AggregateRoot
             throw InvalidImagePublication::noChangesToDiscard();
         }
 
-        $this->replaceVersion($this->published);
+        $published = $this->published;
+        $this->changePagesLinked(fn () => $this->replaceVersion($published));
     }
 
     /**
@@ -221,7 +226,7 @@ final class Image extends AggregateRoot
      * failure there could leave a file behind, never an image pointing at a
      * missing file.
      */
-    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage): void
+    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus): void
     {
         if (ImageStatus::Published === $this->status) {
             throw InvalidImagePublication::publishedImage();
@@ -231,7 +236,14 @@ final class Image extends AggregateRoot
             throw InvalidImagePublication::inUse();
         }
 
+        // An image deleted links to no page any longer.
+        if ([] !== $this->pagesLinked()) {
+            $this->record(new ImagePagesLinked($this->id->value(), [], EventId::random()->value(), Clock::now()));
+        }
+
+        $events = $this->pullDomainEvents();
         $imageRepository->delete($this);
+        $eventBus->publish(...$events);
         $imageStorage->delete($this->path);
     }
 
@@ -263,6 +275,37 @@ final class Image extends AggregateRoot
     public function timeline(): Timeline
     {
         return $this->timeline;
+    }
+
+    /**
+     * Makes a change and, when it changes the pages the captions link to,
+     * tells which they link to now.
+     *
+     * @param \Closure(): void $change
+     */
+    private function changePagesLinked(\Closure $change): void
+    {
+        $before = $this->pagesLinked();
+        $change();
+        $after = $this->pagesLinked();
+
+        if ($before !== $after) {
+            $this->record(new ImagePagesLinked($this->id->value(), $after, EventId::random()->value(), Clock::now()));
+        }
+    }
+
+    /**
+     * The pages linked from the caption being edited and the one last
+     * published, each once and in order.
+     *
+     * @return list<string>
+     */
+    private function pagesLinked(): array
+    {
+        $pages = [...($this->version->caption()?->pageIds() ?? []), ...($this->published?->caption()?->pageIds() ?? [])];
+        sort($pages);
+
+        return array_values(array_unique($pages));
     }
 
     /**

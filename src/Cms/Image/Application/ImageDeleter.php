@@ -8,6 +8,7 @@ use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Cms\Image\Domain\ImageUsage;
+use Shared\Domain\Event\EventBus;
 
 /**
  * Deletes an image off the site, with its file.
@@ -16,10 +17,10 @@ final readonly class ImageDeleter
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage): void
+    public function __invoke(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus): void
     {
         $image = $imageRepository->find(new ImageId($this->id)) ?? throw ImageNotFound::withId($this->id);
 
-        $image->delete($imageRepository, $imageStorage, $imageUsage);
+        $image->delete($imageRepository, $imageStorage, $imageUsage, $eventBus);
     }
 }

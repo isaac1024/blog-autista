@@ -58,7 +58,7 @@ cms:
             title: 'Edit image'
             dates: 'Uploaded on %uploaded% · Changed on %updated%'
             caption_label: 'Caption'
-            caption_hint: 'Context everyone reads under the image: what it is, where it comes from or whom it is credited to. Don’t repeat the alternative text. A single paragraph, without formatting. You can leave it empty until it is published.'
+            caption_hint: 'Context everyone reads under the image: what it is, where it comes from or whom it is credited to. Don’t repeat the alternative text. A single paragraph, without formatting, which may link to pages. You can leave it empty until it is published.'
             caption_placeholder: 'Write the caption here…'
             submit: 'Save'
             publish: 'Publish'
@@ -406,7 +406,7 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             unique_page: 'This page is unique, so it can’t be unpublished.'
             published_page: 'A published page can’t be deleted: unpublish it first.'
-            linked_page: 'Other pages or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
+            linked_page: 'Other pages, image captions or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
             incomplete_dates: 'The publication dates of the page are incomplete.'
     settings:
         already_exist: 'The site already has its settings.'
