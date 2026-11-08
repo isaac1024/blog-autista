@@ -113,7 +113,7 @@
         "test": "paratest",
         "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
-        "infection": "XDEBUG_MODE=coverage infection --only-covering-test-cases",
+        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection --only-covering-test-cases",
         "infection:diff": "XDEBUG_MODE=coverage infection --only-covering-test-cases --git-diff-lines --git-diff-base=master --map-source-class-to-test",
         "check": [
             "@cs:check",
