@@ -14,6 +14,8 @@ use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\Seo;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
+use Shared\Domain\Clock;
+use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -46,6 +48,13 @@ final class PageEditController extends AbstractController
 
     private const string PUBLISH_FORM = 'page-publish-form';
 
+    private const string PREVIEW_MODAL = 'preview';
+
+    /**
+     * How long a shared preview link lets anyone see the page.
+     */
+    private const string SHARED_PREVIEW_VALIDITY = 'P7D';
+
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
@@ -57,7 +66,7 @@ final class PageEditController extends AbstractController
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(string $id, PageRepository $pageRepository): Response
+    public function __invoke(string $id, PageRepository $pageRepository, SignedUrls $signedUrls): Response
     {
         try {
             $page = new PageFinder($id)($pageRepository);
@@ -65,7 +74,14 @@ final class PageEditController extends AbstractController
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
-        return $this->pageRenderer->render($this->page($page));
+        // Signed anew each time the editor loads, valid for a while from now.
+        $expiresAt = Clock::now()->add(new \DateInterval(self::SHARED_PREVIEW_VALIDITY));
+        $sharedPreview = new SharedPreviewLink(
+            $signedUrls->sign($this->generateUrl('cms_pages_preview', ['id' => $page->id], UrlGeneratorInterface::ABSOLUTE_URL), $expiresAt),
+            $expiresAt,
+        );
+
+        return $this->pageRenderer->render($this->page($page, $sharedPreview));
     }
 
     /**
@@ -73,7 +89,7 @@ final class PageEditController extends AbstractController
      *
      * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
      */
-    private function page(PageResponse $page): Page
+    private function page(PageResponse $page, SharedPreviewLink $sharedPreview): Page
     {
         return CmsLayout::page(\sprintf(
             '%s · %s · CMS',
@@ -86,7 +102,7 @@ final class PageEditController extends AbstractController
                 'subtitle' => $this->dates($page),
                 'badge' => ($this->pageRole)($page),
                 'status' => $this->pageState->label($page),
-            ], $this->pageActions($page))
+            ], $this->pageActions($page, $sharedPreview))
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
@@ -126,15 +142,16 @@ final class PageEditController extends AbstractController
 
     /**
      * What is done to the page apart from editing it, offered only when the
-     * page allows it: seeing it on the site, and, each confirmed first,
+     * page allows it: previewing what is saved, through a link that expires
+     * and can be sent to anyone, seeing it on the site, and, each confirmed first,
      * discarding its unpublished changes, taking it off the site, or deleting
      * it.
      *
      * @return list<PageComponent>
      */
-    private function pageActions(PageResponse $page): array
+    private function pageActions(PageResponse $page, SharedPreviewLink $sharedPreview): array
     {
-        $actions = [];
+        $actions = [$this->previewModal($sharedPreview)];
 
         // The page as the site serves it, at the address it has there, which
         // may differ from the one being edited.
@@ -158,6 +175,40 @@ final class PageEditController extends AbstractController
         }
 
         return $actions;
+    }
+
+    /**
+     * The version last saved, as the site would serve it once published,
+     * behind a signed link that shows it to anyone who has it, without
+     * signing in, until it expires: the editor opens it, or copies it to send.
+     */
+    private function previewModal(SharedPreviewLink $sharedPreview): PageComponent
+    {
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT);
+
+        return new PageComponent('Shared:Modal', [
+            'id' => self::PREVIEW_MODAL,
+            'trigger' => $this->translator->trans('cms.pages.preview.trigger'),
+            'title' => $this->translator->trans('cms.pages.preview.title'),
+            'description' => $this->translator->trans('cms.pages.preview.description'),
+            'variant' => 'secondary',
+        ], [
+            new PageComponent('Shared:CopyField', [
+                'id' => 'page-shared-preview-url',
+                'label' => $this->translator->trans('cms.pages.preview.url_label'),
+                'hint' => $this->translator->trans('cms.pages.preview.url_hint', [
+                    '%expires%' => $formatter->format($sharedPreview->expiresAt),
+                ]),
+                'value' => $sharedPreview->url,
+                'copyLabel' => $this->translator->trans('cms.pages.preview.copy'),
+                'copiedMessage' => $this->translator->trans('cms.pages.preview.copied'),
+                'failedMessage' => $this->translator->trans('cms.pages.preview.copy_failed'),
+            ]),
+            new PageComponent('Shared:ButtonLink', [
+                'url' => $sharedPreview->url,
+                'label' => $this->translator->trans('cms.pages.preview.open'),
+            ]),
+        ]);
     }
 
     /**

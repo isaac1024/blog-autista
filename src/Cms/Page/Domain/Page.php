@@ -385,6 +385,14 @@ final class Page extends AggregateRoot
         return $this->publishedSlug;
     }
 
+    /**
+     * The version the site serves, null while the page isn't on it.
+     */
+    public function onSite(): ?PageVersion
+    {
+        return $this->status->versionOnSite($this->published);
+    }
+
     public function timeline(): Timeline
     {
         return $this->timeline;

@@ -6,6 +6,7 @@ namespace Web\Settings\Infrastructure\Controller;
 
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteChrome;
+use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\PublishedImagesFinder;
@@ -27,16 +28,6 @@ use Web\Settings\Domain\SettingsRepository;
  */
 final readonly class SiteLayout
 {
-    /**
-     * Where the site serves the copies of its images, and the size of the
-     * largest, which it shares.
-     */
-    private const string MEDIA_URL = '/media/';
-
-    private const int WIDTH = 1200;
-
-    private const int HEIGHT = 675;
-
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private SettingsRepository $settingsRepository,
@@ -111,11 +102,6 @@ final readonly class SiteLayout
 
         $image = new PublishedImagesFinder([$settings->defaultImageId])($this->imageRepository)[$settings->defaultImageId] ?? null;
 
-        return null === $image ? null : [
-            'src' => \sprintf('%s%s-%dw.webp', self::MEDIA_URL, preg_replace('/\.webp$/', '', $image->path), self::WIDTH),
-            'width' => self::WIDTH,
-            'height' => self::HEIGHT,
-            'alt' => $image->alt,
-        ];
+        return null === $image ? null : SiteMedia::shareImage($image->path, $image->alt);
     }
 }

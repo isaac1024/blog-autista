@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Web\Page\Infrastructure\Controller;
 
-use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
-use Shared\Infrastructure\Ui\RichTextComponents;
+use Shared\Infrastructure\Ui\SiteMedia;
+use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
@@ -17,22 +17,15 @@ use Web\Page\Domain\PageRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 
 /**
- * Composes a page of the site from Twig components: its title as the main
- * heading, its content below, and how it presents itself to search engines,
- * with its own address as its canonical URL, in the chrome of the site.
+ * Composes a page of the site, painted as SitePage paints it, in the chrome of
+ * the site, presenting itself to search engines with its own address as its
+ * canonical URL.
  */
 final readonly class PublishedPage
 {
-    /**
-     * Where the site serves the copies of its images, and their widths, all 16:9.
-     */
-    private const string MEDIA_URL = '/media/';
-
-    private const array WIDTHS = [400 => 225, 800 => 450, 1200 => 675];
-
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-        private RichTextComponents $richTextComponents,
+        private SitePage $sitePage,
         private ImageRepository $imageRepository,
         private PageRepository $pageRepository,
         private SiteLayout $siteLayout,
@@ -44,59 +37,38 @@ final readonly class PublishedPage
             ? $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
             : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $images = $this->images($page);
+        $images = array_map(
+            static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
+            new PublishedImagesFinder($page->content->imageIds())($this->imageRepository),
+        );
 
         // Search engines may show its images large, in results and Discover.
-        return $this->siteLayout->page($page->title)
-            ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
-            ->withMain('Shared:PageTitle', ['title' => $page->title])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $images, $this->linkedPages($page, $images)));
+        return ($this->sitePage)(
+            $this->siteLayout->page($page->title)
+                ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical),
+            $page->title,
+            $page->content,
+            $images,
+            $this->linkedPages(SitePage::linkedPageIds($page->content, $images)),
+        );
     }
 
     /**
-     * The images on the site the page embeds, as the content paints them.
+     * The published pages among those linked, with their current address,
+     * keyed by id. A target not on the site isn't here, so its text stays
+     * unlinked and its widget isn't painted.
      *
-     * @return array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}>
-     */
-    private function images(PageResponse $page): array
-    {
-        return array_map(static function (ImageResponse $image): array {
-            $copy = static fn (int $width): string => \sprintf('%s%s-%dw.webp', self::MEDIA_URL, preg_replace('/\.webp$/', '', $image->path), $width);
-
-            return [
-                'src' => $copy(1200),
-                'srcset' => implode(', ', array_map(static fn (int $width): string => \sprintf('%s %dw', $copy($width), $width), array_keys(self::WIDTHS))),
-                'width' => 1200,
-                'height' => self::WIDTHS[1200],
-                'alt' => $image->alt,
-                'caption' => $image->caption,
-            ];
-        }, new PublishedImagesFinder($page->content->imageIds())($this->imageRepository));
-    }
-
-    /**
-     * The published pages the content, its widgets and the captions of its
-     * images link to, with their current address, keyed by id. A target not
-     * on the site isn't here, so its text stays unlinked and its widget
-     * isn't painted.
-     *
-     * @param array<string, array{caption: RichText}> $images
+     * @param list<string> $pageIds
      *
      * @return array<string, array{url: string, title: string}>
      */
-    private function linkedPages(PageResponse $page, array $images): array
+    private function linkedPages(array $pageIds): array
     {
-        $pageIds = $page->content->pageIds();
-
-        foreach ($images as $image) {
-            array_push($pageIds, ...$image['caption']->pageIds());
-        }
-
         return array_map(fn (PageResponse $target): array => [
             'url' => null === $target->slug
                 ? $this->urlGenerator->generate('web_home')
                 : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]),
             'title' => $target->title,
-        ], new PublishedPagesFinder(array_values(array_unique($pageIds)))($this->pageRepository));
+        ], new PublishedPagesFinder($pageIds)($this->pageRepository));
     }
 }

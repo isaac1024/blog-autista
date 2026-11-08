@@ -154,6 +154,16 @@ cms:
                     'noindex,nofollow':
                         label: 'Hide entirely'
                         hint: 'It neither appears in the results nor are its links followed.'
+        preview:
+            trigger: 'Preview'
+            title: 'Preview'
+            description: 'Anyone with this link can see the last saved version of the page, as it will look on the site, without signing in. If you save more changes, the link will show them.'
+            url_label: 'Link'
+            url_hint: 'Valid until %expires%. Copy it and send it to whoever you want.'
+            copy: 'Copy link'
+            copied: 'Link copied.'
+            copy_failed: 'Could not copy it. The link is selected: copy it with Ctrl+C (or Cmd+C).'
+            open: 'Open preview'
         discard:
             trigger: 'Discard changes'
             title: 'Discard the changes?'

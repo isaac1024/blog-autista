@@ -154,6 +154,16 @@ cms:
                     'noindex,nofollow':
                         label: 'Ocultar del todo'
                         hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
+        preview:
+            trigger: 'Vista previa'
+            title: 'Vista previa'
+            description: 'Cualquiera con este enlace podrá ver la última versión guardada de la página, como se verá en la web, sin iniciar sesión. Si guardas más cambios, el enlace los mostrará.'
+            url_label: 'Enlace'
+            url_hint: 'Válido hasta el %expires%. Cópialo y envíalo a quien quieras.'
+            copy: 'Copiar enlace'
+            copied: 'Enlace copiado.'
+            copy_failed: 'No se ha podido copiar. El enlace está seleccionado: cópialo con Ctrl+C (o Cmd+C).'
+            open: 'Abrir vista previa'
         discard:
             trigger: 'Descartar cambios'
             title: '¿Descartar los cambios?'

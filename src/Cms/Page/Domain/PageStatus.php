@@ -13,4 +13,13 @@ enum PageStatus: string
     case Draft = 'draft';
     case Published = 'published';
     case Unpublished = 'unpublished';
+
+    /**
+     * The version the site serves among the one last published, which is
+     * none while the page is off the site.
+     */
+    public function versionOnSite(?PageVersion $published): ?PageVersion
+    {
+        return self::Published === $this ? $published : null;
+    }
 }

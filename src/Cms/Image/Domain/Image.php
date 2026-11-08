@@ -272,6 +272,14 @@ final class Image extends AggregateRoot
         return $this->status;
     }
 
+    /**
+     * The version the site serves, null while the image isn't on it.
+     */
+    public function onSite(): ?ImageVersion
+    {
+        return ImageStatus::Published === $this->status ? $this->published : null;
+    }
+
     public function timeline(): Timeline
     {
         return $this->timeline;

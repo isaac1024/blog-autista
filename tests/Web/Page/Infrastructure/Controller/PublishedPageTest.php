@@ -6,6 +6,7 @@ namespace Web\Tests\Page\Infrastructure\Controller;
 
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\RichTextComponents;
+use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
@@ -66,7 +67,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new RichTextComponents(), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
@@ -89,7 +90,7 @@ final class PublishedPageTest extends TestCase
         $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository);
         $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
 
-        $result = new PublishedPage($urlGenerator, new RichTextComponents(), $imageRepository, $pageRepository, $siteLayout)(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout)(PageResponse::fromPage($page));
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }

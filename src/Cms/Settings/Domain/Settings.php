@@ -190,6 +190,14 @@ final class Settings extends AggregateRoot
         return $this->status;
     }
 
+    /**
+     * The version the site shows, null until they are first published.
+     */
+    public function onSite(): ?SettingsVersion
+    {
+        return SettingsStatus::Published === $this->status ? $this->published : null;
+    }
+
     public function timeline(): Timeline
     {
         return $this->timeline;
