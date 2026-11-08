@@ -19,7 +19,6 @@ use Doctrine\ORM\Mapping as ORM;
 final readonly class Timeline
 {
     public function __construct(
-        // @phpstan-ignore property.onlyWritten (only Doctrine reads it, to store it)
         #[ORM\Column(name: 'created_at')]
         private \DateTimeImmutable $createdAt,
         #[ORM\Column(name: 'updated_at')]
@@ -47,6 +46,11 @@ final readonly class Timeline
     public function published(\DateTimeImmutable $now): self
     {
         return new self($this->createdAt, $this->updatedAt, $this->firstPublishedAt ?? $now, $now);
+    }
+
+    public function createdAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 
     public function updatedAt(): \DateTimeImmutable

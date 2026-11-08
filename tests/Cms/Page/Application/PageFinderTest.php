@@ -30,7 +30,7 @@ final class PageFinderTest extends TestCase
             ->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
 
         self::assertEquals(
-            new PageResponse($id, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: true),
+            new PageResponse($id, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: true),
             (new PageFinder($id))($repository),
         );
     }
@@ -42,7 +42,7 @@ final class PageFinderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
 
         self::assertEquals(
-            new PageResponse($id, 'Portada', null, type: 'home', home: true, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
+            new PageResponse($id, 'Portada', null, type: 'home', home: true, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }
@@ -54,7 +54,7 @@ final class PageFinderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Contacto', slug: 'contacto', type: PageType::Contact));
 
         self::assertEquals(
-            new PageResponse($id, 'Contacto', 'contacto', type: 'contact', home: false, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
+            new PageResponse($id, 'Contacto', 'contacto', type: 'contact', home: false, unique: true, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }
@@ -74,7 +74,7 @@ final class PageFinderTest extends TestCase
         ));
 
         self::assertEquals(
-            new PageResponse($id, 'Buscar', 'buscar', type: 'search', home: false, unique: true, content: $content, metaDescription: 'Busca en todo el blog.', robots: 'noindex,follow', status: 'draft', changed: false, publishedSlug: null, updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
+            new PageResponse($id, 'Buscar', 'buscar', type: 'search', home: false, unique: true, content: $content, metaDescription: 'Busca en todo el blog.', robots: 'noindex,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: false),
             (new PageFinder($id))($repository),
         );
     }

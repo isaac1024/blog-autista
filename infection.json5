@@ -30,7 +30,9 @@
             "*\\Controller\\*::formActions",
             "*\\Controller\\*::confirmModal",
             "*\\Controller\\*::uploadModal",
-            "*\\Controller\\*::imageActions"
+            "*\\Controller\\*::imageActions",
+            "*\\Controller\\*::titleField",
+            "*\\Controller\\*::dates"
         ]
     },
     "timeout": 60,

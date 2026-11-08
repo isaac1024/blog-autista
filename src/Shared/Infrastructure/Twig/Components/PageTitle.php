@@ -22,6 +22,11 @@ final class PageTitle
     public ?string $badge = null;
 
     /**
+     * Where the resource stands, such as whether it is published.
+     */
+    public ?string $status = null;
+
+    /**
      * @var list<PageComponent>
      */
     public array $children = [];
@@ -35,11 +40,13 @@ final class PageTitle
         string $variant = 'default',
         array $children = [],
         ?string $badge = null,
+        ?string $status = null,
     ): void {
         $this->title = $title;
         $this->subtitle = $subtitle;
         $this->variant = $variant;
         $this->children = $children;
         $this->badge = $badge;
+        $this->status = $status;
     }
 }

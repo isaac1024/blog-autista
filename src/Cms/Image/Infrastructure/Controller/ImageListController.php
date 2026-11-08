@@ -176,7 +176,7 @@ final class ImageListController extends AbstractController
                     new PageComponent('Shared:FormTextarea', [
                         'name' => 'alt',
                         'id' => 'image-alt',
-                        'rows' => 2,
+                        'singleLine' => true,
                         'recommendedMax' => Alt::MAX_LENGTH,
                         'attributes' => [
                             'required' => true,

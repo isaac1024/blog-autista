@@ -6,6 +6,9 @@
 {% if badge %}
             <twig:Shared:Badge :label="badge" variant="accent" />
 {% endif %}
+{% if status %}
+            <twig:Shared:Badge :label="status" />
+{% endif %}
         </div>
 {% if subtitle %}
         <p class="m-0 max-w-[60ch] {{ variant == 'login' ? 'text-[1rem]' : 'text-lg' }} text-muted">{{ subtitle }}</p>

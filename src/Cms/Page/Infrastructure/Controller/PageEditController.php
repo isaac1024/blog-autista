@@ -79,28 +79,20 @@ final class PageEditController extends AbstractController
             $page->title,
             $this->translator->trans('cms.pages.edit.title'),
         ))
-            // The document comes first: its title, edited where it reads, then its address and content.
-            ->withMain('Shared:DocumentTitle', [
-                'name' => 'title',
-                'id' => 'page-title',
-                'label' => $this->translator->trans('cms.pages.edit.title_label'),
-                'value' => $page->title,
-                'form' => self::FORM,
+            // What is being edited and where it stands, with what is done to it apart from editing.
+            ->withMain('Shared:PageTitle', [
+                'title' => $this->translator->trans('cms.pages.edit.title'),
+                'subtitle' => $this->dates($page),
                 'badge' => ($this->pageRole)($page),
                 'status' => $this->pageState->label($page),
-                // The title of the page is also its title in search results, cut around there.
-                'recommendedMax' => SearchPreview::TITLE_LIMIT,
-                'attributes' => [
-                    'required' => true,
-                    'minlength' => Title::MIN_LENGTH,
-                    'maxlength' => Title::MAX_LENGTH,
-                ],
             ], $this->pageActions($page))
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
                 'id' => self::FORM,
             ], [
+                // The document comes first: its title, then its address and content.
+                $this->titleField($page),
                 // The home page is served at the root of the site, so it has no slug to edit.
                 $page->home ? $this->homeAddress() : $this->slugField($page),
                 new PageComponent('Shared:RichTextEditor', [
@@ -181,6 +173,46 @@ final class PageEditController extends AbstractController
         }
 
         return $actions;
+    }
+
+    /**
+     * When the page was created and last changed, in the editor's language.
+     */
+    private function dates(PageResponse $page): string
+    {
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+
+        return $this->translator->trans('cms.pages.edit.dates', [
+            '%created%' => $formatter->format($page->createdAt),
+            '%updated%' => $formatter->format($page->updatedAt),
+        ]);
+    }
+
+    /**
+     * The title of the page, a single line: it is also its title in search
+     * results, cut around there.
+     */
+    private function titleField(PageResponse $page): PageComponent
+    {
+        return new PageComponent('Shared:FormField', [], [
+            new PageComponent('Shared:FormLabel', [
+                'for' => 'page-title',
+                'text' => $this->translator->trans('cms.pages.edit.title_label'),
+            ]),
+            new PageComponent('Shared:FormTextarea', [
+                'name' => 'title',
+                'id' => 'page-title',
+                'value' => $page->title,
+                'singleLine' => true,
+                'recommendedMax' => SearchPreview::TITLE_LIMIT,
+                'attributes' => [
+                    'required' => true,
+                    'minlength' => Title::MIN_LENGTH,
+                    'maxlength' => Title::MAX_LENGTH,
+                    'aria-describedby' => 'page-title-count',
+                ],
+            ]),
+        ]);
     }
 
     private function homeAddress(): PageComponent

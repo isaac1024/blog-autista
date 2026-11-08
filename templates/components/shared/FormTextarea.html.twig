@@ -2,7 +2,12 @@
 {% if this.counted %}
 <div class="grid gap-2"{{ counter.attributes(recommendedMin, recommendedMax) }}>
 {% endif %}
-    <textarea{{ attributes.defaults({class: 'w-full rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} id="{{ id }}" name="{{ name }}" rows="{{ rows }}"{% if this.counted %} data-character-count-target="field" data-action="input->character-count#update"{% endif %}>{{ value }}</textarea>
+{#
+    A single line grows to show the whole text, however long, yet holds one
+    line: the single-line controller turns line breaks into spaces.
+#}
+{% set actions = (singleLine ? ['keydown->single-line#preventBreak', 'input->single-line#flatten'] : [])|merge(this.counted ? ['input->character-count#update'] : []) %}
+    <textarea{{ attributes.defaults({class: 'w-full rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]' ~ (singleLine ? ' resize-none overflow-hidden [field-sizing:content]' : '')}) }} id="{{ id }}" name="{{ name }}" rows="{{ singleLine ? 1 : rows }}"{% if singleLine %} data-controller="single-line"{% endif %}{% if this.counted %} data-character-count-target="field"{% endif %}{% if actions is not empty %} data-action="{{ actions|join(' ') }}"{% endif %}>{{ value }}</textarea>
 {% if this.counted %}
     {{ counter.output(id ~ '-count', this.length, recommendedMin, recommendedMax) }}
 </div>

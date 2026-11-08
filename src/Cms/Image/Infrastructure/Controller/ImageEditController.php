@@ -83,7 +83,7 @@ final class ImageEditController extends AbstractController
                     '%uploaded%' => $formatter->format($image->createdAt),
                     '%updated%' => $formatter->format($image->updatedAt),
                 ]),
-                'badge' => $this->imageState->label($image),
+                'status' => $this->imageState->label($image),
             ], $this->imageActions($image))
             ->withMain('Shared:ImagePreview', [
                 'src' => self::MEDIA_URL.$image->path,
@@ -109,7 +109,7 @@ final class ImageEditController extends AbstractController
                         'name' => 'alt',
                         'id' => 'image-alt',
                         'value' => $image->alt,
-                        'rows' => 2,
+                        'singleLine' => true,
                         'recommendedMax' => Alt::MAX_LENGTH,
                         'attributes' => [
                             'required' => true,
