@@ -35,13 +35,14 @@ final class ImageListController extends AbstractController
 
     /**
      * Where the CMS host serves the files of the images: the web server maps
-     * it onto the image storage.
+     * it onto the image storage, apart from the copies the site serves.
      */
-    private const string MEDIA_URL = '/media/';
+    private const string MEDIA_URL = '/originales/';
 
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
+        private readonly ImageState $imageState,
     ) {}
 
     #[Route('/images', name: 'cms_images', methods: ['GET'])]
@@ -133,6 +134,7 @@ final class ImageListController extends AbstractController
             'url' => $this->generateUrl('cms_images_edit', ['id' => $image->id]),
             'meta' => $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
             'thumbnail' => self::MEDIA_URL.$image->path,
+            'status' => $this->imageState->label($image),
         ]);
     }
 

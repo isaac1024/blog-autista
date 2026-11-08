@@ -84,7 +84,7 @@ final class ImageSearcherTest extends TestCase
 
         self::assertEquals(
             [
-                new ImageResponse($circleId, 'Círculo naranja sobre fondo azul', null, '2026/11/'.$circleId.'.webp', ClockMother::now(), ClockMother::now()),
+                new ImageResponse($circleId, 'Círculo naranja sobre fondo azul', null, '2026/11/'.$circleId.'.webp', ClockMother::now(), ClockMother::now(), 'draft', false, true, false, true),
                 new ImageResponse(
                     $squareId,
                     'Cuadrado blanco sobre fondo verde',
@@ -92,6 +92,11 @@ final class ImageSearcherTest extends TestCase
                     '2027/01/'.$squareId.'.webp',
                     ClockMother::now('2027-01-31 23:59:59'),
                     ClockMother::now('2027-01-31 23:59:59'),
+                    'draft',
+                    false,
+                    true,
+                    false,
+                    true,
                 ),
             ],
             (new ImageSearcher('', 1))($repository),

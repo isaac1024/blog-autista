@@ -25,6 +25,34 @@ cms:
         list:
             label: 'Imágenes del blog'
             uploaded_at: 'Subida el %date%'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicada'
+                description: 'Publicada: la web muestra esta versión.'
+            changed:
+                label: 'Publicada con cambios'
+                description: 'Publicada con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicada'
+                description: 'Despublicada: ya no está en la web.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'La imagen «%alt%» volverá a ser la que está publicada en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar esta imagen?'
+            description: 'La imagen «%alt%» dejará de estar en la web. Podrás volver a publicarla.'
+            submit: 'Sí, despublicar la imagen'
+        delete:
+            trigger: 'Borrar imagen'
+            title: '¿Borrar esta imagen?'
+            description: 'La imagen «%alt%» y su fichero dejarán de existir. No se puede deshacer.'
+            submit: 'Sí, borrar la imagen'
         edit:
             title: 'Editar imagen'
             dates: 'Subida el %uploaded% · Modificada el %updated%'
@@ -32,6 +60,9 @@ cms:
             caption_hint: 'Contexto que leen todos bajo la imagen: qué es, de dónde viene o a quién se debe. No repitas el texto alternativo. Un solo párrafo, sin formato. Puedes dejarlo vacío hasta publicarla.'
             caption_placeholder: 'Escribe aquí el pie de foto…'
             submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
         upload:
             title: 'Subir una imagen'
             description: 'Elige una imagen y el trozo de ella que quieres mostrar.'
@@ -264,3 +295,9 @@ errors:
         caption:
             not_a_single_paragraph: 'El pie de foto debe ser un solo párrafo.'
             too_long: 'El pie de foto no puede pasar de %max% caracteres.'
+        publication:
+            without_caption: 'La imagen no se puede publicar sin pie de foto.'
+            nothing_to_publish: 'La imagen ya está publicada tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar una imagen publicada.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'

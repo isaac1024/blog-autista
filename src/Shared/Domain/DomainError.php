@@ -11,6 +11,11 @@ namespace Shared\Domain;
  * Besides its message, for logs and developers, each error names what went
  * wrong with a key and its parameters, so adapters can tell it to people in
  * their own words.
+ *
+ * Every rule broken has an error of its own, so the errors grow in number
+ * with the rules of the domain rather than with how it is designed.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract class DomainError extends \DomainException
 {

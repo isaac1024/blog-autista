@@ -12,6 +12,7 @@ use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
@@ -55,7 +56,7 @@ final class ImageUpdaterTest extends TestCase
                 updatedAt: ClockMother::NOW,
             )));
 
-        (new ImageUpdater($id, $alt, $caption))($repository);
+        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -99,7 +100,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(self::image($id, $stored)));
 
-        (new ImageUpdater($id, $alt, $caption))($repository);
+        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -122,7 +123,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(self::image($id, null)));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository);
+        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
     }
 
     public function testItMovesWhenTheImageLastChangedWhenOnlyTheCaptionChanges(): void
@@ -135,7 +136,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(ImageMother::create(id: $id, caption: $caption, createdAt: self::BEFORE, updatedAt: ClockMother::NOW)));
 
-        (new ImageUpdater($id, ImageMother::ALT, $caption))($repository);
+        (new ImageUpdater($id, ImageMother::ALT, $caption))($repository, self::createStub(EventBus::class));
     }
 
     public function testItMovesWhenTheImageLastChangedWhenOnlyTheAlternativeTextChanges(): void
@@ -147,7 +148,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(ImageMother::create(id: $id, alt: 'Otro texto', createdAt: self::BEFORE, updatedAt: ClockMother::NOW)));
 
-        (new ImageUpdater($id, 'Otro texto', Text::EMPTY))($repository);
+        (new ImageUpdater($id, 'Otro texto', Text::EMPTY))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -165,7 +166,7 @@ final class ImageUpdaterTest extends TestCase
         $repository->method('find')->willReturn(self::image($id, null));
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, $parameters, static fn () => (new ImageUpdater($id, $alt, $caption))($repository));
+        self::assertTells($key, $parameters, static fn () => (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class)));
     }
 
     /**
@@ -201,7 +202,7 @@ final class ImageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId($id));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository);
+        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -212,7 +213,7 @@ final class ImageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('image-id'));
 
-        (new ImageUpdater('image-id', ImageMother::ALT, Text::EMPTY))($repository);
+        (new ImageUpdater('image-id', ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
     }
 
     /**

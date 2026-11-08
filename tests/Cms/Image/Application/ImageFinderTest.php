@@ -27,7 +27,7 @@ final class ImageFinderTest extends TestCase
             ->willReturn(ImageMother::create(id: $id, alt: 'Círculo naranja sobre fondo azul'));
 
         self::assertEquals(
-            new ImageResponse($id, 'Círculo naranja sobre fondo azul', null, '2026/11/'.$id.'.webp', ClockMother::now(), ClockMother::now()),
+            new ImageResponse($id, 'Círculo naranja sobre fondo azul', null, '2026/11/'.$id.'.webp', ClockMother::now(), ClockMother::now(), 'draft', false, true, false, true),
             (new ImageFinder($id))($repository),
         );
     }
@@ -40,7 +40,7 @@ final class ImageFinderTest extends TestCase
         $repository->method('find')->willReturn(ImageMother::create(id: $id, caption: $caption, updatedAt: '2026-12-01 08:00:00'));
 
         self::assertEquals(
-            new ImageResponse($id, ImageMother::ALT, $caption, '2026/11/'.$id.'.webp', ClockMother::now(), ClockMother::now('2026-12-01 08:00:00')),
+            new ImageResponse($id, ImageMother::ALT, $caption, '2026/11/'.$id.'.webp', ClockMother::now(), ClockMother::now('2026-12-01 08:00:00'), 'draft', false, true, false, true),
             (new ImageFinder($id))($repository),
         );
     }

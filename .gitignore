@@ -1,6 +1,8 @@
 
 # Files of the images uploaded to the CMS: they live on the server only.
 /media/
+# Copies of the published images the site serves: made on the server.
+/public/media/
 
 ###> symfony/framework-bundle ###
 /.env.local

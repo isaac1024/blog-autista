@@ -19,10 +19,16 @@ RUN apt-get update \
         unzip \
         libicu-dev \
         libzip-dev \
+        # GD with WebP: the site makes the smaller copies of the images it
+        # publishes, as Hetzner's PHP does with its GD.
+        libpng-dev \
+        libwebp-dev \
         ${PHPIZE_DEPS} \
     # OPcache already ships compiled in php:8.5-fpm-trixie (Zend OPcache);
     # only the extensions that are missing from the base image are built.
+    && docker-php-ext-configure gd --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
+        gd \
         intl \
         pdo_mysql \
         zip \

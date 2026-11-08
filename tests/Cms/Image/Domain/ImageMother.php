@@ -7,6 +7,8 @@ namespace Cms\Tests\Image\Domain;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImagePath;
+use Cms\Image\Domain\ImageStatus;
+use Cms\Image\Domain\ImageVersion;
 use Cms\Image\Domain\Timeline;
 use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
@@ -20,9 +22,9 @@ use Shared\Tests\Domain\ClockMother;
  *     ImageMother::create(caption: RichTextMother::stored(RichTextMother::paragraph('Foto de archivo.')))
  *     ImageMother::create(createdAt: '2027-01-31 23:59:59')
  *
- * Images have no caption, and are created, kept under the month of and
- * changed at ClockMother::NOW, unless a test says otherwise; an image is
- * changed when it is created unless updatedAt says otherwise.
+ * Images are drafts without a caption, and are created, kept under the month
+ * of and changed at ClockMother::NOW, unless a test says otherwise; an image
+ * is changed when it is created unless updatedAt says otherwise.
  */
 final class ImageMother
 {
@@ -40,9 +42,10 @@ final class ImageMother
     ): Image {
         return new Image(
             ImageIdMother::create($id),
-            new Alt($alt),
+            new ImageVersion(new Alt($alt), null === $caption ? null : RichText::fromArray($caption)),
             self::path($id, $createdAt),
-            null === $caption ? null : RichText::fromArray($caption),
+            ImageStatus::Draft,
+            null,
             new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
         );
     }

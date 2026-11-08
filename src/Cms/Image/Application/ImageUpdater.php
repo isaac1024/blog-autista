@@ -6,6 +6,7 @@ namespace Cms\Image\Application;
 
 use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
+use Shared\Domain\Event\EventBus;
 
 /**
  * Saves what an editor writes about an image: its alternative text and its
@@ -22,11 +23,11 @@ final readonly class ImageUpdater
         private array $caption,
     ) {}
 
-    public function __invoke(ImageRepository $imageRepository): void
+    public function __invoke(ImageRepository $imageRepository, EventBus $eventBus): void
     {
         $image = $imageRepository->find(new ImageId($this->id)) ?? throw ImageNotFound::withId($this->id);
 
         $image->edit($this->alt, $this->caption);
-        $image->save($imageRepository);
+        $image->save($imageRepository, $eventBus);
     }
 }

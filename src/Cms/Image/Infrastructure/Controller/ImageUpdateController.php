@@ -8,6 +8,7 @@ use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUpdater;
 use Cms\Image\Domain\ImageRepository;
 use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,7 +21,7 @@ final class ImageUpdateController extends AbstractController
     public function __construct(private readonly TiptapRichText $tiptapRichText) {}
 
     #[Route('/images/{id}', name: 'cms_images_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, ImageRepository $imageRepository): Response
+    public function __invoke(string $id, Request $request, ImageRepository $imageRepository, EventBus $eventBus): Response
     {
         try {
             new ImageUpdater(
@@ -28,7 +29,7 @@ final class ImageUpdateController extends AbstractController
                 $request->request->getString('alt'),
                 // The editor posts its own document, which only this adapter knows.
                 $this->tiptapRichText->toStored($request->request->getString('caption')),
-            )($imageRepository);
+            )($imageRepository, $eventBus);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

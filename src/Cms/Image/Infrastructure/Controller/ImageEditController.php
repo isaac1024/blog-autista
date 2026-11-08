@@ -31,16 +31,25 @@ final class ImageEditController extends AbstractController
 {
     private const string FORM = 'image-form';
 
+    private const string PUBLISH_FORM = 'image-publish-form';
+
+    private const string DELETE_IMAGE_MODAL = 'delete-image';
+
+    private const string UNPUBLISH_IMAGE_MODAL = 'unpublish-image';
+
+    private const string DISCARD_CHANGES_MODAL = 'discard-changes';
+
     /**
      * Where the CMS host serves the files of the images: the web server maps
-     * it onto the image storage.
+     * it onto the image storage, apart from the copies the site serves.
      */
-    private const string MEDIA_URL = '/media/';
+    private const string MEDIA_URL = '/originales/';
 
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
         private readonly TiptapRichText $tiptapRichText,
+        private readonly ImageState $imageState,
     ) {}
 
     #[Route('/images/{id}', name: 'cms_images_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -74,7 +83,8 @@ final class ImageEditController extends AbstractController
                     '%uploaded%' => $formatter->format($image->createdAt),
                     '%updated%' => $formatter->format($image->updatedAt),
                 ]),
-            ])
+                'badge' => $this->imageState->label($image),
+            ], $this->imageActions($image))
             ->withMain('Shared:ImagePreview', [
                 'src' => self::MEDIA_URL.$image->path,
                 'alt' => $image->alt,
@@ -122,11 +132,98 @@ final class ImageEditController extends AbstractController
                     'singleParagraph' => true,
                     'maxLength' => Caption::MAX_LENGTH,
                 ]),
-                new PageComponent('Shared:ActionBar', [], [
-                    new PageComponent('Shared:FormButton', [
-                        'label' => $this->translator->trans('cms.images.edit.submit'),
-                    ]),
-                ]),
+                new PageComponent('Shared:ActionBar', [
+                    'status' => $this->imageState->description($image),
+                ], $this->formActions($image)),
+            ])
+            // Publishing takes what is saved, not what the edit form holds, so
+            // it is a form of its own, which its button in the bar submits.
+            ->withMain('Shared:Form', [
+                'action' => $this->generateUrl('cms_images_publish', ['id' => $image->id]),
+                'method' => 'post',
+                'id' => self::PUBLISH_FORM,
+                'hidden' => true,
             ]);
+    }
+
+    /**
+     * What is done to the image apart from editing it, each confirmed first
+     * and offered only when the image allows it: discarding its unpublished
+     * changes, taking it off the site, or deleting it.
+     *
+     * @return list<PageComponent>
+     */
+    private function imageActions(ImageResponse $image): array
+    {
+        $actions = [];
+
+        if ($image->changed) {
+            $actions[] = $this->confirmModal($image, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_images_discard', 'secondary');
+        }
+
+        if ($image->canBeUnpublished) {
+            $actions[] = $this->confirmModal($image, self::UNPUBLISH_IMAGE_MODAL, 'unpublish', 'cms_images_unpublish', 'secondary');
+        }
+
+        if ($image->canBeDeleted) {
+            $actions[] = $this->confirmModal($image, self::DELETE_IMAGE_MODAL, 'delete', 'cms_images_delete', 'danger');
+        }
+
+        return $actions;
+    }
+
+    /**
+     * Saving comes first, so it is what Enter in a field does. Publishing puts
+     * what is saved on the site, so it waits while the form holds unsaved
+     * changes; a published image offers it again only once it has changes to
+     * publish.
+     *
+     * @return list<PageComponent>
+     */
+    private function formActions(ImageResponse $image): array
+    {
+        $publishable = $image->hasSomethingToPublish;
+        $actions = [
+            new PageComponent('Shared:FormButton', [
+                'label' => $this->translator->trans('cms.images.edit.submit'),
+                'variant' => $publishable ? 'secondary' : 'primary',
+            ]),
+        ];
+
+        if ($publishable) {
+            $actions[] = new PageComponent('Shared:FormButton', [
+                'label' => $this->translator->trans('published' === $image->status ? 'cms.images.edit.republish' : 'cms.images.edit.publish'),
+                'form' => self::PUBLISH_FORM,
+                'waitsFor' => self::FORM,
+                'waitingHint' => $this->translator->trans('cms.images.edit.publish_unsaved'),
+            ]);
+        }
+
+        return $actions;
+    }
+
+    /**
+     * A modal that confirms an action on the image, with its texts under
+     * cms.images.{action}.
+     */
+    private function confirmModal(ImageResponse $image, string $id, string $action, string $route, string $variant): PageComponent
+    {
+        return new PageComponent('Shared:Modal', [
+            'id' => $id,
+            'trigger' => $this->translator->trans(\sprintf('cms.images.%s.trigger', $action)),
+            'title' => $this->translator->trans(\sprintf('cms.images.%s.title', $action)),
+            'description' => $this->translator->trans(\sprintf('cms.images.%s.description', $action), ['%alt%' => $image->alt]),
+            'variant' => $variant,
+        ], [
+            new PageComponent('Shared:Form', [
+                'action' => $this->generateUrl($route, ['id' => $image->id]),
+                'method' => 'post',
+            ], [
+                new PageComponent('Shared:FormButton', [
+                    'label' => $this->translator->trans(\sprintf('cms.images.%s.submit', $action)),
+                    'variant' => 'danger',
+                ]),
+            ]),
+        ]);
     }
 }

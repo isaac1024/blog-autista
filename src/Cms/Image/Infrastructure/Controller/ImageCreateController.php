@@ -9,6 +9,7 @@ use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,7 +23,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ImageCreateController extends AbstractController
 {
     #[Route('/images', name: 'cms_images_create', methods: ['POST'])]
-    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage): Response
+    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus): Response
     {
         $image = $request->files->get('image');
 
@@ -32,7 +33,7 @@ final class ImageCreateController extends AbstractController
                 $request->request->getString('alt'),
                 // The domain refuses an image without its file.
                 $image instanceof UploadedFile && $image->isValid() ? $image->getPathname() : '',
-            )($imageRepository, $imageStorage);
+            )($imageRepository, $imageStorage, $eventBus);
         } catch (DomainError $error) {
             // Told in the library, where it goes back to all the same.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

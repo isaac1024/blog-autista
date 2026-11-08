@@ -25,6 +25,24 @@ final readonly class LocalFilesystem
         $this->filesystem->chmod($target, $permissions);
     }
 
+    public function exists(string $path): bool
+    {
+        return $this->filesystem->exists($path);
+    }
+
+    /**
+     * Creates a directory and those above it it lacks.
+     */
+    public function makeDirectory(string $path): void
+    {
+        $this->filesystem->mkdir($path);
+    }
+
+    public function setPermissions(string $path, int $permissions): void
+    {
+        $this->filesystem->chmod($path, $permissions);
+    }
+
     /**
      * Removes a file, if it is there. Directories are left alone, so a wrong
      * path can never take a whole tree with it.

@@ -24,7 +24,7 @@ final readonly class DoctrineImageRepository implements ImageRepository
      */
     private const array CRITERIA_FIELDS = [
         'id' => 'id',
-        'alt' => 'alt.value',
+        'alt' => 'version.alt.value',
     ];
 
     public function __construct(private EntityManagerInterface $entityManager) {}
@@ -33,6 +33,13 @@ final readonly class DoctrineImageRepository implements ImageRepository
     public function save(Image $image): void
     {
         $this->entityManager->persist($image);
+        $this->entityManager->flush();
+    }
+
+    #[\Override]
+    public function delete(Image $image): void
+    {
+        $this->entityManager->remove($image);
         $this->entityManager->flush();
     }
 

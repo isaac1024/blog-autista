@@ -9,10 +9,12 @@ doctrine:
         profiling_collect_backtrace: '%kernel.debug%'
         types:
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
+            cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
             cms_page_slug: Cms\Page\Infrastructure\Persistence\Doctrine\PageSlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
+            web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
         # have to map to a Doctrine type when the schema is introspected. Any
@@ -38,6 +40,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Page/Domain'
                 prefix: 'Cms\Page\Domain'
+            WebImage:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Image/Domain'
+                prefix: 'Web\Image\Domain'
             WebPage:
                 type: attribute
                 is_bundle: false

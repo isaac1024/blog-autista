@@ -99,7 +99,7 @@ final class ImageListControllerTest extends CmsWebTestCase
 
         $crawler = $client->request('GET', self::URL.'?alt=azul');
         self::assertSame(
-            '/media/2026/11/01a1b801-ce58-723d-8234-b76d9105d001.webp',
+            '/originales/2026/11/01a1b801-ce58-723d-8234-b76d9105d001.webp',
             $crawler->filter('main ul[aria-label] > li img')->attr('src'),
             'the thumbnail is the file of the image, where the CMS host serves it',
         );

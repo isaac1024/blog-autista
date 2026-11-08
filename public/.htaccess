@@ -68,3 +68,12 @@ DirectoryIndex index.php
         # RedirectTemp cannot be used instead
     </IfModule>
 </IfModule>
+
+# Copies of the published images: a file never changes, since a new crop is a
+# new image with addresses of its own, so browsers keep them for a year.
+<IfModule mod_headers.c>
+    <If "%{REQUEST_URI} =~ m#^/media/#">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+        Header set X-Content-Type-Options "nosniff"
+    </If>
+</IfModule>

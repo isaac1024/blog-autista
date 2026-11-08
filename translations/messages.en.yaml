@@ -25,6 +25,34 @@ cms:
         list:
             label: 'Images of the blog'
             uploaded_at: 'Uploaded on %date%'
+        status:
+            draft:
+                label: 'Draft'
+                description: 'Draft: not on the site yet.'
+            published:
+                label: 'Published'
+                description: 'Published: the site shows this version.'
+            changed:
+                label: 'Published with changes'
+                description: 'Published with changes: the site shows the previous version until you republish.'
+            unpublished:
+                label: 'Unpublished'
+                description: 'Unpublished: no longer on the site.'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The image “%alt%” will go back to the one published on the site. The changes saved since will be lost. This can’t be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish this image?'
+            description: 'The image “%alt%” will no longer be on the site. You can publish it again.'
+            submit: 'Yes, unpublish the image'
+        delete:
+            trigger: 'Delete image'
+            title: 'Delete this image?'
+            description: 'The image “%alt%” and its file will no longer exist. This can’t be undone.'
+            submit: 'Yes, delete the image'
         edit:
             title: 'Edit image'
             dates: 'Uploaded on %uploaded% · Changed on %updated%'
@@ -32,6 +60,9 @@ cms:
             caption_hint: 'Context everyone reads under the image: what it is, where it comes from or whom it is credited to. Don’t repeat the alternative text. A single paragraph, without formatting. You can leave it empty until it is published.'
             caption_placeholder: 'Write the caption here…'
             submit: 'Save'
+            publish: 'Publish'
+            republish: 'Republish'
+            publish_unsaved: 'Save the changes to be able to publish them.'
         upload:
             title: 'Upload an image'
             description: 'Choose an image and the part of it you want to show.'
@@ -264,3 +295,9 @@ errors:
         caption:
             not_a_single_paragraph: 'The caption must be a single paragraph.'
             too_long: 'The caption can’t be longer than %max% characters.'
+        publication:
+            without_caption: 'The image can’t be published without a caption.'
+            nothing_to_publish: 'The image is published as it is: there is nothing to publish.'
+            not_published: 'Only a published image can be unpublished.'
+            no_changes_to_discard: 'There are no unpublished changes to discard.'
+            published_image: 'A published image can’t be deleted: unpublish it first.'
