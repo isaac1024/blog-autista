@@ -177,7 +177,7 @@ final class Page extends AggregateRoot
         );
         self::contentFeatures()->assertAllows($version->content());
 
-        $this->replaceVersion($version);
+        $this->changeImagesUsed(fn () => $this->replaceVersion($version));
     }
 
     /**
@@ -194,7 +194,9 @@ final class Page extends AggregateRoot
         }
 
         $this->status = PageStatus::Published;
-        $this->published = $this->version;
+        $this->changeImagesUsed(function (): void {
+            $this->published = $this->version;
+        });
         $this->publishedSlug = $this->version->slug();
         $this->timeline = $this->timeline->published($now);
 
@@ -242,7 +244,8 @@ final class Page extends AggregateRoot
             throw InvalidPublication::noChangesToDiscard();
         }
 
-        $this->replaceVersion($this->published);
+        $published = $this->published;
+        $this->changeImagesUsed(fn () => $this->replaceVersion($published));
     }
 
     /**
@@ -297,7 +300,7 @@ final class Page extends AggregateRoot
     /**
      * Deletes a generic page off the site; unique pages stay for good.
      */
-    public function delete(PageRepository $pageRepository): void
+    public function delete(PageRepository $pageRepository, EventBus $eventBus): void
     {
         if ($this->type->isUnique()) {
             throw UniquePageCannotBeDeleted::ofType($this->type);
@@ -307,7 +310,14 @@ final class Page extends AggregateRoot
             throw InvalidPublication::publishedPage();
         }
 
+        // A page deleted embeds no image any longer.
+        if ([] !== $this->imagesUsed()) {
+            $this->record(new PageImagesUsed($this->id->value(), [], EventId::random()->value(), Clock::now()));
+        }
+
+        $events = $this->pullDomainEvents();
         $pageRepository->delete($this);
+        $eventBus->publish(...$events);
     }
 
     public function id(): PageId
@@ -360,6 +370,37 @@ final class Page extends AggregateRoot
     public function timeline(): Timeline
     {
         return $this->timeline;
+    }
+
+    /**
+     * Makes a change and, when it changes the images the page embeds, tells
+     * which it embeds now.
+     *
+     * @param \Closure(): void $change
+     */
+    private function changeImagesUsed(\Closure $change): void
+    {
+        $before = $this->imagesUsed();
+        $change();
+        $after = $this->imagesUsed();
+
+        if ($before !== $after) {
+            $this->record(new PageImagesUsed($this->id->value(), $after, EventId::random()->value(), Clock::now()));
+        }
+    }
+
+    /**
+     * The images embedded in the version being edited and in the one last
+     * published, each once.
+     *
+     * @return list<string>
+     */
+    private function imagesUsed(): array
+    {
+        $ids = [...$this->version->content()->imageIds(), ...($this->published?->content()->imageIds() ?? [])];
+        sort($ids);
+
+        return array_values(array_unique($ids));
     }
 
     private function replaceVersion(PageVersion $version): void

@@ -14,4 +14,13 @@ interface ImageRepository
     public function delete(Image $image): void;
 
     public function find(ImageId $id): ?Image;
+
+    /**
+     * The images on the site among those given; any other is left out.
+     *
+     * @param list<ImageId> $ids
+     *
+     * @return list<Image>
+     */
+    public function findByIds(array $ids): array;
 }

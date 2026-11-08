@@ -6,6 +6,7 @@ namespace Shared\Infrastructure\RichText;
 
 use Shared\Domain\RichText\Block;
 use Shared\Domain\RichText\Callout;
+use Shared\Domain\RichText\EmbeddedImage;
 use Shared\Domain\RichText\Heading;
 use Shared\Domain\RichText\InlineText;
 use Shared\Domain\RichText\InvalidRichText;
@@ -84,6 +85,8 @@ final readonly class TiptapRichText
             'bulletList' => self::nonEmpty(['type' => 'list', 'style' => ListStyle::Unordered->value, 'items' => self::items($node, $path)], 'items'),
             'orderedList' => self::nonEmpty(['type' => 'list', 'style' => ListStyle::Ordered->value, 'items' => self::items($node, $path)], 'items'),
             'table' => self::table($node, $path),
+            // An image is embedded by its id alone; the editor shows the rest.
+            'image' => ['type' => 'image', 'id' => $attrs['id'] ?? null],
             default => throw InvalidRichText::malformed($path.'.type', 'a block the editor offers'),
         };
     }
@@ -292,6 +295,7 @@ final readonly class TiptapRichText
                 'type' => ListStyle::Ordered === $block->style() ? 'orderedList' : 'bulletList',
                 'content' => array_map(static fn (InlineText $item): array => ['type' => 'listItem', 'content' => [self::tiptapParagraph($item)]], $block->items()),
             ],
+            $block instanceof EmbeddedImage => ['type' => 'image', 'attrs' => ['id' => $block->imageId()]],
             $block instanceof Table => ['type' => 'table', 'content' => [
                 self::tiptapRow('tableHeader', $block->header()),
                 ...array_map(static fn (array $row): array => self::tiptapRow('tableCell', $row), $block->rows()),

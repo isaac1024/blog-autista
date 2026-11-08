@@ -14,6 +14,7 @@ use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 
 final class PageDeleterTest extends TestCase
@@ -31,7 +32,7 @@ final class PageDeleterTest extends TestCase
             ->method('delete')
             ->with(self::identicalTo($page));
 
-        (new PageDeleter($id))($repository);
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class));
     }
 
     #[DataProvider('uniquePages')]
@@ -43,7 +44,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(UniquePageCannotBeDeleted::ofType($page->type()));
 
-        (new PageDeleter($page->id()->value()))($repository);
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -65,7 +66,7 @@ final class PageDeleterTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::once())->method('delete')->with(self::identicalTo($page));
 
-        (new PageDeleter($page->id()->value()))($repository);
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
     }
 
     public function testItNeverDeletesAPublishedPage(): void
@@ -77,7 +78,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPublication::publishedPage());
 
-        (new PageDeleter($page->id()->value()))($repository);
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -89,7 +90,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageDeleter($id))($repository);
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -100,6 +101,6 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        (new PageDeleter('page-id'))($repository);
+        (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class));
     }
 }

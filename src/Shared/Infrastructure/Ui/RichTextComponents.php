@@ -6,6 +6,7 @@ namespace Shared\Infrastructure\Ui;
 
 use Shared\Domain\RichText\Block;
 use Shared\Domain\RichText\Callout;
+use Shared\Domain\RichText\EmbeddedImage;
 use Shared\Domain\RichText\Heading;
 use Shared\Domain\RichText\InlineText;
 use Shared\Domain\RichText\ItemList;
@@ -26,11 +27,50 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 final readonly class RichTextComponents
 {
     /**
+     * Embedded images are painted from what the caller knows of them, keyed
+     * by id; one it doesn't give, such as one off the site, isn't painted.
+     *
+     * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
+     *
      * @return list<PageComponent>
      */
-    public function __invoke(RichText $content): array
+    public function __invoke(RichText $content, array $images): array
     {
-        return array_map(self::block(...), $content->blocks());
+        $components = [];
+
+        foreach ($content->blocks() as $block) {
+            if ($block instanceof EmbeddedImage) {
+                $image = $images[$block->imageId()] ?? null;
+
+                if (null !== $image) {
+                    $components[] = self::image($image);
+                }
+
+                continue;
+            }
+
+            $components[] = self::block($block);
+        }
+
+        return $components;
+    }
+
+    /**
+     * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
+     */
+    private static function image(array $image): PageComponent
+    {
+        $caption = $image['caption']->blocks()[0] ?? null;
+
+        return new PageComponent('Shared:ContentImage', [
+            'src' => $image['src'],
+            'srcset' => $image['srcset'],
+            'width' => $image['width'],
+            'height' => $image['height'],
+            'alt' => $image['alt'],
+            // A caption is a single paragraph.
+            'caption' => $caption instanceof Paragraph ? self::runs($caption->text()) : [],
+        ]);
     }
 
     private static function block(Block $block): PageComponent

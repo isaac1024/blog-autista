@@ -1,0 +1,11 @@
+{% import 'shared/inline_text.html.twig' as inline %}
+{#
+    As wide as the text it sits in, and never wider than the copy it has:
+    the browser picks the copy of the srcset for that width.
+#}
+<figure class="m-0 grid gap-2">
+    <img class="block h-auto w-full rounded-card bg-bg" src="{{ src }}" srcset="{{ srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ width }}" height="{{ height }}" alt="{{ alt }}" loading="lazy" decoding="async">
+{% if caption is not empty %}
+    <figcaption class="text-[1rem] text-muted">{{ inline.render(caption) }}</figcaption>
+{% endif %}
+</figure>

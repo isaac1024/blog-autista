@@ -176,7 +176,7 @@ final class PageUpdaterTest extends TestCase
     {
         yield 'unknown version' => [['version' => 2, 'blocks' => []], InvalidRichText::unsupportedVersion(2)];
         yield 'blocks are not a list' => [['version' => 1, 'blocks' => 'none'], InvalidRichText::malformed('blocks', 'a list')];
-        yield 'unknown block' => [Text::stored(['type' => 'image', 'src' => 'x.png']), InvalidRichText::malformed('blocks[0].type', 'a known block type')];
+        yield 'unknown block' => [Text::stored(['type' => 'video', 'src' => 'x.mp4']), InvalidRichText::malformed('blocks[0].type', 'a known block type')];
         yield 'level 1 heading, the title of the page' => [Text::stored(Text::heading(1, 'Título')), InvalidRichText::malformed('heading.level', 'between 2 and 6')];
         yield 'heading skipping a level' => [Text::stored(Text::heading(3, 'Detalle')), InvalidRichText::skippedHeadingLevel(3, 1)];
         yield 'heading skipping a level after other blocks' => [

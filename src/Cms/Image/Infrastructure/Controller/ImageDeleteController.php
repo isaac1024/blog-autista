@@ -8,6 +8,7 @@ use Cms\Image\Application\ImageDeleter;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
+use Cms\Image\Domain\ImageUsage;
 use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,10 +18,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ImageDeleteController extends AbstractController
 {
     #[Route('/images/{id}/delete', name: 'cms_images_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, ImageRepository $imageRepository, ImageStorage $imageStorage): Response
+    public function __invoke(string $id, ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage): Response
     {
         try {
-            new ImageDeleter($id)($imageRepository, $imageStorage);
+            new ImageDeleter($id)($imageRepository, $imageStorage, $imageUsage);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

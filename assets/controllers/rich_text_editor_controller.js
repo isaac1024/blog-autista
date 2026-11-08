@@ -329,6 +329,107 @@ const SlashMenu = Extension.create({
     },
 });
 
+/**
+ * Draws an embedded image as the CMS knows it now: its thumbnail, its texts
+ * and where it stands for the site. Undefined while it is being looked up,
+ * null when there is no such image any longer.
+ */
+const drawImage = (figure, image, labels) => {
+    figure.replaceChildren();
+
+    if (image === undefined || image === null) {
+        const note = document.createElement('p');
+        note.className = 'rich-text-image-note';
+        note.textContent = image === undefined ? labels.loading : labels.missing;
+        figure.append(note);
+
+        return;
+    }
+
+    const thumbnail = document.createElement('img');
+    thumbnail.src = image.thumbnail;
+    // The texts below name it.
+    thumbnail.alt = '';
+    thumbnail.width = 240;
+    thumbnail.height = 135;
+
+    const details = document.createElement('div');
+    details.className = 'rich-text-image-details';
+
+    const status = document.createElement('span');
+    status.className = 'rich-text-image-status';
+    status.textContent = image.status;
+
+    const alt = document.createElement('p');
+    alt.className = 'rich-text-image-alt';
+    alt.textContent = `${labels.embedded} ${image.alt}`;
+
+    details.append(status, alt);
+
+    if (image.caption !== '') {
+        const caption = document.createElement('p');
+        caption.textContent = image.caption;
+        details.append(caption);
+    }
+
+    if (!image.published) {
+        const offSite = document.createElement('p');
+        offSite.className = 'rich-text-image-note';
+        offSite.textContent = labels.offSite;
+        details.append(offSite);
+    }
+
+    figure.append(thumbnail, details);
+};
+
+/**
+ * An image of the library, embedded by its id alone: the editor shows what
+ * the CMS knows of it now, so its texts and status are always the latest.
+ */
+const EmbeddedImage = Node.create({
+    name: 'image',
+    group: 'block',
+    atom: true,
+    selectable: true,
+    draggable: false,
+
+    addOptions() {
+        return { describe: () => undefined, views: new Set(), labels: {} };
+    },
+
+    addAttributes() {
+        return {
+            id: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('data-image-id'),
+                renderHTML: (attributes) => ({ 'data-image-id': attributes.id }),
+            },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'figure[data-image-id]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['figure', mergeAttributes(HTMLAttributes)];
+    },
+
+    addNodeView() {
+        return ({ node }) => {
+            const figure = document.createElement('figure');
+            figure.className = 'rich-text-image';
+            figure.setAttribute('data-image-id', node.attrs.id);
+            const draw = () => drawImage(figure, this.options.describe(node.attrs.id), this.options.labels);
+
+            draw();
+            this.options.views.add(draw);
+
+            return { dom: figure, destroy: () => this.options.views.delete(draw) };
+        };
+    },
+});
+
 /** What every control runs, given a command chain. */
 const COMMANDS = {
     bold: (chain) => chain.toggleBold(),
@@ -369,6 +470,7 @@ export default class extends Controller {
     static targets = [
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
+        'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
     ];
 
     static values = {
@@ -387,11 +489,18 @@ export default class extends Controller {
         maxLength: Number,
         count: String,
         countOver: String,
+        imageSearchUrl: String,
+        imageLookupUrl: String,
+        imageLabels: Object,
     };
 
     connect() {
         this.menu = null;
         this.dismiss = null;
+        // What the CMS knows of each image embedded or picked, by id.
+        this.images = new Map();
+        this.imagesLookedUp = false;
+        this.imageViews = new Set();
         this.editor = new Editor({
             element: this.editorTarget,
             extensions: this.extensions(),
@@ -425,6 +534,110 @@ export default class extends Controller {
         this.refreshOutline();
         this.refreshControls();
         this.refreshCount();
+        this.lookUpImages();
+    }
+
+    /* Images: embedded by id, shown as the CMS knows them now. */
+
+    /** Looks up every image the document embeds, then draws them. */
+    async lookUpImages() {
+        if (!this.hasImageLookupUrlValue) {
+            return;
+        }
+
+        const ids = [];
+
+        this.editor.state.doc.descendants((node) => {
+            if (node.type.name === 'image' && node.attrs.id) {
+                ids.push(node.attrs.id);
+            }
+        });
+
+        if (ids.length > 0) {
+            const url = new URL(this.imageLookupUrlValue, window.location.href);
+            url.searchParams.set('ids', ids.join(','));
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+
+            if (response.ok) {
+                for (const image of (await response.json()).images) {
+                    this.images.set(image.id, image);
+                }
+            }
+        }
+
+        this.imagesLookedUp = true;
+        this.drawImages();
+    }
+
+    describeImage(id) {
+        if (this.images.has(id)) {
+            return this.images.get(id);
+        }
+
+        return this.imagesLookedUp ? null : undefined;
+    }
+
+    drawImages() {
+        for (const draw of this.imageViews) {
+            draw();
+        }
+    }
+
+    openImageDialog() {
+        this.imageDialogTarget.showModal();
+        this.imageSearchTarget.focus();
+        this.searchImages();
+    }
+
+    async searchImages(event) {
+        event?.preventDefault();
+
+        const url = new URL(this.imageSearchUrlValue, window.location.href);
+        url.searchParams.set('alt', this.imageSearchTarget.value);
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        const images = response.ok ? (await response.json()).images : [];
+
+        this.imageResultsTarget.replaceChildren(...images.map((image) => this.imageResult(image)));
+        const { none, result, results } = this.imageLabelsValue;
+        this.imageStatusTarget.textContent = [none, result][images.length] ?? results.replace('%count%', String(images.length));
+    }
+
+    /** One image to pick: the whole row is its button, named by its text and status. */
+    imageResult(image) {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'rich-text-image-option';
+        button.addEventListener('click', () => this.embedImage(image));
+
+        const thumbnail = document.createElement('img');
+        thumbnail.src = image.thumbnail;
+        thumbnail.alt = '';
+        thumbnail.width = 112;
+        thumbnail.height = 63;
+        thumbnail.loading = 'lazy';
+
+        const text = document.createElement('span');
+        text.className = 'rich-text-image-option-text';
+        const alt = document.createElement('span');
+        alt.className = 'font-bold';
+        alt.textContent = image.alt;
+        const status = document.createElement('span');
+        status.className = 'rich-text-image-status';
+        status.textContent = image.status;
+        text.append(alt, status);
+
+        button.append(thumbnail, text);
+        item.append(button);
+
+        return item;
+    }
+
+    embedImage(image) {
+        this.images.set(image.id, image);
+        this.imageDialogTarget.close();
+        this.editor.chain().focus().insertContent({ type: 'image', attrs: { id: image.id } }).run();
+        this.drawImages();
     }
 
     /**
@@ -467,6 +680,13 @@ export default class extends Controller {
         }
 
         const section = onHeading(this.editor.state);
+
+        // Embedding an image starts by picking it.
+        if (command === 'insertImage') {
+            this.openImageDialog();
+
+            return;
+        }
 
         COMMANDS[command](this.editor.chain().focus()).run();
 
@@ -562,6 +782,11 @@ export default class extends Controller {
     }
 
     can(command) {
+        // Images go between blocks, never inside a table.
+        if (command === 'insertImage') {
+            return !this.editor.isActive('table');
+        }
+
         // The header row names the columns, so it can't be removed on its own.
         if (command === 'deleteRow' && this.editor.isActive('tableHeader')) {
             return false;
@@ -604,6 +829,13 @@ export default class extends Controller {
 
         if (block === 'table') {
             COMMANDS.insertTable(chain).run();
+
+            return;
+        }
+
+        if (block === 'image') {
+            chain.run();
+            this.openImageDialog();
 
             return;
         }
@@ -715,6 +947,14 @@ export default class extends Controller {
 
             if (normalise(label).includes(normalise(query))) {
                 items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'table') });
+            }
+        }
+
+        if (this.hasImageSearchUrlValue && this.featuresValue.blocks.includes('image')) {
+            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertImage').dataset.label;
+
+            if (normalise(label).includes(normalise(query))) {
+                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'image') });
             }
         }
 
@@ -977,6 +1217,14 @@ export default class extends Controller {
 
         if (blocks.includes('callout')) {
             extensions.push(Callout.configure({ labels: this.calloutLabelsValue }));
+        }
+
+        if (blocks.includes('image') && this.hasImageLookupUrlValue) {
+            extensions.push(EmbeddedImage.configure({
+                describe: (id) => this.describeImage(id),
+                views: this.imageViews,
+                labels: this.imageLabelsValue,
+            }));
         }
 
         if (blocks.includes('table')) {

@@ -10,6 +10,7 @@ use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
+use Cms\Image\Domain\ImageUsage;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -40,7 +41,7 @@ final class ImageDeleterTest extends TestCase
                 $steps[] = 'file';
             });
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage);
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false));
 
         self::assertSame(['image', 'file'], $steps);
     }
@@ -65,7 +66,7 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage);
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false));
     }
 
     public function testItDeletesNothingWhileTheImageIsOnTheSite(): void
@@ -76,7 +77,7 @@ final class ImageDeleterTest extends TestCase
         $storage = $this->createMock(ImageStorage::class);
         $storage->expects(self::never())->method('delete');
 
-        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage));
+        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false)));
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void
@@ -86,6 +87,14 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false));
+    }
+
+    private static function usage(bool $inUse): ImageUsage
+    {
+        $usage = self::createStub(ImageUsage::class);
+        $usage->method('isInUse')->willReturn($inUse);
+
+        return $usage;
     }
 }

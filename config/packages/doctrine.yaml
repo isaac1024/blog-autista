@@ -11,6 +11,7 @@ doctrine:
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            cms_relation_id: Cms\Relation\Infrastructure\Persistence\Doctrine\RelationIdType
             cms_page_slug: Cms\Page\Infrastructure\Persistence\Doctrine\PageSlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
@@ -35,6 +36,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Image/Domain'
                 prefix: 'Cms\Image\Domain'
+            CmsRelation:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Relation/Domain'
+                prefix: 'Cms\Relation\Domain'
             CmsPage:
                 type: attribute
                 is_bundle: false

@@ -89,6 +89,26 @@ final class Image
         $imageRepository->delete($this);
     }
 
+    public function id(): ImageId
+    {
+        return $this->id;
+    }
+
+    public function alt(): string
+    {
+        return $this->alt;
+    }
+
+    public function caption(): RichText
+    {
+        return $this->caption;
+    }
+
+    public function path(): string
+    {
+        return $this->path;
+    }
+
     private function tookLaterThan(\DateTimeImmutable $occurredOn): bool
     {
         return $this->lastEventOn > $occurredOn;

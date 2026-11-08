@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Relation\Domain;
+
+/**
+ * Outbound port used to persist and read relations.
+ */
+interface RelationRepository
+{
+    /**
+     * Replaces every relation of the source to resources of the type with
+     * relations to those given, all or none.
+     *
+     * @param list<string> $targetIds
+     */
+    public function replace(ResourceType $sourceType, string $sourceId, ResourceType $targetType, array $targetIds): void;
+
+    /**
+     * Whether any resource uses the one given.
+     */
+    public function isUsed(ResourceType $targetType, string $targetId): bool;
+}

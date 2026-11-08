@@ -70,6 +70,24 @@ final readonly class RichText
     }
 
     /**
+     * Ids of the images it embeds, each once, in order.
+     *
+     * @return list<string>
+     */
+    public function imageIds(): array
+    {
+        $ids = [];
+
+        foreach ($this->blocks as $block) {
+            if ($block instanceof EmbeddedImage) {
+                $ids[] = $block->imageId();
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
      * @return array{version: int, blocks: list<array<string, mixed>>}
      */
     public function toArray(): array
@@ -90,6 +108,7 @@ final readonly class RichText
             BlockType::List => ItemList::fromArray($data, $path),
             BlockType::Callout => Callout::fromArray($data, $path),
             BlockType::Table => Table::fromArray($data, $path),
+            BlockType::Image => EmbeddedImage::fromArray($data, $path),
         };
     }
 }

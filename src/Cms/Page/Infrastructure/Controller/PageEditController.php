@@ -102,6 +102,8 @@ final class PageEditController extends AbstractController
                     'placeholder' => $this->translator->trans('cms.pages.edit.content_placeholder'),
                     'value' => json_encode($this->tiptapRichText->toTiptap($page->content), \JSON_THROW_ON_ERROR),
                     'features' => PageAggregate::contentFeatures()->toArray(),
+                    'imageSearchUrl' => $this->generateUrl('cms_images_search'),
+                    'imageLookupUrl' => $this->generateUrl('cms_images_lookup'),
                 ]),
                 $this->searchEngineSection($page),
                 new PageComponent('Shared:ActionBar', [

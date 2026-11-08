@@ -120,7 +120,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         yield 'missing title' => [self::fields(without: ['title'])];
         yield 'missing content' => [self::fields(without: ['content'])];
         yield 'content that is not JSON' => [self::fields(['content' => '<p>Hola</p>'])];
-        yield 'content with a block the editor does not offer' => [self::fields(['content' => '{"type":"doc","content":[{"type":"image","attrs":{"src":"x.png"}}]}'])];
+        yield 'content with a block the editor does not offer' => [self::fields(['content' => '{"type":"doc","content":[{"type":"video","attrs":{"src":"x.mp4"}}]}'])];
         yield 'content with a heading level a page does not allow' => [self::fields(['content' => json_encode(['type' => 'doc', 'content' => [
             ['type' => 'heading', 'attrs' => ['level' => 2], 'content' => [['type' => 'text', 'text' => 'A']]],
             ['type' => 'heading', 'attrs' => ['level' => 3], 'content' => [['type' => 'text', 'text' => 'B']]],

@@ -6,6 +6,7 @@ namespace Cms\Page\Application;
 
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Shared\Domain\Event\EventBus;
 
 /**
  * Deletes an existing page, failing when it doesn't exist.
@@ -14,10 +15,10 @@ final readonly class PageDeleter
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(PageRepository $pageRepository): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
 
-        $page->delete($pageRepository);
+        $page->delete($pageRepository, $eventBus);
     }
 }

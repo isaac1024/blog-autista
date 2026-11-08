@@ -109,7 +109,7 @@ final class TiptapRichTextTest extends TestCase
         yield 'not a document' => ['{"type":"paragraph"}', InvalidRichText::malformed('document.type', '"doc"')];
         yield 'content that is not a list' => ['{"type":"doc","content":{"type":"paragraph"}}', InvalidRichText::malformed('document.content', 'a list')];
         yield 'unknown block, never dropped' => [
-            self::document([['type' => 'image', 'attrs' => ['src' => 'x.png']]]),
+            self::document([['type' => 'video', 'attrs' => ['src' => 'x.mp4']]]),
             InvalidRichText::malformed('document.content[0].type', 'a block the editor offers'),
         ];
         yield 'node without a type' => [self::document([['content' => []]]), InvalidRichText::malformed('document.content[0]', 'a node with a type')];

@@ -14,6 +14,8 @@
     <path d="M12 5v14M6 13l6 6 6-6" />
 {% elseif name == 'bold' %}
     <path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z" />
+{% elseif name == 'insertImage' %}
+    <rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.75" /><path d="M20.5 15.5l-5-5-9 9" />
 {% elseif name == 'insertTable' %}
     <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" /><path d="M3.5 9.5h17M3.5 14.5h17M10 9.5v10" />
 {% elseif name == 'undo' %}
@@ -68,7 +70,7 @@
 {% macro separator() %}
 <span class="mx-0.5 h-7 w-0.5 flex-none rounded-full bg-divider" aria-hidden="true"></span>
 {% endmacro %}
-<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-quote-source-hint-value="{{ 'ui.editor.quote_source_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}"{% if singleParagraph %} data-rich-text-editor-single-paragraph-value="true"{% endif %}{% if maxLength %} data-rich-text-editor-max-length-value="{{ maxLength }}" data-rich-text-editor-count-value="{{ 'ui.editor.count'|trans }}" data-rich-text-editor-count-over-value="{{ 'ui.editor.count_over'|trans }}"{% endif %}>
+<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-quote-source-hint-value="{{ 'ui.editor.quote_source_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}"{% if singleParagraph %} data-rich-text-editor-single-paragraph-value="true"{% endif %}{% if this.allowsImages %} data-rich-text-editor-image-search-url-value="{{ imageSearchUrl }}" data-rich-text-editor-image-lookup-url-value="{{ imageLookupUrl }}" data-rich-text-editor-image-labels-value="{{ {loading: 'ui.editor.image.loading'|trans, missing: 'ui.editor.image.missing'|trans, offSite: 'ui.editor.image.off_site'|trans, result: 'ui.editor.image.result'|trans, results: 'ui.editor.image.results'|trans, none: 'ui.editor.image.none'|trans, embedded: 'ui.editor.image.embedded'|trans}|json_encode }}"{% endif %}{% if maxLength %} data-rich-text-editor-max-length-value="{{ maxLength }}" data-rich-text-editor-count-value="{{ 'ui.editor.count'|trans }}" data-rich-text-editor-count-over-value="{{ 'ui.editor.count_over'|trans }}"{% endif %}>
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span class="{{ hideLabel ? 'sr-only' : 'text-[1rem] font-bold' }}" id="{{ id }}-label">{{ label }}</span>
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint" data-rich-text-editor-target="hint" hidden>{{ hint ?? 'ui.editor.hint'|trans }}</p>
@@ -95,7 +97,10 @@
 {% if this.allowsTables %}
                     {{ _self.button('insertTable', 'ui.editor.table.insert'|trans) }}
 {% endif %}
-{% if this.allowsBold or this.allowsTables %}
+{% if this.allowsImages %}
+                    {{ _self.button('insertImage', 'ui.editor.image.insert'|trans) }}
+{% endif %}
+{% if this.allowsBold or this.allowsTables or this.allowsImages %}
                     {{ _self.separator() }}
 {% endif %}
                     {{ _self.button('undo', 'ui.editor.undo'|trans) }}
@@ -159,6 +164,33 @@
                 </button>
             </div>
             <ol class="m-0 flex list-none flex-col gap-0.5 p-0" data-rich-text-editor-target="outlineDialogList"></ol>
+        </div>
+    </dialog>
+{% endif %}
+{% if this.allowsImages %}
+    {# The images of the library to embed one, searched by their alternative text. #}
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-image-dialog" aria-labelledby="{{ id }}-image-title" closedby="any" data-rich-text-editor-target="imageDialog">
+        <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="m-0 text-xl font-bold" id="{{ id }}-image-title">{{ 'ui.editor.image.title'|trans }}</h2>
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-image-dialog" command="close">
+                    <span class="sr-only">{{ 'ui.close'|trans }}</span>
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            {#
+                Not a form: the editor sits in the form of what it edits, and
+                a form can't hold another. Enter and the button search.
+            #}
+            <div class="flex flex-col gap-2" role="search">
+                <label class="text-[1rem] font-bold" for="{{ id }}-image-search">{{ 'ui.editor.image.search'|trans }}</label>
+                <div class="flex gap-2">
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-image-search" data-rich-text-editor-target="imageSearch" data-action="keydown.enter->rich-text-editor#searchImages">
+                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="rich-text-editor#searchImages">{{ 'ui.editor.image.search_submit'|trans }}</button>
+                </div>
+            </div>
+            <p class="m-0 text-[1rem] text-muted" role="status" data-rich-text-editor-target="imageStatus"></p>
+            <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.editor.image.list'|trans }}" data-rich-text-editor-target="imageResults"></ul>
         </div>
     </dialog>
 {% endif %}

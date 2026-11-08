@@ -38,4 +38,23 @@ final readonly class DoctrineImageRepository implements ImageRepository
     {
         return $this->entityManager->find(Image::class, $id);
     }
+
+    #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<Image> $images */
+        $images = $this->entityManager->createQueryBuilder()
+            ->select('image')
+            ->from(Image::class, 'image')
+            ->where('image.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (ImageId $id): string => $id->value(), $ids))
+            ->getQuery()
+            ->getResult();
+
+        return $images;
+    }
 }

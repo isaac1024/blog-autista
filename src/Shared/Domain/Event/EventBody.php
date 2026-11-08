@@ -38,6 +38,24 @@ final readonly class EventBody
     }
 
     /**
+     * @return list<string>
+     */
+    public function stringList(string $key): array
+    {
+        $strings = [];
+
+        foreach ($this->array($key) as $value) {
+            if (!\is_string($value)) {
+                throw new \UnexpectedValueException(\sprintf('The event body has no "%s" list of strings.', $key));
+            }
+
+            $strings[] = $value;
+        }
+
+        return $strings;
+    }
+
+    /**
      * @return array<array-key, mixed>
      */
     public function array(string $key): array

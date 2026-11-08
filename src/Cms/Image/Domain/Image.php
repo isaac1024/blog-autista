@@ -25,7 +25,8 @@ use Shared\Domain\RichText\RichText;
  *
  * - Editing saves whatever valid texts an editor writes, caption or not.
  * - An image is published only with a caption.
- * - A published image is unpublished before it is deleted.
+ * - A published image is unpublished before it is deleted, and an image in
+ *   use is never deleted; it can be unpublished, and the site leaves it out.
  *
  * Its rules reach every value object, error and event of the image, so its
  * coupling grows with what an image is rather than with how it is designed.
@@ -216,13 +217,18 @@ final class Image extends AggregateRoot
     }
 
     /**
-     * Deletes an image off the site, and then its file: a failure there could
-     * leave a file behind, never an image pointing at a missing file.
+     * Deletes an image off the site that nothing uses, and then its file: a
+     * failure there could leave a file behind, never an image pointing at a
+     * missing file.
      */
-    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage): void
+    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage): void
     {
         if (ImageStatus::Published === $this->status) {
             throw InvalidImagePublication::publishedImage();
+        }
+
+        if ($imageUsage->isInUse($this->id)) {
+            throw InvalidImagePublication::inUse();
         }
 
         $imageRepository->delete($this);

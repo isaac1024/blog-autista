@@ -32,4 +32,9 @@ final class InvalidImagePublication extends DomainError
     {
         return new self('A published image cannot be deleted; unpublish it first.', 'errors.image.publication.published_image', []);
     }
+
+    public static function inUse(): self
+    {
+        return new self('An image in use cannot be deleted.', 'errors.image.publication.in_use', []);
+    }
 }

@@ -59,6 +59,14 @@ final class RichTextEditor
     public ?string $hint = null;
 
     /**
+     * Where the editor searches the images to embed, and looks up those it
+     * embeds already, as JSON; null when it embeds none.
+     */
+    public ?string $imageSearchUrl = null;
+
+    public ?string $imageLookupUrl = null;
+
+    /**
      * The Tiptap document, as JSON.
      */
     public string $value = '';
@@ -82,6 +90,8 @@ final class RichTextEditor
         bool $singleParagraph = false,
         ?int $maxLength = null,
         ?string $hint = null,
+        ?string $imageSearchUrl = null,
+        ?string $imageLookupUrl = null,
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -93,6 +103,8 @@ final class RichTextEditor
         $this->singleParagraph = $singleParagraph;
         $this->maxLength = $maxLength;
         $this->hint = $hint;
+        $this->imageSearchUrl = $imageSearchUrl;
+        $this->imageLookupUrl = $imageLookupUrl;
     }
 
     /**
@@ -137,6 +149,15 @@ final class RichTextEditor
     public function allowsTables(): bool
     {
         return $this->allows('table');
+    }
+
+    /**
+     * Whether images can be embedded: the module allows them, and the editor
+     * knows where to find them.
+     */
+    public function allowsImages(): bool
+    {
+        return $this->allows('image') && null !== $this->imageSearchUrl && null !== $this->imageLookupUrl;
     }
 
     public function allowsQuotes(): bool
