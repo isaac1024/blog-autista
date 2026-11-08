@@ -8,14 +8,17 @@ use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\UniquePageCannotBeDeleted;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 
 final class PageDeleterTest extends TestCase
 {
@@ -102,5 +105,33 @@ final class PageDeleterTest extends TestCase
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
         (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class));
+    }
+
+    /**
+     * A page deleted embeds no image any longer, told at once.
+     */
+    public function testItTellsThePageEmbedsNoImageOnceDeleted(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::unpublished(id: $id, content: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001'])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
+                && $id === $event->aggregateId()
+                && ['image_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new PageDeleter($id))($repository, $eventBus);
+    }
+
+    public function testItTellsNothingWhenThePageDeletedEmbedsNoImage(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create());
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with();
+
+        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus);
     }
 }

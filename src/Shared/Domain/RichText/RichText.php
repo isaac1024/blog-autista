@@ -70,7 +70,7 @@ final readonly class RichText
     }
 
     /**
-     * Ids of the images it embeds, each once, in order.
+     * Ids of the images it embeds, in order, as often as it embeds them.
      *
      * @return list<string>
      */
@@ -84,7 +84,7 @@ final readonly class RichText
             }
         }
 
-        return array_values(array_unique($ids));
+        return $ids;
     }
 
     /**

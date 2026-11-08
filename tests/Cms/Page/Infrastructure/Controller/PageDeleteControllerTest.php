@@ -6,11 +6,14 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Relation\Domain\RelationRepository;
+use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -27,6 +30,24 @@ final class PageDeleteControllerTest extends CmsWebTestCase
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
+    }
+
+    /**
+     * A page deleted embeds no image any longer, so its images stop being in
+     * use at once.
+     */
+    public function testItFreesTheImagesThePageEmbeddedAsItDeletesIt(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi', content: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']));
+        self::getContainer()->get(PageRepository::class)->save($page);
+        $relations = self::getContainer()->get(RelationRepository::class);
+        $relations->replace(ResourceType::Page, $page->id()->value(), ResourceType::Image, ['01a1b801-ce58-723d-8234-b76d9105d001']);
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+
+        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertFalse($relations->isUsed(ResourceType::Image, '01a1b801-ce58-723d-8234-b76d9105d001'));
     }
 
     public function testItDeletesThePageAndGoesBackToTheList(): void

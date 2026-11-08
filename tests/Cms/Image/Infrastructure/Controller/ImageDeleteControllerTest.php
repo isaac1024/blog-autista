@@ -7,6 +7,8 @@ namespace Cms\Tests\Image\Infrastructure\Controller;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
+use Cms\Relation\Domain\RelationRepository;
+use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Image\Domain\ImageFileMother;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
@@ -82,6 +84,26 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.image.publication.published_image', 'parameters' => []]], self::notices($client));
+        self::assertEquals($expected, $this->storedImage($image));
+        self::assertFileExists(self::file($image));
+    }
+
+    public function testItGoesBackToTheEditorToTellWhyAndKeepsAnImageInUse(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $image = $this->saveImage(ImageMother::unpublished(id: ImageIdMother::random()->value()));
+        $expected = clone $image;
+        self::getContainer()->get(RelationRepository::class)->replace(
+            ResourceType::Page,
+            '01a19e72-b07f-7d78-889c-fa4a14a4fb95',
+            ResourceType::Image,
+            [$image->id()->value()],
+        );
+
+        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+
+        self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.image.publication.in_use', 'parameters' => []]], self::notices($client));
         self::assertEquals($expected, $this->storedImage($image));
         self::assertFileExists(self::file($image));
     }

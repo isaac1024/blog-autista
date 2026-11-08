@@ -63,6 +63,10 @@ final class TiptapRichTextTest extends TestCase
             [self::table([['tableHeader', 'Nombre'], ['tableHeader', 'Finalidad']], [['tableCell', 'PHPSESSID'], ['tableCell', '']])],
             [['type' => 'table', 'header' => [[['text' => 'Nombre']], [['text' => 'Finalidad']]], 'rows' => [[[['text' => 'PHPSESSID']], []]]]],
         ];
+        yield 'image, embedded by its id alone' => [
+            [['type' => 'image', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]],
+            [['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
+        ];
         yield 'empty blocks the editor leaves behind are dropped' => [
             [
                 ['type' => 'paragraph'],

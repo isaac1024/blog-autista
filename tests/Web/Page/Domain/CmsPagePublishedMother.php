@@ -49,6 +49,9 @@ final class CmsPagePublishedMother
         ];
     }
 
+    /**
+     * @param array<array-key, mixed> $content in the stored rich text format
+     */
     public static function create(
         string $id = PageIdMother::DEFAULT_VALUE,
         string $title = 'Sobre mí',
@@ -57,13 +60,14 @@ final class CmsPagePublishedMother
         ?string $metaDescription = 'Quién escribe este blog sobre autismo y por qué.',
         Robots $robots = Robots::IndexFollow,
         string $occurredOn = ClockMother::NOW,
+        array $content = self::CONTENT,
     ): CmsPagePublished {
         return new CmsPagePublished(
             $id,
             $type,
             $title,
             $slug,
-            RichText::fromArray(self::CONTENT),
+            RichText::fromArray($content),
             $metaDescription,
             $robots,
             ClockMother::now(),

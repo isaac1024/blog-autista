@@ -31,11 +31,10 @@ final readonly class DoctrineRelationRepository implements RelationRepository
                 ->getQuery()
                 ->execute();
 
+            // The transaction flushes them as it commits.
             foreach (array_unique($targetIds) as $targetId) {
                 $this->entityManager->persist(Relation::between($sourceType, $sourceId, $targetType, $targetId));
             }
-
-            $this->entityManager->flush();
         });
     }
 

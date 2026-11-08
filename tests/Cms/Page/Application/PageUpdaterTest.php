@@ -10,6 +10,7 @@ use Cms\Page\Domain\InvalidSeo;
 use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Robots;
@@ -23,6 +24,7 @@ use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
+use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Domain\RichText\InvalidRichText;
@@ -515,6 +517,77 @@ final class PageUpdaterTest extends TestCase
         yield 'unknown robots directive' => [Text::EMPTY, '', 'noindex', 'errors.page.seo.unknown_robots', ['%robots%' => 'noindex']];
     }
 
+    public function testItSavesContentThatEmbedsImages(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $content = Text::stored(Text::paragraph('Antes.'), ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']);
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content)));
+
+        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class));
+    }
+
+    public function testItSavesNothingWhenAnImageIsEmbeddedWithoutItsId(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidRichText::malformed('blocks[0].id', 'a string'));
+
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image']))($repository, self::createStub(EventBus::class));
+    }
+
+    public function testItSavesNothingWhenAnImageIsEmbeddedByAnythingButItsId(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidRichText::malformed('blocks[0].id', 'the id of an image'));
+
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image', 'id' => 'foto.webp']))($repository, self::createStub(EventBus::class));
+    }
+
+    /**
+     * Told at once, so the images in use are never behind the page: those of
+     * the version edited and of the one published, each once and in order.
+     */
+    public function testItTellsTheImagesThePageEmbedsWhenTheyChange(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']),
+        ));
+
+        // The image on the site is embedded again, among two others.
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d003'], ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001'], ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d002']), PageMother::META_DESCRIPTION)(
+            $repository,
+            $this->toldImages(['01a1b801-ce58-723d-8234-b76d9105d001', '01a1b801-ce58-723d-8234-b76d9105d002', '01a1b801-ce58-723d-8234-b76d9105d003']),
+        );
+    }
+
+    public function testItTellsNothingWhenThePageEmbedsTheSameImages(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $content = Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']);
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with();
+
+        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+    }
+
     /**
      * An edit that leaves the content and search engine settings as a new
      * page has them, unless a test says otherwise.
@@ -530,5 +603,22 @@ final class PageUpdaterTest extends TestCase
         string $robots = 'index,follow',
     ): PageUpdater {
         return new PageUpdater($id, $title, $slug, $content, $metaDescription, $robots);
+    }
+
+    /**
+     * A bus that expects to be told the images the page embeds, and nothing else.
+     *
+     * @param list<string> $imageIds
+     */
+    private function toldImages(array $imageIds): EventBus
+    {
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
+                && PageIdMother::DEFAULT_VALUE === $event->aggregateId()
+                && ['image_ids' => $imageIds] === $event->toPrimitives(),
+        ));
+
+        return $eventBus;
     }
 }

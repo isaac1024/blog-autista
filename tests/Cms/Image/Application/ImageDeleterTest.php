@@ -80,6 +80,22 @@ final class ImageDeleterTest extends TestCase
         self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false)));
     }
 
+    /**
+     * An image a page embeds can be unpublished, never deleted.
+     */
+    public function testItDeletesNothingWhileTheImageIsInUse(): void
+    {
+        $repository = $this->createMock(ImageRepository::class);
+        $repository->method('find')->willReturn(ImageMother::unpublished());
+        $repository->expects(self::never())->method('delete');
+        $storage = $this->createMock(ImageStorage::class);
+        $storage->expects(self::never())->method('delete');
+        $usage = $this->createMock(ImageUsage::class);
+        $usage->expects(self::once())->method('isInUse')->with(self::equalTo(ImageIdMother::create()))->willReturn(true);
+
+        self::assertTells('errors.image.publication.in_use', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, $usage));
+    }
+
     public function testItFailsWhenTheImageDoesNotExist(): void
     {
         $repository = self::createStub(ImageRepository::class);

@@ -8,14 +8,17 @@ use Cms\Page\Application\PageChangesDiscarder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PageRepository;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageChangesDiscarderTest extends TestCase
@@ -79,5 +82,25 @@ final class PageChangesDiscarderTest extends TestCase
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
         (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class));
+    }
+
+    public function testItTellsTheImagesThePageEmbedsOnceItsChangesAreDiscarded(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']),
+            publishedContent: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d002']),
+        ));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
+                && ['image_ids' => ['01a1b801-ce58-723d-8234-b76d9105d002']] === $event->toPrimitives(),
+        ));
+
+        new PageChangesDiscarder($id)($repository, $eventBus);
     }
 }

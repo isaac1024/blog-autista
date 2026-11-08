@@ -7,6 +7,8 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\Robots;
+use Cms\Relation\Domain\RelationRepository;
+use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
@@ -14,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class PageUpdateControllerTest extends CmsWebTestCase
 {
     use ClockSensitiveTrait;
+    use QueuedDomainEvents;
     private const string URL = 'http://cms.blogautista.localhost/pages/%s';
 
     /**
@@ -173,6 +177,25 @@ final class PageUpdateControllerTest extends CmsWebTestCase
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Portada'), $this->storedPage($home));
+    }
+
+    /**
+     * The page tells the images it embeds at once, not through the queue, so
+     * by the time it is saved the image is in use.
+     */
+    public function testItKeepsTheImagesThePageEmbedsInUseAsItSaves(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = $this->savePage();
+        $document = ['type' => 'doc', 'content' => [['type' => 'image', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]];
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields([
+            'content' => json_encode($document, \JSON_THROW_ON_ERROR),
+        ]));
+
+        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertTrue(self::getContainer()->get(RelationRepository::class)->isUsed(ResourceType::Image, '01a1b801-ce58-723d-8234-b76d9105d001'));
+        self::assertSame([], $this->queuedEvents());
     }
 
     public function testItRespondsNotFoundWhenThePageDoesNotExist(): void

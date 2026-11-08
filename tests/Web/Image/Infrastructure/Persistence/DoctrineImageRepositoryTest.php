@@ -42,6 +42,21 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->find(ImageIdMother::random()));
     }
 
+    public function testItFindsOnlyTheImagesOnTheSiteAmongThoseGiven(): void
+    {
+        $first = ImageIdMother::random();
+        $second = ImageIdMother::random();
+        $images = [Image::publish(CmsImagePublishedMother::create(id: $first->value())), Image::publish(CmsImagePublishedMother::create(id: $second->value()))];
+        $repository = $this->repository();
+        $repository->save($images[0]);
+        $repository->save($images[1]);
+        $repository->save(Image::publish(CmsImagePublishedMother::create(id: ImageIdMother::random()->value())));
+        $this->entityManager()->clear();
+
+        self::assertEqualsCanonicalizing($images, $repository->findByIds([$first, ImageIdMother::random(), $second]));
+        self::assertSame([], $repository->findByIds([]));
+    }
+
     public function testItDeletesOnlyTheGivenImage(): void
     {
         $keptId = ImageIdMother::random();

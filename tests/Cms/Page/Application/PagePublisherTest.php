@@ -8,6 +8,7 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PagePublisher;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePublished;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
@@ -21,6 +22,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PagePublisherTest extends TestCase
@@ -165,5 +167,31 @@ final class PagePublisherTest extends TestCase
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
         new PagePublisher('sobre-mi')(self::createStub(PageRepository::class), self::createStub(EventBus::class));
+    }
+
+    /**
+     * Publishing replaces the version on the site, so the images it embedded
+     * there and no longer does stop being in use.
+     */
+    public function testItTellsTheImagesThePageEmbedsOncePublished(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']),
+            publishedContent: Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d002']),
+        ));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
+                && $id === $event->aggregateId()
+                && ['image_ids' => ['01a1b801-ce58-723d-8234-b76d9105d001']] === $event->toPrimitives()),
+            self::isInstanceOf(PagePublished::class),
+        );
+
+        new PagePublisher($id)($repository, $eventBus);
     }
 }

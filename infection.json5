@@ -32,7 +32,8 @@
             "*\\Controller\\*::uploadModal",
             "*\\Controller\\*::imageActions",
             "*\\Controller\\*::titleField",
-            "*\\Controller\\*::dates"
+            "*\\Controller\\*::dates",
+            "*\\Controller\\*::images"
         ]
     },
     "timeout": 60,
