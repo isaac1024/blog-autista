@@ -77,6 +77,37 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
         self::assertEquals($image, $entityManager->find(Image::class, $id));
     }
 
+    /**
+     * A published image keeps apart the version on the site, read back with
+     * its status.
+     */
+    public function testItSavesThePublicationSoItCanBeReadBack(): void
+    {
+        $id = ImageIdMother::random();
+        $image = ImageMother::published(id: $id->value(), alt: 'Otro texto', caption: Text::stored(Text::paragraph('Otro pie.')));
+        $entityManager = $this->entityManager();
+
+        $this->repository()->save($image);
+        $entityManager->clear();
+
+        self::assertEquals($image, $entityManager->find(Image::class, $id));
+    }
+
+    public function testItDeletesOnlyTheGivenImage(): void
+    {
+        $kept = ImageMother::create(id: ImageIdMother::random()->value());
+        $deleted = ImageMother::create(id: ImageIdMother::random()->value());
+        $repository = $this->repository();
+        $repository->save($kept);
+        $repository->save($deleted);
+
+        $repository->delete($deleted);
+        $this->entityManager()->clear();
+
+        self::assertNull($repository->find($deleted->id()));
+        self::assertEquals($kept, $repository->find($kept->id()));
+    }
+
     public function testItFindsTheImageWithTheGivenId(): void
     {
         $id = ImageIdMother::random();
