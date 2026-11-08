@@ -12,6 +12,7 @@ use Shared\Domain\RichText\InlineText;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Domain\RichText\ItemList;
 use Shared\Domain\RichText\ListStyle;
+use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\Paragraph;
 use Shared\Domain\RichText\Quote;
 use Shared\Domain\RichText\RichText;
@@ -267,12 +268,32 @@ final readonly class TiptapRichText
             $childPath = \sprintf('%s.content[%d]', $path, $index);
             $child = self::node($child, 'text', $childPath);
             $marks = [];
+            $linked = false;
+            $pageId = null;
 
             foreach (self::list($child['marks'] ?? [], $childPath.'.marks') as $markIndex => $mark) {
-                $marks[] = self::type($mark, \sprintf('%s.marks[%d]', $childPath, $markIndex));
+                $markPath = \sprintf('%s.marks[%d]', $childPath, $markIndex);
+                $type = self::type($mark, $markPath);
+                $marks[] = $type;
+
+                if ('link' === $type) {
+                    // A text links one page: a second link would hide which.
+                    if ($linked) {
+                        throw InvalidRichText::malformed($markPath, 'a single link');
+                    }
+
+                    $linked = true;
+                    $pageId = self::attrs($mark, $markPath)['id'] ?? null;
+                }
             }
 
-            $runs[] = [] === $marks ? ['text' => $child['text'] ?? null] : ['text' => $child['text'] ?? null, 'marks' => $marks];
+            $run = [] === $marks ? ['text' => $child['text'] ?? null] : ['text' => $child['text'] ?? null, 'marks' => $marks];
+
+            if ($linked) {
+                $run['page_id'] = $pageId;
+            }
+
+            $runs[] = $run;
         }
 
         return $runs;
@@ -331,10 +352,18 @@ final readonly class TiptapRichText
     private static function tiptapInline(InlineText $text): array
     {
         return array_map(
-            static fn (TextRun $run): array => [] === $run->marks()
-            ? ['type' => 'text', 'text' => $run->text()]
-            : ['type' => 'text', 'text' => $run->text(), 'marks' => array_map(static fn ($mark): array => ['type' => $mark->value], $run->marks())],
-            $text->runs()
+            static function (TextRun $run): array {
+                $node = ['type' => 'text', 'text' => $run->text()];
+
+                foreach ($run->marks() as $mark) {
+                    $node['marks'][] = Mark::Link === $mark
+                        ? ['type' => $mark->value, 'attrs' => ['id' => $run->pageId()]]
+                        : ['type' => $mark->value];
+                }
+
+                return $node;
+            },
+            $text->runs(),
         );
     }
 

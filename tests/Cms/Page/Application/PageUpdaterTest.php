@@ -6,11 +6,13 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
+use Cms\Page\Domain\InvalidContent;
 use Cms\Page\Domain\InvalidSeo;
 use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
+use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Robots;
@@ -137,8 +139,8 @@ final class PageUpdaterTest extends TestCase
     }
 
     /**
-     * Everything a page allows: the blocks of fixed pages, two heading levels
-     * and bold.
+     * Everything a page allows: the blocks of fixed pages, two heading levels,
+     * bold and links to pages.
      *
      * @return iterable<string, array{array<array-key, mixed>}>
      */
@@ -147,6 +149,10 @@ final class PageUpdaterTest extends TestCase
         yield 'no content' => [Text::EMPTY];
         yield 'headings going down one level at a time' => [Text::stored(Text::heading(2, 'Qué datos'), Text::heading(3, 'Datos técnicos'), Text::heading(2, 'Derechos'))];
         yield 'paragraph with bold' => [Text::stored(Text::paragraph('Solo usamos cookies ', '**técnicas**', '.'))];
+        yield 'paragraph linked to a page' => [Text::stored([
+            'type' => 'paragraph',
+            'text' => [['text' => 'Contacto', 'marks' => ['bold', 'link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']],
+        ])];
         yield 'quote' => [Text::stored(['type' => 'quote', 'paragraphs' => [Text::text('Una cita'), Text::text('en dos párrafos')]])];
         yield 'unordered list' => [Text::stored(['type' => 'list', 'style' => 'unordered', 'items' => [Text::text('Sesión'), Text::text('Preferencias')]])];
         yield 'ordered list' => [Text::stored(['type' => 'list', 'style' => 'ordered', 'items' => [Text::text('Primero')]])];
@@ -230,6 +236,22 @@ final class PageUpdaterTest extends TestCase
         yield 'table without rows' => [Text::stored(Text::table(['Nombre'], [])), InvalidRichText::empty('blocks[0].rows')];
         yield 'table with an empty header cell' => [Text::stored(Text::table([''], [['a']])), InvalidRichText::empty('blocks[0].header[0]')];
         yield 'table with uneven rows' => [Text::stored(Text::table(['Nombre', 'Finalidad'], [['PHPSESSID']])), InvalidRichText::unevenTable('table.rows', 2)];
+        yield 'link without the page it goes to' => [
+            Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link']]]]),
+            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a page id exactly when the text has the link mark'),
+        ];
+        yield 'page to go to without a link' => [
+            Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]]),
+            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a page id exactly when the text has the link mark'),
+        ];
+        yield 'link to anything but the id of a page' => [
+            Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '/contacto.html']]]),
+            InvalidRichText::malformed('blocks[0].text[0].page_id', 'the id of a page'),
+        ];
+        yield 'link to the page itself' => [
+            Text::stored(['type' => 'paragraph', 'text' => [['text' => 'esta página', 'marks' => ['link'], 'page_id' => PageIdMother::DEFAULT_VALUE]]]),
+            InvalidContent::linksItself(),
+        ];
     }
 
     #[DataProvider('validSeo')]
@@ -513,6 +535,13 @@ final class PageUpdaterTest extends TestCase
             'errors.rich_text.uneven_table',
             ['%columns%' => 2],
         ];
+        yield 'link to the page itself' => [
+            Text::stored(['type' => 'paragraph', 'text' => [['text' => 'esta página', 'marks' => ['link'], 'page_id' => PageIdMother::DEFAULT_VALUE]]]),
+            '',
+            'index,follow',
+            'errors.page.content.links_itself',
+            [],
+        ];
         yield 'meta description too long' => [Text::EMPTY, str_repeat('a', 201), 'index,follow', 'errors.page.seo.description_too_long', ['%max%' => 200]];
         yield 'unknown robots directive' => [Text::EMPTY, '', 'noindex', 'errors.page.seo.unknown_robots', ['%robots%' => 'noindex']];
     }
@@ -586,6 +615,59 @@ final class PageUpdaterTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with();
 
         self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+    }
+
+    /**
+     * Told at once, so the pages in use are never behind the page: those
+     * linked from the version edited and from the one published, each once
+     * and in order.
+     */
+    public function testItTellsThePagesThePageLinksToWhenTheyChange(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(self::linking('01a1b801-ce58-723d-8234-b76d9105e001')),
+        ));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PagePagesLinked
+                && $id === $event->aggregateId()
+                && ['page_ids' => ['01a1b801-ce58-723d-8234-b76d9105e001', '01a1b801-ce58-723d-8234-b76d9105e002', '01a1b801-ce58-723d-8234-b76d9105e003']] === $event->toPrimitives(),
+        ));
+
+        // The page linked on the site is linked again, twice, among two others.
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(
+            self::linking('01a1b801-ce58-723d-8234-b76d9105e003'),
+            self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
+            self::linking('01a1b801-ce58-723d-8234-b76d9105e002'),
+            self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+    }
+
+    public function testItTellsNothingWhenThePageLinksToTheSamePages(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $content = Text::stored(self::linking('01a1b801-ce58-723d-8234-b76d9105e001'));
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with();
+
+        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+    }
+
+    /**
+     * A paragraph whose text links to the page.
+     *
+     * @return array<string, mixed>
+     */
+    private static function linking(string $pageId): array
+    {
+        return ['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => $pageId]]];
     }
 
     /**

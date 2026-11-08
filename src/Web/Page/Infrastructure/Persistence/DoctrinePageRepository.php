@@ -41,6 +41,25 @@ final readonly class DoctrinePageRepository implements PageRepository
     }
 
     #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<Page> $pages */
+        $pages = $this->entityManager->createQueryBuilder()
+            ->select('page')
+            ->from(Page::class, 'page')
+            ->where('page.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (PageId $id): string => $id->value(), $ids))
+            ->getQuery()
+            ->getResult();
+
+        return $pages;
+    }
+
+    #[\Override]
     public function findBySlug(string $slug): ?Page
     {
         return $this->entityManager->getRepository(Page::class)->findOneBy(['slug' => $slug]);

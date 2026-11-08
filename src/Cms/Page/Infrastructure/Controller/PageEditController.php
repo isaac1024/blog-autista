@@ -105,6 +105,9 @@ final class PageEditController extends AbstractController
                     'features' => PageAggregate::contentFeatures()->toArray(),
                     'imageSearchUrl' => $this->generateUrl('cms_images_search'),
                     'imageLookupUrl' => $this->generateUrl('cms_images_lookup'),
+                    // A page doesn't link itself, so the search leaves it out.
+                    'pageSearchUrl' => $this->generateUrl('cms_pages_search', ['except' => $page->id]),
+                    'pageLookupUrl' => $this->generateUrl('cms_pages_lookup'),
                 ]),
                 $this->searchEngineSection($page),
                 new PageComponent('Shared:ActionBar', [

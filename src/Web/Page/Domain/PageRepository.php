@@ -16,6 +16,15 @@ interface PageRepository
     public function find(PageId $id): ?Page;
 
     /**
+     * The pages on the site among those given; any other is left out.
+     *
+     * @param list<PageId> $ids
+     *
+     * @return list<Page>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The page served at the slug.
      */
     public function findBySlug(string $slug): ?Page;

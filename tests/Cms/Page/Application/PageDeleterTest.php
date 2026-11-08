@@ -9,7 +9,9 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
+use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageUsage;
 use Cms\Page\Domain\UniquePageCannotBeDeleted;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
@@ -35,7 +37,7 @@ final class PageDeleterTest extends TestCase
             ->method('delete')
             ->with(self::identicalTo($page));
 
-        (new PageDeleter($id))($repository, self::createStub(EventBus::class));
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     #[DataProvider('uniquePages')]
@@ -47,7 +49,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(UniquePageCannotBeDeleted::ofType($page->type()));
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     /**
@@ -69,7 +71,7 @@ final class PageDeleterTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::once())->method('delete')->with(self::identicalTo($page));
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     public function testItNeverDeletesAPublishedPage(): void
@@ -81,7 +83,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPublication::publishedPage());
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class));
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -93,7 +95,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageDeleter($id))($repository, self::createStub(EventBus::class));
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -104,7 +106,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class));
+        (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class), self::unused());
     }
 
     /**
@@ -122,7 +124,7 @@ final class PageDeleterTest extends TestCase
                 && ['image_ids' => []] === $event->toPrimitives(),
         ));
 
-        (new PageDeleter($id))($repository, $eventBus);
+        (new PageDeleter($id))($repository, $eventBus, self::unused());
     }
 
     public function testItTellsNothingWhenThePageDeletedEmbedsNoImage(): void
@@ -132,6 +134,54 @@ final class PageDeleterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus);
+        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::unused());
+    }
+
+    public function testItNeverDeletesAPageOtherPagesLinkTo(): void
+    {
+        $page = PageMother::unpublished();
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::never())->method('delete');
+        $pageUsage = $this->createMock(PageUsage::class);
+        $pageUsage->expects(self::once())
+            ->method('isInUse')
+            ->with(self::equalTo($page->id()))
+            ->willReturn(true);
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::never())->method('publish');
+
+        $this->expectExceptionObject(InvalidPublication::linkedPage());
+
+        (new PageDeleter($page->id()->value()))($repository, $eventBus, $pageUsage);
+    }
+
+    /**
+     * A page deleted links to no page any longer, told at once.
+     */
+    public function testItTellsThePageLinksToNoPageOnceDeleted(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::unpublished(id: $id, content: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d002']]])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PagePagesLinked
+                && $id === $event->aggregateId()
+                && ['page_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new PageDeleter($id))($repository, $eventBus, self::unused());
+    }
+
+    /**
+     * No other page links to it.
+     */
+    private static function unused(): PageUsage
+    {
+        $pageUsage = self::createStub(PageUsage::class);
+        $pageUsage->method('isInUse')->willReturn(false);
+
+        return $pageUsage;
     }
 }

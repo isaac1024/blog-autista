@@ -13,6 +13,7 @@ use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\Robots;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
+use Web\Tests\Page\Domain\PageIdMother;
 
 final class PageFinderTest extends TestCase
 {
@@ -26,6 +27,7 @@ final class PageFinderTest extends TestCase
 
         self::assertEquals(
             new PageResponse(
+                PageIdMother::DEFAULT_VALUE,
                 'Sobre mí',
                 'sobre-mi',
                 RichText::fromArray(CmsPagePublishedMother::CONTENT),

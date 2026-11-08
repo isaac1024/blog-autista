@@ -220,6 +220,31 @@
             font-weight: 700;
         }
 
+        & a {
+            color: var(--color-accent);
+            text-decoration-line: underline;
+            text-decoration-thickness: 0.1em;
+            text-underline-offset: 0.15em;
+        }
+
+        & a:hover {
+            color: var(--color-accent-strong);
+        }
+
+        /*
+         * In the editor, a link that won't show on the site, or whose page is
+         * gone or unchecked, isn't underlined solid. The link tools say why
+         * in words, so the look is never the only sign.
+         */
+        & a:has(.rich-text-link-offSite, .rich-text-link-loading, .rich-text-link-unknown) {
+            text-decoration-style: dashed;
+        }
+
+        & a:has(.rich-text-link-missing) {
+            color: var(--color-danger);
+            text-decoration-style: wavy;
+        }
+
         & ul,
         & ol {
             display: flex;
@@ -477,12 +502,14 @@
         font-weight: 700;
     }
 
-    .rich-text-image-note {
+    .rich-text-image-note,
+    .rich-text-page-note {
         color: var(--color-muted);
     }
 
-    /* Where the image stands for the site, in words: never by colour alone. */
-    .rich-text-image-status {
+    /* Where the resource stands for the site, in words: never by colour alone. */
+    .rich-text-image-status,
+    .rich-text-page-status {
         justify-self: start;
         border: 1px solid var(--color-border);
         border-radius: 999px;
@@ -491,8 +518,9 @@
         font-weight: 700;
     }
 
-    /* An image to pick in the dialog: the whole row is its button. */
-    .rich-text-image-option {
+    /* A resource to pick in a dialog: the whole row is its button. */
+    .rich-text-image-option,
+    .rich-text-page-option {
         display: flex;
         gap: 1rem;
         align-items: center;
@@ -521,7 +549,8 @@
         }
     }
 
-    .rich-text-image-option-text {
+    .rich-text-image-option-text,
+    .rich-text-page-option-text {
         display: grid;
         gap: 0.375rem;
         min-width: 0;

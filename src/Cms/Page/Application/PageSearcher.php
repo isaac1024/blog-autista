@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Page\Application;
 
+use Cms\Page\Domain\IdFilter;
+use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\TitleFilter;
 use Shared\Domain\Criteria\Criteria;
@@ -13,7 +15,8 @@ use Shared\Domain\Criteria\OrderDirection;
 
 /**
  * Lists one page of results, newest first, optionally narrowed down to the
- * pages whose title has every word of the given text.
+ * pages whose title has every word of the given text, and leaving one out,
+ * such as the page that searches others to link.
  */
 final readonly class PageSearcher
 {
@@ -22,6 +25,7 @@ final readonly class PageSearcher
     public function __construct(
         private string $title,
         private int $page,
+        private ?string $except,
     ) {}
 
     /**
@@ -34,10 +38,15 @@ final readonly class PageSearcher
         }
 
         $title = trim($this->title);
+        $filters = '' === $title ? [] : [TitleFilter::matches($title)];
+
+        if (null !== $this->except) {
+            $filters[] = IdFilter::isNot(new PageId($this->except));
+        }
 
         // Page ids are time-ordered (UUID v7), so sorting by id lists the newest first.
         $criteria = new Criteria(
-            filters: '' === $title ? [] : [TitleFilter::matches($title)],
+            filters: $filters,
             order: new Order('id', OrderDirection::Descending),
             limit: self::PAGE_SIZE,
             offset: ($this->page - 1) * self::PAGE_SIZE,

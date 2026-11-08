@@ -61,6 +61,24 @@ final readonly class DoctrinePageRepository implements PageRepository
     }
 
     #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var Query<null, Page> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('page')
+            ->from(Page::class, 'page')
+            ->where('page.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (PageId $id): string => $id->value(), $ids))
+            ->getQuery();
+
+        return $query->getResult();
+    }
+
+    #[\Override]
     public function findBySlug(Slug $slug): ?Page
     {
         // Pages never share a slug, being edited or on the site, so at most

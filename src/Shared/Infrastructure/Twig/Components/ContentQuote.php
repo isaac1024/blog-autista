@@ -14,15 +14,15 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final class ContentQuote
 {
     /**
-     * @var list<list<array{text: string, bold: bool}>>
+     * @var list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>
      */
     public array $paragraphs = [];
 
     public ?string $source = null;
 
     /**
-     * @param list<list<array{text: string, bold: bool}>> $paragraphs runs of text of each paragraph
-     * @param null|string                                 $source     who said it, or where it comes from
+     * @param list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>> $paragraphs stretches of text, each linking one page or none of each paragraph
+     * @param null|string                                                                   $source     who said it, or where it comes from
      */
     public function mount(array $paragraphs, ?string $source): void
     {

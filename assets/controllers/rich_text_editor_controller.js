@@ -1,6 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
-import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core';
-import { TextSelection } from '@tiptap/pm/state';
+import { Editor, Extension, Mark, Node, mergeAttributes } from '@tiptap/core';
+import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Document } from '@tiptap/extension-document';
 import { Paragraph } from '@tiptap/extension-paragraph';
 import { Text } from '@tiptap/extension-text';
@@ -430,6 +431,71 @@ const EmbeddedImage = Node.create({
     },
 });
 
+/**
+ * An internal link to a page, kept by its id alone. It has no href in the CMS:
+ * the editor must not navigate away, and the site resolves the current address.
+ *
+ * Links whose page isn't on the site, or isn't known yet, are told apart by a
+ * class on decorations, which ProseMirror draws itself: the DOM of the text is
+ * never touched by hand. The controller says how each page stands through
+ * stateOf(), and redraws them once it learns more.
+ */
+const pageLinksKey = new PluginKey('pageLinks');
+
+const PageLink = Mark.create({
+    name: 'link',
+    inclusive: false,
+
+    addOptions() {
+        return {
+            // 'published', 'offSite', 'missing', 'unknown' or 'loading'.
+            stateOf: () => 'loading',
+        };
+    },
+
+    addProseMirrorPlugins() {
+        const { stateOf } = this.options;
+
+        return [new Plugin({
+            key: pageLinksKey,
+            props: {
+                decorations: (state) => {
+                    const decorations = [];
+
+                    state.doc.descendants((node, position) => {
+                        const link = node.isText ? node.marks.find((mark) => mark.type.name === 'link') : undefined;
+                        const linkState = link ? stateOf(link.attrs.id) : 'published';
+
+                        if (linkState !== 'published') {
+                            decorations.push(Decoration.inline(position, position + node.nodeSize, { class: `rich-text-link-${linkState}` }));
+                        }
+                    });
+
+                    return DecorationSet.create(state.doc, decorations);
+                },
+            },
+        })];
+    },
+
+    addAttributes() {
+        return {
+            id: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('data-page-id'),
+                renderHTML: (attributes) => ({ 'data-page-id': attributes.id }),
+            },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'a[data-page-id]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['a', mergeAttributes(HTMLAttributes), 0];
+    },
+});
+
 /** What every control runs, given a command chain. */
 const COMMANDS = {
     bold: (chain) => chain.toggleBold(),
@@ -442,6 +508,8 @@ const COMMANDS = {
     deleteColumn: (chain) => chain.deleteColumn(),
     deleteTable: (chain) => chain.deleteTable(),
     quoteSource: (chain) => chain.focusQuoteSource(),
+    // The whole link goes, wherever in it the cursor stands.
+    unlink: (chain) => chain.extendMarkRange('link').unsetMark('link'),
     undo: (chain) => chain.undo(),
     redo: (chain) => chain.redo(),
 };
@@ -471,6 +539,7 @@ export default class extends Controller {
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
         'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
+        'pageDialog', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
     ];
 
     static values = {
@@ -492,6 +561,9 @@ export default class extends Controller {
         imageSearchUrl: String,
         imageLookupUrl: String,
         imageLabels: Object,
+        pageSearchUrl: String,
+        pageLookupUrl: String,
+        pageLabels: Object,
     };
 
     connect() {
@@ -501,6 +573,16 @@ export default class extends Controller {
         this.images = new Map();
         this.imagesLookedUp = false;
         this.imageViews = new Set();
+        // What the CMS knows of each page linked or picked, by id; the ids
+        // looked up and found to be of no page; those being looked up; and
+        // those whose lookup failed.
+        this.pages = new Map();
+        this.missingPages = new Set();
+        this.pagesLookingUp = new Set();
+        this.pagesUnknown = new Set();
+        this.linkRange = null;
+        // Each search outdates the ones before: only the latest is shown.
+        this.pageSearch = { request: 0, page: 1, count: 0 };
         this.editor = new Editor({
             element: this.editorTarget,
             extensions: this.extensions(),
@@ -524,6 +606,8 @@ export default class extends Controller {
                 this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
                 this.refreshOutline();
                 this.refreshCount();
+                // Text pasted or brought back by undo may link pages not looked up yet.
+                this.lookUpPages();
             },
             onTransaction: () => this.refreshControls(),
             onFocus: () => this.refreshControls(),
@@ -535,6 +619,7 @@ export default class extends Controller {
         this.refreshControls();
         this.refreshCount();
         this.lookUpImages();
+        this.lookUpPages();
     }
 
     /* Images: embedded by id, shown as the CMS knows them now. */
@@ -640,6 +725,222 @@ export default class extends Controller {
         this.drawImages();
     }
 
+    /* Page links: applied to the selected text, with their targets looked up by id. */
+
+    /** Looks up the pages the document links to that the editor doesn't know yet. */
+    async lookUpPages() {
+        if (!this.hasPageLookupUrlValue) {
+            return;
+        }
+
+        const ids = new Set();
+
+        this.editor.state.doc.descendants((node) => {
+            for (const mark of node.marks) {
+                const { id } = mark.attrs;
+
+                if (mark.type.name === 'link' && id && this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id)) {
+                    ids.add(id);
+                }
+            }
+        });
+
+        if (ids.size === 0) {
+            return;
+        }
+
+        ids.forEach((id) => this.pagesLookingUp.add(id));
+        const url = new URL(this.pageLookupUrlValue, window.location.href);
+        url.searchParams.set('ids', [...ids].join(','));
+        let found = null;
+
+        try {
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            found = response.ok ? (await response.json()).pages : null;
+        } catch {
+            // Told as unknown below: the page may well exist.
+        }
+
+        for (const id of ids) {
+            this.pagesLookingUp.delete(id);
+        }
+
+        if (found === null) {
+            ids.forEach((id) => this.pagesUnknown.add(id));
+        } else {
+            for (const page of found) {
+                this.pages.set(page.id, page);
+                ids.delete(page.id);
+            }
+
+            ids.forEach((id) => this.missingPages.add(id));
+        }
+
+        this.redrawPageLinks();
+    }
+
+    /** How the page of a link stands, as far as the editor knows. */
+    pageState(id) {
+        const page = this.pages.get(id);
+
+        if (page) {
+            return page.published ? 'published' : 'offSite';
+        }
+
+        if (this.missingPages.has(id)) {
+            return 'missing';
+        }
+
+        return this.pagesUnknown.has(id) ? 'unknown' : 'loading';
+    }
+
+    /** The page a link goes to, in words: never by its look alone. */
+    describePage(id) {
+        const labels = this.pageLabelsValue;
+        const state = this.pageState(id);
+
+        if (state === 'loading' || state === 'missing' || state === 'unknown') {
+            return labels[state] ?? '';
+        }
+
+        const page = this.pages.get(id);
+        const target = (labels.target ?? '%title% %status%').replace('%title%', page.title).replace('%status%', page.status);
+
+        return state === 'offSite' ? `${target} ${labels.offSite ?? ''}` : target;
+    }
+
+    /** Redraws the decorations of the links, and the tools of the one under the cursor. */
+    redrawPageLinks() {
+        if (this.editor.isDestroyed) {
+            return;
+        }
+
+        // A transaction that changes nothing but redraws, which also refreshes the controls.
+        this.editor.view.dispatch(this.editor.state.tr.setMeta(pageLinksKey, true).setMeta('addToHistory', false));
+    }
+
+    openPageDialog() {
+        const { selection } = this.editor.state;
+
+        if (!(selection instanceof TextSelection) || selection.empty) {
+            return;
+        }
+
+        // The dialog takes the focus; the range keeps the selected text intact.
+        this.linkRange = { from: selection.from, to: selection.to };
+        this.pageDialogTarget.showModal();
+        this.pageSearchTarget.focus();
+        this.searchPages();
+    }
+
+    /** Lists the first pages of results for the title written. */
+    searchPages(event) {
+        event?.preventDefault();
+        this.pageSearch.page = 1;
+        this.pageSearch.count = 0;
+        this.pageResultsTarget.replaceChildren();
+        this.loadPages();
+    }
+
+    /** Adds the next pages of results to those listed. */
+    morePages() {
+        this.pageSearch.page += 1;
+        this.loadPages();
+    }
+
+    async loadPages() {
+        const request = ++this.pageSearch.request;
+        const url = new URL(this.pageSearchUrlValue, window.location.href);
+        url.searchParams.set('title', this.pageSearchTarget.value);
+        url.searchParams.set('page', String(this.pageSearch.page));
+        this.pageMoreTarget.hidden = true;
+        let result = null;
+
+        try {
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            result = response.ok ? await response.json() : null;
+        } catch {
+            // Told below, like an answer that isn't ok.
+        }
+
+        // A newer search went out meanwhile: this answer is stale.
+        if (request !== this.pageSearch.request) {
+            return;
+        }
+
+        const { none, result: one, results, error } = this.pageLabelsValue;
+
+        if (result === null) {
+            this.pageStatusTarget.textContent = error ?? '';
+
+            return;
+        }
+
+        const first = this.pageResultsTarget.children.length;
+        this.pageResultsTarget.append(...result.pages.map((page) => this.pageResult(page)));
+        this.pageSearch.count += result.pages.length;
+        this.pageMoreTarget.hidden = !result.more;
+
+        const { count } = this.pageSearch;
+        this.pageStatusTarget.textContent = [none, one][count] ?? results.replace('%count%', String(count));
+
+        // Past the first pages, the focus goes to the first page added, not back to the top.
+        if (this.pageSearch.page > 1) {
+            this.pageResultsTarget.children[first]?.querySelector('button')?.focus();
+        }
+    }
+
+    /** One page to pick: the whole row is its button, named by its title and status. */
+    pageResult(page) {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'rich-text-page-option';
+        button.addEventListener('click', () => this.linkPage(page));
+
+        const text = document.createElement('span');
+        text.className = 'rich-text-page-option-text';
+        const title = document.createElement('span');
+        title.className = 'font-bold';
+        title.textContent = page.title;
+        const status = document.createElement('span');
+        status.className = 'rich-text-page-status';
+        status.textContent = page.status;
+        text.append(title, status);
+
+        if (!page.published) {
+            const offSite = document.createElement('span');
+            offSite.className = 'rich-text-page-note';
+            offSite.textContent = this.pageLabelsValue.offSite;
+            text.append(offSite);
+        }
+
+        button.append(text);
+        item.append(button);
+
+        return item;
+    }
+
+    linkPage(page) {
+        if (this.linkRange === null) {
+            return;
+        }
+
+        this.pages.set(page.id, page);
+        this.missingPages.delete(page.id);
+        this.pagesUnknown.delete(page.id);
+        this.pageDialogTarget.close();
+        this.editor.chain().focus().setTextSelection(this.linkRange).setMark('link', { id: page.id }).run();
+        this.linkRange = null;
+        this.redrawPageLinks();
+    }
+
+    /** Takes the link under the cursor out, keeping its text, and says so. */
+    unlink() {
+        COMMANDS.unlink(this.editor.chain().focus()).run();
+        this.announce(this.pageLabelsValue.removed ?? '');
+    }
+
     /**
      * Characters written against the most it takes, said in words. Not a live
      * region: announcing every keystroke would drown the typing.
@@ -684,6 +985,27 @@ export default class extends Controller {
         // Embedding an image starts by picking it.
         if (command === 'insertImage') {
             this.openImageDialog();
+
+            return;
+        }
+
+        // A link starts by picking its page, and only wraps selected text.
+        if (command === 'insertLink') {
+            this.openPageDialog();
+
+            return;
+        }
+
+        // Another page for the whole link under the cursor, whatever is selected.
+        if (command === 'changeLink') {
+            this.editor.chain().focus().extendMarkRange('link').run();
+            this.openPageDialog();
+
+            return;
+        }
+
+        if (command === 'unlink') {
+            this.unlink();
 
             return;
         }
@@ -741,6 +1063,15 @@ export default class extends Controller {
             this.quoteToolsTarget.hidden = !this.editor.isActive('blockquote');
         }
 
+        if (this.hasLinkToolsTarget) {
+            const inLink = this.editor.isActive('link');
+            this.linkToolsTarget.hidden = !inLink;
+
+            if (inLink) {
+                this.linkTargetTarget.textContent = this.describePage(this.editor.getAttributes('link').id);
+            }
+        }
+
         this.markCurrentSection();
     }
 
@@ -782,6 +1113,19 @@ export default class extends Controller {
     }
 
     can(command) {
+        if (command === 'changeLink' || command === 'unlink') {
+            return this.editor.isActive('link');
+        }
+
+        // Links wrap existing text: with no text selected there is nothing to link.
+        if (command === 'insertLink') {
+            const { selection } = this.editor.state;
+
+            return selection instanceof TextSelection
+                && !selection.empty
+                && this.editor.can().setMark('link', { id: 'page' });
+        }
+
         // Images go between blocks, never inside a table.
         if (command === 'insertImage') {
             return !this.editor.isActive('table');
@@ -816,6 +1160,11 @@ export default class extends Controller {
             ? (direction < 0 ? this.sectionMovedUpValue : this.sectionMovedDownValue)
             : (direction < 0 ? this.movedUpValue : this.movedDownValue);
 
+        this.announce(message);
+    }
+
+    /** Says something through the live region, even the same thing twice in a row. */
+    announce(message) {
         this.statusTarget.textContent = '';
         window.requestAnimationFrame(() => {
             this.statusTarget.textContent = message;
@@ -1173,6 +1522,10 @@ export default class extends Controller {
                 extensions.push(Bold);
             }
 
+            if (marks.includes('link') && this.hasPageLookupUrlValue) {
+                extensions.push(PageLink.configure({ stateOf: (id) => this.pageState(id) }));
+            }
+
             return extensions;
         }
 
@@ -1200,6 +1553,10 @@ export default class extends Controller {
 
         if (marks.includes('bold')) {
             extensions.push(Bold);
+        }
+
+        if (marks.includes('link') && this.hasPageLookupUrlValue) {
+            extensions.push(PageLink.configure({ stateOf: (id) => this.pageState(id) }));
         }
 
         if (blocks.includes('heading')) {

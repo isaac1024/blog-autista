@@ -9,6 +9,7 @@ use Cms\Page\Application\PagePublisher;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
+use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PagePublished;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
@@ -189,6 +190,32 @@ final class PagePublisherTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
                 && $id === $event->aggregateId()
                 && ['image_ids' => ['01a1b801-ce58-723d-8234-b76d9105d001']] === $event->toPrimitives()),
+            self::isInstanceOf(PagePublished::class),
+        );
+
+        new PagePublisher($id)($repository, $eventBus);
+    }
+
+    /**
+     * Publishing replaces the version on the site, so the pages it linked to
+     * there and no longer does stop being in use.
+     */
+    public function testItTellsThePagesThePageLinksToOncePublished(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]]),
+            publishedContent: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e002']]]),
+        ));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PagePagesLinked
+                && $id === $event->aggregateId()
+                && ['page_ids' => ['01a1b801-ce58-723d-8234-b76d9105e001']] === $event->toPrimitives()),
             self::isInstanceOf(PagePublished::class),
         );
 

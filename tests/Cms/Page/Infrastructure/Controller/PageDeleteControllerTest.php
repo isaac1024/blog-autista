@@ -50,6 +50,36 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         self::assertFalse($relations->isUsed(ResourceType::Image, '01a1b801-ce58-723d-8234-b76d9105d001'));
     }
 
+    /**
+     * A page deleted links to no page any longer, so the pages it linked to
+     * stop being in use at once.
+     */
+    public function testItFreesThePagesThePageLinkedToAsItDeletesIt(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi', content: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]]));
+        self::getContainer()->get(PageRepository::class)->save($page);
+        $relations = self::getContainer()->get(RelationRepository::class);
+        $relations->replace(ResourceType::Page, $page->id()->value(), ResourceType::Page, ['01a1b801-ce58-723d-8234-b76d9105e001']);
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+
+        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertFalse($relations->isUsed(ResourceType::Page, '01a1b801-ce58-723d-8234-b76d9105e001'));
+    }
+
+    public function testItGoesBackAndKeepsAPageOtherPagesLinkTo(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $page = $this->savePage();
+        self::getContainer()->get(RelationRepository::class)->replace(ResourceType::Page, PageIdMother::random()->value(), ResourceType::Page, [$page->id()->value()]);
+
+        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertEquals($page, $this->storedPage($page));
+    }
+
     public function testItDeletesThePageAndGoesBackToTheList(): void
     {
         $client = self::createAuthenticatedClient();

@@ -19,6 +19,7 @@ final readonly class PageResponse
      * @param string  $robots          one of the Robots values
      */
     public function __construct(
+        public string $id,
         public string $title,
         public ?string $slug,
         public RichText $content,
@@ -29,6 +30,7 @@ final readonly class PageResponse
     public static function fromPage(Page $page): self
     {
         return new self(
+            $page->id()->value(),
             $page->title(),
             $page->slug(),
             $page->content(),

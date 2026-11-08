@@ -9,6 +9,7 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
+use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
@@ -99,6 +100,26 @@ final class PageChangesDiscarderTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof PageImagesUsed
                 && ['image_ids' => ['01a1b801-ce58-723d-8234-b76d9105d002']] === $event->toPrimitives(),
+        ));
+
+        new PageChangesDiscarder($id)($repository, $eventBus);
+    }
+
+    public function testItTellsThePagesThePageLinksToOnceItsChangesAreDiscarded(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::published(
+            id: $id,
+            title: 'Sobre mí',
+            slug: 'sobre-mi',
+            content: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]]),
+            publishedContent: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e002']]]),
+        ));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PagePagesLinked
+                && ['page_ids' => ['01a1b801-ce58-723d-8234-b76d9105e002']] === $event->toPrimitives(),
         ));
 
         new PageChangesDiscarder($id)($repository, $eventBus);

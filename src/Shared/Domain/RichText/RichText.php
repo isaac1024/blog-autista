@@ -88,6 +88,28 @@ final readonly class RichText
     }
 
     /**
+     * Ids of the pages it links to, in order, as often as it links to them.
+     *
+     * @return list<string>
+     */
+    public function pageIds(): array
+    {
+        $ids = [];
+
+        foreach ($this->blocks as $block) {
+            foreach ($block->texts() as $text) {
+                foreach ($text->runs() as $run) {
+                    if (null !== $run->pageId()) {
+                        $ids[] = $run->pageId();
+                    }
+                }
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
      * @return array{version: int, blocks: list<array<string, mixed>>}
      */
     public function toArray(): array

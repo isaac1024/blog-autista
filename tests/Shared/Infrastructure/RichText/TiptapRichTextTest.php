@@ -43,6 +43,34 @@ final class TiptapRichTextTest extends TestCase
             [['type' => 'paragraph', 'content' => [self::text('Solo '), self::text('técnicas', 'bold')]]],
             [['type' => 'paragraph', 'text' => [['text' => 'Solo '], ['text' => 'técnicas', 'marks' => ['bold']]]]],
         ];
+        yield 'paragraph with a bold link to a page' => [
+            [['type' => 'paragraph', 'content' => [
+                self::text('Lee '),
+                ['type' => 'text', 'text' => 'la página', 'marks' => [
+                    ['type' => 'bold'],
+                    ['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
+                ]],
+            ]]],
+            [['type' => 'paragraph', 'text' => [
+                ['text' => 'Lee '],
+                ['text' => 'la página', 'marks' => ['bold', 'link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
+            ]]],
+        ];
+        yield 'link to a page, partly bold' => [
+            [['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'quién ', 'marks' => [['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]],
+                ['type' => 'text', 'text' => 'escribe', 'marks' => [
+                    ['type' => 'bold'],
+                    ['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
+                ]],
+                ['type' => 'text', 'text' => ' el blog', 'marks' => [['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]],
+            ]]],
+            [['type' => 'paragraph', 'text' => [
+                ['text' => 'quién ', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
+                ['text' => 'escribe', 'marks' => ['bold', 'link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
+                ['text' => ' el blog', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
+            ]]],
+        ];
         yield 'quote' => [
             [['type' => 'blockquote', 'content' => [self::paragraph('Uno'), self::paragraph('Dos')]]],
             [['type' => 'quote', 'paragraphs' => [[['text' => 'Uno']], [['text' => 'Dos']]]]],
@@ -157,6 +185,13 @@ final class TiptapRichTextTest extends TestCase
             ]]]]]),
             InvalidRichText::malformed('document.content[0].content[0].content[0].content', 'a single paragraph'),
         ];
+        yield 'text linking two pages' => [
+            self::document([['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Enlace', 'marks' => [
+                ['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
+                ['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d002']],
+            ]]]]]),
+            InvalidRichText::malformed('document.content[0].content[0].marks[1]', 'a single link'),
+        ];
     }
 
     public function testItLeavesUnknownMarksToTheDomain(): void
@@ -166,6 +201,33 @@ final class TiptapRichTextTest extends TestCase
             ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [['text' => 'cursiva', 'marks' => ['italic']]]]]],
             new TiptapRichText()->toStored(self::document([['type' => 'paragraph', 'content' => [self::text('cursiva', 'italic')]]])),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $run
+     */
+    #[DataProvider('invalidStoredLinks')]
+    public function testItRejectsAnInvalidStoredLink(array $run, InvalidRichText $error): void
+    {
+        $this->expectExceptionObject($error);
+
+        new TiptapRichText()->toTiptap(['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [$run]]]]);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, InvalidRichText}>
+     */
+    public static function invalidStoredLinks(): iterable
+    {
+        $path = 'blocks[0].text[0].page_id';
+        $inconsistent = InvalidRichText::malformed($path, 'a page id exactly when the text has the link mark');
+
+        yield 'link without a page' => [['text' => 'Enlace', 'marks' => ['link']], $inconsistent];
+        yield 'page without a link' => [['text' => 'Texto', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'], $inconsistent];
+        yield 'page id malformed' => [
+            ['text' => 'Enlace', 'marks' => ['link'], 'page_id' => 'pagina'],
+            InvalidRichText::malformed($path, 'the id of a page'),
+        ];
     }
 
     /**

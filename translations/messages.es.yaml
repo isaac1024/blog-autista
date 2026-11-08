@@ -216,6 +216,7 @@ ui:
         toolbar: 'Formato del bloque'
         noscript: 'Para editar el contenido hace falta JavaScript. El título y la dirección web se guardan igualmente.'
         groups:
+            link: 'Enlace'
             table: 'Tabla'
             quote: 'Cita'
         paragraph: 'Párrafo'
@@ -236,6 +237,25 @@ ui:
             delete_row: 'Quitar fila'
             delete_column: 'Quitar columna'
             delete: 'Quitar tabla'
+        link:
+            insert: 'Enlace'
+            title: 'Enlazar el texto seleccionado'
+            search: 'Buscar página por título'
+            search_submit: 'Buscar'
+            list: 'Páginas del blog'
+            result: 'Una página. Elígela para enlazar el texto seleccionado.'
+            results: '%count% páginas. Elige una para enlazar el texto seleccionado.'
+            none: 'Ninguna página coincide con la búsqueda.'
+            loading: 'Cargando la página enlazada…'
+            missing: 'La página enlazada ya no existe.'
+            target: 'Página enlazada: %title%. %status%.'
+            off_site: 'En la web se verá como texto sin enlace hasta que publiques la página.'
+            unknown: 'No se ha podido comprobar la página enlazada.'
+            error: 'No se ha podido buscar. Inténtalo de nuevo.'
+            change: 'Cambiar página'
+            remove: 'Quitar enlace'
+            removed: 'Enlace quitado.'
+            more: 'Ver más páginas'
         image:
             insert: 'Imagen'
             title: 'Insertar una imagen'
@@ -285,6 +305,8 @@ errors:
             not_unique: 'Las páginas de tipo «%type%» no son únicas: se crean desde el CMS.'
         unique_cannot_be_deleted: 'Esta página es única, así que no se puede borrar.'
         unique_already_exists: 'El sitio ya tiene su página de tipo «%type%».'
+        content:
+            links_itself: 'Una página no puede enlazarse a sí misma. Quita ese enlace.'
         seo:
             description_too_long: 'La meta descripción no puede pasar de %max% caracteres.'
             empty_description: 'La meta descripción no puede estar vacía.'
@@ -298,6 +320,7 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
+            linked_page: 'Otras páginas enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
             incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
     image:
         alt:

@@ -32,12 +32,12 @@ final class ContentImage
     public string $alt = '';
 
     /**
-     * @var list<array{text: string, bold: bool}>
+     * @var list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>
      */
     public array $caption = [];
 
     /**
-     * @param list<array{text: string, bold: bool}> $caption runs of text
+     * @param list<array{href: ?string, runs: list<array{text: string, bold: bool}>}> $caption stretches of text, each linking one page or none
      */
     public function mount(string $src, string $srcset, int $width, int $height, string $alt, array $caption): void
     {

@@ -19,12 +19,12 @@ final class ContentCallout
     public string $variant = '';
 
     /**
-     * @var list<list<array{text: string, bold: bool}>>
+     * @var list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>
      */
     public array $paragraphs = [];
 
     /**
-     * @param list<list<array{text: string, bold: bool}>> $paragraphs runs of text of each paragraph
+     * @param list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>> $paragraphs stretches of text, each linking one page or none of each paragraph
      */
     public function mount(string $variant, array $paragraphs): void
     {

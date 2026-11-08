@@ -1,5 +1,7 @@
 {#
-    Runs of text of a content block, as the RichText adapter hands them over:
-    bold runs become strong, and everything is escaped.
+    Text of a content block, as the RichText adapter hands it over: in
+    stretches that each link one page or none, already grouped so a link
+    partly bold is one link. Bold runs become strong, and everything is
+    escaped.
 #}
-{% macro render(runs) %}{% for run in runs %}{% if run.bold %}<strong>{{ run.text }}</strong>{% else %}{{ run.text }}{% endif %}{% endfor %}{% endmacro %}
+{% macro render(stretches) %}{% for stretch in stretches %}{% if stretch.href is not null %}<a href="{{ stretch.href }}">{% endif %}{% for run in stretch.runs %}{% if run.bold %}<strong>{{ run.text }}</strong>{% else %}{{ run.text }}{% endif %}{% endfor %}{% if stretch.href is not null %}</a>{% endif %}{% endfor %}{% endmacro %}

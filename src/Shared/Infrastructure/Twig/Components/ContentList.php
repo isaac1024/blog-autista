@@ -15,7 +15,7 @@ final class ContentList
     public bool $ordered = false;
 
     /**
-     * @var list<list<array{text: string, bold: bool}>>
+     * @var list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>
      */
     public array $items = [];
 
@@ -23,7 +23,7 @@ final class ContentList
      * A flag here is a presentation option of a prop, not a sign of a method
      * doing two jobs.
      *
-     * @param list<list<array{text: string, bold: bool}>> $items runs of text of each item
+     * @param list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>> $items stretches of text, each linking one page or none of each item
      *
      * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
      */

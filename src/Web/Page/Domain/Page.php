@@ -103,6 +103,11 @@ final class Page
         $pageRepository->save($this);
     }
 
+    public function id(): PageId
+    {
+        return $this->id;
+    }
+
     public function title(): string
     {
         return $this->title;

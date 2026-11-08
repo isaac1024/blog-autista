@@ -61,7 +61,7 @@ final readonly class InlineText
     }
 
     /**
-     * @return list<array{text: string, marks?: list<string>}>
+     * @return list<array{text: string, marks?: list<string>, page_id?: string}>
      */
     public function toArray(): array
     {

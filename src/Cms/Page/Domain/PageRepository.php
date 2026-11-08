@@ -22,6 +22,15 @@ interface PageRepository
     public function find(PageId $id): ?Page;
 
     /**
+     * The pages among those given; an id of no page is left out.
+     *
+     * @param list<PageId> $ids
+     *
+     * @return list<Page>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The page edited with the slug, or on the site with it.
      */
     public function findBySlug(Slug $slug): ?Page;

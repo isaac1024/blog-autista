@@ -67,6 +67,14 @@ final class RichTextEditor
     public ?string $imageLookupUrl = null;
 
     /**
+     * Where the editor searches pages to link and looks up those already
+     * linked, as JSON; null when it links none.
+     */
+    public ?string $pageSearchUrl = null;
+
+    public ?string $pageLookupUrl = null;
+
+    /**
      * The Tiptap document, as JSON.
      */
     public string $value = '';
@@ -92,6 +100,8 @@ final class RichTextEditor
         ?string $hint = null,
         ?string $imageSearchUrl = null,
         ?string $imageLookupUrl = null,
+        ?string $pageSearchUrl = null,
+        ?string $pageLookupUrl = null,
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -105,6 +115,8 @@ final class RichTextEditor
         $this->hint = $hint;
         $this->imageSearchUrl = $imageSearchUrl;
         $this->imageLookupUrl = $imageLookupUrl;
+        $this->pageSearchUrl = $pageSearchUrl;
+        $this->pageLookupUrl = $pageLookupUrl;
     }
 
     /**
@@ -158,6 +170,15 @@ final class RichTextEditor
     public function allowsImages(): bool
     {
         return $this->allows('image') && null !== $this->imageSearchUrl && null !== $this->imageLookupUrl;
+    }
+
+    /**
+     * Whether text can link to pages: the module allows links, and the editor
+     * knows where to find their targets.
+     */
+    public function allowsLinks(): bool
+    {
+        return \in_array('link', $this->features['marks'], true) && null !== $this->pageSearchUrl && null !== $this->pageLookupUrl;
     }
 
     public function allowsQuotes(): bool

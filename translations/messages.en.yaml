@@ -216,6 +216,7 @@ ui:
         toolbar: 'Block formatting'
         noscript: 'Editing the content needs JavaScript. The title and the web address are saved anyway.'
         groups:
+            link: 'Link'
             table: 'Table'
             quote: 'Quote'
         paragraph: 'Paragraph'
@@ -236,6 +237,25 @@ ui:
             delete_row: 'Remove row'
             delete_column: 'Remove column'
             delete: 'Remove table'
+        link:
+            insert: 'Link'
+            title: 'Link the selected text'
+            search: 'Search pages by title'
+            search_submit: 'Search'
+            list: 'Pages of the blog'
+            result: 'One page. Pick it to link the selected text.'
+            results: '%count% pages. Pick one to link the selected text.'
+            none: 'No page matches the search.'
+            loading: 'Loading the linked page…'
+            missing: 'The linked page no longer exists.'
+            target: 'Linked page: %title%. %status%.'
+            off_site: 'On the site it will appear as plain text until you publish the page.'
+            unknown: 'The linked page couldn’t be checked.'
+            error: 'The search didn’t work. Try again.'
+            change: 'Change page'
+            remove: 'Remove link'
+            removed: 'Link removed.'
+            more: 'Show more pages'
         image:
             insert: 'Image'
             title: 'Insert an image'
@@ -285,6 +305,8 @@ errors:
             not_unique: '“%type%” pages are not unique: they are created from the CMS.'
         unique_cannot_be_deleted: 'This page is unique, so it can’t be deleted.'
         unique_already_exists: 'The site already has its “%type%” page.'
+        content:
+            links_itself: 'A page can’t link to itself. Take that link out.'
         seo:
             description_too_long: 'The meta description can’t be longer than %max% characters.'
             empty_description: 'The meta description can’t be empty.'
@@ -298,6 +320,7 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             unique_page: 'This page is unique, so it can’t be unpublished.'
             published_page: 'A published page can’t be deleted: unpublish it first.'
+            linked_page: 'Other pages link to this one, so it can’t be deleted. Take those links out first.'
             incomplete_dates: 'The publication dates of the page are incomplete.'
     image:
         alt:

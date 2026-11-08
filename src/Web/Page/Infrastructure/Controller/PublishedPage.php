@@ -13,6 +13,8 @@ use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
+use Web\Page\Application\PublishedPagesFinder;
+use Web\Page\Domain\PageRepository;
 
 /**
  * Composes a page of the site from Twig components: its title as the main
@@ -32,6 +34,7 @@ final readonly class PublishedPage
         private UrlGeneratorInterface $urlGenerator,
         private RichTextComponents $richTextComponents,
         private ImageRepository $imageRepository,
+        private PageRepository $pageRepository,
     ) {}
 
     public function __invoke(PageResponse $page): Page
@@ -43,7 +46,7 @@ final readonly class PublishedPage
         return WebLayout::page($page->title)
             ->withSearchEngineMetadata($page->metaDescription, $page->robots, $canonical)
             ->withMain('Shared:PageTitle', ['title' => $page->title])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $this->images($page)));
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $this->images($page), $this->links($page)));
     }
 
     /**
@@ -65,5 +68,20 @@ final readonly class PublishedPage
                 'caption' => $image->caption,
             ];
         }, new PublishedImagesFinder($page->content->imageIds())($this->imageRepository));
+    }
+
+    /**
+     * Current addresses of the published pages the content links to, keyed by
+     * id. A target not on the site has no address, so its text stays unlinked.
+     *
+     * @return array<string, string>
+     */
+    private function links(PageResponse $page): array
+    {
+        return array_map(function (PageResponse $target): string {
+            return null === $target->slug
+                ? $this->urlGenerator->generate('web_home')
+                : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]);
+        }, new PublishedPagesFinder($page->content->pageIds())($this->pageRepository));
     }
 }

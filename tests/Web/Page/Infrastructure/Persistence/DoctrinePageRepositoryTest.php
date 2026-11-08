@@ -52,6 +52,24 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findHome());
     }
 
+    public function testItFindsOnlyThePagesOnTheSiteAmongThoseGiven(): void
+    {
+        $first = PageIdMother::random();
+        $second = PageIdMother::random();
+        $pages = [
+            Page::publish(CmsPagePublishedMother::create(id: $first->value(), title: 'Primera', slug: 'primera')),
+            Page::publish(CmsPagePublishedMother::create(id: $second->value(), title: 'Segunda', slug: 'segunda')),
+        ];
+        $repository = $this->repository();
+        $repository->save($pages[0]);
+        $repository->save($pages[1]);
+        $repository->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Otra', slug: 'otra')));
+        $this->entityManager()->clear();
+
+        self::assertEqualsCanonicalizing($pages, $repository->findByIds([$first, PageIdMother::random(), $second]));
+        self::assertSame([], $repository->findByIds([]));
+    }
+
     public function testItDeletesOnlyTheGivenPage(): void
     {
         $kept = Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), slug: 'contacto'));

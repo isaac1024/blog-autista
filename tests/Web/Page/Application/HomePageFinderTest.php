@@ -14,6 +14,7 @@ use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Domain\Robots;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
+use Web\Tests\Page\Domain\PageIdMother;
 
 final class HomePageFinderTest extends TestCase
 {
@@ -26,6 +27,7 @@ final class HomePageFinderTest extends TestCase
 
         self::assertEquals(
             new PageResponse(
+                PageIdMother::DEFAULT_VALUE,
                 'Inicio',
                 null,
                 RichText::fromArray(CmsPagePublishedMother::CONTENT),

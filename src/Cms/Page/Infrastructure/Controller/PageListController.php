@@ -40,7 +40,7 @@ final class PageListController extends AbstractController
         $title = trim($title);
 
         try {
-            $pages = new PageSearcher($title, $page)($pageRepository);
+            $pages = new PageSearcher($title, $page, except: null)($pageRepository);
         } catch (InvalidCriteria $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

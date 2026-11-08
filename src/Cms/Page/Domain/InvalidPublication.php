@@ -48,6 +48,11 @@ final class InvalidPublication extends DomainError
         return new self('A published page cannot be deleted; unpublish it first.', 'errors.page.publication.published_page', []);
     }
 
+    public static function linkedPage(): self
+    {
+        return new self('A page other pages link to cannot be deleted.', 'errors.page.publication.linked_page', []);
+    }
+
     public static function incompleteDates(): self
     {
         return new self('A page published once has both a first and a last publication date.', 'errors.page.publication.incomplete_dates', []);

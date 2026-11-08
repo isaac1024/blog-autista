@@ -13,12 +13,12 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final class ContentParagraph
 {
     /**
-     * @var list<array{text: string, bold: bool}>
+     * @var list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>
      */
     public array $text = [];
 
     /**
-     * @param list<array{text: string, bold: bool}> $text runs of text
+     * @param list<array{href: ?string, runs: list<array{text: string, bold: bool}>}> $text stretches of text, each linking one page or none
      */
     public function mount(array $text): void
     {

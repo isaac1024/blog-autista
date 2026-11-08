@@ -14,18 +14,18 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final class ContentTable
 {
     /**
-     * @var list<list<array{text: string, bold: bool}>>
+     * @var list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>
      */
     public array $header = [];
 
     /**
-     * @var list<list<list<array{text: string, bold: bool}>>>
+     * @var list<list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>>
      */
     public array $rows = [];
 
     /**
-     * @param list<list<array{text: string, bold: bool}>>       $header runs of text of each header cell
-     * @param list<list<list<array{text: string, bold: bool}>>> $rows   runs of text of each cell, row by row
+     * @param list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>       $header stretches of text, each linking one page or none of each header cell
+     * @param list<list<list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>>> $rows   stretches of text, each linking one page or none of each cell, row by row
      */
     public function mount(array $header, array $rows): void
     {

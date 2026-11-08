@@ -33,6 +33,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   keeps its version meanwhile.
  * - A published page is unpublished before it is deleted, and unique pages
  *   are never unpublished nor deleted.
+ * - A page links to other pages, never to itself, and one that others link
+ *   to is never deleted; it can be unpublished, and the site leaves its
+ *   links as plain text.
  *
  * The unique indexes on the slugs keep two pages from sharing an address,
  * the one being edited or the one on the site; pages without one share none.
@@ -136,7 +139,7 @@ final class Page extends AggregateRoot
 
     /**
      * What the content of a page can use: the blocks of fixed pages such as
-     * the legal ones, with two heading levels, and bold as the only mark.
+     * the legal ones, with two heading levels, bold and links to other pages.
      */
     public static function contentFeatures(): RichTextFeatures
     {
@@ -144,7 +147,7 @@ final class Page extends AggregateRoot
             blocks: BlockType::cases(),
             headingLevels: [2, 3],
             calloutVariants: [CalloutVariant::Note, CalloutVariant::Important],
-            marks: [Mark::Bold],
+            marks: [Mark::Bold, Mark::Link],
         );
     }
 
@@ -177,7 +180,11 @@ final class Page extends AggregateRoot
         );
         self::contentFeatures()->assertAllows($version->content());
 
-        $this->changeImagesUsed(fn () => $this->replaceVersion($version));
+        if (\in_array($this->id->value(), $version->content()->pageIds(), true)) {
+            throw InvalidContent::linksItself();
+        }
+
+        $this->changeResourcesUsed(fn () => $this->replaceVersion($version));
     }
 
     /**
@@ -194,7 +201,7 @@ final class Page extends AggregateRoot
         }
 
         $this->status = PageStatus::Published;
-        $this->changeImagesUsed(function (): void {
+        $this->changeResourcesUsed(function (): void {
             $this->published = $this->version;
         });
         $this->publishedSlug = $this->version->slug();
@@ -245,7 +252,7 @@ final class Page extends AggregateRoot
         }
 
         $published = $this->published;
-        $this->changeImagesUsed(fn () => $this->replaceVersion($published));
+        $this->changeResourcesUsed(fn () => $this->replaceVersion($published));
     }
 
     /**
@@ -298,9 +305,10 @@ final class Page extends AggregateRoot
     }
 
     /**
-     * Deletes a generic page off the site; unique pages stay for good.
+     * Deletes a generic page off the site, unless other pages link to it;
+     * unique pages stay for good.
      */
-    public function delete(PageRepository $pageRepository, EventBus $eventBus): void
+    public function delete(PageRepository $pageRepository, EventBus $eventBus, PageUsage $pageUsage): void
     {
         if ($this->type->isUnique()) {
             throw UniquePageCannotBeDeleted::ofType($this->type);
@@ -310,9 +318,19 @@ final class Page extends AggregateRoot
             throw InvalidPublication::publishedPage();
         }
 
-        // A page deleted embeds no image any longer.
-        if ([] !== $this->imagesUsed()) {
+        if ($pageUsage->isInUse($this->id)) {
+            throw InvalidPublication::linkedPage();
+        }
+
+        // A page deleted embeds no image, nor links to any page, any longer.
+        $used = $this->resourcesUsed();
+
+        if ([] !== $used['images']) {
             $this->record(new PageImagesUsed($this->id->value(), [], EventId::random()->value(), Clock::now()));
+        }
+
+        if ([] !== $used['pages']) {
+            $this->record(new PagePagesLinked($this->id->value(), [], EventId::random()->value(), Clock::now()));
         }
 
         $events = $this->pullDomainEvents();
@@ -373,34 +391,40 @@ final class Page extends AggregateRoot
     }
 
     /**
-     * Makes a change and, when it changes the images the page embeds, tells
-     * which it embeds now.
+     * Makes a change and, when it changes the images the page embeds or the
+     * pages it links to, tells which it uses now.
      *
      * @param \Closure(): void $change
      */
-    private function changeImagesUsed(\Closure $change): void
+    private function changeResourcesUsed(\Closure $change): void
     {
-        $before = $this->imagesUsed();
+        $before = $this->resourcesUsed();
         $change();
-        $after = $this->imagesUsed();
+        $after = $this->resourcesUsed();
 
-        if ($before !== $after) {
-            $this->record(new PageImagesUsed($this->id->value(), $after, EventId::random()->value(), Clock::now()));
+        if ($before['images'] !== $after['images']) {
+            $this->record(new PageImagesUsed($this->id->value(), $after['images'], EventId::random()->value(), Clock::now()));
+        }
+
+        if ($before['pages'] !== $after['pages']) {
+            $this->record(new PagePagesLinked($this->id->value(), $after['pages'], EventId::random()->value(), Clock::now()));
         }
     }
 
     /**
-     * The images embedded in the version being edited and in the one last
-     * published, each once.
+     * The images embedded in, and the pages linked from, the version being
+     * edited and the one last published, each once and in order.
      *
-     * @return list<string>
+     * @return array{images: list<string>, pages: list<string>}
      */
-    private function imagesUsed(): array
+    private function resourcesUsed(): array
     {
-        $ids = [...$this->version->content()->imageIds(), ...($this->published?->content()->imageIds() ?? [])];
-        sort($ids);
+        $images = [...$this->version->content()->imageIds(), ...($this->published?->content()->imageIds() ?? [])];
+        $pages = [...$this->version->content()->pageIds(), ...($this->published?->content()->pageIds() ?? [])];
+        sort($images);
+        sort($pages);
 
-        return array_values(array_unique($ids));
+        return ['images' => array_values(array_unique($images)), 'pages' => array_values(array_unique($pages))];
     }
 
     private function replaceVersion(PageVersion $version): void

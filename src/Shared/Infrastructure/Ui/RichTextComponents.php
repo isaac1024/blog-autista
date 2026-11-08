@@ -16,7 +16,6 @@ use Shared\Domain\RichText\Paragraph;
 use Shared\Domain\RichText\Quote;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\Table;
-use Shared\Domain\RichText\TextRun;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 
 /**
@@ -31,10 +30,11 @@ final readonly class RichTextComponents
      * by id; one it doesn't give, such as one off the site, isn't painted.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
+     * @param array<string, string>                                                                                      $links  current addresses of published link targets, keyed by page id
      *
      * @return list<PageComponent>
      */
-    public function __invoke(RichText $content, array $images): array
+    public function __invoke(RichText $content, array $images, array $links): array
     {
         $components = [];
 
@@ -43,13 +43,13 @@ final readonly class RichTextComponents
                 $image = $images[$block->imageId()] ?? null;
 
                 if (null !== $image) {
-                    $components[] = self::image($image);
+                    $components[] = self::image($image, $links);
                 }
 
                 continue;
             }
 
-            $components[] = self::block($block);
+            $components[] = self::block($block, $links);
         }
 
         return $components;
@@ -57,8 +57,9 @@ final readonly class RichTextComponents
 
     /**
      * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
+     * @param array<string, string>                                                                       $links
      */
-    private static function image(array $image): PageComponent
+    private static function image(array $image, array $links): PageComponent
     {
         $caption = $image['caption']->blocks()[0] ?? null;
 
@@ -69,48 +70,73 @@ final readonly class RichTextComponents
             'height' => $image['height'],
             'alt' => $image['alt'],
             // A caption is a single paragraph.
-            'caption' => $caption instanceof Paragraph ? self::runs($caption->text()) : [],
+            'caption' => $caption instanceof Paragraph ? self::runs($caption->text(), $links) : [],
         ]);
     }
 
-    private static function block(Block $block): PageComponent
+    /**
+     * @param array<string, string> $links
+     */
+    private static function block(Block $block, array $links): PageComponent
     {
+        $runs = static fn (InlineText $text): array => self::runs($text, $links);
+
         return match (true) {
             $block instanceof Heading => new PageComponent('Shared:ContentHeading', [
                 'level' => $block->level(),
-                'text' => self::runs($block->text()),
+                'text' => $runs($block->text()),
             ]),
             $block instanceof Paragraph => new PageComponent('Shared:ContentParagraph', [
-                'text' => self::runs($block->text()),
+                'text' => $runs($block->text()),
             ]),
             $block instanceof Quote => new PageComponent('Shared:ContentQuote', [
-                'paragraphs' => array_map(self::runs(...), $block->paragraphs()),
+                'paragraphs' => array_map($runs, $block->paragraphs()),
                 'source' => $block->source(),
             ]),
             $block instanceof ItemList => new PageComponent('Shared:ContentList', [
                 'ordered' => ListStyle::Ordered === $block->style(),
-                'items' => array_map(self::runs(...), $block->items()),
+                'items' => array_map($runs, $block->items()),
             ]),
             $block instanceof Callout => new PageComponent('Shared:ContentCallout', [
                 'variant' => $block->variant()->value,
-                'paragraphs' => array_map(self::runs(...), $block->paragraphs()),
+                'paragraphs' => array_map($runs, $block->paragraphs()),
             ]),
             $block instanceof Table => new PageComponent('Shared:ContentTable', [
-                'header' => array_map(self::runs(...), $block->header()),
-                'rows' => array_map(static fn (array $row): array => array_map(self::runs(...), $row), $block->rows()),
+                'header' => array_map($runs, $block->header()),
+                'rows' => array_map(static fn (array $row): array => array_map($runs, $row), $block->rows()),
             ]),
             default => throw new \LogicException(\sprintf('No component paints %s blocks.', $block->type()->value)),
         };
     }
 
     /**
-     * @return list<array{text: string, bold: bool}>
+     * The text in stretches, each linking one page or none: runs in a row
+     * that link the same page form one stretch, so a link partly bold is
+     * still one link. A run whose page isn't on the site links none.
+     *
+     * @param array<string, string> $links
+     *
+     * @return list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>
      */
-    private static function runs(InlineText $text): array
+    private static function runs(InlineText $text, array $links): array
     {
-        return array_map(
-            static fn (TextRun $run): array => ['text' => $run->text(), 'bold' => \in_array(Mark::Bold, $run->marks(), true)],
-            $text->runs(),
-        );
+        $stretches = [];
+        $last = null;
+
+        foreach ($text->runs() as $run) {
+            $href = null === $run->pageId() ? null : ($links[$run->pageId()] ?? null);
+            $piece = ['text' => $run->text(), 'bold' => \in_array(Mark::Bold, $run->marks(), true)];
+
+            if (null !== $last && $stretches[$last]['href'] === $href) {
+                $stretches[$last]['runs'][] = $piece;
+
+                continue;
+            }
+
+            $stretches[] = ['href' => $href, 'runs' => [$piece]];
+            $last = array_key_last($stretches);
+        }
+
+        return $stretches;
     }
 }

@@ -7,6 +7,7 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageUsage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,10 +18,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PageDeleteController extends AbstractController
 {
     #[Route('/pages/{id}/delete', name: 'cms_pages_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, PageRepository $pageRepository, EventBus $eventBus, PageUsage $pageUsage): Response
     {
         try {
-            new PageDeleter($id)($pageRepository, $eventBus);
+            new PageDeleter($id)($pageRepository, $eventBus, $pageUsage);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

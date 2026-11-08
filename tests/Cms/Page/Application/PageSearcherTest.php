@@ -6,6 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PageSearcher;
+use Cms\Page\Domain\IdFilter;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageIdMother;
@@ -16,6 +17,7 @@ use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
+use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
 use Shared\Tests\Domain\RichText\RichTextMother;
@@ -45,32 +47,40 @@ final class PageSearcherTest extends TestCase
         $pageSize = PageSearcher::PAGE_SIZE;
 
         yield 'no title, first page by default' => [
-            new PageSearcher('', 1),
+            new PageSearcher('', 1, except: null),
             new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'blank title does not filter' => [
-            new PageSearcher('   ', 1),
+            new PageSearcher('   ', 1, except: null),
             new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'title filters by its words' => [
-            new PageSearcher('guía familias', 1),
+            new PageSearcher('guía familias', 1, except: null),
             new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía familias')], order: $newestFirst, offset: 0),
         ];
         yield 'title is trimmed before filtering' => [
-            new PageSearcher('  guía  ', 1),
+            new PageSearcher('  guía  ', 1, except: null),
             new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst, offset: 0),
         ];
         yield 'second page skips the first one' => [
-            new PageSearcher('', 2),
+            new PageSearcher('', 2, except: null),
             new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: $pageSize),
         ];
         yield 'later pages skip every previous one' => [
-            new PageSearcher('', 5),
+            new PageSearcher('', 5, except: null),
             new Criteria(limit: $pageSize, filters: [], order: $newestFirst, offset: 4 * $pageSize),
         ];
         yield 'title and page together' => [
-            new PageSearcher('guía', 3),
+            new PageSearcher('guía', 3, except: null),
             new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía')], order: $newestFirst, offset: 2 * $pageSize),
+        ];
+        yield 'one page left out' => [
+            new PageSearcher('', 1, except: PageIdMother::DEFAULT_VALUE),
+            new Criteria(limit: $pageSize, filters: [IdFilter::isNot(PageIdMother::create(PageIdMother::DEFAULT_VALUE))], order: $newestFirst, offset: 0),
+        ];
+        yield 'title and a page left out together' => [
+            new PageSearcher('guía', 1, except: PageIdMother::DEFAULT_VALUE),
+            new Criteria(limit: $pageSize, filters: [TitleFilter::matches('guía'), IdFilter::isNot(PageIdMother::create(PageIdMother::DEFAULT_VALUE))], order: $newestFirst, offset: 0),
         ];
     }
 
@@ -89,7 +99,7 @@ final class PageSearcherTest extends TestCase
                 new PageResponse($guideId, 'Guía rápida', 'guia-rapida', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: true),
                 new PageResponse($aboutId, 'Sobre mí', 'sobre-mi', type: 'standard', home: false, unique: false, content: RichTextMother::EMPTY, metaDescription: '', robots: 'index,follow', status: 'draft', changed: false, publishedSlug: null, createdAt: ClockMother::now(), updatedAt: ClockMother::now(), hasSomethingToPublish: true, canBeUnpublished: false, canBeDeleted: true),
             ],
-            (new PageSearcher('', 1))($repository),
+            (new PageSearcher('', 1, except: null))($repository),
         );
     }
 
@@ -98,7 +108,7 @@ final class PageSearcherTest extends TestCase
         $repository = self::createStub(PageRepository::class);
         $repository->method('matching')->willReturn([]);
 
-        self::assertSame([], (new PageSearcher('inexistente', 1))($repository));
+        self::assertSame([], (new PageSearcher('inexistente', 1, except: null))($repository));
     }
 
     #[DataProvider('invalidPages')]
@@ -109,7 +119,7 @@ final class PageSearcherTest extends TestCase
 
         $this->expectExceptionObject(InvalidCriteria::nonPositivePage($page));
 
-        (new PageSearcher('', $page))($repository);
+        (new PageSearcher('', $page, except: null))($repository);
     }
 
     /**
@@ -123,8 +133,18 @@ final class PageSearcherTest extends TestCase
 
     public function testItTellsWhichPageNumberIsRefused(): void
     {
-        self::assertTells('errors.criteria.non_positive_page', ['%page%' => 0], static fn () => (new PageSearcher('', 0))(
+        self::assertTells('errors.criteria.non_positive_page', ['%page%' => 0], static fn () => (new PageSearcher('', 0, except: null))(
             self::createStub(PageRepository::class),
         ));
+    }
+
+    public function testItRejectsLeavingOutAnIdThatIsNotAUuid(): void
+    {
+        $repository = $this->createMock(PageRepository::class);
+        $repository->expects(self::never())->method('matching');
+
+        $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
+
+        (new PageSearcher('', 1, except: 'page-id'))($repository);
     }
 }

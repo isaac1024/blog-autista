@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Persistence;
 
+use Cms\Page\Domain\IdFilter;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
@@ -318,6 +319,31 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     }
 
     /**
+     * In whatever order; an id of no page is left out.
+     */
+    public function testItFindsThePagesWithTheGivenIds(): void
+    {
+        $about = PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi');
+        $contact = PageMother::create(id: PageId::random()->value(), title: 'Contacto', slug: 'contacto');
+        $repository = $this->repository();
+        $repository->save($about);
+        $repository->save($contact);
+        $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Aviso legal', slug: 'aviso-legal'));
+        $this->entityManager()->clear();
+
+        $found = $repository->findByIds([$contact->id(), PageId::random(), $about->id()]);
+
+        self::assertEqualsCanonicalizing([$about, $contact], $found);
+    }
+
+    public function testItFindsNoPageWithoutIds(): void
+    {
+        $this->repository()->save(PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
+
+        self::assertSame([], $this->repository()->findByIds([]));
+    }
+
+    /**
      * The only test that commits its data, which full-text search needs: it
      * saves the pages once and checks every kind of criteria against them, so
      * the suite pays for one committed fixture instead of one per case.
@@ -389,6 +415,12 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
             array_reverse($alphabetical),
         ];
         yield 'sorted by slug' => [new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('slug', OrderDirection::Ascending), offset: 0), $oldestFirst];
+
+        // Leaving a page out.
+        yield 'every page but one' => [
+            new Criteria(limit: Criteria::MAX_LIMIT, filters: [IdFilter::isNot(new PageId('01a19e72-b07f-7d78-889c-fa4a14a4fb04'))], order: $byId, offset: 0),
+            array_values(array_diff($oldestFirst, ['Guía rápida de autismo'])),
+        ];
 
         // Pagination.
         yield 'first page' => [new Criteria(limit: 3, filters: [], order: $byId, offset: 0), \array_slice($oldestFirst, 0, 3)];
