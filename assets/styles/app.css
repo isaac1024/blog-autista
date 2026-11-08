@@ -340,7 +340,7 @@
         }
 
         & th {
-            background-color: var(--color-bg);
+            border-bottom-width: 4px;
             font-weight: 700;
         }
     }
