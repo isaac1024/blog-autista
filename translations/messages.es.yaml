@@ -87,6 +87,7 @@ cms:
         edit:
             title: 'Editar página'
             dates: 'Creada el %created% · Modificada el %updated%'
+            view_on_site: 'Ver en la web'
             title_label: 'Título'
             slug_label: 'Dirección web (slug)'
             slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sobre-mi. Puedes dejarla vacía hasta publicar la página.'

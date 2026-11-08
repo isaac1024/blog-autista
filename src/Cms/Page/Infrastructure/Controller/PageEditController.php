@@ -24,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -121,15 +122,25 @@ final class PageEditController extends AbstractController
     }
 
     /**
-     * What is done to the page apart from editing it, each confirmed first and
-     * offered only when the page allows it: discarding its unpublished
-     * changes, taking it off the site, or deleting it.
+     * What is done to the page apart from editing it, offered only when the
+     * page allows it: seeing it on the site, and, each confirmed first,
+     * discarding its unpublished changes, taking it off the site, or deleting
+     * it.
      *
      * @return list<PageComponent>
      */
     private function pageActions(PageResponse $page): array
     {
         $actions = [];
+
+        // The page as the site serves it, at the address it has there, which
+        // may differ from the one being edited.
+        if (PageStatus::Published->value === $page->status) {
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->publishedUrl($page),
+                'label' => $this->translator->trans('cms.pages.edit.view_on_site'),
+            ]);
+        }
 
         if ($page->changed) {
             $actions[] = $this->confirmModal($page, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_pages_discard', 'secondary');
@@ -144,6 +155,17 @@ final class PageEditController extends AbstractController
         }
 
         return $actions;
+    }
+
+    /**
+     * Where the site serves the page: the home page at its root, any other at
+     * the slug it was published with.
+     */
+    private function publishedUrl(PageResponse $page): string
+    {
+        return $page->home
+            ? $this->generateUrl('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
+            : $this->generateUrl('web_page', ['slug' => $page->publishedSlug], UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     /**

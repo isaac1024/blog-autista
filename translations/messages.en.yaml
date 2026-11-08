@@ -87,6 +87,7 @@ cms:
         edit:
             title: 'Edit page'
             dates: 'Created on %created% · Changed on %updated%'
+            view_on_site: 'View on the site'
             title_label: 'Title'
             home_address: 'The home page is served at the root of the site (/), so it has no address of its own.'
             content_title: 'Content'
