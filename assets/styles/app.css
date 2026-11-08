@@ -502,6 +502,40 @@
         font-weight: 700;
     }
 
+    /* A widget in the editor: what kind it is, then its page as the CMS knows it now. */
+    .rich-text-widget {
+        display: grid;
+        gap: 0.375rem;
+        margin: 1rem 0;
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-card);
+        padding: 0.75rem;
+        background-color: var(--color-bg);
+        font-size: 1rem;
+
+        &.ProseMirror-selectednode {
+            outline: 3px solid var(--color-focus);
+            outline-offset: 3px;
+        }
+
+        /* Selected as a whole, its outline tells it: its texts stay as they are. */
+        & *::selection {
+            background-color: transparent;
+            color: var(--color-text);
+        }
+    }
+
+    .rich-text-widget-label {
+        color: var(--color-muted);
+        font-weight: 700;
+    }
+
+    .rich-text-widget-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
     .rich-text-image-note,
     .rich-text-page-note {
         color: var(--color-muted);

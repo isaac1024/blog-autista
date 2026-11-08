@@ -209,6 +209,8 @@ cms:
         submit: 'Sign in'
 
 content:
+    related_page:
+        label: 'Related content'
     callout:
         note: 'Note'
         important: 'Important'
@@ -355,6 +357,16 @@ ui:
             missing: 'This image no longer exists in the library.'
             off_site: 'It won’t show on the site until you publish it.'
             embedded: 'Image:'
+        widget:
+            insert: 'Related page'
+            title: 'Insert a related page'
+            label: 'Related content:'
+            result: 'One page. Pick it to show it as related content.'
+            results: '%count% pages. Pick one to show it as related content.'
+            loading: 'Loading the page…'
+            missing: 'This page no longer exists.'
+            off_site: 'It won’t show on the site until you publish the page.'
+            unknown: 'The page could not be checked.'
         undo: 'Undo'
         redo: 'Redo'
 errors:

@@ -13,4 +13,5 @@ enum BlockType: string
     case Callout = 'callout';
     case Table = 'table';
     case Image = 'image';
+    case Widget = 'widget';
 }

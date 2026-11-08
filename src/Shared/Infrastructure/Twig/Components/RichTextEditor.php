@@ -67,8 +67,8 @@ final class RichTextEditor
     public ?string $imageLookupUrl = null;
 
     /**
-     * Where the editor searches pages to link and looks up those already
-     * linked, as JSON; null when it links none.
+     * Where the editor searches pages to link, or to show in a widget, and
+     * looks up those already there, as JSON; null when it links none.
      */
     public ?string $pageSearchUrl = null;
 
@@ -179,6 +179,23 @@ final class RichTextEditor
     public function allowsLinks(): bool
     {
         return \in_array('link', $this->features['marks'], true) && null !== $this->pageSearchUrl && null !== $this->pageLookupUrl;
+    }
+
+    /**
+     * Whether widgets can show pages: the module allows them, and the editor
+     * knows where to find the pages.
+     */
+    public function allowsWidgets(): bool
+    {
+        return $this->allows('widget') && null !== $this->pageSearchUrl && null !== $this->pageLookupUrl;
+    }
+
+    /**
+     * Whether the editor picks pages, to link text or to show in a widget.
+     */
+    public function picksPages(): bool
+    {
+        return $this->allowsLinks() || $this->allowsWidgets();
     }
 
     public function allowsQuotes(): bool

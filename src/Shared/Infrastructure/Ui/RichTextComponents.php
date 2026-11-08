@@ -16,6 +16,8 @@ use Shared\Domain\RichText\Paragraph;
 use Shared\Domain\RichText\Quote;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\Table;
+use Shared\Domain\RichText\Widget;
+use Shared\Domain\RichText\WidgetKind;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 
 /**
@@ -26,16 +28,18 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 final readonly class RichTextComponents
 {
     /**
-     * Embedded images are painted from what the caller knows of them, keyed
-     * by id; one it doesn't give, such as one off the site, isn't painted.
+     * Embedded images and the pages of widgets are painted from what the
+     * caller knows of them, keyed by id; one it doesn't give, such as one off
+     * the site, isn't painted, and text linking it stays plain.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
-     * @param array<string, string>                                                                                      $links  current addresses of published link targets, keyed by page id
+     * @param array<string, array{url: string, title: string}>                                                           $pages  published pages linked, with their current address, keyed by id
      *
      * @return list<PageComponent>
      */
-    public function __invoke(RichText $content, array $images, array $links): array
+    public function __invoke(RichText $content, array $images, array $pages): array
     {
+        $links = array_map(static fn (array $page): string => $page['url'], $pages);
         $components = [];
 
         foreach ($content->blocks() as $block) {
@@ -49,10 +53,33 @@ final readonly class RichTextComponents
                 continue;
             }
 
+            if ($block instanceof Widget) {
+                $page = $pages[$block->pageId()] ?? null;
+
+                if (null !== $page) {
+                    $components[] = self::widget($block->kind(), $page);
+                }
+
+                continue;
+            }
+
             $components[] = self::block($block, $links);
         }
 
         return $components;
+    }
+
+    /**
+     * @param array{url: string, title: string} $page
+     */
+    private static function widget(WidgetKind $kind, array $page): PageComponent
+    {
+        return match ($kind) {
+            WidgetKind::RelatedPage => new PageComponent('Shared:ContentRelatedPage', [
+                'title' => $page['title'],
+                'url' => $page['url'],
+            ]),
+        };
     }
 
     /**

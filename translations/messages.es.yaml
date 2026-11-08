@@ -209,6 +209,8 @@ cms:
         submit: 'Entrar'
 
 content:
+    related_page:
+        label: 'Contenido relacionado'
     callout:
         note: 'Nota'
         important: 'Importante'
@@ -355,6 +357,16 @@ ui:
             missing: 'Esta imagen ya no existe en la biblioteca.'
             off_site: 'No se verá en la web hasta que la publiques.'
             embedded: 'Imagen:'
+        widget:
+            insert: 'Página relacionada'
+            title: 'Insertar una página relacionada'
+            label: 'Contenido relacionado:'
+            result: 'Una página. Elígela para mostrarla como contenido relacionado.'
+            results: '%count% páginas. Elige una para mostrarla como contenido relacionado.'
+            loading: 'Cargando la página…'
+            missing: 'Esta página ya no existe.'
+            off_site: 'No se verá en la web hasta que publiques la página.'
+            unknown: 'No se ha podido comprobar la página.'
         undo: 'Deshacer'
         redo: 'Rehacer'
 errors:

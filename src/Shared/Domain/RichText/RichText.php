@@ -88,7 +88,8 @@ final readonly class RichText
     }
 
     /**
-     * Ids of the pages it links to, in order, as often as it links to them.
+     * Ids of the pages it links to, from its text and its widgets, in order,
+     * as often as it links to them.
      *
      * @return list<string>
      */
@@ -97,6 +98,10 @@ final readonly class RichText
         $ids = [];
 
         foreach ($this->blocks as $block) {
+            if ($block instanceof Widget) {
+                $ids[] = $block->pageId();
+            }
+
             foreach ($block->texts() as $text) {
                 foreach ($text->runs() as $run) {
                     if (null !== $run->pageId()) {
@@ -131,6 +136,7 @@ final readonly class RichText
             BlockType::Callout => Callout::fromArray($data, $path),
             BlockType::Table => Table::fromArray($data, $path),
             BlockType::Image => EmbeddedImage::fromArray($data, $path),
+            BlockType::Widget => Widget::fromArray($data, $path),
         };
     }
 }

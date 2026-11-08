@@ -29,7 +29,7 @@ final class RichTextComponentsTest extends TestCase
             ]],
         ]);
 
-        $components = new RichTextComponents()($content, [], [self::PUBLISHED => '/sobre-mi.html']);
+        $components = new RichTextComponents()($content, [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']]);
 
         self::assertSame([self::PUBLISHED, self::MISSING], $content->pageIds());
         self::assertSame('Shared:ContentParagraph', $components[0]->name);
@@ -54,7 +54,7 @@ final class RichTextComponentsTest extends TestCase
         $components = new RichTextComponents()(
             RichText::fromArray(['version' => 1, 'blocks' => [$block]]),
             [],
-            [self::PUBLISHED => '/sobre-mi.html'],
+            [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']],
         );
 
         $runs = $components[0]->props;
@@ -136,7 +136,7 @@ final class RichTextComponentsTest extends TestCase
         $components = new RichTextComponents()(
             RichText::fromArray(['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => $text]]]),
             [],
-            [self::PUBLISHED => '/sobre-mi.html', self::OTHER_PUBLISHED => '/contacto.html'],
+            [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí'], self::OTHER_PUBLISHED => ['url' => '/contacto.html', 'title' => 'Contacto']],
         );
 
         self::assertSame($expected, $components[0]->props['text']);

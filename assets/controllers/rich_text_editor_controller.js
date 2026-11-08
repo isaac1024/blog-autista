@@ -432,6 +432,99 @@ const EmbeddedImage = Node.create({
 });
 
 /**
+ * Draws a widget as the CMS knows its page now: its title and where it
+ * stands for the site, after what kind of widget it is, all in words.
+ */
+const drawWidget = (element, { state, page }, labels) => {
+    element.replaceChildren();
+
+    const label = document.createElement('p');
+    label.className = 'rich-text-widget-label';
+    label.textContent = labels.label ?? '';
+    element.append(label);
+
+    if (page === undefined) {
+        const note = document.createElement('p');
+        note.className = 'rich-text-page-note';
+        note.textContent = labels[state] ?? '';
+        element.append(note);
+
+        return;
+    }
+
+    const title = document.createElement('p');
+    title.className = 'rich-text-widget-title';
+    title.textContent = page.title;
+
+    const status = document.createElement('span');
+    status.className = 'rich-text-page-status';
+    status.textContent = page.status;
+
+    element.append(title, status);
+
+    if (state === 'offSite') {
+        const offSite = document.createElement('p');
+        offSite.className = 'rich-text-page-note';
+        offSite.textContent = labels.offSite ?? '';
+        element.append(offSite);
+    }
+};
+
+/**
+ * A widget: for now, a page of the blog shown as a card of related content.
+ * Its page is kept by its id alone, as a link's is, so the editor shows its
+ * latest title and status, and the site its current address.
+ */
+const Widget = Node.create({
+    name: 'widget',
+    group: 'block',
+    atom: true,
+    selectable: true,
+    draggable: false,
+
+    addOptions() {
+        return { describe: () => ({ state: 'loading', page: undefined }), views: new Set(), labels: {} };
+    },
+
+    addAttributes() {
+        return {
+            kind: {
+                default: 'related_page',
+                parseHTML: (element) => element.getAttribute('data-widget-kind'),
+                renderHTML: (attributes) => ({ 'data-widget-kind': attributes.kind }),
+            },
+            id: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('data-page-id'),
+                renderHTML: (attributes) => ({ 'data-page-id': attributes.id }),
+            },
+        };
+    },
+
+    parseHTML() {
+        return [{ tag: 'div[data-widget-kind]' }];
+    },
+
+    renderHTML({ HTMLAttributes }) {
+        return ['div', mergeAttributes(HTMLAttributes)];
+    },
+
+    addNodeView() {
+        return ({ node }) => {
+            const element = document.createElement('div');
+            element.className = 'rich-text-widget';
+            element.setAttribute('data-widget-kind', node.attrs.kind);
+            const draw = () => drawWidget(element, this.options.describe(node.attrs.id), this.options.labels);
+
+            draw();
+            this.options.views.add(draw);
+
+            return { dom: element, destroy: () => this.options.views.delete(draw) };
+        };
+    },
+});
+
+/**
  * An internal link to a page, kept by its id alone. It has no href in the CMS:
  * the editor must not navigate away, and the site resolves the current address.
  *
@@ -539,7 +632,7 @@ export default class extends Controller {
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
         'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
-        'pageDialog', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
+        'pageDialog', 'pageDialogTitle', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
     ];
 
     static values = {
@@ -564,6 +657,7 @@ export default class extends Controller {
         pageSearchUrl: String,
         pageLookupUrl: String,
         pageLabels: Object,
+        widgetLabels: Object,
     };
 
     connect() {
@@ -581,6 +675,9 @@ export default class extends Controller {
         this.pagesLookingUp = new Set();
         this.pagesUnknown = new Set();
         this.linkRange = null;
+        // What the page dialog picks a page for: 'link' or 'widget'.
+        this.pagePurpose = 'link';
+        this.widgetViews = new Set();
         // Each search outdates the ones before: only the latest is shown.
         this.pageSearch = { request: 0, page: 1, count: 0 };
         this.editor = new Editor({
@@ -727,7 +824,7 @@ export default class extends Controller {
 
     /* Page links: applied to the selected text, with their targets looked up by id. */
 
-    /** Looks up the pages the document links to that the editor doesn't know yet. */
+    /** Looks up the pages the document links to, or shows in widgets, that the editor doesn't know yet. */
     async lookUpPages() {
         if (!this.hasPageLookupUrlValue) {
             return;
@@ -735,12 +832,16 @@ export default class extends Controller {
 
         const ids = new Set();
 
-        this.editor.state.doc.descendants((node) => {
-            for (const mark of node.marks) {
-                const { id } = mark.attrs;
+        const unknown = (id) => id && this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id);
 
-                if (mark.type.name === 'link' && id && this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id)) {
-                    ids.add(id);
+        this.editor.state.doc.descendants((node) => {
+            if (node.type.name === 'widget' && unknown(node.attrs.id)) {
+                ids.add(node.attrs.id);
+            }
+
+            for (const mark of node.marks) {
+                if (mark.type.name === 'link' && unknown(mark.attrs.id)) {
+                    ids.add(mark.attrs.id);
                 }
             }
         });
@@ -809,25 +910,40 @@ export default class extends Controller {
         return state === 'offSite' ? `${target} ${labels.offSite ?? ''}` : target;
     }
 
-    /** Redraws the decorations of the links, and the tools of the one under the cursor. */
+    /** How the page of a widget stands, and the page itself once known. */
+    describeWidget(id) {
+        return { state: this.pageState(id), page: this.pages.get(id) };
+    }
+
+    /** Redraws the widgets, the decorations of the links, and the tools of the one under the cursor. */
     redrawPageLinks() {
         if (this.editor.isDestroyed) {
             return;
+        }
+
+        for (const draw of this.widgetViews) {
+            draw();
         }
 
         // A transaction that changes nothing but redraws, which also refreshes the controls.
         this.editor.view.dispatch(this.editor.state.tr.setMeta(pageLinksKey, true).setMeta('addToHistory', false));
     }
 
-    openPageDialog() {
-        const { selection } = this.editor.state;
+    /** Picks a page to link the selected text to, or, for 'widget', to show in a new widget. */
+    openPageDialog(purpose = 'link') {
+        if (purpose === 'link') {
+            const { selection } = this.editor.state;
 
-        if (!(selection instanceof TextSelection) || selection.empty) {
-            return;
+            if (!(selection instanceof TextSelection) || selection.empty) {
+                return;
+            }
+
+            // The dialog takes the focus; the range keeps the selected text intact.
+            this.linkRange = { from: selection.from, to: selection.to };
         }
 
-        // The dialog takes the focus; the range keeps the selected text intact.
-        this.linkRange = { from: selection.from, to: selection.to };
+        this.pagePurpose = purpose;
+        this.pageDialogTitleTarget.textContent = this.pagePurposeLabels().title ?? '';
         this.pageDialogTarget.showModal();
         this.pageSearchTarget.focus();
         this.searchPages();
@@ -868,7 +984,8 @@ export default class extends Controller {
             return;
         }
 
-        const { none, result: one, results, error } = this.pageLabelsValue;
+        const { none, error } = this.pageLabelsValue;
+        const { result: one, results } = this.pagePurposeLabels();
 
         if (result === null) {
             this.pageStatusTarget.textContent = error ?? '';
@@ -896,7 +1013,7 @@ export default class extends Controller {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'rich-text-page-option';
-        button.addEventListener('click', () => this.linkPage(page));
+        button.addEventListener('click', () => (this.pagePurpose === 'widget' ? this.embedWidget(page) : this.linkPage(page)));
 
         const text = document.createElement('span');
         text.className = 'rich-text-page-option-text';
@@ -911,7 +1028,7 @@ export default class extends Controller {
         if (!page.published) {
             const offSite = document.createElement('span');
             offSite.className = 'rich-text-page-note';
-            offSite.textContent = this.pageLabelsValue.offSite;
+            offSite.textContent = this.pagePurposeLabels().offSite ?? '';
             text.append(offSite);
         }
 
@@ -932,6 +1049,21 @@ export default class extends Controller {
         this.pageDialogTarget.close();
         this.editor.chain().focus().setTextSelection(this.linkRange).setMark('link', { id: page.id }).run();
         this.linkRange = null;
+        this.redrawPageLinks();
+    }
+
+    /** The labels of the dialog that depend on what it picks a page for. */
+    pagePurposeLabels() {
+        return this.pagePurpose === 'widget' ? this.widgetLabelsValue : this.pageLabelsValue;
+    }
+
+    /** Shows the page picked in a new widget, where the cursor was. */
+    embedWidget(page) {
+        this.pages.set(page.id, page);
+        this.missingPages.delete(page.id);
+        this.pagesUnknown.delete(page.id);
+        this.pageDialogTarget.close();
+        this.editor.chain().focus().insertContent({ type: 'widget', attrs: { kind: 'related_page', id: page.id } }).run();
         this.redrawPageLinks();
     }
 
@@ -985,6 +1117,13 @@ export default class extends Controller {
         // Embedding an image starts by picking it.
         if (command === 'insertImage') {
             this.openImageDialog();
+
+            return;
+        }
+
+        // A widget starts by picking the page it shows.
+        if (command === 'insertWidget') {
+            this.openPageDialog('widget');
 
             return;
         }
@@ -1126,8 +1265,8 @@ export default class extends Controller {
                 && this.editor.can().setMark('link', { id: 'page' });
         }
 
-        // Images go between blocks, never inside a table.
-        if (command === 'insertImage') {
+        // Images and widgets go between blocks, never inside a table.
+        if (command === 'insertImage' || command === 'insertWidget') {
             return !this.editor.isActive('table');
         }
 
@@ -1185,6 +1324,13 @@ export default class extends Controller {
         if (block === 'image') {
             chain.run();
             this.openImageDialog();
+
+            return;
+        }
+
+        if (block === 'widget') {
+            chain.run();
+            this.openPageDialog('widget');
 
             return;
         }
@@ -1304,6 +1450,14 @@ export default class extends Controller {
 
             if (normalise(label).includes(normalise(query))) {
                 items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'image') });
+            }
+        }
+
+        if (this.hasWidgetLabelsValue && this.featuresValue.blocks.includes('widget')) {
+            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertWidget').dataset.label;
+
+            if (normalise(label).includes(normalise(query))) {
+                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'widget') });
             }
         }
 
@@ -1581,6 +1735,14 @@ export default class extends Controller {
                 describe: (id) => this.describeImage(id),
                 views: this.imageViews,
                 labels: this.imageLabelsValue,
+            }));
+        }
+
+        if (blocks.includes('widget') && this.hasWidgetLabelsValue && this.hasPageLookupUrlValue) {
+            extensions.push(Widget.configure({
+                describe: (id) => this.describeWidget(id),
+                views: this.widgetViews,
+                labels: this.widgetLabelsValue,
             }));
         }
 
