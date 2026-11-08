@@ -56,8 +56,7 @@
     --color-accent-strong: #4e3176;
     /*
      * Label and tint of each kind of callout; the label keeps 7:1 on its tint.
-     * The edge comes from a stretch of the spectrum: the cool end for a note,
-     * the warmer one for what the reader should not miss.
+     * The label colours its edge and its icon too.
      */
     --color-note: #2c5080;
     --color-note-soft: #edf2f8;
@@ -74,17 +73,6 @@
     --color-selection-bg: #614092;
     --color-selection-text: #fff;
 
-    /*
-     * Muted spectrum of colours. Purely decorative: low saturation to avoid
-     * sensory overload, and never the only carrier of meaning.
-     */
-    --color-spectrum-1: #614092;
-    --color-spectrum-2: #3e6ea6;
-    --color-spectrum-3: #2e8277;
-    --color-spectrum-4: #74943f;
-    --color-spectrum-5: #cc9433;
-    --color-spectrum-6: #c0604f;
-
     /* Square corners: shapes stay crisp and plain. */
     --radius-card: 0;
     --radius-control: 0;
@@ -97,34 +85,21 @@
     --tracking-base: 0.01em;
 }
 
-@utility bg-spectrum {
-    background-image: linear-gradient(
-        90deg,
-        var(--color-spectrum-1),
-        var(--color-spectrum-2),
-        var(--color-spectrum-3),
-        var(--color-spectrum-4),
-        var(--color-spectrum-5),
-        var(--color-spectrum-6)
-    );
-}
-
 @layer base {
     /*
-     * Icons of the callouts, painted with the same stretch of the spectrum as
-     * their edge. A background image can't take a colour from a token, so
-     * each theme has its own.
+     * Icons of the callouts, in the colour of their label. A background image
+     * can't take a colour from a token, so each theme has its own.
      */
     :root {
         color-scheme: light dark;
-        --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23614092'/%3E%3Cstop offset='1' stop-color='%232e8277'/%3E%3C/linearGradient%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
-        --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23cc9433'/%3E%3Cstop offset='1' stop-color='%23c0604f'/%3E%3C/linearGradient%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
+        --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c5080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
+        --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23863526' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23c9b6ea'/%3E%3Cstop offset='1' stop-color='%238ccbc1'/%3E%3C/linearGradient%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
-            --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='url(%23g)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='3' y1='3' x2='21' y2='21'%3E%3Cstop stop-color='%23e8c483'/%3E%3Cstop offset='1' stop-color='%23eba597'/%3E%3C/linearGradient%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
+            --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9c6ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
+            --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0b4a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
 
             --color-note: #a9c6ea;
             --color-note-soft: #1c232d;
@@ -151,13 +126,6 @@
             --color-focus: #c9b6ea;
             --color-selection-bg: #c9b6ea;
             --color-selection-text: #17151a;
-
-            --color-spectrum-1: #c9b6ea;
-            --color-spectrum-2: #9ebde3;
-            --color-spectrum-3: #8ccbc1;
-            --color-spectrum-4: #b8d18e;
-            --color-spectrum-5: #e8c483;
-            --color-spectrum-6: #eba597;
 
             --shadow-card: 0 24px 60px rgb(5 8 12 / 50%);
             --shadow-panel: none;
@@ -299,24 +267,21 @@
         }
 
         /*
-         * Square, like the other blocks of the text. The edge is drawn under a
-         * transparent border, which forced colours turn into a visible line.
+         * Square, like the other blocks of the text, with an edge in the
+         * colour of its label.
          */
         & [data-callout] {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            border-left: 6px solid transparent;
-            background:
-                linear-gradient(var(--color-spectrum-1), var(--color-spectrum-2), var(--color-spectrum-3)) left / 6px 100% no-repeat border-box,
-                var(--color-note-soft);
+            border-left: 6px solid var(--color-note);
+            background-color: var(--color-note-soft);
             padding: 1rem 1rem 1rem 1.125rem;
         }
 
         & [data-callout][data-variant="important"] {
-            background:
-                linear-gradient(var(--color-spectrum-5), var(--color-spectrum-6)) left / 6px 100% no-repeat border-box,
-                var(--color-important-soft);
+            border-left-color: var(--color-important);
+            background-color: var(--color-important-soft);
         }
 
         /*
