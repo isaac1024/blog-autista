@@ -24,8 +24,8 @@ final class SettingsUpdateController extends AbstractController
                 $request->request->getString('name'),
                 $request->request->getString('default_image'),
                 // Each entry posts its fields under its position, in order.
-                array_values($request->request->all('main_menu')),
-                array_values($request->request->all('footer_menu')),
+                $request->request->all('main_menu'),
+                $request->request->all('footer_menu'),
             )($settingsRepository, $eventBus);
         } catch (SettingsNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);

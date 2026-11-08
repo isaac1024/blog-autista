@@ -12,6 +12,7 @@ use Web\Page\Application\PageResponse;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
+use Web\Page\Domain\Robots;
 use Web\Page\Infrastructure\Controller\PublishedPage;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
@@ -72,5 +73,24 @@ final class PublishedPageTest extends TestCase
             ['href' => '/', 'runs' => [['text' => 'Portada', 'bold' => false]]],
             ['href' => null, 'runs' => [['text' => 'No publicada', 'bold' => false]]],
         ], $result->main[1]->children[0]->props['text']);
+    }
+
+    /**
+     * Search engines may show its images large, whatever it allows them.
+     */
+    public function testItLetsSearchEnginesShowItsImagesLarge(): void
+    {
+        $urlGenerator = self::createStub(UrlGeneratorInterface::class);
+        $urlGenerator->method('generate')->willReturn('/sobre-mi.html');
+        $imageRepository = self::createStub(ImageRepository::class);
+        $imageRepository->method('findByIds')->willReturn([]);
+        $pageRepository = self::createStub(PageRepository::class);
+        $pageRepository->method('findByIds')->willReturn([]);
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository);
+        $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
+
+        $result = new PublishedPage($urlGenerator, new RichTextComponents(), $imageRepository, $pageRepository, $siteLayout)(PageResponse::fromPage($page));
+
+        self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }
 }

@@ -12,9 +12,12 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
+use Web\Settings\Domain\Settings;
+use Web\Settings\Domain\SettingsRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
+use Web\Tests\Settings\Domain\CmsSettingsPublishedMother;
 
 final class PageControllerTest extends WebTestCase
 {
@@ -47,6 +50,23 @@ final class PageControllerTest extends WebTestCase
                 ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d002'],
             ],
         ])));
+
+        $client->request('GET', self::HOST.'/sobre-mi.html');
+
+        self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * The settings on the site give the page its chrome: menus with pages on
+     * the site and off it, and a default image on the site to share.
+     */
+    public function testItServesAPageInTheChromeOfThePublishedSettings(): void
+    {
+        $client = self::createClient();
+        $image = CmsSettingsPublishedMother::IMAGE;
+        self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: $image, path: '2026/11/'.$image.'.webp')));
+        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: CmsSettingsPublishedMother::PAGE, slug: 'sobre-mi')));
+        self::getContainer()->get(SettingsRepository::class)->save(Settings::publish(CmsSettingsPublishedMother::create()));
 
         $client->request('GET', self::HOST.'/sobre-mi.html');
 

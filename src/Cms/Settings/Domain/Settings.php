@@ -140,9 +140,8 @@ final class Settings extends AggregateRoot
      */
     public function hasUnpublishedChanges(): bool
     {
-        return SettingsStatus::Published === $this->status
-            && null !== $this->published
-            && !$this->published->equals($this->version);
+        // Settings have a version published only once on the site, where they stay.
+        return null !== $this->published && !$this->published->equals($this->version);
     }
 
     /**
