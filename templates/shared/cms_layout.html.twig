@@ -10,6 +10,8 @@
     <path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z" /><path d="M14 3.5v5h5M9 13h6M9 16.5h4" />
 {% elseif name == 'images' %}
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.75" /><path d="M20.5 15.5l-5-5-9 9" />
+{% elseif name == 'settings' %}
+    <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
 {% elseif name == 'logout' %}
     <path d="M10 20.5H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4M16 16.5l4.5-4.5L16 7.5M20.5 12H9.5" />
 {% endif %}
@@ -27,6 +29,7 @@
 <ul class="m-0 flex list-none flex-col gap-1 p-0">
     <li>{{ _self.item('cms.nav.pages'|trans, path('cms_pages'), 'pages', currentRoute starts with 'cms_pages') }}</li>
     <li>{{ _self.item('cms.nav.images'|trans, path('cms_images'), 'images', currentRoute starts with 'cms_images') }}</li>
+    <li>{{ _self.item('cms.nav.settings'|trans, path('cms_settings'), 'settings', currentRoute starts with 'cms_settings') }}</li>
 </ul>
 {% endmacro %}
 
@@ -41,7 +44,7 @@
     <div class="h-1 flex-none bg-spectrum" aria-hidden="true"></div>
     <div class="flex flex-1 flex-col md:flex-row">
         <aside class="relative flex items-center justify-between gap-4 border-b border-divider bg-surface px-[clamp(1rem,4vw,1.5rem)] py-3 md:sticky md:top-0 md:h-dvh md:w-72 md:flex-none md:flex-col md:items-stretch md:justify-start md:gap-8 md:border-b-0 md:border-r md:px-4 md:py-6">
-            <twig:Shared:Brand brand="blog autista" :homeUrl="path('cms_pages')" class="px-1 text-lg md:px-3" />
+            <twig:Shared:Brand brand="CMS" :homeUrl="path('cms_pages')" class="px-1 text-lg md:px-3" />
 
             <details class="group md:hidden">
                 <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent group-open:border-accent group-open:text-accent [&::-webkit-details-marker]:hidden">

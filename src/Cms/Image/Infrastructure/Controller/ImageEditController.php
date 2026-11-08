@@ -74,7 +74,7 @@ final class ImageEditController extends AbstractController
         $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
 
         return CmsLayout::page(\sprintf(
-            '%s · blog autista',
+            '%s · CMS',
             $this->translator->trans('cms.images.edit.title'),
         ))
             ->withMain('Shared:PageTitle', [

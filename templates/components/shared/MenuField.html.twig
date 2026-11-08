@@ -1,0 +1,78 @@
+{% set button = 'min-h-11 cursor-pointer rounded-control border-2 border-border bg-surface px-3 text-[1rem] font-bold text-text hover:border-accent hover:text-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-60 forced-colors:border-[ButtonText]' %}
+{% set labels = {
+    loading: 'ui.menu_field.loading'|trans,
+    missing: 'ui.menu_field.missing'|trans,
+    unknown: 'ui.menu_field.unknown'|trans,
+    offSite: 'ui.menu_field.off_site'|trans,
+    added: 'ui.menu_field.added'|trans,
+    removed: 'ui.menu_field.removed'|trans,
+    movedUp: 'ui.menu_field.moved_up'|trans,
+    movedDown: 'ui.menu_field.moved_down'|trans,
+    full: 'ui.menu_field.full'|trans({'%max%': maxItems}),
+    repeated: 'ui.menu_field.repeated'|trans,
+    none: 'ui.menu_field.search_none'|trans,
+    result: 'ui.menu_field.search_result'|trans,
+    results: 'ui.menu_field.search_results'|trans,
+    error: 'ui.menu_field.search_error'|trans,
+} %}
+{% macro row(fieldName, fieldId, index, item, labelMaxLength, button) %}
+<li class="grid gap-3 rounded-control border-2 border-border bg-surface p-3" data-menu-field-target="row" data-page-id="{{ item.page_id }}">
+    <input type="hidden" name="{{ fieldName }}[{{ index }}][page_id]" value="{{ item.page_id }}" data-field="page_id">
+    <p class="m-0 grid gap-1" id="{{ fieldId }}-{{ index }}-page" data-field="page">
+        <span class="font-bold" data-menu-field-target="pageTitle">{{ 'ui.menu_field.loading'|trans }}</span>
+        <span class="text-[1rem] text-muted" data-menu-field-target="pageStatus"></span>
+    </p>
+    <div class="grid gap-2">
+        <label class="text-[1rem] font-bold" for="{{ fieldId }}-{{ index }}-label" data-field="label-for">{{ 'ui.menu_field.label'|trans }}</label>
+        <input class="min-h-12 w-full rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text placeholder:text-muted placeholder:opacity-100 focus-visible:border-accent" type="text" id="{{ fieldId }}-{{ index }}-label" name="{{ fieldName }}[{{ index }}][label]" value="{{ item.label }}" maxlength="{{ labelMaxLength }}" aria-describedby="{{ fieldId }}-label-hint {{ fieldId }}-{{ index }}-page" data-field="label">
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button class="{{ button }}" type="button" aria-describedby="{{ fieldId }}-{{ index }}-page" data-action="menu-field#moveUp" data-field="up">{{ 'ui.menu_field.move_up'|trans }}</button>
+        <button class="{{ button }}" type="button" aria-describedby="{{ fieldId }}-{{ index }}-page" data-action="menu-field#moveDown" data-field="down">{{ 'ui.menu_field.move_down'|trans }}</button>
+        <button class="{{ button }}" type="button" aria-describedby="{{ fieldId }}-{{ index }}-page" data-action="menu-field#remove" data-field="remove">{{ 'ui.menu_field.remove'|trans }}</button>
+    </div>
+</li>
+{% endmacro %}
+<fieldset class="m-0 grid min-w-0 gap-3 border-0 p-0" id="{{ id }}" aria-describedby="{{ id }}-hint" data-controller="menu-field" data-menu-field-name-value="{{ name }}" data-menu-field-search-url-value="{{ searchUrl }}" data-menu-field-lookup-url-value="{{ lookupUrl }}" data-menu-field-max-value="{{ maxItems }}" data-menu-field-labels-value="{{ labels|json_encode }}">
+    <legend class="mb-1 p-0 text-[1rem] font-bold">{{ label }}</legend>
+    <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ hint }}</p>
+    <p class="m-0 text-[1rem] text-muted" id="{{ id }}-label-hint" hidden>{{ 'ui.menu_field.label_hint'|trans }}</p>
+    <p class="m-0 text-[1rem]" data-menu-field-target="empty"{% if items is not empty %} hidden{% endif %}>{{ 'ui.menu_field.empty'|trans }}</p>
+    <ol class="m-0 grid list-none gap-2 p-0" aria-label="{{ label }}" data-menu-field-target="list">
+{% for item in items %}
+        {{ _self.row(name, id, loop.index0, item, labelMaxLength, button) }}
+{% endfor %}
+    </ol>
+    <template data-menu-field-target="template">
+        {{ _self.row(name, id, '__index__', {page_id: '', label: ''}, labelMaxLength, button) }}
+    </template>
+    <div class="flex flex-wrap items-center gap-3">
+        <button class="{{ button }} self-start" type="button" aria-describedby="{{ id }}-full" data-menu-field-target="add" data-action="menu-field#openDialog" hidden>{{ 'ui.menu_field.add'|trans }}</button>
+        <span class="text-[1rem] text-muted" id="{{ id }}-full" data-menu-field-target="full" hidden>{{ labels.full }}</span>
+    </div>
+    <noscript><p class="m-0 text-[1rem] text-muted">{{ 'ui.menu_field.noscript'|trans }}</p></noscript>
+
+    {# The pages to add, searched by their titles. Not a form: the field sits in the form of the settings. #}
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-dialog" aria-labelledby="{{ id }}-dialog-title" closedby="any" data-menu-field-target="dialog">
+        <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="m-0 text-xl font-bold" id="{{ id }}-dialog-title">{{ 'ui.menu_field.dialog_title'|trans({'%menu%': label}) }}</h2>
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-dialog" command="close">
+                    <span class="sr-only">{{ 'ui.close'|trans }}</span>
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-2" role="search">
+                <label class="text-[1rem] font-bold" for="{{ id }}-search">{{ 'ui.menu_field.search'|trans }}</label>
+                <div class="flex gap-2">
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-search" data-menu-field-target="search" data-action="keydown.enter->menu-field#search">
+                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="menu-field#search">{{ 'ui.menu_field.search_submit'|trans }}</button>
+                </div>
+            </div>
+            <p class="m-0 text-[1rem] text-muted" role="status" data-menu-field-target="searchStatus"></p>
+            <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.menu_field.search_list'|trans }}" data-menu-field-target="results"></ul>
+            <button class="min-h-12 cursor-pointer self-start rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-menu-field-target="more" data-action="menu-field#more" hidden>{{ 'ui.menu_field.more'|trans }}</button>
+        </div>
+    </dialog>
+    <p class="sr-only" aria-live="polite" data-menu-field-target="status"></p>
+</fieldset>

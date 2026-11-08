@@ -1,0 +1,54 @@
+{% set button = 'min-h-11 cursor-pointer rounded-control border-2 border-border bg-surface px-3 text-[1rem] font-bold text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]' %}
+{% set labels = {
+    empty: 'ui.image_field.empty'|trans,
+    loading: 'ui.image_field.loading'|trans,
+    missing: 'ui.image_field.missing'|trans,
+    unknown: 'ui.image_field.unknown'|trans,
+    offSite: 'ui.image_field.off_site'|trans,
+    chosen: 'ui.image_field.chosen'|trans,
+    removed: 'ui.image_field.removed'|trans,
+    none: 'ui.image_field.search_none'|trans,
+    result: 'ui.image_field.search_result'|trans,
+    results: 'ui.image_field.search_results'|trans,
+    error: 'ui.image_field.search_error'|trans,
+} %}
+<fieldset class="m-0 grid min-w-0 gap-3 border-0 p-0" id="{{ id }}" aria-describedby="{{ id }}-hint" data-controller="image-field" data-image-field-search-url-value="{{ searchUrl }}" data-image-field-lookup-url-value="{{ lookupUrl }}" data-image-field-labels-value="{{ labels|json_encode }}">
+    <legend class="mb-1 p-0 text-[1rem] font-bold">{{ label }}</legend>
+    <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ hint }}</p>
+    <input type="hidden" name="{{ name }}" value="{{ value }}" data-image-field-target="input">
+    <div class="flex flex-wrap items-center gap-4 rounded-control border-2 border-border bg-surface p-3" id="{{ id }}-current">
+        <img class="block aspect-video h-auto w-28 flex-none object-cover" src="" alt="" width="112" height="63" data-image-field-target="thumbnail" hidden>
+        <p class="m-0 grid min-w-0 gap-1">
+            <span class="font-bold" data-image-field-target="description">{{ value ? labels.loading : labels.empty }}</span>
+            <span class="text-[1rem] text-muted" data-image-field-target="state"></span>
+        </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <button class="{{ button }}" type="button" aria-describedby="{{ id }}-current" data-image-field-target="choose" data-action="image-field#openDialog" hidden>{{ 'ui.image_field.choose'|trans }}</button>
+        <button class="{{ button }}" type="button" aria-describedby="{{ id }}-current" data-image-field-target="remove" data-action="image-field#remove" hidden>{{ 'ui.image_field.remove'|trans }}</button>
+    </div>
+    <noscript><p class="m-0 text-[1rem] text-muted">{{ 'ui.image_field.noscript'|trans }}</p></noscript>
+
+    {# The images to pick, searched by alternative text. Not a form: the field sits in the form of the settings. #}
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-dialog" aria-labelledby="{{ id }}-dialog-title" closedby="any" data-image-field-target="dialog">
+        <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="m-0 text-xl font-bold" id="{{ id }}-dialog-title">{{ 'ui.image_field.dialog_title'|trans }}</h2>
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-dialog" command="close">
+                    <span class="sr-only">{{ 'ui.close'|trans }}</span>
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-2" role="search">
+                <label class="text-[1rem] font-bold" for="{{ id }}-search">{{ 'ui.image_field.search'|trans }}</label>
+                <div class="flex gap-2">
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-search" data-image-field-target="search" data-action="keydown.enter->image-field#search">
+                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="image-field#search">{{ 'ui.image_field.search_submit'|trans }}</button>
+                </div>
+            </div>
+            <p class="m-0 text-[1rem] text-muted" role="status" data-image-field-target="searchStatus"></p>
+            <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.image_field.search_list'|trans }}" data-image-field-target="results"></ul>
+        </div>
+    </dialog>
+    <p class="sr-only" aria-live="polite" data-image-field-target="status"></p>
+</fieldset>

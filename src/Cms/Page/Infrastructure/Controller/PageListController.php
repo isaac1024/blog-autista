@@ -58,7 +58,7 @@ final class PageListController extends AbstractController
     private function page(array $pages, string $title): Page
     {
         $page = CmsLayout::page(\sprintf(
-            '%s · blog autista',
+            '%s · CMS',
             $this->translator->trans('cms.pages.title'),
         ))
             ->withMain('Shared:PageTitle', [

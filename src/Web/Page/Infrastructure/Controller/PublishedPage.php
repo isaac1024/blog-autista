@@ -7,7 +7,6 @@ namespace Web\Page\Infrastructure\Controller;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\RichTextComponents;
-use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
@@ -15,11 +14,12 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PublishedPagesFinder;
 use Web\Page\Domain\PageRepository;
+use Web\Settings\Infrastructure\Controller\SiteLayout;
 
 /**
  * Composes a page of the site from Twig components: its title as the main
  * heading, its content below, and how it presents itself to search engines,
- * with its own address as its canonical URL.
+ * with its own address as its canonical URL, in the chrome of the site.
  */
 final readonly class PublishedPage
 {
@@ -35,6 +35,7 @@ final readonly class PublishedPage
         private RichTextComponents $richTextComponents,
         private ImageRepository $imageRepository,
         private PageRepository $pageRepository,
+        private SiteLayout $siteLayout,
     ) {}
 
     public function __invoke(PageResponse $page): Page
@@ -43,8 +44,9 @@ final readonly class PublishedPage
             ? $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
             : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return WebLayout::page($page->title)
-            ->withSearchEngineMetadata($page->metaDescription, $page->robots, $canonical)
+        // Search engines may show its images large, in results and Discover.
+        return $this->siteLayout->page($page->title)
+            ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
             ->withMain('Shared:PageTitle', ['title' => $page->title])
             ->withMain('Shared:Prose', [], ($this->richTextComponents)($page->content, $this->images($page), $this->links($page)));
     }

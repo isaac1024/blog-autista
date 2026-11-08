@@ -76,7 +76,7 @@ final class PageEditController extends AbstractController
     private function page(PageResponse $page): Page
     {
         return CmsLayout::page(\sprintf(
-            '%s · %s · blog autista',
+            '%s · %s · CMS',
             $page->title,
             $this->translator->trans('cms.pages.edit.title'),
         ))

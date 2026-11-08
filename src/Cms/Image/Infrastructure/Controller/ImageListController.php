@@ -74,7 +74,7 @@ final class ImageListController extends AbstractController
     private function page(array $images, string $alt): Page
     {
         $page = CmsLayout::page(\sprintf(
-            '%s · blog autista',
+            '%s · CMS',
             $this->translator->trans('cms.images.title'),
         ))
             ->withMain('Shared:PageTitle', [

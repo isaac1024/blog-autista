@@ -12,11 +12,16 @@ doctrine:
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
             cms_relation_id: Cms\Relation\Infrastructure\Persistence\Doctrine\RelationIdType
+            cms_settings_id: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
+            cms_settings_image_id: Cms\Settings\Infrastructure\Persistence\Doctrine\ImageIdType
+            cms_settings_menu: Cms\Settings\Infrastructure\Persistence\Doctrine\MenuType
+            cms_settings_version: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsVersionType
             cms_page_slug: Cms\Page\Infrastructure\Persistence\Doctrine\PageSlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            web_settings_id: Web\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
         # have to map to a Doctrine type when the schema is introspected. Any
         # UuidType declares the same "UUID" column, so the schema comparison
@@ -46,6 +51,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Page/Domain'
                 prefix: 'Cms\Page\Domain'
+            CmsSettings:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Settings/Domain'
+                prefix: 'Cms\Settings\Domain'
             WebImage:
                 type: attribute
                 is_bundle: false
@@ -56,6 +66,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Page/Domain'
                 prefix: 'Web\Page\Domain'
+            WebSettings:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Settings/Domain'
+                prefix: 'Web\Settings\Domain'
 
 when@test:
     doctrine:

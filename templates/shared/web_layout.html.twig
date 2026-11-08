@@ -1,9 +1,6 @@
 {% extends 'page.html.twig' %}
 
-{% block header %}
-    <twig:Shared:PageHeader brand="blog autista" :homeUrl="path('web_home')" />
-{% endblock %}
-
-{% block footer %}
-    <twig:Shared:PageFooter brand="blog autista" />
-{% endblock %}
+{#
+    The header and the footer are components of the page, which WebLayout adds
+    from what the site tells it, so this layout paints the regions as they come.
+#}

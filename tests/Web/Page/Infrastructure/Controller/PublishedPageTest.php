@@ -13,6 +13,8 @@ use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Infrastructure\Controller\PublishedPage;
+use Web\Settings\Domain\SettingsRepository;
+use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 
@@ -63,7 +65,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new RichTextComponents(), $imageRepository, $pageRepository)(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new RichTextComponents(), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
