@@ -16,7 +16,7 @@ framework:
                     max_retries: 3
                     delay: 1000
                     multiplier: 2
-            failed: 'doctrine://default?queue_name=failed&auto_setup=0'
+            failed: '%env(MESSENGER_FAILURE_TRANSPORT_DSN)%'
             sync: 'sync://'
 
         routing:

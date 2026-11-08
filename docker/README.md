@@ -36,6 +36,14 @@ The database is only reachable inside the compose network, so run Doctrine and
 Messenger commands through `docker compose exec`. To inspect it, use
 `docker compose exec database mariadb -uapp -papp app`.
 
+Compose reads `DEFAULT_URI` and `DATABASE_URL` from `.env`; values exported in
+the shell take precedence. `REDIS_URL`, `MARIADB_PASSWORD` and
+`MARIADB_ROOT_PASSWORD` can also be overridden, with local-only defaults when
+they are unset. When changing the local database password, update both
+`MARIADB_PASSWORD` and `DATABASE_URL` so the database and application agree.
+The database and user names stay `app`, as the test database initialization
+grants privileges to that user.
+
 ## Application components
 
 | Need | Package | Notes |

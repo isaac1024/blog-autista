@@ -27,6 +27,7 @@
  *   - thresholds:  per-page overrides for the Lighthouse thresholds
  *   - formFactors: per-page override of `lighthouse.formFactors`
  *
+ * Set `CMS_HOST` and `WEB_HOST` when the development contexts use custom hosts.
  * Authenticated CMS pages are included when `CMS_SESSION_COOKIE` holds a valid
  * PHPSESSID from a logged-in development session; the page editor also needs
  * `CMS_PAGE_ID`, the id of an existing page. Pages of the site are included
@@ -37,13 +38,15 @@
  * `--only=html,lighthouse` and a subset of pages with `--page=cms-login`.
  */
 
+const cmsHost = process.env.CMS_HOST ?? 'cms.blogautista.localhost';
+const webHost = process.env.WEB_HOST ?? 'www.blogautista.localhost';
 const cmsSession = process.env.CMS_SESSION_COOKIE;
 const cmsHeaders = cmsSession ? { Cookie: `PHPSESSID=${cmsSession}` } : {};
 
 const pages = [
     {
         name: 'cms-login',
-        host: 'cms.blogautista.localhost',
+        host: cmsHost,
         path: '/login',
     },
 ];
@@ -52,13 +55,13 @@ if (cmsSession) {
     pages.push(
         {
             name: 'cms-pages',
-            host: 'cms.blogautista.localhost',
+            host: cmsHost,
             path: '/pages',
             headers: cmsHeaders,
         },
         {
             name: 'cms-images',
-            host: 'cms.blogautista.localhost',
+            host: cmsHost,
             path: '/images',
             headers: cmsHeaders,
         },
@@ -69,7 +72,7 @@ if (cmsSession) {
 if (cmsSession && process.env.CMS_PAGE_ID) {
     pages.push({
         name: 'cms-page-edit',
-        host: 'cms.blogautista.localhost',
+        host: cmsHost,
         path: `/pages/${process.env.CMS_PAGE_ID}`,
         headers: cmsHeaders,
     });
@@ -80,7 +83,7 @@ if (cmsSession && process.env.CMS_PAGE_ID) {
 if (process.env.WEB_PAGE_SLUG) {
     pages.push({
         name: 'web-page',
-        host: 'www.blogautista.localhost',
+        host: webHost,
         path: `/${process.env.WEB_PAGE_SLUG}.html`,
     });
 }
@@ -88,7 +91,7 @@ if (process.env.WEB_PAGE_SLUG) {
 if (process.env.WEB_HOME) {
     pages.push({
         name: 'web-home',
-        host: 'www.blogautista.localhost',
+        host: webHost,
         path: '/',
     });
 }

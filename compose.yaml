@@ -55,11 +55,11 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     environment:
-      DEFAULT_URI: http://www.blogautista.localhost
+      DEFAULT_URI: "${DEFAULT_URI}"
       # Credentials are local-only; production values live in .env.local
       # (or the secrets vault) on the hosting account.
-      DATABASE_URL: "mysql://app:app@database:3306/app?serverVersion=11.8.9-MariaDB&charset=utf8mb4"
-      REDIS_URL: "redis://redis:6379"
+      DATABASE_URL: "${DATABASE_URL}"
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379}"
     volumes:
       - .:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zzz-app.ini:ro
@@ -87,8 +87,8 @@ services:
     user: www-data
     command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=256M", "-vv"]
     environment:
-      DATABASE_URL: "mysql://app:app@database:3306/app?serverVersion=11.8.9-MariaDB&charset=utf8mb4"
-      REDIS_URL: "redis://redis:6379"
+      DATABASE_URL: "${DATABASE_URL}"
+      REDIS_URL: "${REDIS_URL:-redis://redis:6379}"
       # Editing code rebuilds the dev cache, which can kill the worker mid
       # message; this delivers that message again within a minute, not an hour.
       MESSENGER_REDELIVER_TIMEOUT: "60"
@@ -110,8 +110,8 @@ services:
     environment:
       MARIADB_DATABASE: app
       MARIADB_USER: app
-      MARIADB_PASSWORD: app
-      MARIADB_ROOT_PASSWORD: root
+      MARIADB_PASSWORD: "${MARIADB_PASSWORD:-app}"
+      MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD:-root}"
     volumes:
       - db-data:/var/lib/mysql
       - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro

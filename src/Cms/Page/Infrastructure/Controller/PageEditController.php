@@ -23,7 +23,6 @@ use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -61,8 +60,6 @@ final class PageEditController extends AbstractController
         private readonly TiptapRichText $tiptapRichText,
         private readonly PageRole $pageRole,
         private readonly PageState $pageState,
-        #[Autowire('%env(WEB_HOST)%')]
-        private readonly string $webHost,
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -362,7 +359,7 @@ final class PageEditController extends AbstractController
      */
     private function searchEngineSection(PageResponse $page): PageComponent
     {
-        $baseUrl = 'https://'.$this->webHost;
+        $baseUrl = rtrim($this->generateUrl('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL), '/');
 
         return new PageComponent('Shared:Panel', [
             'title' => $this->translator->trans('cms.pages.edit.seo.title'),

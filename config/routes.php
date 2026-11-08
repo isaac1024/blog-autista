@@ -14,17 +14,21 @@ use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
  * the cache after changing them.
  */
 return static function (RoutingConfigurator $routes): void {
-    $host = static function (string $name, string $default): string {
+    $host = static function (string $name): string {
         $value = $_SERVER[$name] ?? $_ENV[$name] ?? getenv($name);
 
-        return \is_string($value) && '' !== $value ? $value : $default;
+        if (!\is_string($value) || '' === $value) {
+            throw new RuntimeException(\sprintf('%s must be set and not empty.', $name));
+        }
+
+        return $value;
     };
 
     // The public site is only in Spanish, whatever language the browser asks for.
     $routes->import(['path' => '../src/Web/', 'namespace' => 'Web'], 'attribute')
-        ->host($host('WEB_HOST', 'www.blogautista.localhost'))
+        ->host($host('WEB_HOST'))
         ->defaults(['_locale' => 'es']);
 
     $routes->import(['path' => '../src/Cms/', 'namespace' => 'Cms'], 'attribute')
-        ->host($host('CMS_HOST', 'cms.blogautista.localhost'));
+        ->host($host('CMS_HOST'));
 };
