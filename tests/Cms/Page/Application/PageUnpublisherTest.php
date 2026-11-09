@@ -8,6 +8,7 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUnpublisher;
 use Cms\Page\Domain\InvalidPublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\PageUnpublished;
@@ -48,7 +49,7 @@ final class PageUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        (new PageUnpublisher($id))($repository, $eventBus);
+        (new PageUnpublisher($id))($repository, $eventBus, self::createStub(PageRedirects::class));
     }
 
     /**
@@ -70,7 +71,7 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageUnpublisher($page->id()->value()))($repository, $eventBus);
+        (new PageUnpublisher($page->id()->value()))($repository, $eventBus, self::createStub(PageRedirects::class));
     }
 
     /**
@@ -100,13 +101,13 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageUnpublisher($id))($repository, self::createStub(EventBus::class));
+        (new PageUnpublisher($id))($repository, self::createStub(EventBus::class), self::createStub(PageRedirects::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class));
+        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class), self::createStub(PageRedirects::class));
     }
 }

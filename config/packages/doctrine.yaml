@@ -11,6 +11,7 @@ doctrine:
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            cms_redirect_id: Cms\Redirect\Infrastructure\Persistence\Doctrine\RedirectIdType
             cms_relation_id: Cms\Relation\Infrastructure\Persistence\Doctrine\RelationIdType
             cms_settings_id: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
             cms_settings_image_id: Cms\Settings\Infrastructure\Persistence\Doctrine\ImageIdType
@@ -21,6 +22,7 @@ doctrine:
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            web_redirect_id: Web\Redirect\Infrastructure\Persistence\Doctrine\RedirectIdType
             web_settings_id: Web\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
         # have to map to a Doctrine type when the schema is introspected. Any
@@ -41,6 +43,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Image/Domain'
                 prefix: 'Cms\Image\Domain'
+            CmsRedirect:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Redirect/Domain'
+                prefix: 'Cms\Redirect\Domain'
             CmsRelation:
                 type: attribute
                 is_bundle: false
@@ -66,6 +73,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Page/Domain'
                 prefix: 'Web\Page\Domain'
+            WebRedirect:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Redirect/Domain'
+                prefix: 'Web\Redirect\Domain'
             WebSettings:
                 type: attribute
                 is_bundle: false

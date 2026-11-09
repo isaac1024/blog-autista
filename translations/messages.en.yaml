@@ -18,6 +18,10 @@ cms:
             saved: 'Changes saved.'
             published: 'Settings published on the site.'
             discarded: 'Changes discarded: the settings are back to the ones the site uses.'
+        redirect:
+            created: 'Redirect created.'
+            saved: 'Changes saved.'
+            deleted: 'Redirect deleted.'
     nav:
         account: 'Account'
         administration: 'Administration'
@@ -25,6 +29,7 @@ cms:
         menu: 'Menu'
         pages: 'Pages'
         images: 'Images'
+        redirects: 'Redirects'
         settings: 'Settings'
         logout: 'Sign out'
     images:
@@ -65,9 +70,9 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this image?'
-            description: 'The image “%alt%” will no longer be on the site. You can publish it again.'
-            submit: 'Yes, unpublish the image'
+            page_title: 'Unpublish “%alt%”'
+            back: 'Back to the image'
+            submit: 'Unpublish the image'
         delete:
             trigger: 'Delete image'
             title: 'Delete this image?'
@@ -96,6 +101,105 @@ cms:
         current: 'Page %page%'
         previous: 'Previous'
         next: 'Next'
+    redirects:
+        title: 'Redirects'
+        subtitle: 'Addresses of the blog that lead to other content, or say that what was there no longer exists.'
+        add: 'New redirect'
+        back: 'Back to the redirects'
+        search:
+            label: 'Search by address'
+            submit: 'Search'
+            empty:
+                title: 'No redirect matches'
+                message: 'No redirect has an address containing “%source%”.'
+                action: 'See them all'
+        empty:
+            title: 'No redirects yet'
+            message: 'Create one to lead an old address to other content, or to say that what was there no longer exists.'
+        list:
+            label: 'Redirects'
+        status:
+            moved: 'Redirects'
+            gone: 'Gone'
+        target:
+            page: 'Page “%name%”'
+            image: 'Image “%name%”'
+            gone: 'No longer exists (410)'
+            deleted: 'Deleted content'
+        retire:
+            subtitle: 'It will be taken off the site. First, decide what becomes of its addresses. You can publish it again.'
+            address:
+                title: 'Its address'
+                description: 'It is at %address% now. Once unpublished, that address can lead to other content, say it no longer exists, or stop being found.'
+                none: 'It has no address on the site to decide on.'
+                legend: 'What its address does once unpublished'
+                not_found:
+                    label: 'Let it not be found'
+                    hint: 'The site will say it can’t find the address (404). You can create a redirect later.'
+            incoming:
+                title: 'Redirects that lead here'
+                description: '%count% addresses lead to this content. As redirects only lead to published content, decide what each one does.'
+                legend: 'What %source% does'
+                legend_origin: 'What %source% does (and what links to or embeds %origin%)'
+                same:
+                    label: 'Lead where its address leads'
+                    hint: 'Only if its address leads to other content.'
+                delete:
+                    label: 'Delete the redirect'
+                    hint: 'The site will say it can’t find the address (404).'
+        last_address:
+            title: 'Its last address'
+            not_found: 'It was at %address%, which now leads nowhere: the site says it can’t find it.'
+            redirected: 'It was at %address%, which now leads to: %target%.'
+            create: 'Create redirect'
+            edit: 'Edit the redirect'
+        new:
+            title: 'New redirect'
+            subtitle: 'An address of the blog that no longer shows anything, and where it leads now.'
+            submit: 'Create redirect'
+            fixed: 'It is the last address of unpublished content, so it can’t be changed.'
+        edit:
+            title: 'Edit redirect'
+            dates: 'Created on %created% · Modified on %updated%'
+            origin: 'It was the last address of this content: %origin%. What links to it or embeds it is shown with the target of this redirect, or not shown if it no longer exists.'
+            submit: 'Save'
+        delete:
+            trigger: 'Delete'
+            title: 'Delete this redirect?'
+            description: 'The address %source% will lead nowhere: the site will say it can’t find it.'
+            description_origin: 'The address %source% will lead nowhere: the site will say it can’t find it. Also, what links to or embeds this content will stop showing it: %origin%.'
+            submit: 'Delete redirect'
+        form:
+            source:
+                label: 'Address'
+                hint: 'The full address of the blog, as typed in the browser; for example, %example%. For an image, that of any of its sizes.'
+            action:
+                legend: 'What this address does'
+                page:
+                    label: 'Lead to a page'
+                    hint: 'Whoever visits it goes to the page you choose.'
+                image:
+                    label: 'Lead to another image'
+                    hint: 'Only for addresses of images: the image you choose is shown, at the same size.'
+                gone:
+                    label: 'Say it no longer exists'
+                    hint: 'The site answers that what was there was taken off for good (code 410).'
+            page:
+                label: 'Target page'
+                hint: 'Only a published page can be chosen.'
+            image:
+                label: 'Target image'
+                hint: 'Only a published image can be chosen.'
+            off_site: 'Can’t be chosen: it isn’t published.'
+        incoming:
+            title: 'Redirects that lead here'
+            all: 'See them all'
+            page:
+                description: 'Addresses that lead to the page “%name%”. While there is any, it can’t be taken off the site.'
+                empty: 'No address leads to the page “%name%”.'
+            image:
+                description: 'Addresses that lead to the image “%name%”. While there is any, it can’t be taken off the site.'
+                empty: 'No address leads to the image “%name%”.'
     relations:
         title: 'Where it is used'
         types:
@@ -217,9 +321,9 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this page?'
-            description: 'The page “%title%” will be taken off the site and its address will stop working. You can publish it again.'
-            submit: 'Yes, unpublish the page'
+            page_title: 'Unpublish “%title%”'
+            back: 'Back to the page'
+            submit: 'Unpublish the page'
         status:
             draft:
                 label: 'Draft'
@@ -272,6 +376,14 @@ content:
         important: 'Important'
     table:
         label: 'Table'
+site:
+    home: 'Go to the home page'
+    not_found:
+        title: 'We can’t find this page'
+        message: 'The address may be mistyped, or the page may no longer exist.'
+    gone:
+        title: 'This page no longer exists'
+        message: 'It was taken off the blog and won’t be available again.'
 ui:
     close: 'Close'
     cropper:
@@ -313,6 +425,22 @@ ui:
         search_results: '%count% pages. Pick one to add it.'
         search_error: 'The search failed. Try again.'
         more: 'Show more pages'
+    page_field:
+        empty: 'No page.'
+        choose: 'Choose page'
+        noscript: 'Choosing the page needs JavaScript. The current page is saved anyway.'
+        loading: 'Loading the page…'
+        missing: 'This page no longer exists.'
+        unknown: 'The page couldn’t be checked.'
+        chosen: 'Page chosen: %title%.'
+        dialog_title: 'Choose a page'
+        search: 'Search by title'
+        search_submit: 'Search'
+        search_list: 'Pages'
+        search_none: 'No page matches the search.'
+        search_result: 'One page. Choose it to use it.'
+        search_results: '%count% pages. Choose one to use it.'
+        search_error: 'The search failed. Try again.'
     image_field:
         empty: 'No image.'
         choose: 'Choose image'
@@ -429,6 +557,24 @@ errors:
     title: 'It could not be done.'
     uuid:
         invalid: 'The identifier “%value%” is not valid.'
+    site_path:
+        not_absolute: '“%url%” isn’t a full address: write it starting with https://.'
+        other_host: '“%url%” isn’t an address of %host%.'
+        root: 'The main address of the blog is the home page, which always exists.'
+        too_long: 'The address can’t be longer than %max% characters.'
+    redirect:
+        not_an_image_copy: '“%url%” is among the images, but is the address of none.'
+        live_source: 'The address %source% already shows something on the site, so a redirect there would never be used.'
+        source_taken: 'The address %source% already has a redirect.'
+        unknown_target_type: 'A redirect can’t lead to “%type%”.'
+        missing_target: 'Choose where the redirect leads.'
+        target_off_site: 'A redirect only leads to published content.'
+        undecided: 'Choose what %source% does: it leads to this content, which is about to leave the site.'
+        to_itself: 'Its address can’t lead to the very content being unpublished: choose another.'
+        undecided_address: 'Choose what its address does once unpublished.'
+        no_new_target: 'A redirect can only lead where its address leads if that address leads to other content.'
+        image_to_other: 'The address of an image only leads to another image.'
+        other_to_image: 'Only the address of an image leads to an image.'
     criteria:
         non_positive_limit: 'The number of results must be greater than zero.'
         limit_too_high: 'No more than %max% results can be asked for.'
@@ -471,6 +617,7 @@ errors:
             without_meta_description: 'The page can’t be published without a meta description.'
             nothing_to_publish: 'The page is published as it is: there is nothing to publish.'
             not_published: 'Only a published page can be unpublished.'
+            redirected: 'Redirects lead to this page, so it can’t be unpublished until they lead elsewhere.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             unique_page: 'This page is unique, so it can’t be unpublished.'
             published_page: 'A published page can’t be deleted: unpublish it first.'
@@ -504,6 +651,7 @@ errors:
             without_caption: 'The image can’t be published without a caption.'
             nothing_to_publish: 'The image is published as it is: there is nothing to publish.'
             not_published: 'Only a published image can be unpublished.'
+            redirected: 'Redirects lead to this image, so it can’t be unpublished until they lead elsewhere.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_image: 'A published image can’t be deleted: unpublish it first.'
             in_use: 'This image is used in some page or is the default image of the blog, so it can’t be deleted. Take it out of where it is used first.'

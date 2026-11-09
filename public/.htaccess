@@ -71,9 +71,14 @@ DirectoryIndex index.php
 
 # Copies of the published images: a file never changes, since a new crop is a
 # new image with addresses of its own, so browsers keep them for a year.
+# Only the files Apache serves itself: an address under /media/ without a file
+# goes to the front controller, whose answer, such as a redirect to another
+# image, may change and sets its own caching.
 <IfModule mod_headers.c>
-    <If "%{REQUEST_URI} =~ m#^/media/#">
-        Header set Cache-Control "public, max-age=31536000, immutable"
-        Header set X-Content-Type-Options "nosniff"
-    </If>
+    <FilesMatch "\.webp$">
+        <If "%{REQUEST_URI} =~ m#^/media/#">
+            Header set Cache-Control "public, max-age=31536000, immutable"
+            Header set X-Content-Type-Options "nosniff"
+        </If>
+    </FilesMatch>
 </IfModule>

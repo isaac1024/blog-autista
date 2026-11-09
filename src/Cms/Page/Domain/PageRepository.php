@@ -35,6 +35,16 @@ interface PageRepository
      */
     public function findBySlug(Slug $slug): ?Page;
 
+    /**
+     * The page on the site with the slug.
+     */
+    public function findOnSiteBySlug(Slug $slug): ?Page;
+
+    /**
+     * The page off the site whose last address on it had the slug.
+     */
+    public function findOffSiteByLastSiteSlug(Slug $slug): ?Page;
+
     public function findByType(PageType $type): ?Page;
 
     /**

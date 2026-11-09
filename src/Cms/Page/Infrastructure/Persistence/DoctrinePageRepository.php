@@ -7,6 +7,7 @@ namespace Cms\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
@@ -93,6 +94,23 @@ final readonly class DoctrinePageRepository implements PageRepository
             ->getQuery();
 
         return $query->getResult()[0] ?? null;
+    }
+
+    #[\Override]
+    public function findOnSiteBySlug(Slug $slug): ?Page
+    {
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['publishedSlug' => $slug]);
+    }
+
+    #[\Override]
+    public function findOffSiteByLastSiteSlug(Slug $slug): ?Page
+    {
+        // A page published at an address takes it from any other, so one
+        // page off the site at most last had it; the newest wins otherwise.
+        return $this->entityManager->getRepository(Page::class)->findOneBy(
+            ['lastSiteSlug' => $slug, 'status' => PageStatus::Unpublished],
+            ['id' => 'DESC'],
+        );
     }
 
     #[\Override]

@@ -102,6 +102,7 @@ final class SettingsEditController extends AbstractController
                         'value' => $settings->defaultImage ?? '',
                         'searchUrl' => $this->generateUrl('cms_images_search'),
                         'lookupUrl' => $this->generateUrl('cms_images_lookup'),
+                        'offSite' => $this->translator->trans('ui.image_field.off_site'),
                     ]),
                 ]),
                 new PageComponent('Shared:Panel', [

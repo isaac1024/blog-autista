@@ -27,6 +27,7 @@ use Shared\Domain\RichText\RichText;
  * - An image is published only with a caption.
  * - A published image is unpublished before it is deleted, and an image in
  *   use is never deleted; it can be unpublished, and the site leaves it out.
+ *   An image redirects lead to stays on the site while they do.
  * - Its caption may link to pages, which then aren't deleted while it does.
  *
  * Its rules reach every value object, error and event of the image, so its
@@ -37,6 +38,7 @@ use Shared\Domain\RichText\RichText;
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_image')]
 #[ORM\Index(name: 'ftx_cms_image_alt', columns: ['alt'], flags: ['fulltext'])]
+#[ORM\UniqueConstraint(name: 'uniq_cms_image_path', columns: ['path'])]
 final class Image extends AggregateRoot
 {
     /**
@@ -139,12 +141,17 @@ final class Image extends AggregateRoot
     }
 
     /**
-     * Takes the image off the site.
+     * Takes the image off the site, unless redirects lead to it: it stays
+     * until they lead elsewhere.
      */
-    public function unpublish(): void
+    public function unpublish(ImageRedirects $imageRedirects): void
     {
         if (ImageStatus::Published !== $this->status) {
             throw InvalidImagePublication::notPublished();
+        }
+
+        if ($imageRedirects->isTargeted($this->id)) {
+            throw InvalidImagePublication::redirected();
         }
 
         $this->status = ImageStatus::Unpublished;

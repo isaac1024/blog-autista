@@ -32,7 +32,8 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   checks it, so a published page can be saved without them, and the site
  *   keeps its version meanwhile.
  * - A published page is unpublished before it is deleted, and unique pages
- *   are never unpublished nor deleted.
+ *   are never unpublished nor deleted. A page redirects lead to stays on
+ *   the site while they do.
  * - A page links to other pages, never to itself, and one that others link
  *   to is never deleted; it can be unpublished, and the site leaves its
  *   links as plain text.
@@ -42,15 +43,19 @@ use Shared\Domain\RichText\RichTextFeatures;
  * The one on the unique type keeps the site to one page of each unique type.
  *
  * Its rules reach every value object, error and event of the page, so its
- * coupling grows with what a page is rather than with how it is designed.
+ * coupling grows with what a page is rather than with how it is designed;
+ * so do its methods, one per rule and per thing told of it, such as each of
+ * its slugs.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.TooManyMethods")
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_page')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_page_slug', columns: ['slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_cms_page_published_slug', columns: ['published_slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_cms_page_unique_type', columns: ['unique_type'])]
+#[ORM\Index(name: 'idx_cms_page_last_site_slug', columns: ['last_site_slug'])]
 #[ORM\Index(name: 'ftx_cms_page_title', columns: ['title'], flags: ['fulltext'])]
 final class Page extends AggregateRoot
 {
@@ -61,6 +66,14 @@ final class Page extends AggregateRoot
      */
     #[ORM\Column(name: 'published_slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
     private ?Slug $publishedSlug;
+
+    /**
+     * The slug the page last had on the site, kept once it is off it, so its
+     * last address can be told and found. Null for a page never published,
+     * for the home page, and once another page is published at that address.
+     */
+    #[ORM\Column(name: 'last_site_slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $lastSiteSlug;
 
     /**
      * The type of a unique page, apart from it so it can be indexed and kept
@@ -96,6 +109,7 @@ final class Page extends AggregateRoot
         private int $publicationRevision,
     ) {
         $this->publishedSlug = PageStatus::Published === $status ? $published?->slug() : null;
+        $this->lastSiteSlug = $published?->slug();
         $this->uniqueType = $type->isUnique() ? $type : null;
     }
 
@@ -215,6 +229,7 @@ final class Page extends AggregateRoot
             $this->published = $this->version;
         });
         $this->publishedSlug = $this->version->slug();
+        $this->lastSiteSlug = $this->version->slug();
         $this->timeline = $this->timeline->published($now);
         ++$this->publicationRevision;
 
@@ -236,9 +251,10 @@ final class Page extends AggregateRoot
 
     /**
      * Takes the page off the site, freeing its address there. Unique pages
-     * stay on the site once published, since other parts of it rely on them.
+     * stay on the site once published, since other parts of it rely on them,
+     * and so does a page that redirects lead to, until they lead elsewhere.
      */
-    public function unpublish(): void
+    public function unpublish(PageRedirects $pageRedirects): void
     {
         if ($this->type->isUnique()) {
             throw InvalidPublication::uniquePage($this->type);
@@ -246,6 +262,10 @@ final class Page extends AggregateRoot
 
         if (PageStatus::Published !== $this->status) {
             throw InvalidPublication::notPublished();
+        }
+
+        if ($pageRedirects->isTargeted($this->id)) {
+            throw InvalidPublication::redirected();
         }
 
         $this->status = PageStatus::Unpublished;
@@ -396,6 +416,16 @@ final class Page extends AggregateRoot
     public function publishedSlug(): ?Slug
     {
         return $this->publishedSlug;
+    }
+
+    /**
+     * The slug the page last had on the site, on it or not: null for a page
+     * never published, for the home page, and for one whose last address
+     * another page took.
+     */
+    public function lastSiteSlug(): ?Slug
+    {
+        return $this->lastSiteSlug;
     }
 
     /**

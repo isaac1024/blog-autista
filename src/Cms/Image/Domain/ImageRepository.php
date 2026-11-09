@@ -18,6 +18,11 @@ interface ImageRepository
     public function find(ImageId $id): ?Image;
 
     /**
+     * The image whose file is kept at the path; a path names one image only.
+     */
+    public function findByPath(ImagePath $path): ?Image;
+
+    /**
      * The images among those given; an id of no image is left out.
      *
      * @param list<ImageId> $ids

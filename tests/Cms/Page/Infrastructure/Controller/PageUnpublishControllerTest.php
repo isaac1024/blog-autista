@@ -25,6 +25,11 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
 
     private const string URL = 'http://cms.blogautista.localhost/pages/%s/unpublish';
 
+    /**
+     * What its address does once off the site: nothing, so it isn't found.
+     */
+    private const array LEAVE_NOT_FOUND = ['address' => ['action' => 'none']];
+
     #[\Override]
     protected function setUp(): void
     {
@@ -37,7 +42,7 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage(PageMother::published(id: PageIdMother::random()->value()));
 
-        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $page->id()->value()), self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
@@ -49,7 +54,7 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
         $id = PageIdMother::random()->value();
         $page = $this->savePage(PageMother::published(id: $id));
 
-        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $id), self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('/pages/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.notices.page.unpublished', 'parameters' => []]], self::successNotices($client));
@@ -67,9 +72,9 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->savePage($page);
 
-        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $page->id()->value()), self::LEAVE_NOT_FOUND);
 
-        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value().'/unpublish', Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
         self::assertSame([], $this->queuedEvents());
     }
@@ -89,7 +94,8 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('GET', \sprintf(self::URL, PageIdMother::random()->value()));
+        // GET serves the form that asks what becomes of its addresses.
+        $client->request('PUT', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_METHOD_NOT_ALLOWED);
     }
@@ -98,7 +104,7 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, PageIdMother::random()->value()));
+        $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, PageIdMother::random()->value()), self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

@@ -18,6 +18,10 @@ cms:
             saved: 'Cambios guardados.'
             published: 'Ajustes publicados en la web.'
             discarded: 'Cambios descartados: los ajustes vuelven a ser los que usa la web.'
+        redirect:
+            created: 'Redirección creada.'
+            saved: 'Cambios guardados.'
+            deleted: 'Redirección borrada.'
     nav:
         account: 'Cuenta'
         administration: 'Administración'
@@ -25,6 +29,7 @@ cms:
         menu: 'Menú'
         pages: 'Páginas'
         images: 'Imágenes'
+        redirects: 'Redirecciones'
         settings: 'Ajustes'
         logout: 'Cerrar sesión'
     images:
@@ -65,9 +70,9 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar esta imagen?'
-            description: 'La imagen «%alt%» dejará de estar en la web. Podrás volver a publicarla.'
-            submit: 'Sí, despublicar la imagen'
+            page_title: 'Despublicar «%alt%»'
+            back: 'Volver a la imagen'
+            submit: 'Despublicar la imagen'
         delete:
             trigger: 'Borrar imagen'
             title: '¿Borrar esta imagen?'
@@ -96,6 +101,105 @@ cms:
         current: 'Página %page%'
         previous: 'Anterior'
         next: 'Siguiente'
+    redirects:
+        title: 'Redirecciones'
+        subtitle: 'Direcciones del blog que llevan a otro contenido, o que dicen que lo que había ya no existe.'
+        add: 'Nueva redirección'
+        back: 'Volver a las redirecciones'
+        search:
+            label: 'Buscar por dirección'
+            submit: 'Buscar'
+            empty:
+                title: 'Ninguna redirección coincide'
+                message: 'No hay redirecciones cuya dirección contenga «%source%».'
+                action: 'Ver todas'
+        empty:
+            title: 'Aún no hay redirecciones'
+            message: 'Crea una para llevar una dirección antigua a otro contenido, o para decir que lo que había ya no existe.'
+        list:
+            label: 'Redirecciones'
+        status:
+            moved: 'Redirige'
+            gone: 'Ya no existe'
+        target:
+            page: 'Página «%name%»'
+            image: 'Imagen «%name%»'
+            gone: 'Ya no existe (410)'
+            deleted: 'Contenido borrado'
+        retire:
+            subtitle: 'Dejará de estar en la web. Antes, decide qué pasa con sus direcciones. Podrás volver a publicarlo.'
+            address:
+                title: 'Su dirección'
+                description: 'Ahora está en %address%. Al despublicarlo, esa dirección puede llevar a otro contenido, decir que ya no existe o dejar de encontrarse.'
+                none: 'No tiene dirección en la web que decidir.'
+                legend: 'Qué hace su dirección al despublicarlo'
+                not_found:
+                    label: 'Dejar que no se encuentre'
+                    hint: 'La web dirá que no encuentra la dirección (404). Podrás crear una redirección más adelante.'
+            incoming:
+                title: 'Redirecciones que llevan aquí'
+                description: '%count% direcciones llevan a este contenido. Como solo se redirige a contenido publicado, decide qué hace cada una.'
+                legend: 'Qué hace %source%'
+                legend_origin: 'Qué hace %source% (y lo que enlaza o incluye %origin%)'
+                same:
+                    label: 'Llevar a donde lleve su dirección'
+                    hint: 'Solo si su dirección lleva a otro contenido.'
+                delete:
+                    label: 'Borrar la redirección'
+                    hint: 'La web dirá que no encuentra la dirección (404).'
+        last_address:
+            title: 'Su última dirección'
+            not_found: 'Estaba en %address%, que ahora no lleva a ningún sitio: la web dice que no la encuentra.'
+            redirected: 'Estaba en %address%, que ahora lleva a: %target%.'
+            create: 'Crear redirección'
+            edit: 'Editar la redirección'
+        new:
+            title: 'Nueva redirección'
+            subtitle: 'Una dirección del blog que ya no muestra nada, y a dónde lleva ahora.'
+            submit: 'Crear redirección'
+            fixed: 'Es la última dirección de un contenido despublicado, así que no se puede cambiar.'
+        edit:
+            title: 'Editar redirección'
+            dates: 'Creada el %created% · Modificada el %updated%'
+            origin: 'Era la última dirección de este contenido: %origin%. Lo que lo enlaza o lo incluye se muestra con el destino de esta redirección, o no se muestra si ya no existe.'
+            submit: 'Guardar'
+        delete:
+            trigger: 'Borrar'
+            title: '¿Borrar esta redirección?'
+            description: 'La dirección %source% dejará de llevar a ningún sitio: la web dirá que no la encuentra.'
+            description_origin: 'La dirección %source% dejará de llevar a ningún sitio: la web dirá que no la encuentra. Además, lo que enlaza o incluye este contenido dejará de mostrarlo: %origin%.'
+            submit: 'Borrar redirección'
+        form:
+            source:
+                label: 'Dirección'
+                hint: 'La dirección completa del blog, como se escribe en el navegador; por ejemplo, %example%. Para una imagen, la de cualquiera de sus tamaños.'
+            action:
+                legend: 'Qué hace esta dirección'
+                page:
+                    label: 'Llevar a una página'
+                    hint: 'Quien la visite irá a la página que elijas.'
+                image:
+                    label: 'Llevar a otra imagen'
+                    hint: 'Solo para direcciones de imágenes: se muestra la imagen que elijas, al mismo tamaño.'
+                gone:
+                    label: 'Decir que ya no existe'
+                    hint: 'La web responde que lo que había se retiró para siempre (código 410).'
+            page:
+                label: 'Página de destino'
+                hint: 'Solo se puede elegir una página publicada.'
+            image:
+                label: 'Imagen de destino'
+                hint: 'Solo se puede elegir una imagen publicada.'
+            off_site: 'No se puede elegir: no está publicada.'
+        incoming:
+            title: 'Redirecciones que llevan aquí'
+            all: 'Ver todas'
+            page:
+                description: 'Direcciones que llevan a la página «%name%». Mientras haya alguna, no se puede retirar de la web.'
+                empty: 'Ninguna dirección lleva a la página «%name%».'
+            image:
+                description: 'Direcciones que llevan a la imagen «%name%». Mientras haya alguna, no se puede retirar de la web.'
+                empty: 'Ninguna dirección lleva a la imagen «%name%».'
     relations:
         title: 'Dónde se usa'
         types:
@@ -217,9 +321,9 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar esta página?'
-            description: 'La página «%title%» dejará de estar en la web y su dirección dejará de funcionar. Podrás volver a publicarla.'
-            submit: 'Sí, despublicar la página'
+            page_title: 'Despublicar «%title%»'
+            back: 'Volver a la página'
+            submit: 'Despublicar la página'
         status:
             draft:
                 label: 'Borrador'
@@ -272,6 +376,14 @@ content:
         important: 'Importante'
     table:
         label: 'Tabla'
+site:
+    home: 'Ir a la portada'
+    not_found:
+        title: 'No encontramos esta página'
+        message: 'Puede que la dirección esté mal escrita o que la página ya no exista.'
+    gone:
+        title: 'Esta página ya no existe'
+        message: 'Se retiró del blog y no volverá a estar disponible.'
 ui:
     close: 'Cerrar'
     cropper:
@@ -313,6 +425,22 @@ ui:
         search_results: '%count% páginas. Elige una para añadirla.'
         search_error: 'No se ha podido buscar. Inténtalo de nuevo.'
         more: 'Ver más páginas'
+    page_field:
+        empty: 'Sin página.'
+        choose: 'Elegir página'
+        noscript: 'Para elegir la página hace falta JavaScript. La página actual se guarda igualmente.'
+        loading: 'Cargando la página…'
+        missing: 'Esta página ya no existe.'
+        unknown: 'No se ha podido comprobar la página.'
+        chosen: 'Página elegida: %title%.'
+        dialog_title: 'Elegir una página'
+        search: 'Buscar por título'
+        search_submit: 'Buscar'
+        search_list: 'Páginas'
+        search_none: 'Ninguna página coincide con la búsqueda.'
+        search_result: 'Una página. Elígela para usarla.'
+        search_results: '%count% páginas. Elige una para usarla.'
+        search_error: 'No se ha podido buscar. Inténtalo de nuevo.'
     image_field:
         empty: 'Sin imagen.'
         choose: 'Elegir imagen'
@@ -429,6 +557,24 @@ errors:
     title: 'No se ha podido completar.'
     uuid:
         invalid: 'El identificador «%value%» no es válido.'
+    site_path:
+        not_absolute: '«%url%» no es una dirección completa: escríbela empezando por https://.'
+        other_host: '«%url%» no es una dirección de %host%.'
+        root: 'La dirección principal del blog es la portada, que siempre existe.'
+        too_long: 'La dirección no puede tener más de %max% caracteres.'
+    redirect:
+        not_an_image_copy: '«%url%» está entre las imágenes, pero no es la dirección de ninguna.'
+        live_source: 'La dirección %source% ya muestra algo en la web, así que una redirección allí no se usaría nunca.'
+        source_taken: 'La dirección %source% ya tiene una redirección.'
+        unknown_target_type: 'Una redirección no puede llevar a «%type%».'
+        missing_target: 'Elige a dónde lleva la redirección.'
+        target_off_site: 'Solo se puede redirigir a contenido publicado.'
+        undecided: 'Elige qué hace %source%: lleva a este contenido, que va a dejar de estar en la web.'
+        to_itself: 'Su dirección no puede llevar al mismo contenido que se despublica: elige otro.'
+        undecided_address: 'Elige qué hace su dirección al despublicarlo.'
+        no_new_target: 'Una redirección solo puede llevar a donde lleve su dirección si esa dirección lleva a otro contenido.'
+        image_to_other: 'La dirección de una imagen solo puede llevar a otra imagen.'
+        other_to_image: 'Solo la dirección de una imagen puede llevar a una imagen.'
     criteria:
         non_positive_limit: 'El número de resultados debe ser mayor que cero.'
         limit_too_high: 'No se pueden pedir más de %max% resultados.'
@@ -471,6 +617,7 @@ errors:
             without_meta_description: 'La página no se puede publicar sin meta descripción.'
             nothing_to_publish: 'La página ya está publicada tal como está: no hay nada que publicar.'
             not_published: 'Solo se puede despublicar una página publicada.'
+            redirected: 'Hay redirecciones que llevan a esta página, así que no se puede despublicar hasta que lleven a otro sitio.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
@@ -504,6 +651,7 @@ errors:
             without_caption: 'La imagen no se puede publicar sin pie de foto.'
             nothing_to_publish: 'La imagen ya está publicada tal como está: no hay nada que publicar.'
             not_published: 'Solo se puede despublicar una imagen publicada.'
+            redirected: 'Hay redirecciones que llevan a esta imagen, así que no se puede despublicar hasta que lleven a otro sitio.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'
             in_use: 'Esta imagen se usa en alguna página o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'

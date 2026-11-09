@@ -14,6 +14,7 @@ use Cms\Page\Domain\Robots;
 use Cms\Page\Domain\Seo;
 use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
+use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\RichText\TiptapRichText;
@@ -39,8 +40,6 @@ final class PageEditController extends AbstractController
 {
     private const string DELETE_PAGE_MODAL = 'delete-page';
 
-    private const string UNPUBLISH_PAGE_MODAL = 'unpublish-page';
-
     private const string DISCARD_CHANGES_MODAL = 'discard-changes';
 
     private const string FORM = 'page-form';
@@ -60,6 +59,7 @@ final class PageEditController extends AbstractController
         private readonly TiptapRichText $tiptapRichText,
         private readonly PageRole $pageRole,
         private readonly PageState $pageState,
+        private readonly LastAddressPanel $lastAddressPanel,
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -88,7 +88,7 @@ final class PageEditController extends AbstractController
      */
     private function page(PageResponse $page, SharedPreviewLink $sharedPreview): Page
     {
-        return CmsLayout::page(\sprintf(
+        return $this->lastAddressPanel->onPage(CmsLayout::page(\sprintf(
             '%s · %s · CMS',
             $page->title,
             $this->translator->trans('cms.pages.edit.title'),
@@ -99,7 +99,7 @@ final class PageEditController extends AbstractController
                 'subtitle' => $this->dates($page),
                 'badge' => ($this->pageRole)($page),
                 'status' => $this->pageState->label($page),
-            ], $this->pageActions($page, $sharedPreview))
+            ], $this->pageActions($page, $sharedPreview)), $page->id)
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
@@ -143,8 +143,8 @@ final class PageEditController extends AbstractController
      * What is done to the page apart from editing it, offered only when the
      * page allows it: previewing what is saved, through a link that expires
      * and can be sent to anyone, seeing it on the site, seeing what uses it,
-     * and, each confirmed first, discarding its unpublished changes, taking it off the site, or deleting
-     * it.
+     * and, each confirmed first, discarding its unpublished changes, taking it
+     * off the site, or deleting it.
      *
      * @return list<PageComponent>
      */
@@ -172,7 +172,12 @@ final class PageEditController extends AbstractController
         }
 
         if ($page->canBeUnpublished) {
-            $actions[] = $this->confirmModal($page, self::UNPUBLISH_PAGE_MODAL, 'unpublish', 'cms_pages_unpublish', 'secondary');
+            // Taking it off the site asks what becomes of its addresses, on a
+            // page of its own.
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->generateUrl('cms_pages_unpublish_form', ['id' => $page->id]),
+                'label' => $this->translator->trans('cms.pages.unpublish.trigger'),
+            ]);
         }
 
         if ($page->canBeDeleted) {

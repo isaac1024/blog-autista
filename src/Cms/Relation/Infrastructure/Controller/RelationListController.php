@@ -10,6 +10,8 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
+use Cms\Redirect\Domain\ResourceType as RedirectResourceType;
+use Cms\Redirect\Infrastructure\Controller\IncomingRedirectsPanel;
 use Cms\Relation\Application\UsersFinder;
 use Cms\Relation\Application\UsersResponse;
 use Cms\Relation\Domain\RelationRepository;
@@ -29,7 +31,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Where a page or an image is used: every resource of the CMS that relates
- * to it, each leading to where it is edited, apart from the editor itself.
+ * to it, each leading to where it is edited, apart from the editor itself,
+ * and the redirects that lead to it.
  *
  * It finds the page or the image it lists the users of, so its coupling grows
  * with the kinds of resource and says nothing about its design.
@@ -43,6 +46,7 @@ final class RelationListController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly UserRows $userRows,
         private readonly ListPagination $listPagination,
+        private readonly IncomingRedirectsPanel $incomingRedirectsPanel,
     ) {}
 
     /**
@@ -105,17 +109,25 @@ final class RelationListController extends AbstractController
                 ]),
             ]);
 
-        if ([] === $rows) {
-            return $layout->withMain('Shared:EmptyState', [
+        $layout = [] === $rows
+            ? $layout->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans($texts.'.empty.title'),
                 'message' => $this->translator->trans($texts.'.empty.message'),
-            ]);
-        }
+            ])
+            : $layout
+                ->withMain('Shared:ResourceList', [
+                    'label' => $this->translator->trans($texts.'.list', ['%name%' => $name]),
+                ], $rows)
+                ->withMain('Shared:Pagination', ($this->listPagination)('cms_relations', ['type' => $section, 'id' => $id], $page, $users->hasMore));
 
-        return $layout
-            ->withMain('Shared:ResourceList', [
-                'label' => $this->translator->trans($texts.'.list', ['%name%' => $name]),
-            ], $rows)
-            ->withMain('Shared:Pagination', ($this->listPagination)('cms_relations', ['type' => $section, 'id' => $id], $page, $users->hasMore));
+        // The redirects that lead to it keep it on the site, as what uses it
+        // keeps it in the library.
+        $panel = ($this->incomingRedirectsPanel)(
+            ResourceType::Page === $type ? RedirectResourceType::Page : RedirectResourceType::Image,
+            $id,
+            $name,
+        );
+
+        return $layout->withMain($panel->name, $panel->props, $panel->children);
     }
 }

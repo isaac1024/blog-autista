@@ -7,6 +7,7 @@ namespace Cms\Tests\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\IdFilter;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
+use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\Robots;
@@ -221,7 +222,7 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
     {
         $page = PageMother::published(id: PageId::random()->value(), slug: 'sobre-mi');
         $page->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
-        $page->unpublish();
+        $page->unpublish(self::createStub(PageRedirects::class));
         $this->repository()->save($page);
         $this->entityManager()->clear();
 

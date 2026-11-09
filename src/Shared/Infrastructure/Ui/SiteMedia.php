@@ -4,24 +4,15 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Ui;
 
+use Shared\Domain\ImageCopy;
 use Shared\Domain\RichText\RichText;
 
 /**
- * Where the site serves the copies of its published images, all 16:9, named
- * after the file of the CMS and their width, so any page painted like the
- * site's, wherever it is served, points at them.
+ * How a page painted like the site's, wherever it is served, points at the
+ * copies of its published images, which ImageCopy names.
  */
 final class SiteMedia
 {
-    private const string URL = '/media/';
-
-    /**
-     * Widths of the copies, with their heights.
-     */
-    private const array SIZES = [400 => 225, 800 => 450, 1200 => 675];
-
-    private const int LARGEST = 1200;
-
     /**
      * An embedded image as the content paints it, from its largest copy and
      * every other one for the browser to choose from.
@@ -32,14 +23,16 @@ final class SiteMedia
      */
     public static function image(string $path, string $alt, RichText $caption): array
     {
+        $largest = new ImageCopy($path, ImageCopy::LARGEST);
+
         return [
-            'src' => self::copy($path, self::LARGEST),
+            'src' => $largest->url(),
             'srcset' => implode(', ', array_map(
-                static fn (int $width): string => \sprintf('%s %dw', self::copy($path, $width), $width),
-                array_keys(self::SIZES),
+                static fn (int $width): string => \sprintf('%s %dw', new ImageCopy($path, $width)->url(), $width),
+                array_keys(ImageCopy::SIZES),
             )),
-            'width' => self::LARGEST,
-            'height' => self::SIZES[self::LARGEST],
+            'width' => $largest->width(),
+            'height' => $largest->height(),
             'alt' => $alt,
             'caption' => $caption,
         ];
@@ -54,16 +47,13 @@ final class SiteMedia
      */
     public static function shareImage(string $path, string $alt): array
     {
+        $largest = new ImageCopy($path, ImageCopy::LARGEST);
+
         return [
-            'src' => self::copy($path, self::LARGEST),
-            'width' => self::LARGEST,
-            'height' => self::SIZES[self::LARGEST],
+            'src' => $largest->url(),
+            'width' => $largest->width(),
+            'height' => $largest->height(),
             'alt' => $alt,
         ];
-    }
-
-    private static function copy(string $path, int $width): string
-    {
-        return \sprintf('%s%s-%dw.webp', self::URL, preg_replace('/\.webp$/', '', $path), $width);
     }
 }

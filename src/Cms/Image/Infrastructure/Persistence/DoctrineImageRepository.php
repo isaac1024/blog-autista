@@ -6,6 +6,7 @@ namespace Cms\Image\Infrastructure\Persistence;
 
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageId;
+use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -47,6 +48,12 @@ final readonly class DoctrineImageRepository implements ImageRepository
     public function find(ImageId $id): ?Image
     {
         return $this->entityManager->find(Image::class, $id);
+    }
+
+    #[\Override]
+    public function findByPath(ImagePath $path): ?Image
+    {
+        return $this->entityManager->getRepository(Image::class)->findOneBy(['path.value' => $path->value()]);
     }
 
     #[\Override]

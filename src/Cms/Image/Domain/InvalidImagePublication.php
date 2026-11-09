@@ -23,6 +23,11 @@ final class InvalidImagePublication extends DomainError
         return new self('Only a published image can be unpublished.', 'errors.image.publication.not_published', []);
     }
 
+    public static function redirected(): self
+    {
+        return new self('An image that redirects lead to stays on the site until they lead elsewhere.', 'errors.image.publication.redirected', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published image with unpublished changes has changes to discard.', 'errors.image.publication.no_changes_to_discard', []);

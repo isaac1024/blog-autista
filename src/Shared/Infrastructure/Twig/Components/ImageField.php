@@ -44,6 +44,12 @@ final class ImageField
 
     public string $lookupUrl = '';
 
+    /**
+     * What is said of an image off the site, after its status, such as that
+     * it won't be used until it is published.
+     */
+    public string $offSite = '';
+
     public function mount(
         string $name,
         string $id,
@@ -52,6 +58,7 @@ final class ImageField
         string $value,
         string $searchUrl,
         string $lookupUrl,
+        string $offSite,
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -60,5 +67,6 @@ final class ImageField
         $this->value = $value;
         $this->searchUrl = $searchUrl;
         $this->lookupUrl = $lookupUrl;
+        $this->offSite = $offSite;
     }
 }

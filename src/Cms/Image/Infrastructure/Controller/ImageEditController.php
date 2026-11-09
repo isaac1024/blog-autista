@@ -11,6 +11,7 @@ use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Caption;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -35,8 +36,6 @@ final class ImageEditController extends AbstractController
 
     private const string DELETE_IMAGE_MODAL = 'delete-image';
 
-    private const string UNPUBLISH_IMAGE_MODAL = 'unpublish-image';
-
     private const string DISCARD_CHANGES_MODAL = 'discard-changes';
 
     public function __construct(
@@ -44,6 +43,7 @@ final class ImageEditController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly TiptapRichText $tiptapRichText,
         private readonly ImageState $imageState,
+        private readonly LastAddressPanel $lastAddressPanel,
     ) {}
 
     #[Route('/images/{id}', name: 'cms_images_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -67,7 +67,7 @@ final class ImageEditController extends AbstractController
     {
         $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
 
-        return CmsLayout::page(\sprintf(
+        return $this->lastAddressPanel->onImage(CmsLayout::page(\sprintf(
             '%s · CMS',
             $this->translator->trans('cms.images.edit.title'),
         ))
@@ -78,7 +78,7 @@ final class ImageEditController extends AbstractController
                     '%updated%' => $formatter->format($image->updatedAt),
                 ]),
                 'status' => $this->imageState->label($image),
-            ], $this->imageActions($image))
+            ], $this->imageActions($image)), $image->id)
             ->withMain('Shared:ImagePreview', [
                 'src' => $this->generateUrl('cms_images_file', ['id' => $image->id]),
                 'alt' => $image->alt,
@@ -167,7 +167,12 @@ final class ImageEditController extends AbstractController
         }
 
         if ($image->canBeUnpublished) {
-            $actions[] = $this->confirmModal($image, self::UNPUBLISH_IMAGE_MODAL, 'unpublish', 'cms_images_unpublish', 'secondary');
+            // Taking it off the site asks what becomes of its addresses, on a
+            // page of its own.
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->generateUrl('cms_images_unpublish_form', ['id' => $image->id]),
+                'label' => $this->translator->trans('cms.images.unpublish.trigger'),
+            ]);
         }
 
         if ($image->canBeDeleted) {

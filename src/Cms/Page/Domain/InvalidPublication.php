@@ -33,6 +33,11 @@ final class InvalidPublication extends DomainError
         return new self('Only a published page can be unpublished.', 'errors.page.publication.not_published', []);
     }
 
+    public static function redirected(): self
+    {
+        return new self('A page that redirects lead to stays on the site until they lead elsewhere.', 'errors.page.publication.redirected', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published page with unpublished changes has changes to discard.', 'errors.page.publication.no_changes_to_discard', []);

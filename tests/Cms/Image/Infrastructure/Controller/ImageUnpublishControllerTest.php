@@ -25,6 +25,11 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
 
     private const string URL = 'http://cms.blogautista.localhost/images/%s/unpublish';
 
+    /**
+     * What its address does once off the site: nothing, so it isn't found.
+     */
+    private const array LEAVE_NOT_FOUND = ['address' => ['action' => 'none']];
+
     #[\Override]
     protected function setUp(): void
     {
@@ -37,7 +42,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $image = $this->saveImage(ImageMother::published(id: ImageIdMother::random()->value()));
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $image->id()->value()), self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($image, $this->storedImage($image));
@@ -50,7 +55,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
         $id = ImageIdMother::random()->value();
         $image = $this->saveImage(ImageMother::published(id: $id));
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $id), self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('/images/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.notices.image.unpublished', 'parameters' => []]], self::successNotices($client));
@@ -63,7 +68,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
         $id = ImageIdMother::random()->value();
         $this->saveImage(ImageMother::published(id: $id));
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $id), self::LEAVE_NOT_FOUND);
 
         $events = $this->queuedEvents();
         self::assertCount(1, $events);
@@ -82,9 +87,9 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
         $this->saveImage($image);
         $expected = clone $image;
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $image->id()->value()), self::LEAVE_NOT_FOUND);
 
-        self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value().'/unpublish', Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));
         self::assertEquals($expected, $this->storedImage($image));
         self::assertSame([], $this->queuedEvents());
@@ -105,7 +110,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, ImageIdMother::random()->value()));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, ImageIdMother::random()->value()), self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -114,7 +119,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, 'circulo-naranja'));
+        $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, 'circulo-naranja'), self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

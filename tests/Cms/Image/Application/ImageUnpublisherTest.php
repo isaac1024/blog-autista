@@ -7,6 +7,7 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUnpublisher;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageRedirects;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageUnpublished;
 use Cms\Tests\Image\Domain\ImageIdMother;
@@ -37,7 +38,7 @@ final class ImageUnpublisherTest extends TestCase
         // It keeps the version it had on the site.
         $repository->expects(self::once())->method('save')->with(self::equalTo(ImageMother::unpublished()));
 
-        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), self::createStub(ImageRedirects::class));
     }
 
     public function testItTellsTheSiteToTakeItOff(): void
@@ -53,7 +54,7 @@ final class ImageUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        (new ImageUnpublisher($id))($repository, $eventBus);
+        (new ImageUnpublisher($id))($repository, $eventBus, self::createStub(ImageRedirects::class));
     }
 
     #[DataProvider('imagesOffTheSite')]
@@ -65,7 +66,7 @@ final class ImageUnpublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells('errors.image.publication.not_published', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus));
+        self::assertTells('errors.image.publication.not_published', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(ImageRedirects::class)));
     }
 
     /**
@@ -84,6 +85,6 @@ final class ImageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), self::createStub(ImageRedirects::class));
     }
 }
