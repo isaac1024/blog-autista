@@ -32,17 +32,6 @@ final class SettingsSaverTest extends TestCase
         (new SettingsSaver($later))($repository);
     }
 
-    public function testItKeepsTheSettingsWhenAnEarlierVersionArrivesLate(): void
-    {
-        $repository = $this->createMock(SettingsRepository::class);
-        $repository->method('find')->willReturn(Settings::publish(Event::create(name: 'Otro nombre', occurredOn: '2026-11-07 11:00:00')));
-        $repository->expects(self::once())->method('save')->with(self::equalTo(
-            Settings::publish(Event::create(name: 'Otro nombre', occurredOn: '2026-11-07 11:00:00')),
-        ));
-
-        (new SettingsSaver(Event::create(occurredOn: '2026-11-07 09:00:00')))($repository);
-    }
-
     /**
      * Only a later event is kept over a new one: two from the same moment
      * keep the one taken last.

@@ -62,7 +62,8 @@ final class CmsSettingsPublishedMother
         array $footerMenu = self::FOOTER_MENU,
         string $occurredOn = ClockMother::NOW,
         string $id = self::ID,
+        int $revision = 1,
     ): CmsSettingsPublished {
-        return new CmsSettingsPublished($id, $name, $defaultImageId, $mainMenu, $footerMenu, EventId::random()->value(), ClockMother::now($occurredOn));
+        return new CmsSettingsPublished($id, $name, $defaultImageId, $mainMenu, $footerMenu, EventId::random()->value(), ClockMother::now($occurredOn), $revision);
     }
 }

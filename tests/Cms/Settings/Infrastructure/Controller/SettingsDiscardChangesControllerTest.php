@@ -38,7 +38,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $settings = $this->saveSettings(Mother::published(Mother::version(name: 'Otro nombre'), Mother::version()));
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($settings, $this->storedSettings());
@@ -49,7 +49,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->saveSettings(Mother::published(Mother::version(name: 'Otro nombre'), Mother::version(), createdAt: self::BEFORE));
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertSame([], self::notices($client));
@@ -63,7 +63,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $expected = $this->saveSettings($settings);
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.settings.publication.no_changes_to_discard', 'parameters' => []]], self::notices($client));
@@ -83,7 +83,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

@@ -37,7 +37,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $image = $this->saveImage(ImageMother::published(id: ImageIdMother::random()->value()));
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($image, $this->storedImage($image));
@@ -50,7 +50,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
         $id = ImageIdMother::random()->value();
         $image = $this->saveImage(ImageMother::create(id: $id, caption: ImageMother::CAPTION));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
         self::assertSame([], self::notices($client));
@@ -63,13 +63,13 @@ final class ImagePublishControllerTest extends CmsWebTestCase
         $id = ImageIdMother::random()->value();
         $this->saveImage(ImageMother::create(id: $id, caption: ImageMother::CAPTION));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, $id));
 
         $events = $this->queuedEvents();
         self::assertCount(1, $events);
         self::assertSame('cms.image.published', $events[0]->name);
         self::assertSame($id, $events[0]->aggregateId);
-        self::assertSame(['alt' => ImageMother::ALT, 'caption' => ImageMother::CAPTION, 'path' => '2026/11/'.$id.'.webp'], $events[0]->body);
+        self::assertSame(['alt' => ImageMother::ALT, 'caption' => ImageMother::CAPTION, 'path' => '2026/11/'.$id.'.webp', 'revision' => 1], $events[0]->body);
     }
 
     /**
@@ -82,7 +82,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
         $this->saveImage($image);
         $expected = clone $image;
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));
@@ -109,7 +109,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, ImageIdMother::random()->value()));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, ImageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -118,7 +118,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'circulo-naranja'));
+        $this->post($client, 'cms_images_publish', \sprintf(self::URL, 'circulo-naranja'));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

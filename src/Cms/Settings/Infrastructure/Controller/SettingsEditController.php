@@ -71,6 +71,7 @@ final class SettingsEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_settings_update'),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_settings_update',
                 'id' => self::FORM,
             ], [
                 new PageComponent('Shared:Panel', [
@@ -119,6 +120,7 @@ final class SettingsEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_settings_publish'),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_settings_publish',
                 'id' => self::PUBLISH_FORM,
                 'hidden' => true,
             ]);
@@ -186,6 +188,7 @@ final class SettingsEditController extends AbstractController
             new PageComponent('Shared:Form', [
                 'action' => $this->generateUrl('cms_settings_discard'),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_settings_discard',
             ], [
                 new PageComponent('Shared:FormButton', [
                     'label' => $this->translator->trans('cms.settings.discard.submit'),

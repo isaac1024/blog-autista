@@ -26,7 +26,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage();
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
@@ -44,7 +44,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $relations = self::getContainer()->get(RelationRepository::class);
         $relations->replace(ResourceType::Page, $page->id()->value(), ResourceType::Image, ['01a1b801-ce58-723d-8234-b76d9105d001']);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertFalse($relations->isUsed(ResourceType::Image, '01a1b801-ce58-723d-8234-b76d9105d001'));
@@ -62,7 +62,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $relations = self::getContainer()->get(RelationRepository::class);
         $relations->replace(ResourceType::Page, $page->id()->value(), ResourceType::Page, ['01a1b801-ce58-723d-8234-b76d9105e001']);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertFalse($relations->isUsed(ResourceType::Page, '01a1b801-ce58-723d-8234-b76d9105e001'));
@@ -74,7 +74,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $page = $this->savePage();
         self::getContainer()->get(RelationRepository::class)->replace(ResourceType::Page, PageIdMother::random()->value(), ResourceType::Page, [$page->id()->value()]);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
@@ -85,7 +85,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertNull($this->storedPage($page));
@@ -97,7 +97,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         self::getContainer()->get(PageRepository::class)->save($page);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
@@ -121,7 +121,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $page = PageMother::published(id: PageIdMother::random()->value());
         self::getContainer()->get(PageRepository::class)->save($page);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
@@ -142,7 +142,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -151,7 +151,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'sobre-mi'));
+        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, 'sobre-mi'));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

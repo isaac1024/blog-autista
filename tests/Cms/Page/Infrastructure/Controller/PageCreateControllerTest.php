@@ -16,7 +16,7 @@ final class PageCreateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Posts']);
+        $this->post($client, 'cms_pages_create', 'http://cms.blogautista.localhost/pages', ['title' => 'Posts']);
 
         self::assertResponseStatusCodeSame(Response::HTTP_SEE_OTHER);
     }
@@ -25,7 +25,7 @@ final class PageCreateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => ' ']);
+        $this->post($client, 'cms_pages_create', 'http://cms.blogautista.localhost/pages', ['title' => ' ']);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages', Response::HTTP_SEE_OTHER);
     }
@@ -37,7 +37,7 @@ final class PageCreateControllerTest extends CmsWebTestCase
             PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
         );
 
-        $client->request('POST', 'http://cms.blogautista.localhost/pages', ['title' => 'Sobre mí']);
+        $this->post($client, 'cms_pages_create', 'http://cms.blogautista.localhost/pages', ['title' => 'Sobre mí']);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages', Response::HTTP_SEE_OTHER);
     }

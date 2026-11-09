@@ -17,6 +17,7 @@ final readonly class Administrator
     public function __construct(
         private string $identifier,
         private string $passwordHash,
+        private string $credentialsVersion,
         private array $roles = [self::ADMIN_ROLE],
     ) {
         if ('' === trim($identifier)) {
@@ -29,6 +30,10 @@ final readonly class Administrator
 
         if ([] === $roles) {
             throw new \InvalidArgumentException('The administrator must have at least one role.');
+        }
+
+        if ('' === $credentialsVersion) {
+            throw new \InvalidArgumentException('The administrator credentials version must not be empty.');
         }
     }
 
@@ -48,5 +53,10 @@ final readonly class Administrator
     public function roles(): array
     {
         return $this->roles;
+    }
+
+    public function credentialsVersion(): string
+    {
+        return $this->credentialsVersion;
     }
 }

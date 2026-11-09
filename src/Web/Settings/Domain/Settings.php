@@ -11,8 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
  * blog, its default image and its menus. Their image and pages are only ids:
  * the site paints those that are on it, and leaves out the rest.
  *
- * Events can come late or twice, so they only take the ones that happened
- * after the last they took.
+ * Events can come late or twice: the projection that hands them over only
+ * lets through those newer than the last it applied, by their revision.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'web_settings')]
@@ -35,8 +35,6 @@ final class Settings
         private array $mainMenu,
         #[ORM\Column(type: 'json')]
         private array $footerMenu,
-        #[ORM\Column]
-        private \DateTimeImmutable $lastEventOn,
     ) {}
 
     public static function publish(CmsSettingsPublished $event): self
@@ -47,25 +45,18 @@ final class Settings
             $event->defaultImageId(),
             $event->mainMenu(),
             $event->footerMenu(),
-            $event->occurredOn(),
         );
     }
 
     /**
-     * Takes the version the CMS published, unless the settings already took
-     * a later event.
+     * Takes the version the CMS published.
      */
     public function republish(CmsSettingsPublished $event): void
     {
-        if ($this->lastEventOn > $event->occurredOn()) {
-            return;
-        }
-
         $this->name = $event->name();
         $this->defaultImageId = $event->defaultImageId();
         $this->mainMenu = $event->mainMenu();
         $this->footerMenu = $event->footerMenu();
-        $this->lastEventOn = $event->occurredOn();
     }
 
     public function save(SettingsRepository $settingsRepository): void

@@ -9,6 +9,7 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,8 +18,10 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PageCreateController extends AbstractController
 {
     #[Route('/pages', name: 'cms_pages_create', methods: ['POST'])]
-    public function __invoke(Request $request, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(Request $request, PageRepository $pageRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         try {
             new PageCreator(PageId::random()->value(), $request->request->getString('title'))($pageRepository, $eventBus);
         } catch (DomainError $error) {

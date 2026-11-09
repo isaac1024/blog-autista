@@ -62,7 +62,41 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
         $repository->findByIdentifier('   ');
     }
 
-    private function repository(string $identifier, string $password): EnvironmentAdministratorRepository
+    public function testItChangesTheCredentialsVersionWhenThePasswordChanges(): void
+    {
+        $before = $this->repository('admin', 'secret')->credentialsVersion('admin');
+        $after = $this->repository('admin', 'new-secret')->credentialsVersion('admin');
+
+        self::assertNotNull($before);
+        self::assertNotNull($after);
+        self::assertNotSame($before, $after);
+    }
+
+    public function testItChangesTheCredentialsVersionWhenTheApplicationSecretChanges(): void
+    {
+        $before = $this->repository('admin', 'secret')->credentialsVersion('admin');
+        $after = $this->repository('admin', 'secret', appSecret: 'another-app-secret')->credentialsVersion('admin');
+
+        self::assertNotNull($before);
+        self::assertNotNull($after);
+        self::assertNotSame($before, $after);
+    }
+
+    public function testItRefusesAnEmptyApplicationSecret(): void
+    {
+        $this->expectExceptionObject(new \InvalidArgumentException('APP_SECRET must not be empty.'));
+
+        $this->repository('admin', 'secret', appSecret: '');
+    }
+
+    public function testItRefusesTheDevelopmentPasswordInProduction(): void
+    {
+        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_PASSWORD must not use the development default in production.'));
+
+        $this->repository('admin', 'admin', environment: 'prod');
+    }
+
+    private function repository(string $identifier, string $password, string $appSecret = 'test-app-secret', string $environment = 'test'): EnvironmentAdministratorRepository
     {
         return new EnvironmentAdministratorRepository(
             $identifier,
@@ -70,6 +104,8 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
             new PasswordHasherFactory([
                 PasswordAuthenticatedUserInterface::class => ['algorithm' => 'plaintext'],
             ]),
+            $appSecret,
+            $environment,
         );
     }
 }

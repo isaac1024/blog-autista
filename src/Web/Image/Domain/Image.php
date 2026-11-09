@@ -12,8 +12,8 @@ use Shared\Domain\RichText\RichText;
  * the site serves. It only exists while the image is published, so the site
  * never shows one taken off.
  *
- * Events can come late or twice, so it only takes the ones that happened
- * after the last it took.
+ * Events can come late or twice: the projection that hands them over only
+ * lets through those newer than the last it applied, by their revision.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'web_image')]
@@ -32,28 +32,21 @@ final class Image
         private RichText $caption,
         #[ORM\Column(length: 64)]
         private readonly string $path,
-        #[ORM\Column]
-        private \DateTimeImmutable $lastEventOn,
     ) {}
 
     public static function publish(CmsImagePublished $event): self
     {
-        return new self(new ImageId($event->aggregateId()), $event->alt(), $event->caption(), $event->path(), $event->occurredOn());
+        return new self(new ImageId($event->aggregateId()), $event->alt(), $event->caption(), $event->path());
     }
 
     /**
-     * Takes the version the CMS published, unless the image already took a
-     * later event. Its file never changes, so neither do its copies.
+     * Takes the version the CMS published. Its file never changes, so
+     * neither do its copies.
      */
     public function republish(CmsImagePublished $event): void
     {
-        if ($this->tookLaterThan($event->occurredOn())) {
-            return;
-        }
-
         $this->alt = $event->alt();
         $this->caption = $event->caption();
-        $this->lastEventOn = $event->occurredOn();
     }
 
     /**
@@ -75,16 +68,11 @@ final class Image
     }
 
     /**
-     * Takes the image off the site, unless it was published again after the
-     * CMS took it off. Its copies go first, so the site stops serving them
-     * even if removing the image fails.
+     * Takes the image off the site. Its copies go first, so the site stops
+     * serving them even if removing the image fails.
      */
-    public function unpublish(CmsImageUnpublished $event, ImageRepository $imageRepository, ImageVariants $imageVariants): void
+    public function unpublish(ImageRepository $imageRepository, ImageVariants $imageVariants): void
     {
-        if ($this->tookLaterThan($event->occurredOn())) {
-            return;
-        }
-
         $imageVariants->remove($this->path);
         $imageRepository->delete($this);
     }
@@ -107,10 +95,5 @@ final class Image
     public function path(): string
     {
         return $this->path;
-    }
-
-    private function tookLaterThan(\DateTimeImmutable $occurredOn): bool
-    {
-        return $this->lastEventOn > $occurredOn;
     }
 }

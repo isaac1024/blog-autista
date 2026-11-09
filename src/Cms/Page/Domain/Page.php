@@ -69,6 +69,12 @@ final class Page extends AggregateRoot
     #[ORM\Column(name: 'unique_type', length: 20, nullable: true, enumType: PageType::class)]
     private ?PageType $uniqueType;
 
+    /**
+     * One argument per mapped field: Doctrine hydrates it without calling
+     * this, and the named constructors start each field.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'cms_page_id')]
@@ -86,6 +92,8 @@ final class Page extends AggregateRoot
         private ?PageVersion $published,
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
+        #[ORM\Column(options: ['default' => 0])]
+        private int $publicationRevision,
     ) {
         $this->publishedSlug = PageStatus::Published === $status ? $published?->slug() : null;
         $this->uniqueType = $type->isUnique() ? $type : null;
@@ -109,6 +117,7 @@ final class Page extends AggregateRoot
             PageStatus::Draft,
             null,
             Timeline::start(Clock::now()),
+            0,
         );
     }
 
@@ -134,6 +143,7 @@ final class Page extends AggregateRoot
             PageStatus::Draft,
             null,
             Timeline::start(Clock::now()),
+            0,
         );
     }
 
@@ -206,6 +216,7 @@ final class Page extends AggregateRoot
         });
         $this->publishedSlug = $this->version->slug();
         $this->timeline = $this->timeline->published($now);
+        ++$this->publicationRevision;
 
         $this->record(new PagePublished(
             $this->id->value(),
@@ -219,6 +230,7 @@ final class Page extends AggregateRoot
             $now->format(\DATE_ATOM),
             EventId::random()->value(),
             $now,
+            $this->publicationRevision,
         ));
     }
 
@@ -238,8 +250,9 @@ final class Page extends AggregateRoot
 
         $this->status = PageStatus::Unpublished;
         $this->publishedSlug = null;
+        ++$this->publicationRevision;
 
-        $this->record(new PageUnpublished($this->id->value(), EventId::random()->value(), Clock::now()));
+        $this->record(new PageUnpublished($this->id->value(), EventId::random()->value(), Clock::now(), $this->publicationRevision));
     }
 
     /**

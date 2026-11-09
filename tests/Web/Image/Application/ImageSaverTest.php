@@ -55,18 +55,6 @@ final class ImageSaverTest extends TestCase
         );
     }
 
-    public function testItKeepsTheImageWhenAnEarlierVersionArrivesLate(): void
-    {
-        $later = Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', occurredOn: '2026-11-07 11:00:00'));
-        $repository = $this->createMock(ImageRepository::class);
-        $repository->method('find')->willReturn($later);
-        $repository->expects(self::once())->method('save')->with(self::equalTo(
-            Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', occurredOn: '2026-11-07 11:00:00')),
-        ));
-
-        (new ImageSaver(CmsImagePublishedMother::create(occurredOn: '2026-11-07 09:00:00')))($repository, self::createStub(ImageVariants::class));
-    }
-
     /**
      * Only a later event is kept over a new one: two from the same moment
      * keep the one taken last.

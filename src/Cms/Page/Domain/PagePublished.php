@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\RevisedDomainEvent;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -17,7 +17,7 @@ use Shared\Domain\RichText\RichText;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class PagePublished extends DomainEvent
+final readonly class PagePublished extends RevisedDomainEvent
 {
     /**
      * @param array{version: int, blocks: list<array<string, mixed>>} $content in the stored rich text format
@@ -34,8 +34,9 @@ final readonly class PagePublished extends DomainEvent
         private string $lastPublishedAt,
         string $eventId,
         \DateTimeImmutable $occurredOn,
+        int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
     }
 
     #[\Override]
@@ -61,6 +62,7 @@ final readonly class PagePublished extends DomainEvent
             $body->string('last_published_at'),
             $eventId,
             $occurredOn,
+            $body->integer('revision'),
         );
     }
 
@@ -76,6 +78,7 @@ final readonly class PagePublished extends DomainEvent
             'robots' => $this->robots,
             'first_published_at' => $this->firstPublishedAt,
             'last_published_at' => $this->lastPublishedAt,
+            'revision' => $this->revision(),
         ];
     }
 }

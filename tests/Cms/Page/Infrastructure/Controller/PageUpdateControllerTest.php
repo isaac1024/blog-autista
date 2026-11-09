@@ -45,7 +45,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage();
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields());
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields());
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
@@ -56,7 +56,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields());
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields());
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertEquals(
@@ -79,7 +79,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
             ['type' => 'paragraph'],
         ]];
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields([
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields([
             'content' => json_encode($document, \JSON_THROW_ON_ERROR),
             'meta_description' => 'Quién escribe este blog y por qué.',
             'robots' => 'noindex,follow',
@@ -108,7 +108,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), $fields);
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), $fields);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
@@ -143,7 +143,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
             PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'),
         );
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields(['slug' => 'contacto']));
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields(['slug' => 'contacto']));
 
         // The request edits the very instance saved above before the slug check
         // fails, so the stored page is compared against a fresh copy instead.
@@ -161,7 +161,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         self::getContainer()->get(PageRepository::class)->save($home);
 
         // The editor of the home page has no slug field, so none is posted.
-        $client->request('POST', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio'], without: ['slug']));
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio'], without: ['slug']));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Inicio'), $this->storedPage($home));
@@ -173,7 +173,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
         self::getContainer()->get(PageRepository::class)->save($home);
 
-        $client->request('POST', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio', 'slug' => 'inicio']));
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio', 'slug' => 'inicio']));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Portada'), $this->storedPage($home));
@@ -189,7 +189,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         $page = $this->savePage();
         $document = ['type' => 'doc', 'content' => [['type' => 'image', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]];
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()), self::fields([
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields([
             'content' => json_encode($document, \JSON_THROW_ON_ERROR),
         ]));
 
@@ -202,7 +202,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()), self::fields());
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, PageIdMother::random()->value()), self::fields());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -211,7 +211,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'sobre-mi'), self::fields());
+        $this->post($client, 'cms_pages_update', \sprintf(self::URL, 'sobre-mi'), self::fields());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

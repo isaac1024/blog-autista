@@ -36,6 +36,13 @@ final class AdministratorUserTest extends TestCase
         self::assertFalse($user->isEqualTo(AdministratorUser::fromAdministrator(AdministratorMother::create(roles: ['ROLE_EDITOR']))));
     }
 
+    public function testItDiffersWhenTheCredentialsVersionChanges(): void
+    {
+        $user = AdministratorUser::fromAdministrator(AdministratorMother::create(credentialsVersion: 'before'));
+
+        self::assertFalse($user->isEqualTo(AdministratorUser::fromAdministrator(AdministratorMother::create(credentialsVersion: 'after'))));
+    }
+
     public function testItDiffersFromAnotherKindOfUser(): void
     {
         $user = AdministratorUser::fromAdministrator(AdministratorMother::create());

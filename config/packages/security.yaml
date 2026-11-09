@@ -19,6 +19,9 @@ security:
             host: '^%env(CMS_HOST)%$'
             provider: cms_user_provider
             lazy: true
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
             form_login:
                 login_path: cms_login
                 check_path: cms_login_check
@@ -27,6 +30,7 @@ security:
             logout:
                 path: cms_logout
                 target: cms_login
+                enable_csrf: true
         main:
             lazy: true
 

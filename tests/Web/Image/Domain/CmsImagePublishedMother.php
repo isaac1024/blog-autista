@@ -63,7 +63,8 @@ final class CmsImagePublishedMother
         array $caption = self::CAPTION,
         string $path = self::PATH,
         string $occurredOn = ClockMother::NOW,
+        int $revision = 1,
     ): CmsImagePublished {
-        return new CmsImagePublished($id, $alt, RichText::fromArray($caption), $path, EventId::random()->value(), ClockMother::now($occurredOn));
+        return new CmsImagePublished($id, $alt, RichText::fromArray($caption), $path, EventId::random()->value(), ClockMother::now($occurredOn), $revision);
     }
 }

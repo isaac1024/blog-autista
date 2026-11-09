@@ -25,18 +25,30 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
     {
         $this->pageOnTheSite('2026-11-07 09:00:00');
 
-        $this->handle();
+        $this->handle(2);
 
         self::assertNull($this->storedPage());
     }
 
     public function testItKeepsThePageWhenItWasPublishedAgainAfterwards(): void
     {
-        $this->pageOnTheSite('2026-11-07 11:00:00');
+        $this->pageOnTheSite('2026-11-07 11:00:00', 2);
 
         $this->handle();
 
         self::assertNotNull($this->storedPage());
+    }
+
+    public function testItKeepsThePageOffTheSiteWhenItsPublicationIsDeliveredAgain(): void
+    {
+        $this->pageOnTheSite('2026-11-07 09:00:00');
+        $this->pageOnTheSite('2026-11-07 10:00:00', 2);
+        $this->handle(3);
+
+        // The queue retries the second publication, which it took for failed.
+        $this->pageOnTheSite('2026-11-07 10:00:00', 2);
+
+        self::assertNull($this->storedPage());
     }
 
     public function testItTakesTheUnpublicationOfAPageNotOnTheSiteAsDone(): void
@@ -46,19 +58,43 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
         self::assertNull($this->storedPage());
     }
 
-    private function pageOnTheSite(string $publishedOn): void
+    public function testItDoesNotRestoreAPageWhenAnOlderPublicationArrivesAfterTheUnpublication(): void
     {
-        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(occurredOn: $publishedOn)));
+        $this->handle(2);
+
+        $this->pageOnTheSite('2026-11-07 09:00:00');
+
+        self::assertNull($this->storedPage());
     }
 
-    private function handle(): void
+    private function pageOnTheSite(string $publishedOn, int $revision = 1): void
     {
+        $body = CmsPagePublishedMother::body();
+        $body['revision'] = $revision;
+
+        // As the worker does after each message, so the projection reads
+        // what it keeps from the database, not from Doctrine's memory.
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
+        self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
+            'cms.page.published',
+            EventId::random()->value(),
+            PageIdMother::DEFAULT_VALUE,
+            ClockMother::now($publishedOn)->format(\DATE_ATOM),
+            $body,
+        ));
+    }
+
+    private function handle(int $revision = 1): void
+    {
+        // As the worker does after each message, so the projection reads
+        // what it keeps from the database, not from Doctrine's memory.
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.page.unpublished',
             EventId::random()->value(),
             PageIdMother::DEFAULT_VALUE,
             ClockMother::now()->format(\DATE_ATOM),
-            [],
+            ['revision' => $revision],
         ));
     }
 

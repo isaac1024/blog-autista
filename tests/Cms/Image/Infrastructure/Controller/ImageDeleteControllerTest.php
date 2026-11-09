@@ -45,7 +45,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $image = $this->saveImage(ImageMother::create(id: ImageIdMother::random()->value()));
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($image, $this->storedImage($image));
@@ -58,7 +58,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->saveImage($image);
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
         self::assertNull($this->storedImage($image));
@@ -80,7 +80,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
         $image = $this->saveImage(ImageMother::published(id: ImageIdMother::random()->value()));
         $expected = clone $image;
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.image.publication.published_image', 'parameters' => []]], self::notices($client));
@@ -100,7 +100,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
             [$image->id()->value()],
         );
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.image.publication.in_use', 'parameters' => []]], self::notices($client));
@@ -112,7 +112,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, ImageIdMother::random()->value()));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, ImageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -121,7 +121,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'circulo-naranja'));
+        $this->post($client, 'cms_images_delete', \sprintf(self::URL, 'circulo-naranja'));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

@@ -23,6 +23,7 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "8.1.*",
         "symfony/messenger": "8.1.*",
+        "symfony/rate-limiter": "8.1.*",
         "symfony/runtime": "8.1.*",
         "symfony/scheduler": "8.1.*",
         "symfony/security-bundle": "8.1.*",
@@ -113,8 +114,8 @@
         "test": "paratest",
         "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
-        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection --only-covering-test-cases",
-        "infection:diff": "XDEBUG_MODE=coverage infection --only-covering-test-cases --git-diff-lines --git-diff-base=master --map-source-class-to-test",
+        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection",
+        "infection:diff": "XDEBUG_MODE=coverage infection --git-diff-lines --git-diff-base=master",
         "check": [
             "@cs:check",
             "@twig:cs:check",

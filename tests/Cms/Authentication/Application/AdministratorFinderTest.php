@@ -48,6 +48,12 @@ final class AdministratorFinderTest extends TestCase
             {
                 return null !== $this->administrator;
             }
+
+            #[\Override]
+            public function credentialsVersion(string $identifier): ?string
+            {
+                return $this->administrator?->credentialsVersion();
+            }
         };
     }
 }

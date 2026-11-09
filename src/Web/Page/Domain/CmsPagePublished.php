@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Web\Page\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\RevisedDomainEvent;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -17,7 +17,7 @@ use Shared\Domain\RichText\RichText;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class CmsPagePublished extends DomainEvent
+final readonly class CmsPagePublished extends RevisedDomainEvent
 {
     public function __construct(
         string $aggregateId,
@@ -31,8 +31,9 @@ final readonly class CmsPagePublished extends DomainEvent
         private \DateTimeImmutable $lastPublishedAt,
         string $eventId,
         \DateTimeImmutable $occurredOn,
+        int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
     }
 
     #[\Override]
@@ -59,6 +60,7 @@ final readonly class CmsPagePublished extends DomainEvent
             new \DateTimeImmutable($body->string('last_published_at')),
             $eventId,
             $occurredOn,
+            $body->integer('revision'),
         );
     }
 
@@ -74,6 +76,7 @@ final readonly class CmsPagePublished extends DomainEvent
             'robots' => $this->robots->value,
             'first_published_at' => $this->firstPublishedAt->format(\DATE_ATOM),
             'last_published_at' => $this->lastPublishedAt->format(\DATE_ATOM),
+            'revision' => $this->revision(),
         ];
     }
 

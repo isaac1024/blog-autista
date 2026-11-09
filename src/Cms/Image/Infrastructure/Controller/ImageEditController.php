@@ -39,12 +39,6 @@ final class ImageEditController extends AbstractController
 
     private const string DISCARD_CHANGES_MODAL = 'discard-changes';
 
-    /**
-     * Where the CMS host serves the files of the images: the web server maps
-     * it onto the image storage, apart from the copies the site serves.
-     */
-    private const string MEDIA_URL = '/originales/';
-
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
@@ -86,7 +80,7 @@ final class ImageEditController extends AbstractController
                 'status' => $this->imageState->label($image),
             ], $this->imageActions($image))
             ->withMain('Shared:ImagePreview', [
-                'src' => self::MEDIA_URL.$image->path,
+                'src' => $this->generateUrl('cms_images_file', ['id' => $image->id]),
                 'alt' => $image->alt,
                 'width' => Image::WIDTH,
                 'height' => Image::HEIGHT,
@@ -94,6 +88,7 @@ final class ImageEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_images_update', ['id' => $image->id]),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_images_update',
                 'id' => self::FORM,
             ], [
                 new PageComponent('Shared:FormField', [], [
@@ -143,6 +138,7 @@ final class ImageEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_images_publish', ['id' => $image->id]),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_images_publish',
                 'id' => self::PUBLISH_FORM,
                 'hidden' => true,
             ]);
@@ -220,6 +216,7 @@ final class ImageEditController extends AbstractController
             new PageComponent('Shared:Form', [
                 'action' => $this->generateUrl($route, ['id' => $image->id]),
                 'method' => 'post',
+                'csrfTokenId' => $route,
             ], [
                 new PageComponent('Shared:FormButton', [
                     'label' => $this->translator->trans(\sprintf('cms.images.%s.submit', $action)),

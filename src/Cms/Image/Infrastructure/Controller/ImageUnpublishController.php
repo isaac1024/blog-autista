@@ -9,7 +9,9 @@ use Cms\Image\Application\ImageUnpublisher;
 use Cms\Image\Domain\ImageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -17,8 +19,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ImageUnpublishController extends AbstractController
 {
     #[Route('/images/{id}/unpublish', name: 'cms_images_unpublish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, ImageRepository $imageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, ImageRepository $imageRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         try {
             new ImageUnpublisher($id)($imageRepository, $eventBus);
         } catch (ImageNotFound $exception) {

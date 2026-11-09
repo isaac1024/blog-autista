@@ -36,7 +36,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $settings = $this->saveSettings(Mother::create());
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($settings, $this->storedSettings());
@@ -49,7 +49,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         $version = Mother::version(defaultImage: Mother::IMAGE, mainMenu: [Mother::item(label: 'Sobre mí')]);
         $this->saveSettings(Mother::create($version));
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertSame([], self::notices($client));
@@ -65,7 +65,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
             footerMenu: [Mother::item(Mother::OTHER_PAGE)],
         )));
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_publish', self::URL);
 
         $events = $this->queuedEvents();
         self::assertCount(1, $events);
@@ -76,6 +76,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
             'default_image_id' => Mother::IMAGE,
             'main_menu' => [Mother::item(label: 'Sobre mí')],
             'footer_menu' => [Mother::item(Mother::OTHER_PAGE)],
+            'revision' => 1,
         ], $events[0]->body);
     }
 
@@ -84,7 +85,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $settings = $this->saveSettings(Mother::published());
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.settings.publication.nothing_to_publish', 'parameters' => []]], self::notices($client));
@@ -96,7 +97,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', self::URL);
+        $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

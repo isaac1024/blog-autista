@@ -40,7 +40,7 @@ final class ImageCreateControllerTest extends CmsWebTestCase
     {
         $client = self::createClient();
 
-        $client->request('POST', self::URL, ['alt' => ImageMother::ALT], ['image' => self::upload()]);
+        $this->post($client, 'cms_images_create', self::URL, ['alt' => ImageMother::ALT], ['image' => self::upload()]);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertSame([], self::images());
@@ -50,7 +50,7 @@ final class ImageCreateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', self::URL, ['alt' => ImageMother::ALT], ['image' => self::upload()]);
+        $this->post($client, 'cms_images_create', self::URL, ['alt' => ImageMother::ALT], ['image' => self::upload()]);
 
         self::assertResponseRedirects(self::URL, Response::HTTP_SEE_OTHER);
         self::assertSame([], self::notices($client));
@@ -70,7 +70,7 @@ final class ImageCreateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', self::URL, $fields, $files);
+        $this->post($client, 'cms_images_create', self::URL, $fields, $files);
 
         self::assertResponseRedirects(self::URL, Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));

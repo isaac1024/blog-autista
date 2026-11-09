@@ -12,4 +12,6 @@ interface AdministratorRepository
     public function findByIdentifier(string $identifier): ?Administrator;
 
     public function existsByIdentifier(string $identifier): bool;
+
+    public function credentialsVersion(string $identifier): ?string;
 }

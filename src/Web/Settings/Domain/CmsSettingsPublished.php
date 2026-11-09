@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Web\Settings\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\RevisedDomainEvent;
 
 /**
  * The CMS put its settings on the site, or replaced their version there, with
@@ -16,7 +16,7 @@ use Shared\Domain\Event\EventBody;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class CmsSettingsPublished extends DomainEvent
+final readonly class CmsSettingsPublished extends RevisedDomainEvent
 {
     /**
      * @param ?string                                      $defaultImageId null for none
@@ -31,8 +31,9 @@ final readonly class CmsSettingsPublished extends DomainEvent
         private array $footerMenu,
         string $eventId,
         \DateTimeImmutable $occurredOn,
+        int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
     }
 
     #[\Override]
@@ -54,6 +55,7 @@ final readonly class CmsSettingsPublished extends DomainEvent
             self::menu($body->array('footer_menu')),
             $eventId,
             $occurredOn,
+            $body->integer('revision'),
         );
     }
 
@@ -65,6 +67,7 @@ final readonly class CmsSettingsPublished extends DomainEvent
             'default_image_id' => $this->defaultImageId,
             'main_menu' => $this->mainMenu,
             'footer_menu' => $this->footerMenu,
+            'revision' => $this->revision(),
         ];
     }
 

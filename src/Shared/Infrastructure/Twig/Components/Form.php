@@ -37,6 +37,12 @@ final class Form
     public ?string $enctype = null;
 
     /**
+     * What the token it sends protects, for a form that changes something:
+     * the name of the route it posts to, which checks it.
+     */
+    public ?string $csrfTokenId = null;
+
+    /**
      * @var list<PageComponent>
      */
     public array $children = [];

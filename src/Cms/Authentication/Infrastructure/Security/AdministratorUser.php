@@ -20,12 +20,13 @@ final readonly class AdministratorUser implements EquatableInterface, PasswordAu
     private function __construct(
         private string $identifier,
         private string $passwordHash,
+        private string $credentialsVersion,
         private array $roles,
     ) {}
 
     public static function fromAdministrator(Administrator $administrator): self
     {
-        return new self($administrator->identifier(), $administrator->passwordHash(), $administrator->roles());
+        return new self($administrator->identifier(), $administrator->passwordHash(), $administrator->credentialsVersion(), $administrator->roles());
     }
 
     #[\Override]
@@ -49,11 +50,17 @@ final readonly class AdministratorUser implements EquatableInterface, PasswordAu
         return $this->roles;
     }
 
+    public function credentialsVersion(): string
+    {
+        return $this->credentialsVersion;
+    }
+
     #[\Override]
     public function isEqualTo(UserInterface $user): bool
     {
         return $user instanceof self
             && $this->identifier === $user->identifier
+            && $this->credentialsVersion === $user->credentialsVersion
             && $this->roles === $user->roles;
     }
 }

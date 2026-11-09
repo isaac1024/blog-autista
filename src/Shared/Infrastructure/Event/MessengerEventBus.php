@@ -29,7 +29,7 @@ final readonly class MessengerEventBus implements EventBus
                     $event::eventName(),
                     $event->eventId(),
                     $event->aggregateId(),
-                    $event->occurredOn()->format(\DATE_ATOM),
+                    $event->occurredOn()->format('Y-m-d\TH:i:s.uP'),
                     $event->toPrimitives(),
                 ),
                 // Events to be told at once skip the queue: they are handled

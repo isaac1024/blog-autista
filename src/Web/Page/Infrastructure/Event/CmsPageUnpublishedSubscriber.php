@@ -9,13 +9,17 @@ use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Page\Application\PageRemover;
 use Web\Page\Domain\CmsPageUnpublished;
 use Web\Page\Domain\PageRepository;
+use Web\Projection\Domain\Projection;
 
 /**
  * Takes off the site each page the CMS unpublishes.
  */
 final readonly class CmsPageUnpublishedSubscriber implements DomainEventSubscriber
 {
-    public function __construct(private PageRepository $pageRepository) {}
+    public function __construct(
+        private PageRepository $pageRepository,
+        private Projection $projection,
+    ) {}
 
     #[\Override]
     public static function subscribedTo(): array
@@ -27,7 +31,9 @@ final readonly class CmsPageUnpublishedSubscriber implements DomainEventSubscrib
     public function handle(DomainEvent $event): void
     {
         if ($event instanceof CmsPageUnpublished) {
-            new PageRemover($event)($this->pageRepository);
+            $this->projection->apply('page', $event, function () use ($event): void {
+                new PageRemover($event)($this->pageRepository);
+            });
         }
     }
 }

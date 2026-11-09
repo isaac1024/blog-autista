@@ -18,6 +18,6 @@ final readonly class PageRemover
 
     public function __invoke(PageRepository $pageRepository): void
     {
-        $pageRepository->find(new PageId($this->event->aggregateId()))?->unpublish($this->event, $pageRepository);
+        $pageRepository->find(new PageId($this->event->aggregateId()))?->unpublish($pageRepository);
     }
 }

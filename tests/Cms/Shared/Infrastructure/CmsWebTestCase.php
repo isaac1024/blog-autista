@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Shared\Infrastructure;
 
+use Cms\Authentication\Application\AdministratorFinder;
 use Cms\Authentication\Infrastructure\Security\AdministratorUser;
-use Cms\Tests\Authentication\Domain\AdministratorMother;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
  * Base for HTTP tests of the CMS. Authenticated clients get their session
@@ -20,8 +24,53 @@ abstract class CmsWebTestCase extends WebTestCase
     protected static function createAuthenticatedClient(): KernelBrowser
     {
         $client = self::createClient();
-        $client->loginUser(AdministratorUser::fromAdministrator(AdministratorMother::create()), self::FIREWALL);
+        $administrator = self::getContainer()->get(AdministratorFinder::class)->find('admin');
+        $client->loginUser(AdministratorUser::fromAdministrator($administrator), self::FIREWALL);
 
         return $client;
+    }
+
+    /**
+     * A client that signs in through the login form from an address of its
+     * own, so the attempts throttled per address never add up across tests
+     * nor across runs, which share the cache that counts them.
+     */
+    protected static function createLoginClient(): KernelBrowser
+    {
+        $client = self::createClient();
+        $client->setServerParameter('REMOTE_ADDR', long2ip(random_int(0x0A000001, 0x0AFFFFFE)));
+
+        return $client;
+    }
+
+    /**
+     * Posts as the browser does when the form for the route supplied the token.
+     *
+     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $files
+     */
+    protected function post(KernelBrowser $client, string $route, string $url, array $parameters = [], array $files = []): Crawler
+    {
+        $token = $this->csrfToken($client, $route);
+
+        return $client->request('POST', $url, ['_token' => $token] + $parameters, $files);
+    }
+
+    protected function csrfToken(KernelBrowser $client, string $id): string
+    {
+        $session = $client->getSession() ?? throw new \LogicException('The test client has no session.');
+        $request = Request::create('http://cms.blogautista.localhost/');
+        $request->setSession($session);
+        $requests = self::getContainer()->get(RequestStack::class);
+        $requests->push($request);
+
+        try {
+            $token = self::getContainer()->get(CsrfTokenManagerInterface::class)->getToken($id)->getValue();
+            $session->save();
+
+            return $token;
+        } finally {
+            $requests->pop();
+        }
     }
 }

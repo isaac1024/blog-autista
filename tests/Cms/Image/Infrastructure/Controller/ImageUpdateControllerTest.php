@@ -45,7 +45,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createClient();
 
-        $client->request('POST', \sprintf(self::URL, ImageIdMother::DEFAULT_VALUE), self::fields());
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, ImageIdMother::DEFAULT_VALUE), self::fields());
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
     }
@@ -59,7 +59,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
             ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Ilustración de archivo.']]],
         ]];
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()), self::fields([
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, $image->id()->value()), self::fields([
             'alt' => 'Círculo naranja sobre fondo azul',
             'caption' => json_encode($caption, \JSON_THROW_ON_ERROR),
         ]));
@@ -83,7 +83,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $image = $this->saveImage(Text::stored(Text::paragraph('Pie anterior.')));
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()), self::fields());
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, $image->id()->value()), self::fields());
 
         self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
         self::assertEquals(
@@ -104,7 +104,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $image = $this->saveImage();
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()), $fields);
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, $image->id()->value()), $fields);
 
         self::assertResponseRedirects(\sprintf(self::URL, $image->id()->value()), Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));
@@ -133,7 +133,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, ImageIdMother::random()->value()), self::fields());
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, ImageIdMother::random()->value()), self::fields());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -142,7 +142,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'circulo-naranja'), self::fields());
+        $this->post($client, 'cms_images_update', \sprintf(self::URL, 'circulo-naranja'), self::fields());
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

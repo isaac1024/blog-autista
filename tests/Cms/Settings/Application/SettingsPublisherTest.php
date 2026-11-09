@@ -55,7 +55,7 @@ final class SettingsPublisherTest extends TestCase
         yield 'a draft with everything' => [Mother::create($edited, createdAt: self::BEFORE), Mother::published($edited, createdAt: self::BEFORE)];
         yield 'published settings with changes' => [
             Mother::published($edited, Mother::version(), createdAt: self::BEFORE),
-            Mother::published($edited, createdAt: self::BEFORE),
+            Mother::published($edited, createdAt: self::BEFORE, publicationRevision: 2),
         ];
     }
 
@@ -78,6 +78,7 @@ final class SettingsPublisherTest extends TestCase
                 'default_image_id' => Mother::IMAGE,
                 'main_menu' => $main,
                 'footer_menu' => $footer,
+                'revision' => 2,
             ]],
         ], $told);
     }
@@ -100,7 +101,7 @@ final class SettingsPublisherTest extends TestCase
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
             ['cms.settings.pages_linked', SettingsIdMother::DEFAULT_VALUE, ['page_ids' => []]],
-            ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, ['name' => Mother::NAME, 'default_image_id' => null, 'main_menu' => [], 'footer_menu' => []]],
+            ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, ['name' => Mother::NAME, 'default_image_id' => null, 'main_menu' => [], 'footer_menu' => [], 'revision' => 2]],
         ], $told);
     }
 

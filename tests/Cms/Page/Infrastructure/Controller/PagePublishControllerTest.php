@@ -36,7 +36,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage(PageMother::create(id: PageIdMother::random()->value()));
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
@@ -49,7 +49,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
         $id = PageIdMother::random()->value();
         $page = $this->savePage(self::publishableDraft($id));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi'), $this->storedPage($page));
@@ -61,7 +61,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
         $id = PageIdMother::random()->value();
         $this->savePage(self::publishableDraft($id));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $id));
 
         $events = $this->queuedEvents();
         self::assertCount(1, $events);
@@ -78,7 +78,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
         $this->savePage($page);
         $expected = clone $page;
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($expected, $this->storedPage($page));
@@ -108,7 +108,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()));
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

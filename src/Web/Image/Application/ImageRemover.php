@@ -19,6 +19,6 @@ final readonly class ImageRemover
 
     public function __invoke(ImageRepository $imageRepository, ImageVariants $imageVariants): void
     {
-        $imageRepository->find(new ImageId($this->event->aggregateId()))?->unpublish($this->event, $imageRepository, $imageVariants);
+        $imageRepository->find(new ImageId($this->event->aggregateId()))?->unpublish($imageRepository, $imageVariants);
     }
 }

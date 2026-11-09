@@ -9,7 +9,9 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -20,8 +22,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PageDiscardChangesController extends AbstractController
 {
     #[Route('/pages/{id}/discard', name: 'cms_pages_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         try {
             new PageChangesDiscarder($id)($pageRepository, $eventBus);
         } catch (PageNotFound $exception) {

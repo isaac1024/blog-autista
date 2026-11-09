@@ -24,4 +24,10 @@ final readonly class AdministratorFinder
     {
         return $this->administrators->existsByIdentifier($identifier);
     }
+
+    public function credentialsVersion(string $identifier): string
+    {
+        return $this->administrators->credentialsVersion($identifier)
+            ?? throw AdministratorNotFound::withIdentifier($identifier);
+    }
 }

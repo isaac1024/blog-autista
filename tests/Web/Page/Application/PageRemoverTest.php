@@ -37,15 +37,6 @@ final class PageRemoverTest extends TestCase
         (new PageRemover(CmsPageUnpublishedMother::create()))($repository);
     }
 
-    public function testItKeepsAPagePublishedAgainAfterItWasTakenOff(): void
-    {
-        $repository = $this->createMock(PageRepository::class);
-        $repository->method('find')->willReturn(Page::publish(CmsPagePublishedMother::create(occurredOn: '2026-11-07 11:00:00')));
-        $repository->expects(self::never())->method('delete');
-
-        (new PageRemover(CmsPageUnpublishedMother::create()))($repository);
-    }
-
     public function testItDoesNothingWhenThePageIsNotOnTheSite(): void
     {
         $repository = $this->createMock(PageRepository::class);

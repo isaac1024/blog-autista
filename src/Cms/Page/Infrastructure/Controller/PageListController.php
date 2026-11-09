@@ -74,6 +74,7 @@ final class PageListController extends AbstractController
                     new PageComponent('Shared:Form', [
                         'action' => $this->generateUrl('cms_pages_create'),
                         'method' => 'post',
+                        'csrfTokenId' => 'cms_pages_create',
                     ], [
                         new PageComponent('Shared:FormField', [], [
                             new PageComponent('Shared:FormLabel', [

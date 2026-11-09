@@ -62,7 +62,7 @@ final class PagePublisherTest extends TestCase
         ];
         yield 'a published page with changes, keeping its first publication' => [
             PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', publishedTitle: 'Quién soy', updatedAt: self::BEFORE, firstPublishedAt: self::BEFORE, lastPublishedAt: self::BEFORE),
-            PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', updatedAt: self::BEFORE, firstPublishedAt: self::BEFORE),
+            PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', updatedAt: self::BEFORE, firstPublishedAt: self::BEFORE, publicationRevision: 2),
         ];
         yield 'the home page, which has no slug' => [
             PageMother::home(id: $id, content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION),
@@ -70,7 +70,7 @@ final class PagePublisherTest extends TestCase
         ];
         yield 'an unpublished page' => [
             PageMother::unpublished(id: $id, title: 'Sobre mí', slug: 'sobre-mi'),
-            PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi'),
+            PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', publicationRevision: 3),
         ];
     }
 
@@ -101,6 +101,7 @@ final class PagePublisherTest extends TestCase
                     'robots' => 'index,follow',
                     'first_published_at' => ClockMother::now(self::BEFORE)->format(\DATE_ATOM),
                     'last_published_at' => ClockMother::now()->format(\DATE_ATOM),
+                    'revision' => 2,
                 ] === $event->toPrimitives(),
         ));
 

@@ -40,17 +40,6 @@ final class ImageRemoverTest extends TestCase
         self::assertSame(['copies', 'image'], $steps);
     }
 
-    public function testItKeepsTheImageWhenItWasPublishedAgainAfterwards(): void
-    {
-        $repository = $this->createMock(ImageRepository::class);
-        $repository->method('find')->willReturn(Image::publish(CmsImagePublishedMother::create(occurredOn: '2026-11-07 11:00:00')));
-        $repository->expects(self::never())->method('delete');
-        $variants = $this->createMock(ImageVariants::class);
-        $variants->expects(self::never())->method('remove');
-
-        (new ImageRemover(CmsImageUnpublishedMother::create(occurredOn: '2026-11-07 09:00:00')))($repository, $variants);
-    }
-
     public function testItDoesNothingWhenTheImageIsAlreadyGone(): void
     {
         $repository = $this->createMock(ImageRepository::class);

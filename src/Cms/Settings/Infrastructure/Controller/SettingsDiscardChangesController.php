@@ -9,15 +9,19 @@ use Cms\Settings\Application\SettingsNotFound;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class SettingsDiscardChangesController extends AbstractController
 {
     #[Route('/settings/discard', name: 'cms_settings_discard', methods: ['POST'])]
-    public function __invoke(SettingsRepository $settingsRepository, EventBus $eventBus): Response
+    public function __invoke(Request $request, SettingsRepository $settingsRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         try {
             new SettingsChangesDiscarder()($settingsRepository, $eventBus);
         } catch (SettingsNotFound $exception) {

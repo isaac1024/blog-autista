@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Settings\Domain;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\RevisedDomainEvent;
 
 /**
  * The settings were put on the site, or their version there replaced, with
@@ -14,7 +15,7 @@ use Shared\Domain\Event\DomainEvent;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class SettingsPublished extends DomainEvent
+final readonly class SettingsPublished extends RevisedDomainEvent
 {
     /**
      * @param list<array{page_id: string, label: ?string}> $mainMenu
@@ -28,8 +29,9 @@ final readonly class SettingsPublished extends DomainEvent
         private array $footerMenu,
         string $eventId,
         \DateTimeImmutable $occurredOn,
+        int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
     }
 
     #[\Override]
@@ -56,6 +58,7 @@ final readonly class SettingsPublished extends DomainEvent
             $version->footerMenu()->toArray(),
             $eventId,
             $occurredOn,
+            new EventBody($body)->integer('revision'),
         );
     }
 
@@ -67,6 +70,7 @@ final readonly class SettingsPublished extends DomainEvent
             'default_image_id' => $this->defaultImageId,
             'main_menu' => $this->mainMenu,
             'footer_menu' => $this->footerMenu,
+            'revision' => $this->revision(),
         ];
     }
 }

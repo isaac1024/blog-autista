@@ -1,5 +1,8 @@
 {% import 'shared/render_component.html.twig' as renderer %}
 <form class="grid gap-6" method="{{ method }}" action="{{ action }}"{% if id %} id="{{ id }}"{% endif %}{% if hidden %} hidden{% endif %}{% if enctype %} enctype="{{ enctype }}"{% endif %}>
+{% if csrfTokenId is not null %}
+    <input type="hidden" name="_token" value="{{ csrf_token(csrfTokenId) }}">
+{% endif %}
 {% for child in children %}
     {{ renderer.render(child) }}
 {% endfor %}

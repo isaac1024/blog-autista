@@ -18,8 +18,8 @@ use Web\Page\Domain\CmsPageUnpublished;
  */
 final class CmsPageUnpublishedMother
 {
-    public static function create(string $id = PageIdMother::DEFAULT_VALUE, string $occurredOn = ClockMother::NOW): CmsPageUnpublished
+    public static function create(string $id = PageIdMother::DEFAULT_VALUE, string $occurredOn = ClockMother::NOW, int $revision = 2): CmsPageUnpublished
     {
-        return new CmsPageUnpublished($id, EventId::random()->value(), ClockMother::now($occurredOn));
+        return new CmsPageUnpublished($id, EventId::random()->value(), ClockMother::now($occurredOn), $revision);
     }
 }

@@ -57,7 +57,7 @@ final class ImageSearchControllerTest extends CmsWebTestCase
             'id' => $published,
             'alt' => 'Círculo naranja sobre fondo azul',
             'caption' => 'Ilustración de archivo.',
-            'thumbnail' => '/originales/2026/11/'.$published.'.webp',
+            'thumbnail' => '/images/'.$published.'/file',
             'status' => self::statusLabel('published'),
             'published' => true,
         ]]], self::json($client));

@@ -46,6 +46,12 @@ final class Image extends AggregateRoot
 
     public const int HEIGHT = 675;
 
+    /**
+     * One argument per mapped field: Doctrine hydrates it without calling
+     * this, and the named constructors start each field.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'cms_image_id')]
@@ -63,6 +69,8 @@ final class Image extends AggregateRoot
         private ?ImageVersion $published,
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
+        #[ORM\Column(options: ['default' => 0])]
+        private int $publicationRevision,
     ) {}
 
     /**
@@ -81,6 +89,7 @@ final class Image extends AggregateRoot
             ImageStatus::Draft,
             null,
             $timeline,
+            0,
         );
     }
 
@@ -115,6 +124,7 @@ final class Image extends AggregateRoot
         $this->changePagesLinked(function (): void {
             $this->published = $this->version;
         });
+        ++$this->publicationRevision;
 
         $this->record(new ImagePublished(
             $this->id->value(),
@@ -124,6 +134,7 @@ final class Image extends AggregateRoot
             $this->path->value(),
             EventId::random()->value(),
             Clock::now(),
+            $this->publicationRevision,
         ));
     }
 
@@ -137,8 +148,9 @@ final class Image extends AggregateRoot
         }
 
         $this->status = ImageStatus::Unpublished;
+        ++$this->publicationRevision;
 
-        $this->record(new ImageUnpublished($this->id->value(), EventId::random()->value(), Clock::now()));
+        $this->record(new ImageUnpublished($this->id->value(), EventId::random()->value(), Clock::now(), $this->publicationRevision));
     }
 
     /**

@@ -55,7 +55,7 @@ final class CmsImageSubscribersTest extends KernelTestCase
         $caption = Text::stored(Text::paragraph('Otro pie.'));
         $this->handle('cms.image.published', CmsImagePublishedMother::body());
 
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto', caption: $caption), '2026-11-07 11:00:00');
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto', caption: $caption), '2026-11-07 11:00:00', 2);
 
         self::assertEquals(
             Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption, occurredOn: '2026-11-07 11:00:00')),
@@ -63,11 +63,20 @@ final class CmsImageSubscribersTest extends KernelTestCase
         );
     }
 
+    public function testItKeepsTheTextsWhenAnEarlierVersionArrivesLate(): void
+    {
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 11:00:00', 2);
+
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(), '2026-11-07 09:00:00');
+
+        self::assertSame('Otro texto', $this->storedImage()?->alt());
+    }
+
     public function testItTakesOffTheSiteTheImageTheCmsUnpublishes(): void
     {
         $this->handle('cms.image.published', CmsImagePublishedMother::body());
 
-        $this->handle('cms.image.unpublished', [], '2026-11-07 11:00:00');
+        $this->handle('cms.image.unpublished', [], '2026-11-07 11:00:00', 2);
 
         self::assertNull($this->storedImage());
         self::assertSame([], $this->copies());
@@ -75,7 +84,7 @@ final class CmsImageSubscribersTest extends KernelTestCase
 
     public function testItKeepsTheImageWhenItsUnpublicationArrivesAfterALaterPublication(): void
     {
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(), '2026-11-07 11:00:00');
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(), '2026-11-07 11:00:00', 2);
 
         $this->handle('cms.image.unpublished', [], '2026-11-07 09:00:00');
 
@@ -83,11 +92,39 @@ final class CmsImageSubscribersTest extends KernelTestCase
         self::assertSame(['400w', '800w', '1200w'], $this->copies());
     }
 
+    public function testItKeepsTheImageAndItsCopiesOffTheSiteWhenItsPublicationIsDeliveredAgain(): void
+    {
+        $this->handle('cms.image.published', CmsImagePublishedMother::body());
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 10:00:00', 2);
+        $this->handle('cms.image.unpublished', [], '2026-11-07 11:00:00', 3);
+
+        // The queue retries the second publication, which it took for failed.
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 10:00:00', 2);
+
+        self::assertNull($this->storedImage());
+        self::assertSame([], $this->copies());
+    }
+
+    public function testItDoesNotRestoreAnImageNorItsCopiesWhenAnOlderPublicationArrivesLate(): void
+    {
+        $this->handle('cms.image.unpublished', [], revision: 2);
+
+        $this->handle('cms.image.published', CmsImagePublishedMother::body());
+
+        self::assertNull($this->storedImage());
+        self::assertSame([], $this->copies());
+    }
+
     /**
      * @param array<string, mixed> $body
      */
-    private function handle(string $name, array $body, string $occurredOn = ClockMother::NOW): void
+    private function handle(string $name, array $body, string $occurredOn = ClockMother::NOW, int $revision = 1): void
     {
+        $body['revision'] = $revision;
+
+        // As the worker does after each message, so the projection reads
+        // what it keeps from the database, not from Doctrine's memory.
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             $name,
             EventId::random()->value(),

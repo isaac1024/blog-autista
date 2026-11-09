@@ -61,6 +61,7 @@ final class CmsPagePublishedMother
         Robots $robots = Robots::IndexFollow,
         string $occurredOn = ClockMother::NOW,
         array $content = self::CONTENT,
+        int $revision = 1,
     ): CmsPagePublished {
         return new CmsPagePublished(
             $id,
@@ -74,6 +75,7 @@ final class CmsPagePublishedMother
             ClockMother::now($occurredOn),
             EventId::random()->value(),
             ClockMother::now($occurredOn),
+            $revision,
         );
     }
 }

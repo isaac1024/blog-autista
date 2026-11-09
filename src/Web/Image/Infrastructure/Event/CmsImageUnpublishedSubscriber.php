@@ -10,6 +10,7 @@ use Web\Image\Application\ImageRemover;
 use Web\Image\Domain\CmsImageUnpublished;
 use Web\Image\Domain\ImageRepository;
 use Web\Image\Domain\ImageVariants;
+use Web\Projection\Domain\Projection;
 
 /**
  * Takes off the site each image the CMS unpublishes.
@@ -19,6 +20,7 @@ final readonly class CmsImageUnpublishedSubscriber implements DomainEventSubscri
     public function __construct(
         private ImageRepository $imageRepository,
         private ImageVariants $imageVariants,
+        private Projection $projection,
     ) {}
 
     #[\Override]
@@ -31,7 +33,9 @@ final readonly class CmsImageUnpublishedSubscriber implements DomainEventSubscri
     public function handle(DomainEvent $event): void
     {
         if ($event instanceof CmsImageUnpublished) {
-            new ImageRemover($event)($this->imageRepository, $this->imageVariants);
+            $this->projection->apply('image', $event, function () use ($event): void {
+                new ImageRemover($event)($this->imageRepository, $this->imageVariants);
+            });
         }
     }
 }

@@ -37,7 +37,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $image = $this->saveImage(ImageMother::published(id: ImageIdMother::random()->value()));
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_discard', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($image, $this->storedImage($image));
@@ -50,7 +50,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
         $id = ImageIdMother::random()->value();
         $image = $this->saveImage(ImageMother::published(id: $id, alt: 'Otro texto', publishedAlt: ImageMother::ALT, createdAt: '2026-10-01 09:00:00'));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_images_discard', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([], self::notices($client));
@@ -68,7 +68,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
         $this->saveImage($image);
         $expected = clone $image;
 
-        $client->request('POST', \sprintf(self::URL, $image->id()->value()));
+        $this->post($client, 'cms_images_discard', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));
@@ -91,7 +91,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, ImageIdMother::random()->value()));
+        $this->post($client, 'cms_images_discard', \sprintf(self::URL, ImageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -100,7 +100,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, 'circulo-naranja'));
+        $this->post($client, 'cms_images_discard', \sprintf(self::URL, 'circulo-naranja'));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

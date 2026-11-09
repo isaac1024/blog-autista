@@ -58,6 +58,7 @@ final class ImageMother
             ImageStatus::Draft,
             null,
             new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            0,
         );
     }
 
@@ -76,8 +77,9 @@ final class ImageMother
         ?array $publishedCaption = null,
         string $createdAt = ClockMother::NOW,
         ?string $updatedAt = null,
+        int $publicationRevision = 1,
     ): Image {
-        return self::onTheSite(ImageStatus::Published, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt);
+        return self::onTheSite(ImageStatus::Published, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $publicationRevision);
     }
 
     /**
@@ -95,8 +97,9 @@ final class ImageMother
         ?array $publishedCaption = null,
         string $createdAt = ClockMother::NOW,
         ?string $updatedAt = null,
+        int $publicationRevision = 2,
     ): Image {
-        return self::onTheSite(ImageStatus::Unpublished, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt);
+        return self::onTheSite(ImageStatus::Unpublished, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $publicationRevision);
     }
 
     /**
@@ -123,6 +126,7 @@ final class ImageMother
         array $publishedCaption,
         string $createdAt,
         ?string $updatedAt,
+        int $publicationRevision,
     ): Image {
         return new Image(
             ImageIdMother::create($id),
@@ -131,6 +135,7 @@ final class ImageMother
             $status,
             new ImageVersion(new Alt($publishedAlt), RichText::fromArray($publishedCaption)),
             new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            $publicationRevision,
         );
     }
 }

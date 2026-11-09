@@ -59,6 +59,8 @@ final class Settings extends AggregateRoot
         private ?SettingsVersion $published,
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
+        #[ORM\Column(options: ['default' => 0])]
+        private int $publicationRevision,
     ) {
         $this->site = self::SITE;
     }
@@ -75,6 +77,7 @@ final class Settings extends AggregateRoot
             SettingsStatus::Draft,
             null,
             Timeline::start(Clock::now()),
+            0,
         );
     }
 
@@ -109,6 +112,7 @@ final class Settings extends AggregateRoot
         $this->changeResourcesUsed(function (): void {
             $this->published = $this->version;
         });
+        ++$this->publicationRevision;
 
         $this->record(new SettingsPublished(
             $this->id->value(),
@@ -118,6 +122,7 @@ final class Settings extends AggregateRoot
             $this->version->footerMenu()->toArray(),
             EventId::random()->value(),
             Clock::now(),
+            $this->publicationRevision,
         ));
     }
 

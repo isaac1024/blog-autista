@@ -10,6 +10,7 @@ use Web\Image\Application\ImageSaver;
 use Web\Image\Domain\CmsImagePublished;
 use Web\Image\Domain\ImageRepository;
 use Web\Image\Domain\ImageVariants;
+use Web\Projection\Domain\Projection;
 
 /**
  * Puts on the site each image the CMS publishes.
@@ -19,6 +20,7 @@ final readonly class CmsImagePublishedSubscriber implements DomainEventSubscribe
     public function __construct(
         private ImageRepository $imageRepository,
         private ImageVariants $imageVariants,
+        private Projection $projection,
     ) {}
 
     #[\Override]
@@ -31,7 +33,9 @@ final readonly class CmsImagePublishedSubscriber implements DomainEventSubscribe
     public function handle(DomainEvent $event): void
     {
         if ($event instanceof CmsImagePublished) {
-            new ImageSaver($event)($this->imageRepository, $this->imageVariants);
+            $this->projection->apply('image', $event, function () use ($event): void {
+                new ImageSaver($event)($this->imageRepository, $this->imageVariants);
+            });
         }
     }
 }

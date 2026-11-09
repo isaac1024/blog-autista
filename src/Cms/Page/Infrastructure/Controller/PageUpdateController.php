@@ -9,6 +9,7 @@ use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,8 +22,10 @@ final class PageUpdateController extends AbstractController
     public function __construct(private readonly TiptapRichText $tiptapRichText) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         try {
             new PageUpdater(
                 $id,

@@ -33,12 +33,6 @@ final class ImageListController extends AbstractController
      */
     private const float QUALITY = 0.85;
 
-    /**
-     * Where the CMS host serves the files of the images: the web server maps
-     * it onto the image storage, apart from the copies the site serves.
-     */
-    private const string MEDIA_URL = '/originales/';
-
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
@@ -133,7 +127,7 @@ final class ImageListController extends AbstractController
             'title' => $image->alt,
             'url' => $this->generateUrl('cms_images_edit', ['id' => $image->id]),
             'meta' => $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
-            'thumbnail' => self::MEDIA_URL.$image->path,
+            'thumbnail' => $this->generateUrl('cms_images_file', ['id' => $image->id]),
             'status' => $this->imageState->label($image),
         ]);
     }
@@ -154,6 +148,7 @@ final class ImageListController extends AbstractController
             new PageComponent('Shared:Form', [
                 'action' => $this->generateUrl('cms_images_create'),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_images_create',
                 'enctype' => 'multipart/form-data',
             ], [
                 new PageComponent('Shared:ImageCropper', [

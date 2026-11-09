@@ -14,8 +14,6 @@ use Web\Tests\Page\Domain\PageIdMother;
 
 final class PageSaverTest extends TestCase
 {
-    private const string EARLIER = '2026-11-07 09:00:00';
-
     private const string LATER = '2026-11-07 11:00:00';
 
     public function testItPutsANewPageOnTheSite(): void
@@ -39,16 +37,6 @@ final class PageSaverTest extends TestCase
         $repository->expects(self::once())->method('save')->with(self::equalTo(Page::publish($later)));
 
         (new PageSaver($later))($repository);
-    }
-
-    public function testItKeepsThePageWhenTheVersionWasPublishedBeforeTheOneOnTheSite(): void
-    {
-        $current = Page::publish(CmsPagePublishedMother::create(title: 'Quién soy'));
-        $repository = $this->createMock(PageRepository::class);
-        $repository->method('find')->willReturn($current);
-        $repository->expects(self::once())->method('save')->with(self::equalTo(Page::publish(CmsPagePublishedMother::create(title: 'Quién soy'))));
-
-        (new PageSaver(CmsPagePublishedMother::create(title: 'Sobre mí', occurredOn: self::EARLIER)))($repository);
     }
 
     public function testItTakesTheSameEventTwiceAsOnce(): void

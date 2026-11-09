@@ -25,7 +25,8 @@ final class AdministratorMother
         string $identifier = self::DEFAULT_IDENTIFIER,
         string $passwordHash = self::DEFAULT_PASSWORD_HASH,
         array $roles = [Administrator::ADMIN_ROLE],
+        string $credentialsVersion = 'credentials-version',
     ): Administrator {
-        return new Administrator($identifier, $passwordHash, $roles);
+        return new Administrator($identifier, $passwordHash, $credentialsVersion, $roles);
     }
 }

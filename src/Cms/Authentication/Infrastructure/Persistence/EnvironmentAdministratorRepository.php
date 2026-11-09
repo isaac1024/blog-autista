@@ -25,9 +25,21 @@ final readonly class EnvironmentAdministratorRepository implements Administrator
         #[Autowire('%env(CMS_USER_PASSWORD)%')]
         private string $password,
         private PasswordHasherFactoryInterface $passwordHashers,
+        #[Autowire('%env(APP_SECRET)%')]
+        private string $appSecret,
+        #[Autowire('%kernel.environment%')]
+        string $environment,
     ) {
         if ('' === $identifier || '' === $password) {
             throw new \InvalidArgumentException('CMS_USER_IDENTIFIER and CMS_USER_PASSWORD must not be empty.');
+        }
+
+        if ('' === $appSecret) {
+            throw new \InvalidArgumentException('APP_SECRET must not be empty.');
+        }
+
+        if ('prod' === $environment && 'admin' === $password) {
+            throw new \InvalidArgumentException('CMS_USER_PASSWORD must not use the development default in production.');
         }
     }
 
@@ -38,13 +50,28 @@ final readonly class EnvironmentAdministratorRepository implements Administrator
             return null;
         }
 
-        return new Administrator($this->identifier, $this->hashPassword());
+        return new Administrator($this->identifier, $this->hashPassword(), $this->currentCredentialsVersion());
     }
 
     #[\Override]
     public function existsByIdentifier(string $identifier): bool
     {
         return 0 === strcasecmp($this->identifier, $identifier);
+    }
+
+    #[\Override]
+    public function credentialsVersion(string $identifier): ?string
+    {
+        if (!$this->existsByIdentifier($identifier)) {
+            return null;
+        }
+
+        return $this->currentCredentialsVersion();
+    }
+
+    private function currentCredentialsVersion(): string
+    {
+        return hash_hmac('sha256', $this->identifier."\0".$this->password, $this->appSecret);
     }
 
     private function hashPassword(): string

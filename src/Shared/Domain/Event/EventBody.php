@@ -37,6 +37,17 @@ final readonly class EventBody
         return $value;
     }
 
+    public function integer(string $key): int
+    {
+        $value = $this->body[$key] ?? null;
+
+        if (!\is_int($value)) {
+            throw new \UnexpectedValueException(\sprintf('The event body has no "%s" integer.', $key));
+        }
+
+        return $value;
+    }
+
     /**
      * @return list<string>
      */

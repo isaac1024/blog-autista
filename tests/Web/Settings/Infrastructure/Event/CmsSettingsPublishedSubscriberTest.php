@@ -64,25 +64,39 @@ final class CmsSettingsPublishedSubscriberTest extends KernelTestCase
     {
         $this->handle(Event::body());
 
-        $this->handle(Event::body(name: 'Otro nombre', mainMenu: []), '2026-11-07 11:00:00');
+        $this->handle(Event::body(name: 'Otro nombre', mainMenu: []), '2026-11-07 11:00:00', 2);
 
         self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre', mainMenu: [], occurredOn: '2026-11-07 11:00:00')), $this->storedSettings());
     }
 
     public function testItKeepsTheSettingsWhenAnEarlierVersionArrivesLate(): void
     {
-        $this->handle(Event::body(name: 'Otro nombre'), '2026-11-07 11:00:00');
+        $this->handle(Event::body(name: 'Otro nombre'), '2026-11-07 11:00:00', 2);
 
         $this->handle(Event::body(), '2026-11-07 09:00:00');
 
         self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre', occurredOn: '2026-11-07 11:00:00')), $this->storedSettings());
     }
 
+    public function testItUsesTheRevisionToOrderVersionsFromTheSameSecond(): void
+    {
+        $this->handle(Event::body());
+
+        $this->handle(Event::body(name: 'Otro nombre'), revision: 2);
+
+        self::assertSame('Otro nombre', $this->storedSettings()?->name());
+    }
+
     /**
      * @param array<string, mixed> $body
      */
-    private function handle(array $body, string $occurredOn = ClockMother::NOW): void
+    private function handle(array $body, string $occurredOn = ClockMother::NOW, int $revision = 1): void
     {
+        $body['revision'] = $revision;
+
+        // As the worker does after each message, so the projection reads
+        // what it keeps from the database, not from Doctrine's memory.
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.settings.published',
             EventId::random()->value(),

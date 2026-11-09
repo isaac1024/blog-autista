@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Cms\Image\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\RevisedDomainEvent;
 use Shared\Domain\RichText\RichText;
 
 /**
  * An image was put on the site, or its version there replaced, with all the
  * site needs to serve it: its texts and where its file is kept.
+ *
+ * It carries what the site shows, one parameter each.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class ImagePublished extends DomainEvent
+final readonly class ImagePublished extends RevisedDomainEvent
 {
     /**
      * @param array{version: int, blocks: list<array<string, mixed>>} $caption in the stored rich text format
@@ -25,8 +29,9 @@ final readonly class ImagePublished extends DomainEvent
         private string $path,
         string $eventId,
         \DateTimeImmutable $occurredOn,
+        int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
     }
 
     #[\Override]
@@ -47,6 +52,7 @@ final readonly class ImagePublished extends DomainEvent
             $body->string('path'),
             $eventId,
             $occurredOn,
+            $body->integer('revision'),
         );
     }
 
@@ -57,6 +63,7 @@ final readonly class ImagePublished extends DomainEvent
             'alt' => $this->alt,
             'caption' => $this->caption,
             'path' => $this->path,
+            'revision' => $this->revision(),
         ];
     }
 }

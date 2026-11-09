@@ -56,11 +56,11 @@ final class ImagePublisherTest extends TestCase
         ];
         yield 'a published image with changes' => [
             ImageMother::published(alt: 'Otro texto', publishedAlt: ImageMother::ALT, createdAt: self::BEFORE),
-            ImageMother::published(alt: 'Otro texto', createdAt: self::BEFORE),
+            ImageMother::published(alt: 'Otro texto', createdAt: self::BEFORE, publicationRevision: 2),
         ];
         yield 'an unpublished image' => [
             ImageMother::unpublished(createdAt: self::BEFORE),
-            ImageMother::published(createdAt: self::BEFORE),
+            ImageMother::published(createdAt: self::BEFORE, publicationRevision: 3),
         ];
     }
 
@@ -75,7 +75,7 @@ final class ImagePublisherTest extends TestCase
             static fn (DomainEvent $event): bool => $event instanceof ImagePublished
                 && $id === $event->aggregateId()
                 && ClockMother::now()->format(\DATE_ATOM) === $event->occurredOn()->format(\DATE_ATOM)
-                && ['alt' => 'Otro texto', 'caption' => $caption, 'path' => '2026/11/'.$id.'.webp'] === $event->toPrimitives(),
+                && ['alt' => 'Otro texto', 'caption' => $caption, 'path' => '2026/11/'.$id.'.webp', 'revision' => 2] === $event->toPrimitives(),
         ));
 
         (new ImagePublisher($id))($repository, $eventBus);

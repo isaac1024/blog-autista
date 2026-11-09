@@ -10,6 +10,7 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,8 +24,10 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ImageCreateController extends AbstractController
 {
     #[Route('/images', name: 'cms_images_create', methods: ['POST'])]
-    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus): Response
+    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
+        $csrf->assertValid($request);
+
         $image = $request->files->get('image');
 
         try {

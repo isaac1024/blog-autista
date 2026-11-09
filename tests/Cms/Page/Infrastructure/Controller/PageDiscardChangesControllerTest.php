@@ -34,7 +34,7 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createClient();
         $page = $this->savePage(PageMother::published(id: PageIdMother::random()->value(), title: 'Quién soy', publishedTitle: 'Sobre mí'));
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_discard', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
         self::assertEquals($page, $this->storedPage($page));
@@ -46,7 +46,7 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
         $id = PageIdMother::random()->value();
         $page = $this->savePage(PageMother::published(id: $id, title: 'Quién soy', publishedTitle: 'Sobre mí', updatedAt: '2026-10-01 09:00:00'));
 
-        $client->request('POST', \sprintf(self::URL, $id));
+        $this->post($client, 'cms_pages_discard', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects(\sprintf('/pages/%s', $id), Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::published(id: $id, title: 'Sobre mí'), $this->storedPage($page));
@@ -58,7 +58,7 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->savePage($page);
 
-        $client->request('POST', \sprintf(self::URL, $page->id()->value()));
+        $this->post($client, 'cms_pages_discard', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals($page, $this->storedPage($page));
@@ -86,7 +86,7 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', \sprintf(self::URL, PageIdMother::random()->value()));
+        $this->post($client, 'cms_pages_discard', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }

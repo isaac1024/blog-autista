@@ -70,6 +70,7 @@ final class PageMother
             PageStatus::Draft,
             null,
             new Timeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
+            0,
         );
     }
 
@@ -129,6 +130,7 @@ final class PageMother
         string $lastPublishedAt = ClockMother::NOW,
         ?array $publishedContent = null,
         ?string $publishedMetaDescription = null,
+        int $publicationRevision = 1,
     ): Page {
         return new Page(
             PageIdMother::create($id),
@@ -142,6 +144,7 @@ final class PageMother
                 ClockMother::now($firstPublishedAt),
                 ClockMother::now($lastPublishedAt),
             ),
+            $publicationRevision,
         );
     }
 
@@ -158,6 +161,7 @@ final class PageMother
         array $content = self::CONTENT,
         string $metaDescription = self::META_DESCRIPTION,
         ?string $publishedTitle = null,
+        int $publicationRevision = 2,
     ): Page {
         return new Page(
             PageIdMother::create($id),
@@ -166,6 +170,7 @@ final class PageMother
             PageStatus::Unpublished,
             self::version(PageType::Standard, $publishedTitle ?? $title, $slug, $content, $metaDescription, null),
             new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
+            $publicationRevision,
         );
     }
 

@@ -12,8 +12,8 @@ use Shared\Domain\RichText\RichText;
  * are here, ready to be served.
  *
  * Events reach the site through a queue, which may deliver one twice or an
- * old one after a newer one. So a page remembers when the last event it took
- * happened, and takes no older one.
+ * old one after a newer one: the projection that hands them over only lets
+ * through those newer than the last it applied, by their revision.
  *
  * Its constructor takes all of its state, one parameter each, as Doctrine maps it.
  *
@@ -44,8 +44,6 @@ final class Page
         private \DateTimeImmutable $firstPublishedAt,
         #[ORM\Column]
         private \DateTimeImmutable $lastPublishedAt,
-        #[ORM\Column]
-        private \DateTimeImmutable $lastEventOn,
     ) {}
 
     public static function publish(CmsPagePublished $event): self
@@ -60,20 +58,14 @@ final class Page
             $event->robots(),
             $event->firstPublishedAt(),
             $event->lastPublishedAt(),
-            $event->occurredOn(),
         );
     }
 
     /**
-     * Takes the version the CMS published, unless the page already took a
-     * later event.
+     * Takes the version the CMS published.
      */
     public function republish(CmsPagePublished $event): void
     {
-        if ($this->tookLaterThan($event->occurredOn())) {
-            return;
-        }
-
         $this->type = $event->type();
         $this->title = $event->title();
         $this->slug = $event->slug();
@@ -82,24 +74,31 @@ final class Page
         $this->robots = $event->robots();
         $this->firstPublishedAt = $event->firstPublishedAt();
         $this->lastPublishedAt = $event->lastPublishedAt();
-        $this->lastEventOn = $event->occurredOn();
     }
 
     /**
-     * Takes the page off the site, unless it was published again after the
-     * CMS took it off.
+     * Takes the page off the site.
      */
-    public function unpublish(CmsPageUnpublished $event, PageRepository $pageRepository): void
+    public function unpublish(PageRepository $pageRepository): void
     {
-        if ($this->tookLaterThan($event->occurredOn())) {
-            return;
-        }
-
         $pageRepository->delete($this);
     }
 
+    /**
+     * Keeps the page, as long as no other page on the site is at its address.
+     *
+     * @throws SlugTaken while the event that frees the address has yet to arrive
+     */
     public function save(PageRepository $pageRepository): void
     {
+        if (null !== $this->slug) {
+            $holder = $pageRepository->findBySlug($this->slug);
+
+            if (null !== $holder && !$holder->id->equals($this->id)) {
+                throw SlugTaken::withSlug($this->slug);
+            }
+        }
+
         $pageRepository->save($this);
     }
 
@@ -134,10 +133,5 @@ final class Page
     public function robots(): Robots
     {
         return $this->robots;
-    }
-
-    private function tookLaterThan(\DateTimeImmutable $occurredOn): bool
-    {
-        return $this->lastEventOn > $occurredOn;
     }
 }

@@ -37,12 +37,16 @@ final readonly class AdministratorUserProvider implements UserProviderInterface
             throw new UnsupportedUserException(\sprintf('Instances of "%s" are not supported.', $user::class));
         }
 
-        if (!$this->administrators->exists($user->getUserIdentifier())) {
+        try {
+            $version = $this->administrators->credentialsVersion($user->getUserIdentifier());
+        } catch (AdministratorNotFound) {
             throw $this->userNotFound($user->getUserIdentifier());
         }
 
-        // The credentials come from configuration, so the session already holds
-        // the current hash. Changing CMS_USER_PASSWORD requires clearing sessions.
+        if (!hash_equals($version, $user->credentialsVersion())) {
+            throw $this->userNotFound($user->getUserIdentifier());
+        }
+
         return $user;
     }
 

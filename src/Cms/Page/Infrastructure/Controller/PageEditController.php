@@ -103,6 +103,7 @@ final class PageEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_update', ['id' => $page->id]),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_pages_update',
                 'id' => self::FORM,
             ], [
                 // The document comes first: its title, then its address and content.
@@ -132,6 +133,7 @@ final class PageEditController extends AbstractController
             ->withMain('Shared:Form', [
                 'action' => $this->generateUrl('cms_pages_publish', ['id' => $page->id]),
                 'method' => 'post',
+                'csrfTokenId' => 'cms_pages_publish',
                 'id' => self::PUBLISH_FORM,
                 'hidden' => true,
             ]);
@@ -314,6 +316,7 @@ final class PageEditController extends AbstractController
             new PageComponent('Shared:Form', [
                 'action' => $this->generateUrl($route, ['id' => $page->id]),
                 'method' => 'post',
+                'csrfTokenId' => $route,
             ], [
                 new PageComponent('Shared:FormButton', [
                     'label' => $this->translator->trans(\sprintf('cms.pages.%s.submit', $action)),

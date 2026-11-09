@@ -75,7 +75,7 @@ every minute, and another one to `php bin/console messenger:consume async
 | Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
 | Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both |
 | Tests | PHPUnit + ParaTest | in parallel, one database per process; random order, strict output, fail on risky/deprecation/notice/warning |
-| Mutation | Infection | in parallel, one database per thread, only the test cases that cover each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
+| Mutation | Infection | in parallel, one database per thread, the whole suite against each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
 
 ```bash
 composer check        # fast gate: style, Twig, PHPMD, PHPStan, PHPUnit
@@ -158,6 +158,45 @@ docker compose exec -u www-data php bin/console tailwind:build --minify
 docker compose exec -u www-data php bin/console cache:clear --env=prod
 docker compose exec -u www-data php bin/console asset-map:compile --env=prod
 ```
+
+## Images
+
+The files uploaded to the CMS live out of `public/`, in `media/`, and are no
+public files: the CMS serves each original through
+`/images/{id}/file`, behind its login, so neither the web server nor another
+host maps that directory. The site serves only its own copies of the published
+images, from `public/media/`, under `/media/`.
+
+## Production checklist
+
+- `APP_ENV=prod` and `APP_DEBUG=0`.
+- `APP_SECRET`: random and non-empty, for example `php -r 'echo bin2hex(random_bytes(32));'`.
+  `.env` leaves it empty on purpose, and the CMS refuses to authenticate with
+  an empty one.
+- `CMS_USER_IDENTIFIER` and a strong `CMS_USER_PASSWORD`. The CMS refuses
+  the development password `admin` in production. Both checks run when the
+  CMS first needs the administrator, on the first request to its host, not
+  when the app boots, so open the CMS right after deploying.
+- `WEB_HOST`, `CMS_HOST`, `DEFAULT_URI`, `DATABASE_URL`,
+  `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN` and
+  `REDIS_URL` with the real values, in `.env.local` on the account. Clear the
+  cache after changing the hosts, since routes are compiled with them.
+- Deploy in this order: stop the cron jobs that consume `async`, let the
+  queue drain (`messenger:stats`), deploy the code, run
+  `doctrine:migrations:migrate`, clear the cache, and start the cron jobs
+  again. Events carry the publication revision of their page, image or
+  settings, and the site uses it to ignore events that arrive late; an event
+  queued by an older release has none and fails until it lands in the
+  `failed` transport. Inspect those with `messenger:failed:show` and, rather
+  than retrying them, publish again from the CMS whatever they concerned.
+- A page published at an address another page had until just before waits
+  for the event that frees it: the site tries again a minute later, up to the
+  three retries of `async`. If it still lands in `failed`, the event that
+  frees the address failed first: retry that one, then the page.
+- Changing `CMS_USER_PASSWORD` or `CMS_USER_IDENTIFIER` signs out every CMS
+  session. Changing `APP_SECRET` does too, and also invalidates every preview
+  link already handed out: rotate it only when needed, and say so to whoever
+  holds a preview link.
 
 ## Differences from production (on purpose)
 

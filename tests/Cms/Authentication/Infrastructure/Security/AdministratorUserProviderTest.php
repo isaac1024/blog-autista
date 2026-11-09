@@ -47,6 +47,27 @@ final class AdministratorUserProviderTest extends TestCase
         self::assertSame($user, $provider->refreshUser($user));
     }
 
+    public function testItRejectsTheSessionOfAnAdministratorNoLongerConfigured(): void
+    {
+        $user = $this->provider(AdministratorMother::create())
+            ->loadUserByIdentifier(AdministratorMother::DEFAULT_IDENTIFIER);
+
+        $this->expectException(UserNotFoundException::class);
+
+        $this->provider(null)->refreshUser($user);
+    }
+
+    public function testItRejectsTheSessionWhenTheCredentialsChange(): void
+    {
+        $user = $this->provider(AdministratorMother::create(credentialsVersion: 'before'))
+            ->loadUserByIdentifier(AdministratorMother::DEFAULT_IDENTIFIER);
+        $provider = $this->provider(AdministratorMother::create(credentialsVersion: 'after'));
+
+        $this->expectException(UserNotFoundException::class);
+
+        $provider->refreshUser($user);
+    }
+
     private function provider(?Administrator $administrator): AdministratorUserProvider
     {
         $repository = new readonly class($administrator) implements AdministratorRepository {
@@ -62,6 +83,12 @@ final class AdministratorUserProviderTest extends TestCase
             public function existsByIdentifier(string $identifier): bool
             {
                 return null !== $this->administrator;
+            }
+
+            #[\Override]
+            public function credentialsVersion(string $identifier): ?string
+            {
+                return $this->administrator?->credentialsVersion();
             }
         };
 

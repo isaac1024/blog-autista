@@ -40,7 +40,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createClient();
 
-        $client->request('POST', self::URL, ['name' => 'Otro nombre']);
+        $this->post($client, 'cms_settings_update', self::URL, ['name' => 'Otro nombre']);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
     }
@@ -54,7 +54,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->saveSettings(Mother::create(createdAt: self::BEFORE));
 
-        $client->request('POST', self::URL, [
+        $this->post($client, 'cms_settings_update', self::URL, [
             'name' => 'Otro nombre',
             'default_image' => Mother::IMAGE,
             'main_menu' => [
@@ -89,7 +89,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->saveSettings(Mother::create(Mother::version(defaultImage: Mother::IMAGE, mainMenu: [Mother::item()]), createdAt: self::BEFORE));
 
-        $client->request('POST', self::URL, ['name' => Mother::NAME, 'default_image' => '']);
+        $this->post($client, 'cms_settings_update', self::URL, ['name' => Mother::NAME, 'default_image' => '']);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertEquals(Mother::create(createdAt: self::BEFORE, updatedAt: ClockMother::NOW), $this->storedSettings());
@@ -103,7 +103,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $this->saveSettings(Mother::create());
 
-        $client->request('POST', self::URL, [
+        $this->post($client, 'cms_settings_update', self::URL, [
             'name' => Mother::NAME,
             'default_image' => Mother::IMAGE,
             'main_menu' => [['page_id' => Mother::PAGE, 'label' => '']],
@@ -128,7 +128,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $client = self::createAuthenticatedClient();
         $settings = $this->saveSettings(Mother::create(createdAt: self::BEFORE));
 
-        $client->request('POST', self::URL, $fields);
+        $this->post($client, 'cms_settings_update', self::URL, $fields);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
         self::assertSame([$notice], self::notices($client));
@@ -157,7 +157,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('POST', self::URL, ['name' => Mother::NAME]);
+        $this->post($client, 'cms_settings_update', self::URL, ['name' => Mother::NAME]);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
