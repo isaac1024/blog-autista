@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Settings\Infrastructure\Controller;
 
+use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteChrome;
 use Shared\Infrastructure\Ui\SiteMedia;
@@ -14,6 +15,7 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PublishedPagesFinder;
 use Web\Page\Domain\PageRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Application\PublishedSettingsFinder;
 use Web\Settings\Application\SettingsResponse;
 use Web\Settings\Domain\SettingsRepository;
@@ -23,7 +25,8 @@ use Web\Settings\Domain\SettingsRepository;
  * give it: the name of the blog, the menus and the default image.
  *
  * Only what is on the site is painted: a menu leaves out its pages off the
- * site, and an image off it is never shared. Until the settings are
+ * site, and an image off it is never shared, unless the address of either
+ * now leads to one on it, which is painted instead. Until the settings are
  * published, pages go without chrome.
  */
 final readonly class SiteLayout
@@ -33,6 +36,7 @@ final readonly class SiteLayout
         private SettingsRepository $settingsRepository,
         private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
+        private SiteRedirectsByOrigin $redirectsByOrigin,
     ) {}
 
     public function page(string $title): Page
@@ -44,10 +48,14 @@ final readonly class SiteLayout
             return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], null));
         }
 
-        $pages = new PublishedPagesFinder([
+        // A page off the site is linked as the one its address now leads to.
+        $pages = new ReferenceResolver('page', [
             ...array_column($settings->mainMenu, 'page_id'),
             ...array_column($settings->footerMenu, 'page_id'),
-        ])($this->pageRepository);
+        ], null)(
+            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
+            $this->redirectsByOrigin,
+        );
 
         return WebLayout::page($title, new SiteChrome(
             $settings->name,
@@ -100,7 +108,10 @@ final readonly class SiteLayout
             return null;
         }
 
-        $image = new PublishedImagesFinder([$settings->defaultImageId])($this->imageRepository)[$settings->defaultImageId] ?? null;
+        $image = new ReferenceResolver('image', [$settings->defaultImageId], null)(
+            fn (array $ids): array => new PublishedImagesFinder($ids)($this->imageRepository),
+            $this->redirectsByOrigin,
+        )[$settings->defaultImageId] ?? null;
 
         return null === $image ? null : SiteMedia::shareImage($image->path, $image->alt);
     }

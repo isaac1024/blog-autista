@@ -98,4 +98,13 @@ final class Redirect
     {
         return $this->targetId;
     }
+
+    /**
+     * The id of the resource off the site whose last address it answers, if
+     * known.
+     */
+    public function originId(): ?string
+    {
+        return $this->originId;
+    }
 }

@@ -43,6 +43,16 @@ interface RedirectRepository
     public function findByOrigin(Resource $resource): array;
 
     /**
+     * Every redirect that knows any of the resources of the type as its
+     * origin.
+     *
+     * @param list<string> $ids
+     *
+     * @return list<Redirect>
+     */
+    public function findByOrigins(ResourceType $type, array $ids): array;
+
+    /**
      * @return list<Redirect>
      */
     public function matching(Criteria $criteria): array;

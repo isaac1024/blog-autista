@@ -13,6 +13,8 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page as SitePage;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
+use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
@@ -138,7 +140,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $pages, $images);
+        return new SiteLayout($urlGenerator, $repository, $pages, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
     }
 
     /**

@@ -15,6 +15,8 @@ use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Domain\Robots;
 use Web\Page\Infrastructure\Controller\PublishedPage;
+use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
@@ -67,7 +69,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
@@ -87,10 +89,10 @@ final class PublishedPageTest extends TestCase
         $imageRepository->method('findByIds')->willReturn([]);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
-        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository);
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
         $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout)(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }

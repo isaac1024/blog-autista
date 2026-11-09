@@ -13,6 +13,8 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\Robots;
 use Cms\Page\Infrastructure\Controller\PreviewPage;
+use Cms\Redirect\Domain\RedirectRepository;
+use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Tests\Image\Domain\ImageMother;
@@ -200,6 +202,6 @@ final class PreviewPageTest extends TestCase
             static fn (ImageId $id) => $images[$id->value()] ?? null,
         );
 
-        return new PreviewPage($urlGenerator, new SitePage(new RichTextComponents()), $settingsRepository, $pageRepository, $imageRepository);
+        return new PreviewPage($urlGenerator, new SitePage(new RichTextComponents()), $settingsRepository, $pageRepository, $imageRepository, new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class)));
     }
 }

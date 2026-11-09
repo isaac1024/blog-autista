@@ -9,6 +9,7 @@ use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
+use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Domain\Source;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -92,6 +93,16 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
             'origin.type' => $resource->type(),
             'origin.id' => $resource->id(),
         ]);
+    }
+
+    #[\Override]
+    public function findByOrigins(ResourceType $type, array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        return $this->entityManager->getRepository(Redirect::class)->findBy(['origin.type' => $type, 'origin.id' => $ids]);
     }
 
     #[\Override]

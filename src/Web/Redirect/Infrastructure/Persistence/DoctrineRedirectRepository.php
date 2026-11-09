@@ -40,6 +40,19 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
     }
 
     #[\Override]
+    public function findByOrigins(string $type, array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        return $this->entityManager->getRepository(Redirect::class)->findBy(
+            ['originType' => $type, 'originId' => $ids],
+            ['changedAt' => 'DESC', 'id' => 'DESC'],
+        );
+    }
+
+    #[\Override]
     public function findBySource(string $source): ?Redirect
     {
         return $this->entityManager->getRepository(Redirect::class)->findOneBy(['source' => $source], ['changedAt' => 'DESC', 'id' => 'DESC']);
