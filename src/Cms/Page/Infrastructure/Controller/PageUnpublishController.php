@@ -51,8 +51,8 @@ final class PageUnpublishController extends AbstractController
         try {
             new ResourceRetirement(
                 Resource::page($id),
-                RetirementForm::address($request),
-                RetirementForm::incoming($request),
+                RetirementForm::addressDecision($request),
+                RetirementForm::incomingDecisions($request),
                 static function () use ($id, $pageRepository, $eventBus, $pageRedirects): void {
                     new PageUnpublisher($id)($pageRepository, $eventBus, $pageRedirects);
                 },

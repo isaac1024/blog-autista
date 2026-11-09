@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Page\Application\PagePublisher;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageStatus;
+use Cms\Page\Infrastructure\Controller\PagePublishFormController;
+use Cms\Redirect\Application\PreviousAddressDecision;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Application\RedirectCreator;
 use Cms\Redirect\Application\RedirectRetargeter;
+use Cms\Redirect\Application\ResourcePublication;
 use Cms\Redirect\Application\TargetInput;
 use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectRepository;
@@ -21,6 +25,8 @@ use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
+use Shared\Domain\Transaction;
+use Shared\Tests\Domain\RecordingMutualExclusion;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -60,6 +66,8 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.self::PAGE.'/publish', Response::HTTP_SEE_OTHER);
+        // Nothing went wrong: there is something to confirm first.
+        self::assertSame([], self::errorNotices($client));
         self::assertSame(PageStatus::Draft, $this->storedStatus());
         self::assertNotNull($this->redirectAt('/nueva.html'));
     }
@@ -76,6 +84,7 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => '']);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.self::PAGE.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
         self::assertSame(PageStatus::Draft, $this->storedStatus());
         self::assertNotNull($this->redirectAt('/nueva.html'));
     }
@@ -127,10 +136,102 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $page->edit('Sobre mí', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
         self::getContainer()->get(PageRepository::class)->save($page);
 
-        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $this->outlook()]);
+        $outlook = $this->outlook();
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $outlook]);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.self::PAGE.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.undecided_previous', 'parameters' => []]], self::errorNotices($client));
         self::assertSame('sobre-mi', $this->storedPublishedSlug());
+        // The confirmation comes back with what was sent.
+        $saved = $client->getRequest()->getSession()->get(\sprintf(PagePublishFormController::SAVED, self::PAGE));
+        self::assertIsArray($saved);
+        self::assertSame($outlook, $saved['outlook'] ?? null);
+    }
+
+    public function testItLeavesTheAddressAPageLeavesAsItIsWhenTold(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->movingPage();
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $this->outlook(), 'previous' => ['action' => 'keep']]);
+
+        self::assertResponseRedirects('/pages/'.self::PAGE, Response::HTTP_SEE_OTHER);
+        self::assertSame('quien-soy', $this->storedPublishedSlug());
+        self::assertNull($this->redirectAt('/sobre-mi.html'));
+    }
+
+    public function testItLeadsTheAddressAPageLeavesToAnotherPageWhenTold(): void
+    {
+        $client = self::createAuthenticatedClient();
+        self::getContainer()->get(PageRepository::class)->save(PageMother::published(id: self::OTHER, title: 'Otra', slug: 'otra'));
+        $this->movingPage();
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $this->outlook(), 'previous' => ['action' => 'page', 'page_id' => self::OTHER]]);
+
+        self::assertSame(self::OTHER, $this->redirectAt('/sobre-mi.html')?->target()->resource()?->id());
+    }
+
+    /**
+     * Back on the site at another address, the page is no longer the one
+     * that was at its former one: that redirect stays, as an address only.
+     */
+    public function testItForgetsBeingTheOriginOfTheRedirectOfItsFormerAddressOnceBackOnTheSite(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $pages = self::getContainer()->get(PageRepository::class);
+        $pages->save(PageMother::published(id: self::OTHER, title: 'Otra', slug: 'otra'));
+        $page = PageMother::unpublished(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi');
+        $page->edit('Sobre mí', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
+        $pages->save($page);
+        $this->redirect('/sobre-mi.html', self::OTHER);
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $this->outlook(), 'previous' => ['action' => 'keep']]);
+
+        $former = $this->redirectAt('/sobre-mi.html');
+        self::assertSame(self::OTHER, $former?->target()->resource()?->id());
+        self::assertNull($former?->origin()->resource());
+    }
+
+    /**
+     * What the page lacks is told on its editor, not on the confirmation.
+     */
+    public function testItGoesBackToTheEditorWhenThePageCannotBePublished(): void
+    {
+        $client = self::createAuthenticatedClient();
+        self::getContainer()->get(PageRepository::class)->save(PageMother::create(id: self::PAGE, title: 'Nueva', slug: 'nueva'));
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE));
+
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.self::PAGE, Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::successNotices($client));
+        self::assertNotSame([], self::errorNotices($client));
+    }
+
+    /**
+     * It holds the page, the address it takes, the one it leaves and where
+     * that one will lead.
+     */
+    public function testItHoldsThePageBothAddressesAndTheTargetWhilePublishing(): void
+    {
+        self::createAuthenticatedClient();
+        self::getContainer()->get(PageRepository::class)->save(PageMother::published(id: self::OTHER, title: 'Otra', slug: 'otra'));
+        $this->movingPage();
+        $mutualExclusion = new RecordingMutualExclusion();
+
+        new ResourcePublication(
+            Resource::page(self::PAGE),
+            PreviousAddressDecision::leadTo(new TargetInput('page', self::OTHER)),
+            $this->outlook(),
+            fn () => new PagePublisher(self::PAGE)(self::getContainer()->get(PageRepository::class), self::getContainer()->get(EventBus::class)),
+        )(
+            self::getContainer()->get(RedirectRepository::class),
+            self::getContainer()->get(EventBus::class),
+            self::getContainer()->get(SiteResources::class),
+            $mutualExclusion,
+            self::getContainer()->get(Transaction::class),
+        );
+
+        self::assertSame(['address:/quien-soy.html', 'address:/sobre-mi.html', 'page:'.self::PAGE, 'page:'.self::OTHER], $mutualExclusion->lastHeld());
     }
 
     public function testItDeletesItsOwnFormerRedirectWithoutAskingWhenItIsBackAtItsAddress(): void
@@ -159,6 +260,16 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $client->disableReboot();
 
         return $client;
+    }
+
+    /**
+     * The page on the site at /sobre-mi.html, saved to move to /quien-soy.html.
+     */
+    private function movingPage(): void
+    {
+        $page = PageMother::published(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi');
+        $page->edit('Sobre mí', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
+        self::getContainer()->get(PageRepository::class)->save($page);
     }
 
     private function draftAt(string $slug): void

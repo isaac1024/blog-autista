@@ -51,8 +51,8 @@ final class ImageUnpublishController extends AbstractController
         try {
             new ResourceRetirement(
                 Resource::image($id),
-                RetirementForm::address($request),
-                RetirementForm::incoming($request),
+                RetirementForm::addressDecision($request),
+                RetirementForm::incomingDecisions($request),
                 static function () use ($id, $imageRepository, $eventBus, $imageRedirects): void {
                     new ImageUnpublisher($id)($imageRepository, $eventBus, $imageRedirects);
                 },

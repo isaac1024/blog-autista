@@ -52,7 +52,7 @@ final readonly class PreviewPage
         $content = RichText::fromArray($page->content);
         $images = array_map(
             static fn (ImageOnSiteResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
-            $this->images($content->imageIds()),
+            $this->imagesOnSite($content->imageIds()),
         );
 
         $canonical = $page->home || null === $page->slug
@@ -70,7 +70,7 @@ final readonly class PreviewPage
             $images,
             array_map(
                 fn (PageOnSiteResponse $target): array => ['url' => $this->url($target), 'title' => $target->title],
-                $this->pages(SitePage::linkedPageIds($content, $images), $page->id),
+                $this->pagesOnSite(SitePage::linkedPageIds($content, $images), $page->id),
             ),
         );
     }
@@ -88,7 +88,7 @@ final readonly class PreviewPage
             return new SiteChrome(null, $homeUrl, [], [], null);
         }
 
-        $pages = $this->pages([
+        $pages = $this->pagesOnSite([
             ...array_column($settings->mainMenu, 'page_id'),
             ...array_column($settings->footerMenu, 'page_id'),
         ], null);
@@ -135,7 +135,7 @@ final readonly class PreviewPage
             return null;
         }
 
-        $image = $this->images([$settings->defaultImage])[$settings->defaultImage] ?? null;
+        $image = $this->imagesOnSite([$settings->defaultImage])[$settings->defaultImage] ?? null;
 
         return null === $image ? null : SiteMedia::shareImage($image->path, $image->alt);
     }
@@ -148,7 +148,7 @@ final readonly class PreviewPage
      *
      * @return array<string, ImageOnSiteResponse>
      */
-    private function images(array $ids): array
+    private function imagesOnSite(array $ids): array
     {
         return new ReferenceResolver('image', $ids, null)(
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
@@ -164,7 +164,7 @@ final readonly class PreviewPage
      *
      * @return array<string, PageOnSiteResponse>
      */
-    private function pages(array $ids, ?string $except): array
+    private function pagesOnSite(array $ids, ?string $except): array
     {
         return new ReferenceResolver('page', $ids, $except)(
             fn (array $ids): array => new PagesOnSiteFinder($ids)($this->pageRepository),

@@ -33,7 +33,10 @@
             "*\\Controller\\*::imageActions",
             "*\\Controller\\*::titleField",
             "*\\Controller\\*::dates",
-            "*\\Controller\\*::images"
+            "*\\Controller\\*::images",
+            // The panels of the redirects only choose what an editor reads.
+            "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
+            "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke"
         ]
     },
     "timeout": 60,

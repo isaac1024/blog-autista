@@ -50,11 +50,11 @@ final readonly class SiteErrorListener
             return;
         }
 
+        // The kernel answers with the status of the exception.
         $response = null !== ImageCopy::fromUrl($event->getRequest()->getPathInfo())
             // An image is asked for by a page, not read: it gets no page.
             ? new Response()
             : $this->page($gone);
-        $response->setStatusCode($gone ? Response::HTTP_GONE : Response::HTTP_NOT_FOUND);
 
         if ($gone) {
             $response->setPublic();

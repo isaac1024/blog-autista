@@ -44,6 +44,13 @@ final class RedirectProjectionTest extends KernelTestCase
         self::assertNull(self::getContainer()->get(RedirectRepository::class)->findBySource('/vieja.html'));
     }
 
+    public function testItTakesTheDeletionOfARedirectItNeverHad(): void
+    {
+        $this->deleted(self::FIRST, 1, '10:00');
+
+        self::assertNull(self::getContainer()->get(RedirectRepository::class)->find(new RedirectId(self::FIRST)));
+    }
+
     /**
      * A change to a redirect deleted since never brings it back.
      */

@@ -125,12 +125,64 @@ final class RedirectListenerTest extends WebTestCase
     public function testTheRedirectChangedLastAnswersAnAddressTwoShare(): void
     {
         $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/vieja.html', null, null, '2026-11-09 10:00');
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/vieja.html', 'page', self::PAGE, '2026-11-09 11:00');
+        // The one changed last is the older one, so order by change, not by id.
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/vieja.html', null, null, '2026-11-09 10:00');
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/vieja.html', 'page', self::PAGE, '2026-11-09 11:00');
 
         $client->request('GET', self::HOST.'/vieja.html');
 
         self::assertResponseRedirects('/destino.html', Response::HTTP_MOVED_PERMANENTLY);
+    }
+
+    public function testEachAddressIsAnsweredByItsOwnRedirect(): void
+    {
+        $client = $this->site();
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/a-destino.html', 'page', self::PAGE, '2026-11-09 10:00');
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/a-portada.html', 'page', self::HOME, '2026-11-09 11:00');
+
+        $client->request('GET', self::HOST.'/a-destino.html');
+
+        self::assertResponseRedirects('/destino.html', Response::HTTP_MOVED_PERMANENTLY);
+    }
+
+    /**
+     * An address longer than any a redirect is kept at has none.
+     */
+    public function testItFindsNothingAtAnAddressLongerThanAnyRedirectHas(): void
+    {
+        $client = $this->site();
+
+        $client->request('GET', self::HOST.'/'.str_repeat('a', 300).'.html');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * @return iterable<string, array{?string, int}>
+     */
+    public static function imagesWithNothing(): iterable
+    {
+        yield 'never there' => ['none', Response::HTTP_NOT_FOUND];
+        yield 'taken off for good' => [null, Response::HTTP_GONE];
+    }
+
+    /**
+     * An image is asked for by a page, to be shown, so it gets no page of
+     * its own when the site has nothing there.
+     */
+    #[DataProvider('imagesWithNothing')]
+    public function testItAnswersAnImageItHasNothingAtWithNoPage(?string $target, int $status): void
+    {
+        $client = $this->site();
+
+        if (null === $target) {
+            $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9', null, null);
+        }
+
+        $client->request('GET', self::HOST.'/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9-800w.webp');
+
+        self::assertResponseStatusCodeSame($status);
+        self::assertSame('', $client->getResponse()->getContent());
     }
 
     /**
@@ -139,6 +191,7 @@ final class RedirectListenerTest extends WebTestCase
     public static function sameAddresses(): iterable
     {
         yield 'with capitals' => ['/Guía-Antigua.html'];
+        yield 'all in capitals, accents too' => ['/GUÍA-ANTIGUA.html'];
         yield 'encoded in capitals' => ['/gu%C3%ADa-antigua.html'];
         yield 'through a dot segment' => ['/blog/../guía-antigua.html'];
     }

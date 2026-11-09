@@ -68,7 +68,8 @@ final readonly class RedirectListener
         $response->setPublic();
         $response->setMaxAge(self::MAX_AGE);
 
-        $event->allowCustomResponseCode();
+        // A redirect keeps its own status: the kernel only gives the status of
+        // the exception to a response that is neither a redirect nor an error.
         $event->setResponse($response);
     }
 }

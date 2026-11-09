@@ -7,6 +7,7 @@ namespace Cms\Tests\Image\Infrastructure\Controller;
 use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStatus;
+use Cms\Image\Infrastructure\Controller\ImageUnpublishFormController;
 use Cms\Redirect\Application\RedirectCreator;
 use Cms\Redirect\Application\TargetInput;
 use Cms\Redirect\Domain\Redirect;
@@ -82,6 +83,10 @@ final class ImageRedirectsTest extends CmsWebTestCase
 
         self::assertSame(['errors.redirect.undecided'], self::errorKeys($client));
         self::assertSame(ImageStatus::Published, $this->storedStatus());
+        // The form comes back with the choices made.
+        $saved = $client->getRequest()->getSession()->get(\sprintf(ImageUnpublishFormController::SAVED, self::IMAGE));
+        self::assertIsArray($saved);
+        self::assertSame(['action' => 'none'], $saved['address'] ?? null);
     }
 
     /**

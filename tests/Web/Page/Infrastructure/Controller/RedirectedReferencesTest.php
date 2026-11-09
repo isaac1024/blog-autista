@@ -12,6 +12,7 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
+use Web\Page\Domain\PageType;
 use Web\Page\Infrastructure\Controller\PublishedPage;
 use Web\Redirect\Application\RedirectSaver;
 use Web\Redirect\Domain\CmsRedirectSaved;
@@ -42,6 +43,9 @@ final class RedirectedReferencesTest extends KernelTestCase
     /** An image off the site, redirected to Y. */
     private const string X = '0196f3a0-0000-7000-8000-0000000000f1';
     private const string Y = '0196f3a0-0000-7000-8000-0000000000f2';
+    private const string HOME = '0196f3a0-0000-7000-8000-0000000000f9';
+    /** A page all of whose links are on the site. */
+    private const string OTHER = '0196f3a0-0000-7000-8000-0000000000f8';
 
     #[\Override]
     protected function setUp(): void
@@ -50,6 +54,7 @@ final class RedirectedReferencesTest extends KernelTestCase
         $link = static fn (string $text, string $id): array => ['text' => $text, 'marks' => ['link'], 'page_id' => $id];
         $pages = self::getContainer()->get(PageRepository::class);
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::B, title: 'Página B', slug: 'pagina-b')));
+        $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::HOME, title: 'Portada', slug: null, type: PageType::Home)));
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::C, title: 'Página C', slug: 'pagina-c', content: [
             'version' => 1,
             'blocks' => [
@@ -74,6 +79,31 @@ final class RedirectedReferencesTest extends KernelTestCase
     public function testItLinksAPageOffTheSiteAsThePageItsAddressLeadsTo(): void
     {
         self::assertSame('/pagina-b.html', $this->links($this->paint())['A']);
+    }
+
+    /**
+     * Two redirects know A as their origin while the site catches up with
+     * the CMS: the one changed last counts.
+     */
+    public function testItFollowsTheRedirectChangedLastOfTwoThatKnowThePage(): void
+    {
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e5', '/otra-a.html', 'page', self::C, 'page', self::A, '2026-11-09 08:00');
+
+        self::assertSame('/pagina-b.html', $this->links($this->paint())['A']);
+    }
+
+    public function testItLinksAsTheyArePagesOnTheSite(): void
+    {
+        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: self::OTHER, title: 'Otra', slug: 'otra', content: [
+            'version' => 1,
+            'blocks' => [['type' => 'paragraph', 'text' => [
+                ['text' => 'B', 'marks' => ['link'], 'page_id' => self::B],
+                ['text' => ' '],
+                ['text' => 'Home', 'marks' => ['link'], 'page_id' => self::HOME],
+            ]]],
+        ])));
+
+        self::assertSame(['B' => '/pagina-b.html', '' => null, 'Home' => '/'], $this->links($this->paint('otra')));
     }
 
     public function testItLeavesUnlinkedAPageWhoseAddressIsGone(): void
@@ -123,9 +153,9 @@ final class RedirectedReferencesTest extends KernelTestCase
         self::assertStringEndsWith('/media/2026/11/'.self::Y.'-1200w.webp', $page->image['src'] ?? '');
     }
 
-    private function paint(): PaintedPage
+    private function paint(string $slug = 'pagina-c'): PaintedPage
     {
-        $page = self::getContainer()->get(PageRepository::class)->findBySlug('pagina-c') ?? self::fail('No page C.');
+        $page = self::getContainer()->get(PageRepository::class)->findBySlug($slug) ?? self::fail('No page to paint.');
 
         return (self::getContainer()->get(PublishedPage::class))(PageResponse::fromPage($page));
     }
@@ -184,9 +214,9 @@ final class RedirectedReferencesTest extends KernelTestCase
         return $found;
     }
 
-    private function redirect(string $id, string $source, ?string $targetType, ?string $targetId, string $originType, string $originId): void
+    private function redirect(string $id, string $source, ?string $targetType, ?string $targetId, string $originType, string $originId, string $changedAt = '2026-11-09 10:00'): void
     {
-        new RedirectSaver(new CmsRedirectSaved($id, $source, $targetType, $targetId, $originType, $originId, 'event-'.$id, new \DateTimeImmutable(), 1))(
+        new RedirectSaver(new CmsRedirectSaved($id, $source, $targetType, $targetId, $originType, $originId, 'event-'.$id, new \DateTimeImmutable($changedAt), 1))(
             self::getContainer()->get(RedirectRepository::class),
         );
     }

@@ -70,9 +70,18 @@ final readonly class SitePath
     public static function write(string $text): string
     {
         return strtolower(implode('/', array_map(
-            static fn (string $segment): string => rawurlencode(rawurldecode($segment)),
+            static fn (string $segment): string => rawurlencode(self::lowercase(rawurldecode($segment))),
             explode('/', $text),
         )));
+    }
+
+    /**
+     * Any letter in lowercase, accented ones too, so "Guía" and "GUÍA" are
+     * written the same; bytes that aren't text are kept as they come.
+     */
+    private static function lowercase(string $segment): string
+    {
+        return mb_check_encoding($segment, 'UTF-8') ? mb_strtolower($segment, 'UTF-8') : $segment;
     }
 
     /**

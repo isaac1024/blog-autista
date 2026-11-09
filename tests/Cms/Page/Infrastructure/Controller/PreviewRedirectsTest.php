@@ -24,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 final class PreviewRedirectsTest extends KernelTestCase
 {
     private const string OFF_SITE = '0196f3a0-0000-7000-8000-0000000000a1';
+    private const string SECOND_OFF_SITE = '0196f3a0-0000-7000-8000-0000000000a2';
     private const string TARGET = '0196f3a0-0000-7000-8000-0000000000b1';
     private const string PREVIEWED = '0196f3a0-0000-7000-8000-0000000000c1';
     private const string HOST = 'www.blogautista.localhost';
@@ -34,6 +35,15 @@ final class PreviewRedirectsTest extends KernelTestCase
         $this->redirectFrom('/retirada.html', new TargetInput('page', self::TARGET));
 
         self::assertSame(['/destino.html'], $this->links());
+    }
+
+    public function testItFollowsTheLastAddressOfEveryPageOffTheSiteItLinks(): void
+    {
+        $this->previewedLinking(self::OFF_SITE, self::SECOND_OFF_SITE);
+        $this->redirectFrom('/retirada.html', new TargetInput('page', self::TARGET));
+        $this->redirectFrom('/segunda.html', new TargetInput(null, null), '0196f3a0-0000-7000-8000-0000000000e2');
+
+        self::assertSame(['/destino.html', null], $this->links());
     }
 
     public function testItLeavesUnlinkedAPageOffTheSiteWhoseLastAddressIsGone(): void
@@ -52,21 +62,28 @@ final class PreviewRedirectsTest extends KernelTestCase
         self::assertSame([null], $this->links());
     }
 
-    private function previewedLinking(string $linked, bool $published = false): void
+    private function previewedLinking(string $linked, ?string $alsoLinked = null, bool $published = false): void
     {
         self::bootKernel();
         $pages = self::getContainer()->get(PageRepository::class);
         $pages->save(PageMother::unpublished(id: self::OFF_SITE, title: 'Retirada', slug: 'retirada'));
+        $pages->save(PageMother::unpublished(id: self::SECOND_OFF_SITE, title: 'Segunda', slug: 'segunda'));
         $pages->save(PageMother::published(id: self::TARGET, title: 'Destino', slug: 'destino'));
-        $content = ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [['text' => 'Enlace', 'marks' => ['link'], 'page_id' => $linked]]]]];
+        $text = [['text' => 'Enlace', 'marks' => ['link'], 'page_id' => $linked]];
+
+        if (null !== $alsoLinked) {
+            $text = [...$text, ['text' => ' '], ['text' => 'Otro', 'marks' => ['link'], 'page_id' => $alsoLinked]];
+        }
+
+        $content = ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => $text]]];
         $pages->save($published
             ? PageMother::published(id: self::PREVIEWED, title: 'Vista previa', slug: 'vista-previa', content: $content)
             : PageMother::create(id: self::PREVIEWED, title: 'Vista previa', slug: 'vista-previa', content: $content, metaDescription: PageMother::META_DESCRIPTION));
     }
 
-    private function redirectFrom(string $path, TargetInput $target): void
+    private function redirectFrom(string $path, TargetInput $target, string $id = '0196f3a0-0000-7000-8000-0000000000e1'): void
     {
-        new RedirectCreator('0196f3a0-0000-7000-8000-0000000000e1', 'https://'.self::HOST.$path, $target, self::HOST)(
+        new RedirectCreator($id, 'https://'.self::HOST.$path, $target, self::HOST)(
             self::getContainer()->get(RedirectRepository::class),
             self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),

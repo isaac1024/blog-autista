@@ -58,6 +58,20 @@ abstract class CmsWebTestCase extends WebTestCase
     }
 
     /**
+     * What the last action said went wrong, left for the page it goes to,
+     * each by its key and parameters.
+     *
+     * @return array<mixed>
+     */
+    protected static function errorNotices(KernelBrowser $client): array
+    {
+        $flashes = $client->getRequest()->getSession()->getBag('flashes');
+        self::assertInstanceOf(FlashBagInterface::class, $flashes);
+
+        return $flashes->peek('error');
+    }
+
+    /**
      * The keys of what the last action said went wrong, left for the page it
      * goes to.
      *

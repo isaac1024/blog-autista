@@ -48,14 +48,7 @@ final readonly class SiteLayout
             return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], null));
         }
 
-        // A page off the site is linked as the one its address now leads to.
-        $pages = new ReferenceResolver('page', [
-            ...array_column($settings->mainMenu, 'page_id'),
-            ...array_column($settings->footerMenu, 'page_id'),
-        ], null)(
-            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
-            $this->redirectsByOrigin,
-        );
+        $pages = $this->menuPages($settings);
 
         return WebLayout::page($title, new SiteChrome(
             $settings->name,
@@ -64,6 +57,23 @@ final readonly class SiteLayout
             $this->links($settings->footerMenu, $pages),
             $this->shareImage($settings),
         ));
+    }
+
+    /**
+     * The pages of the menus on the site, keyed by id; one off it, as the
+     * one its address now leads to.
+     *
+     * @return array<string, PageResponse>
+     */
+    private function menuPages(SettingsResponse $settings): array
+    {
+        return new ReferenceResolver('page', [
+            ...array_column($settings->mainMenu, 'page_id'),
+            ...array_column($settings->footerMenu, 'page_id'),
+        ], null)(
+            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
+            $this->redirectsByOrigin,
+        );
     }
 
     /**

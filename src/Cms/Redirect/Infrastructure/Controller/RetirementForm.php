@@ -88,7 +88,7 @@ final readonly class RetirementForm
      *
      * @throws InvalidRedirect when nothing is chosen for it
      */
-    public static function address(Request $request): ?TargetInput
+    public static function addressDecision(Request $request): ?TargetInput
     {
         $values = RedirectTargetField::fromRequest($request, 'address');
 
@@ -109,7 +109,7 @@ final readonly class RetirementForm
      *
      * @return array<string, IncomingDecision>
      */
-    public static function incoming(Request $request): array
+    public static function incomingDecisions(Request $request): array
     {
         $decisions = [];
         $posted = $request->request->all('incoming');
