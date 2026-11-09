@@ -74,6 +74,7 @@ cms:
             description: 'The image “%alt%” and its file will no longer exist. This can’t be undone.'
             submit: 'Yes, delete the image'
         edit:
+            relations: 'Where it is used'
             title: 'Edit image'
             dates: 'Uploaded on %uploaded% · Changed on %updated%'
             caption_label: 'Caption'
@@ -90,6 +91,31 @@ cms:
             alt_label: 'Alternative text'
             alt_hint: 'Describe what the image shows for those who can’t see it, as you would say it out loud.'
             submit: 'Upload image'
+    pagination:
+        label: 'Pagination'
+        current: 'Page %page%'
+        previous: 'Previous'
+        next: 'Next'
+    relations:
+        title: 'Where it is used'
+        types:
+            page: 'Page'
+            image: 'Image'
+            settings: 'Settings'
+        page:
+            subtitle: 'What links to the page “%name%”.'
+            back: 'Edit the page'
+            list: 'What uses the page “%name%”'
+            empty:
+                title: 'Nothing uses this page'
+                message: 'No page, image or menu links to it.'
+        image:
+            subtitle: 'What shows the image “%name%”.'
+            back: 'Edit the image'
+            list: 'What uses the image “%name%”'
+            empty:
+                title: 'Nothing uses this image'
+                message: 'No page shows it and the settings don’t use it.'
     settings:
         title: 'Settings'
         dates: 'Created on %created% · Changed on %updated%'
@@ -142,6 +168,7 @@ cms:
                 message: 'No page has “%title%” in its title.'
                 action: 'See all pages'
         edit:
+            relations: 'Where it is used'
             title: 'Edit page'
             dates: 'Created on %created% · Changed on %updated%'
             view_on_site: 'View on the site'

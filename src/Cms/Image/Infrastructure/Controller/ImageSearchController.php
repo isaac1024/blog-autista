@@ -34,6 +34,6 @@ final class ImageSearchController extends AbstractController
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
-        return new JsonResponse(['images' => array_map($this->editorImage, $images)]);
+        return new JsonResponse(['images' => array_map($this->editorImage, $images->images)]);
     }
 }

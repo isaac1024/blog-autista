@@ -38,4 +38,14 @@ final class Relation
     {
         return new self(RelationId::random(), $sourceType, $sourceId, $targetType, $targetId);
     }
+
+    public function sourceType(): ResourceType
+    {
+        return $this->sourceType;
+    }
+
+    public function sourceId(): string
+    {
+        return $this->sourceId;
+    }
 }

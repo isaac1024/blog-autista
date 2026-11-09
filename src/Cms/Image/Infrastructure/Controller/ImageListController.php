@@ -6,11 +6,13 @@ namespace Cms\Image\Infrastructure\Controller;
 
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImageSearcher;
+use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageRepository;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Infrastructure\Ui\CmsLayout;
+use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
@@ -37,6 +39,7 @@ final class ImageListController extends AbstractController
         private readonly PageRenderer $pageRenderer,
         private readonly TranslatorInterface $translator,
         private readonly ImageState $imageState,
+        private readonly ListPagination $listPagination,
     ) {}
 
     #[Route('/images', name: 'cms_images', methods: ['GET'])]
@@ -55,17 +58,15 @@ final class ImageListController extends AbstractController
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
-        return $this->pageRenderer->render($this->page($images, $alt));
+        return $this->pageRenderer->render($this->page($images, $alt, $page));
     }
 
     /**
      * Composes the whole page from Twig components, so it is long by design.
      *
-     * @param list<ImageResponse> $images
-     *
      * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
      */
-    private function page(array $images, string $alt): Page
+    private function page(ImagesResponse $found, string $alt, int $number): Page
     {
         $page = CmsLayout::page(\sprintf(
             '%s · CMS',
@@ -86,7 +87,7 @@ final class ImageListController extends AbstractController
                 'value' => $alt,
             ]);
 
-        if ([] === $images && '' === $alt) {
+        if ([] === $found->images && '' === $alt) {
             return $page->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans('cms.images.empty.title'),
                 'message' => $this->translator->trans('cms.images.empty.message'),
@@ -98,7 +99,7 @@ final class ImageListController extends AbstractController
             ]);
         }
 
-        if ([] === $images) {
+        if ([] === $found->images) {
             return $page->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans('cms.images.search.empty.title'),
                 'message' => $this->translator->trans('cms.images.search.empty.message', ['%alt%' => $alt]),
@@ -112,7 +113,13 @@ final class ImageListController extends AbstractController
 
         return $page->withMain('Shared:ResourceList', [
             'label' => $this->translator->trans('cms.images.list.label'),
-        ], array_map($this->row(...), $images));
+        ], array_map($this->row(...), $found->images))
+            ->withMain('Shared:Pagination', ($this->listPagination)(
+                'cms_images',
+                '' === $alt ? [] : ['alt' => $alt],
+                $number,
+                $found->hasMore,
+            ));
     }
 
     /**

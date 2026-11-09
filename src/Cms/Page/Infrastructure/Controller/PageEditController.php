@@ -142,8 +142,8 @@ final class PageEditController extends AbstractController
     /**
      * What is done to the page apart from editing it, offered only when the
      * page allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, and, each confirmed first,
-     * discarding its unpublished changes, taking it off the site, or deleting
+     * and can be sent to anyone, seeing it on the site, seeing what uses it,
+     * and, each confirmed first, discarding its unpublished changes, taking it off the site, or deleting
      * it.
      *
      * @return list<PageComponent>
@@ -160,6 +160,12 @@ final class PageEditController extends AbstractController
                 'label' => $this->translator->trans('cms.pages.edit.view_on_site'),
             ]);
         }
+
+        // What uses the page, on a page of its own.
+        $actions[] = new PageComponent('Shared:ButtonLink', [
+            'url' => $this->generateUrl('cms_relations', ['type' => 'pages', 'id' => $page->id]),
+            'label' => $this->translator->trans('cms.pages.edit.relations'),
+        ]);
 
         if ($page->changed) {
             $actions[] = $this->confirmModal($page, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_pages_discard', 'secondary');

@@ -8,6 +8,7 @@ use Cms\Relation\Domain\Relation;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /**
@@ -51,5 +52,29 @@ final readonly class DoctrineRelationRepository implements RelationRepository
             ->getSingleScalarResult();
 
         return 0 < (int) $count;
+    }
+
+    #[\Override]
+    public function usersOf(ResourceType $targetType, string $targetId, int $limit, int $offset): array
+    {
+        /** @var Query<null, Relation> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('relation')
+            // Pages first, then images, then the settings, whatever their names.
+            ->addSelect('CASE WHEN relation.sourceType = :page THEN 0 WHEN relation.sourceType = :image THEN 1 ELSE 2 END AS HIDDEN sourceOrder')
+            ->from(Relation::class, 'relation')
+            ->where('relation.targetType = :targetType AND relation.targetId = :targetId')
+            ->orderBy('sourceOrder')
+            // Ids are unique within a type, so every slice is the same.
+            ->addOrderBy('relation.sourceId')
+            ->setParameter('page', ResourceType::Page)
+            ->setParameter('image', ResourceType::Image)
+            ->setParameter('targetType', $targetType)
+            ->setParameter('targetId', $targetId)
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery();
+
+        return $query->getResult();
     }
 }

@@ -6,9 +6,11 @@ namespace Cms\Page\Infrastructure\Controller;
 
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PageSearcher;
+use Cms\Page\Application\PagesResponse;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Infrastructure\Ui\CmsLayout;
+use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
@@ -27,6 +29,7 @@ final class PageListController extends AbstractController
         private readonly TranslatorInterface $translator,
         private readonly PageRole $pageRole,
         private readonly PageState $pageState,
+        private readonly ListPagination $listPagination,
     ) {}
 
     #[Route('/pages', name: 'cms_pages', methods: ['GET'])]
@@ -45,17 +48,15 @@ final class PageListController extends AbstractController
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
-        return $this->pageRenderer->render($this->page($pages, $title));
+        return $this->pageRenderer->render($this->page($pages, $title, $page));
     }
 
     /**
      * Composes the whole page from Twig components, so it is long by design.
      *
-     * @param list<PageResponse> $pages
-     *
      * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
      */
-    private function page(array $pages, string $title): Page
+    private function page(PagesResponse $found, string $title, int $number): Page
     {
         $page = CmsLayout::page(\sprintf(
             '%s · CMS',
@@ -105,7 +106,7 @@ final class PageListController extends AbstractController
                 'value' => $title,
             ]);
 
-        if ([] === $pages && '' === $title) {
+        if ([] === $found->pages && '' === $title) {
             return $page->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans('cms.pages.empty.title'),
                 'message' => $this->translator->trans('cms.pages.empty.message'),
@@ -117,7 +118,7 @@ final class PageListController extends AbstractController
             ]);
         }
 
-        if ([] === $pages) {
+        if ([] === $found->pages) {
             return $page->withMain('Shared:EmptyState', [
                 'title' => $this->translator->trans('cms.pages.search.empty.title'),
                 'message' => $this->translator->trans('cms.pages.search.empty.message', ['%title%' => $title]),
@@ -131,7 +132,13 @@ final class PageListController extends AbstractController
 
         return $page->withMain('Shared:ResourceList', [
             'label' => $this->translator->trans('cms.pages.list.label'),
-        ], array_map($this->row(...), $pages));
+        ], array_map($this->row(...), $found->pages))
+            ->withMain('Shared:Pagination', ($this->listPagination)(
+                'cms_pages',
+                '' === $title ? [] : ['title' => $title],
+                $number,
+                $found->hasMore,
+            ));
     }
 
     /**

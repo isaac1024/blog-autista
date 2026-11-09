@@ -18,6 +18,15 @@ interface ImageRepository
     public function find(ImageId $id): ?Image;
 
     /**
+     * The images among those given; an id of no image is left out.
+     *
+     * @param list<ImageId> $ids
+     *
+     * @return list<Image>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * @return list<Image>
      */
     public function matching(Criteria $criteria): array;

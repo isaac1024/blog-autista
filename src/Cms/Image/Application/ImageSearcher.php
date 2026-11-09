@@ -24,10 +24,7 @@ final readonly class ImageSearcher
         private int $page,
     ) {}
 
-    /**
-     * @return list<ImageResponse>
-     */
-    public function __invoke(ImageRepository $imageRepository): array
+    public function __invoke(ImageRepository $imageRepository): ImagesResponse
     {
         if ($this->page < 1) {
             throw InvalidCriteria::nonPositivePage($this->page);
@@ -39,10 +36,16 @@ final readonly class ImageSearcher
         $criteria = new Criteria(
             filters: '' === $alt ? [] : [AltFilter::matches($alt)],
             order: new Order('id', OrderDirection::Descending),
-            limit: self::PAGE_SIZE,
+            // One more than a page tells whether another follows.
+            limit: self::PAGE_SIZE + 1,
             offset: ($this->page - 1) * self::PAGE_SIZE,
         );
 
-        return array_map(ImageResponse::fromImage(...), $imageRepository->matching($criteria));
+        $images = $imageRepository->matching($criteria);
+
+        return new ImagesResponse(
+            array_map(ImageResponse::fromImage(...), \array_slice($images, 0, self::PAGE_SIZE)),
+            \count($images) > self::PAGE_SIZE,
+        );
     }
 }

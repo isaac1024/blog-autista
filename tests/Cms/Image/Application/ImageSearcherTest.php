@@ -6,6 +6,7 @@ namespace Cms\Tests\Image\Application;
 
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImageSearcher;
+use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\AltFilter;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
@@ -44,31 +45,31 @@ final class ImageSearcherTest extends TestCase
 
         yield 'no text, first page' => [
             new ImageSearcher('', 1),
-            new Criteria(limit: 20, filters: [], order: $newestFirst, offset: 0),
+            new Criteria(limit: 21, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'blank text does not filter' => [
             new ImageSearcher('   ', 1),
-            new Criteria(limit: 20, filters: [], order: $newestFirst, offset: 0),
+            new Criteria(limit: 21, filters: [], order: $newestFirst, offset: 0),
         ];
         yield 'text filters by its words' => [
             new ImageSearcher('círculo azul', 1),
-            new Criteria(limit: 20, filters: [AltFilter::matches('círculo azul')], order: $newestFirst, offset: 0),
+            new Criteria(limit: 21, filters: [AltFilter::matches('círculo azul')], order: $newestFirst, offset: 0),
         ];
         yield 'text is trimmed before filtering' => [
             new ImageSearcher('  círculo  ', 1),
-            new Criteria(limit: 20, filters: [AltFilter::matches('círculo')], order: $newestFirst, offset: 0),
+            new Criteria(limit: 21, filters: [AltFilter::matches('círculo')], order: $newestFirst, offset: 0),
         ];
         yield 'second page skips the first one' => [
             new ImageSearcher('', 2),
-            new Criteria(limit: 20, filters: [], order: $newestFirst, offset: 20),
+            new Criteria(limit: 21, filters: [], order: $newestFirst, offset: 20),
         ];
         yield 'later pages skip every previous one' => [
             new ImageSearcher('', 5),
-            new Criteria(limit: 20, filters: [], order: $newestFirst, offset: 80),
+            new Criteria(limit: 21, filters: [], order: $newestFirst, offset: 80),
         ];
         yield 'text and page together' => [
             new ImageSearcher('círculo', 3),
-            new Criteria(limit: 20, filters: [AltFilter::matches('círculo')], order: $newestFirst, offset: 40),
+            new Criteria(limit: 21, filters: [AltFilter::matches('círculo')], order: $newestFirst, offset: 40),
         ];
     }
 
@@ -83,7 +84,7 @@ final class ImageSearcherTest extends TestCase
         ]);
 
         self::assertEquals(
-            [
+            new ImagesResponse([
                 new ImageResponse($circleId, 'Círculo naranja sobre fondo azul', null, '2026/11/'.$circleId.'.webp', ClockMother::now(), ClockMother::now(), 'draft', false, true, false, true),
                 new ImageResponse(
                     $squareId,
@@ -98,7 +99,7 @@ final class ImageSearcherTest extends TestCase
                     false,
                     true,
                 ),
-            ],
+            ], hasMore: false),
             (new ImageSearcher('', 1))($repository),
         );
     }

@@ -145,15 +145,22 @@ final class ImageEditController extends AbstractController
     }
 
     /**
-     * What is done to the image apart from editing it, each confirmed first
-     * and offered only when the image allows it: discarding its unpublished
-     * changes, taking it off the site, or deleting it.
+     * What is done to the image apart from editing it: seeing what uses it
+     * and, each confirmed first and offered only when the image allows it,
+     * discarding its unpublished changes, taking it off the site, or deleting
+     * it.
      *
      * @return list<PageComponent>
      */
     private function imageActions(ImageResponse $image): array
     {
-        $actions = [];
+        // What uses the image, on a page of its own.
+        $actions = [
+            new PageComponent('Shared:ButtonLink', [
+                'url' => $this->generateUrl('cms_relations', ['type' => 'images', 'id' => $image->id]),
+                'label' => $this->translator->trans('cms.images.edit.relations'),
+            ]),
+        ];
 
         if ($image->changed) {
             $actions[] = $this->confirmModal($image, self::DISCARD_CHANGES_MODAL, 'discard', 'cms_images_discard', 'secondary');

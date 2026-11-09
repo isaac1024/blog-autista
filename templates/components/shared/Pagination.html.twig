@@ -1,0 +1,16 @@
+{# Only painted when there is a page to go to: a single page needs no navigation. #}
+{% if previousUrl or nextUrl %}
+<nav class="flex flex-wrap items-center justify-between gap-4" aria-label="{{ label }}">
+{% if previousUrl %}
+    <a class="inline-flex min-h-11 items-center justify-center rounded-control border-2 border-accent bg-surface px-4 py-2.5 text-[1rem] font-bold text-accent no-underline transition-colors duration-150 hover:bg-accent hover:text-on-accent motion-reduce:transition-none forced-colors:border-[LinkText]" href="{{ previousUrl }}" rel="prev">{{ previousLabel }}</a>
+{% else %}
+    <span></span>
+{% endif %}
+    <span class="text-[1rem] text-muted" aria-current="page">{{ current }}</span>
+{% if nextUrl %}
+    <a class="inline-flex min-h-11 items-center justify-center rounded-control border-2 border-accent bg-surface px-4 py-2.5 text-[1rem] font-bold text-accent no-underline transition-colors duration-150 hover:bg-accent hover:text-on-accent motion-reduce:transition-none forced-colors:border-[LinkText]" href="{{ nextUrl }}" rel="next">{{ nextLabel }}</a>
+{% else %}
+    <span></span>
+{% endif %}
+</nav>
+{% endif %}

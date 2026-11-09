@@ -74,6 +74,7 @@ cms:
             description: 'La imagen «%alt%» y su fichero dejarán de existir. No se puede deshacer.'
             submit: 'Sí, borrar la imagen'
         edit:
+            relations: 'Dónde se usa'
             title: 'Editar imagen'
             dates: 'Subida el %uploaded% · Modificada el %updated%'
             caption_label: 'Pie de foto'
@@ -90,6 +91,31 @@ cms:
             alt_label: 'Texto alternativo'
             alt_hint: 'Describe lo que muestra la imagen para quien no puede verla, como lo contarías en voz alta.'
             submit: 'Subir imagen'
+    pagination:
+        label: 'Paginación'
+        current: 'Página %page%'
+        previous: 'Anterior'
+        next: 'Siguiente'
+    relations:
+        title: 'Dónde se usa'
+        types:
+            page: 'Página'
+            image: 'Imagen'
+            settings: 'Ajustes'
+        page:
+            subtitle: 'Lo que enlaza a la página «%name%».'
+            back: 'Editar la página'
+            list: 'Lo que usa la página «%name%»'
+            empty:
+                title: 'Nada usa esta página'
+                message: 'Ninguna página, imagen ni menú la enlaza.'
+        image:
+            subtitle: 'Lo que muestra la imagen «%name%».'
+            back: 'Editar la imagen'
+            list: 'Lo que usa la imagen «%name%»'
+            empty:
+                title: 'Nada usa esta imagen'
+                message: 'Ninguna página la muestra ni los ajustes la usan.'
     settings:
         title: 'Ajustes'
         dates: 'Creados el %created% · Modificados el %updated%'
@@ -142,6 +168,7 @@ cms:
                 message: 'Ninguna página tiene «%title%» en el título.'
                 action: 'Ver todas las páginas'
         edit:
+            relations: 'Dónde se usa'
             title: 'Editar página'
             dates: 'Creada el %created% · Modificada el %updated%'
             view_on_site: 'Ver en la web'

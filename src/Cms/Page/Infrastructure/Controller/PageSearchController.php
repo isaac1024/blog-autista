@@ -39,8 +39,8 @@ final class PageSearchController extends AbstractController
         }
 
         return new JsonResponse([
-            'pages' => array_map($this->editorPage, $pages),
-            'more' => PageSearcher::PAGE_SIZE === \count($pages),
+            'pages' => array_map($this->editorPage, $pages->pages),
+            'more' => $pages->hasMore,
         ]);
     }
 }

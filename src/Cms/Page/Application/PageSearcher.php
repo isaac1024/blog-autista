@@ -28,10 +28,7 @@ final readonly class PageSearcher
         private ?string $except,
     ) {}
 
-    /**
-     * @return list<PageResponse>
-     */
-    public function __invoke(PageRepository $pageRepository): array
+    public function __invoke(PageRepository $pageRepository): PagesResponse
     {
         if ($this->page < 1) {
             throw InvalidCriteria::nonPositivePage($this->page);
@@ -48,10 +45,16 @@ final readonly class PageSearcher
         $criteria = new Criteria(
             filters: $filters,
             order: new Order('id', OrderDirection::Descending),
-            limit: self::PAGE_SIZE,
+            // One more than a page tells whether another follows.
+            limit: self::PAGE_SIZE + 1,
             offset: ($this->page - 1) * self::PAGE_SIZE,
         );
 
-        return array_map(PageResponse::fromPage(...), $pageRepository->matching($criteria));
+        $pages = $pageRepository->matching($criteria);
+
+        return new PagesResponse(
+            array_map(PageResponse::fromPage(...), \array_slice($pages, 0, self::PAGE_SIZE)),
+            \count($pages) > self::PAGE_SIZE,
+        );
     }
 }
