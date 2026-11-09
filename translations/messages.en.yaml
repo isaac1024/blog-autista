@@ -138,7 +138,7 @@ cms:
                     hint: 'The site will say it can’t find the address (404). You can create a redirect later.'
             incoming:
                 title: 'Redirects that lead here'
-                description: '%count% addresses lead to this content. As redirects only lead to published content, decide what each one does.'
+                description: 'Addresses that lead to this content: %count%. As redirects only lead to published content, decide what each one does.'
                 legend: 'What %source% does'
                 legend_origin: 'What %source% does (and what links to or embeds %origin%)'
                 same:

@@ -28,7 +28,7 @@ final readonly class RedirectNames
     /**
      * @param list<RedirectResponse> $redirects
      *
-     * @return array<string, array{target: string, origin: ?string}> keyed by the id of each redirect
+     * @return array<string, array{target: string, origin: ?string}> keyed by the id of each redirect; origin null for none, or one deleted
      */
     public function __invoke(array $redirects): array
     {
@@ -40,7 +40,8 @@ final readonly class RedirectNames
                 'target' => null === $redirect->targetType || null === $redirect->targetId
                     ? $this->translator->trans('cms.redirects.target.gone')
                     : $this->name($names, $redirect->targetType, $redirect->targetId),
-                'origin' => null === $redirect->originType || null === $redirect->originId
+                // A resource deleted since has nothing linking to it, so it goes unnamed.
+                'origin' => null === $redirect->originType || null === $redirect->originId || !\array_key_exists($redirect->originType.':'.$redirect->originId, $names)
                     ? null
                     : $this->name($names, $redirect->originType, $redirect->originId),
             ];

@@ -80,12 +80,14 @@ final readonly class Source
     }
 
     /**
-     * The address to show an editor: the largest copy, for an image.
+     * The address to show an editor, as it reads: decoded, such as /guía.html
+     * for /gu%c3%ada.html, and the largest copy, for an image. Written back,
+     * it is the same address.
      */
     public function shown(): string
     {
         $imagePath = $this->imagePath();
 
-        return null === $imagePath ? $this->value : new ImageCopy($imagePath, ImageCopy::LARGEST)->url();
+        return rawurldecode(null === $imagePath ? $this->value : new ImageCopy($imagePath, ImageCopy::LARGEST)->url());
     }
 }

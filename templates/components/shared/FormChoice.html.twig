@@ -8,7 +8,7 @@
         its radio is checked. The fields sit outside the card, whose label
         covers it for the pointer, so they stay usable.
     #}
-    <div class="group grid gap-3">
+    <div class="group/choice grid gap-3">
         <div class="relative flex items-start gap-3 rounded-control border-2 border-border bg-surface p-3 hover:border-accent has-[:checked]:border-accent has-[:checked]:shadow-[inset_4px_0_0_var(--color-accent)] has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-focus forced-colors:border-[ButtonText]">
             <input class="mt-1 h-5 w-5 flex-none accent-[var(--color-accent)] focus-visible:outline-none" type="radio" id="{{ optionId }}" name="{{ name }}" value="{{ option.value }}" aria-describedby="{{ optionId }}-hint" data-form-choice-option{% if option.value == value %} checked{% endif %}>
             <span class="grid gap-0.5">
@@ -17,7 +17,7 @@
             </span>
         </div>
 {% if option.fields is not empty %}
-        <div class="hidden gap-4 border-l-4 border-border pl-4 group-has-[[data-form-choice-option]:checked]:grid">
+        <div class="hidden gap-4 border-l-4 border-border pl-4 group-has-[[data-form-choice-option]:checked]/choice:grid">
 {% for field in option.fields %}
             {{ renderer.render(field) }}
 {% endfor %}

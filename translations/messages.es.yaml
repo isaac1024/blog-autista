@@ -138,7 +138,7 @@ cms:
                     hint: 'La web dirá que no encuentra la dirección (404). Podrás crear una redirección más adelante.'
             incoming:
                 title: 'Redirecciones que llevan aquí'
-                description: '%count% direcciones llevan a este contenido. Como solo se redirige a contenido publicado, decide qué hace cada una.'
+                description: 'Direcciones que llevan a este contenido: %count%. Como solo se redirige a contenido publicado, decide qué hace cada una.'
                 legend: 'Qué hace %source%'
                 legend_origin: 'Qué hace %source% (y lo que enlaza o incluye %origin%)'
                 same:

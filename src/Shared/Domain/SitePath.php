@@ -75,8 +75,32 @@ final readonly class SitePath
         )));
     }
 
+    /**
+     * Resolves "." and ".." segments, written or encoded, as a browser does
+     * before it asks for an address, so one written with them is the one
+     * asked for.
+     */
     private static function normalize(string $path): string
     {
-        return '/'.self::write(ltrim($path, '/'));
+        $segments = [];
+        $trailing = false;
+
+        foreach (explode('/', ltrim($path, '/')) as $segment) {
+            $decoded = rawurldecode($segment);
+            $trailing = '.' === $decoded || '..' === $decoded;
+
+            if ('..' === $decoded) {
+                array_pop($segments);
+            } elseif (!$trailing) {
+                $segments[] = $segment;
+            }
+        }
+
+        // A path ending in a dot segment names a directory, so it keeps its slash.
+        if ($trailing) {
+            $segments[] = '';
+        }
+
+        return '/'.self::write(implode('/', $segments));
     }
 }
