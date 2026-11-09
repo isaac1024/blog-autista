@@ -32,6 +32,63 @@ cms:
         redirects: 'Redirects'
         settings: 'Settings'
         logout: 'Sign out'
+        audience: 'Audience'
+        visits: 'Visits'
+    analytics:
+        title: 'Visits'
+        subtitle: 'What the site counts of its readers, with no cookies and without knowing who they are.'
+        periods:
+            label: 'Period'
+            days: '%days% days'
+        today:
+            title: 'Today so far'
+        period:
+            title: 'Last %days% days, up to yesterday'
+        views: 'Page views'
+        visitors: 'Visitors'
+        daily_visitors: 'Daily visitors'
+        daily_visitors_hint: 'Those of each day added up: whoever comes back another day counts again.'
+        chart:
+            title: 'Page views per day'
+            table: 'Show as a table'
+            day: 'Day'
+            unit: 'views'
+        pages:
+            caption: 'Pages'
+            name: 'Page'
+            views: 'Views'
+            deleted: 'Deleted page'
+        channels:
+            caption: 'Channels'
+            name: 'Channel'
+            views: 'Entries'
+        channel:
+            direct: 'Direct'
+            search: 'Organic search'
+            social: 'Social networks'
+            email: 'Email'
+            ai: 'AI assistants'
+            referral: 'Other sites'
+        sources:
+            caption: 'Sources'
+            name: 'Source'
+            views: 'Entries'
+            others: 'Others'
+        devices:
+            caption: 'Device'
+            name: 'Device'
+            views: 'Views'
+        device:
+            mobile: 'Mobile'
+            desktop: 'Desktop'
+        countries:
+            caption: 'Country'
+            name: 'Country'
+            views: 'Views'
+            unknown: 'Unknown'
+        empty:
+            title: 'No visits yet'
+            message: 'They show up here as soon as someone reads a published page.'
     images:
         title: 'Images'
         subtitle: 'The images the pages of the blog show, cropped to 16:9.'

@@ -1,0 +1,25 @@
+<div class="overflow-x-auto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus" tabindex="0" role="region" aria-label="{{ caption }}">
+    <table class="w-full border-collapse text-[1rem]">
+        <caption class="pb-2 text-left font-bold">{{ caption }}</caption>
+        <thead>
+            <tr>
+{% for column in columns %}
+                <th class="border-b border-divider py-2 font-bold text-muted {{ loop.first ? 'text-left' : 'w-28 pl-4 text-right whitespace-nowrap' }}" scope="col">{{ column }}</th>
+{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+{% for row in rows %}
+            <tr>
+                <th class="border-b border-divider py-2 text-left font-normal" scope="row">
+                    <span class="break-words">{{ row.name }}</span>
+                    <span class="mt-1 block h-1 bg-chart forced-colors:bg-[CanvasText]" style="width: {{ (row.share * 100)|round(2) }}%" aria-hidden="true"></span>
+                </th>
+{% for figure in row.figures %}
+                <td class="border-b border-divider py-2 pl-4 text-right align-top tabular-nums whitespace-nowrap">{{ figure }}</td>
+{% endfor %}
+            </tr>
+{% endfor %}
+        </tbody>
+    </table>
+</div>

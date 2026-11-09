@@ -14,6 +14,8 @@
     <path d="M4 7.5h11.5M12 3.5l4 4-4 4M20 16.5H8.5M12 12.5l-4 4 4 4" />
 {% elseif name == 'settings' %}
     <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+{% elseif name == 'visits' %}
+    <path d="M4 20.5h16M7 16.5v-5M12 16.5v-9M17 16.5v-12" />
 {% elseif name == 'logout' %}
     <path d="M10 20.5H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h4M16 16.5l4.5-4.5L16 7.5M20.5 12H9.5" />
 {% endif %}
@@ -28,12 +30,23 @@
 {% endmacro %}
 
 {% macro navigation(currentRoute) %}
-<ul class="m-0 flex list-none flex-col gap-1 p-0">
-    <li>{{ _self.item('cms.nav.pages'|trans, path('cms_pages'), 'pages', currentRoute starts with 'cms_pages') }}</li>
-    <li>{{ _self.item('cms.nav.images'|trans, path('cms_images'), 'images', currentRoute starts with 'cms_images') }}</li>
-    <li>{{ _self.item('cms.nav.redirects'|trans, path('cms_redirects'), 'redirects', currentRoute starts with 'cms_redirects') }}</li>
-    <li>{{ _self.item('cms.nav.settings'|trans, path('cms_settings'), 'settings', currentRoute starts with 'cms_settings') }}</li>
-</ul>
+<div class="flex flex-col gap-6">
+    <div>
+        <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.content'|trans }}</p>
+        <ul class="m-0 flex list-none flex-col gap-1 p-0">
+            <li>{{ _self.item('cms.nav.pages'|trans, path('cms_pages'), 'pages', currentRoute starts with 'cms_pages') }}</li>
+            <li>{{ _self.item('cms.nav.images'|trans, path('cms_images'), 'images', currentRoute starts with 'cms_images') }}</li>
+            <li>{{ _self.item('cms.nav.redirects'|trans, path('cms_redirects'), 'redirects', currentRoute starts with 'cms_redirects') }}</li>
+            <li>{{ _self.item('cms.nav.settings'|trans, path('cms_settings'), 'settings', currentRoute starts with 'cms_settings') }}</li>
+        </ul>
+    </div>
+    <div>
+        <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.audience'|trans }}</p>
+        <ul class="m-0 flex list-none flex-col gap-1 p-0">
+            <li>{{ _self.item('cms.nav.visits'|trans, path('cms_analytics'), 'visits', currentRoute starts with 'cms_analytics') }}</li>
+        </ul>
+    </div>
+</div>
 {% endmacro %}
 
 {% macro account() %}
@@ -67,7 +80,6 @@
 
                 <div class="absolute inset-x-0 top-full z-50 flex flex-col gap-4 border-b border-divider bg-surface px-[clamp(1rem,4vw,1.5rem)] py-4 shadow-card">
                     <nav aria-label="{{ 'cms.nav.administration'|trans }}">
-                        <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.content'|trans }}</p>
                         {{ _self.navigation(currentRoute) }}
                     </nav>
                     <div class="border-t border-divider pt-4">
@@ -77,7 +89,6 @@
             </details>
 
             <nav class="hidden md:block" aria-label="{{ 'cms.nav.administration'|trans }}">
-                <p class="m-0 mb-2 px-3 text-[0.875rem] font-bold text-muted">{{ 'cms.nav.content'|trans }}</p>
                 {{ _self.navigation(currentRoute) }}
             </nav>
 
@@ -109,5 +120,5 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
-{# Only the CMS ships JavaScript: the Stimulus controllers of its editors. #}
+{# The Stimulus controllers of the editors of the CMS. #}
 {% block importmap %}{{ importmap('cms') }}{% endblock %}

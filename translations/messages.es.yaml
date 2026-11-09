@@ -32,6 +32,63 @@ cms:
         redirects: 'Redirecciones'
         settings: 'Ajustes'
         logout: 'Cerrar sesión'
+        audience: 'Audiencia'
+        visits: 'Visitas'
+    analytics:
+        title: 'Visitas'
+        subtitle: 'Lo que el sitio cuenta de quien lo lee, sin cookies y sin saber quién es.'
+        periods:
+            label: 'Periodo'
+            days: '%days% días'
+        today:
+            title: 'Hoy, hasta ahora'
+        period:
+            title: 'Últimos %days% días, hasta ayer'
+        views: 'Páginas vistas'
+        visitors: 'Visitantes'
+        daily_visitors: 'Visitantes diarios'
+        daily_visitors_hint: 'La suma de los de cada día: quien vuelve otro día cuenta otra vez.'
+        chart:
+            title: 'Páginas vistas por día'
+            table: 'Ver como tabla'
+            day: 'Día'
+            unit: 'vistas'
+        pages:
+            caption: 'Páginas'
+            name: 'Página'
+            views: 'Vistas'
+            deleted: 'Página eliminada'
+        channels:
+            caption: 'Procedencia'
+            name: 'Canal'
+            views: 'Entradas'
+        channel:
+            direct: 'Directo'
+            search: 'Búsqueda orgánica'
+            social: 'Redes sociales'
+            email: 'Correo'
+            ai: 'Asistentes de IA'
+            referral: 'Otros sitios'
+        sources:
+            caption: 'Fuentes'
+            name: 'Fuente'
+            views: 'Entradas'
+            others: 'Otras'
+        devices:
+            caption: 'Dispositivo'
+            name: 'Dispositivo'
+            views: 'Vistas'
+        device:
+            mobile: 'Móvil'
+            desktop: 'Escritorio'
+        countries:
+            caption: 'País'
+            name: 'País'
+            views: 'Vistas'
+            unknown: 'Desconocido'
+        empty:
+            title: 'Aún no hay visitas'
+            message: 'Aparecen aquí en cuanto alguien lee una página publicada.'
     images:
         title: 'Imágenes'
         subtitle: 'Las imágenes que muestran las páginas del blog, recortadas en 16:9.'

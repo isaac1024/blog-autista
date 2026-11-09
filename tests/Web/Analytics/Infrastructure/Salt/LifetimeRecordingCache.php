@@ -24,7 +24,7 @@ final class LifetimeRecordingCache implements CacheInterface
     private array $lifetimes = [];
 
     /**
-     * @param array<array-key, mixed>|null $metadata
+     * @param null|array<array-key, mixed> $metadata
      */
     #[\Override]
     public function get(string $key, callable $callback, ?float $beta = null, ?array &$metadata = null): mixed

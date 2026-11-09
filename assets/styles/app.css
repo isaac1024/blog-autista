@@ -54,6 +54,8 @@
     /* Tint of the current navigation item and of badges; accent text keeps 7:1 on it. */
     --color-accent-soft: #f4f0fa;
     --color-accent-strong: #4e3176;
+    /* The one hue of a chart's marks, never of its text; checked for contrast and colour blindness against the surface. */
+    --color-chart: #614092;
     /*
      * Label and tint of each kind of callout; the label keeps 7:1 on its tint.
      * The label colours its edge and its icon too.
@@ -116,6 +118,7 @@
             --color-accent: #c9b6ea;
             --color-accent-soft: #28232f;
             --color-accent-strong: #d8c8f0;
+            --color-chart: #9f7fe0;
             --color-on-accent: #17151a;
 
             --color-danger: #ffb4ab;

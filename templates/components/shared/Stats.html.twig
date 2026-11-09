@@ -1,0 +1,11 @@
+<dl class="m-0 grid grid-cols-1 gap-3 min-[24rem]:grid-cols-2">
+{% for item in items %}
+    <div class="flex flex-col gap-1 border border-divider bg-bg p-4 forced-colors:border-[CanvasText]">
+        <dt class="text-[1rem] text-muted">{{ item.label }}</dt>
+        <dd class="m-0 text-[clamp(1.75rem,5vw,2.25rem)] font-bold leading-tight tabular-nums">{{ item.value }}</dd>
+{% if item.hint is defined %}
+        <dd class="m-0 text-[0.875rem] text-muted">{{ item.hint }}</dd>
+{% endif %}
+    </div>
+{% endfor %}
+</dl>
