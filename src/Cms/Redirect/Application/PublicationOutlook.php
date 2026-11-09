@@ -31,4 +31,25 @@ final readonly class PublicationOutlook
     {
         return null !== $this->replaced || null !== $this->previous;
     }
+
+    /**
+     * What was told and asked, in short, so a confirmation is known to be of
+     * what publishing does now: empty when nothing is, and different once a
+     * redirect it tells of, or an address it asks about, changed.
+     */
+    public function fingerprint(): string
+    {
+        if (!$this->asksFirst()) {
+            return '';
+        }
+
+        return hash('sha256', json_encode([
+            $this->next,
+            $this->previous,
+            ...array_map(
+                static fn (?RedirectResponse $redirect): ?array => null === $redirect ? null : [$redirect->id, $redirect->targetType, $redirect->targetId, $redirect->originType, $redirect->originId],
+                [$this->replaced, $this->previousRedirect],
+            ),
+        ], \JSON_THROW_ON_ERROR));
+    }
 }

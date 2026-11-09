@@ -10,6 +10,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
+use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\SourceAvailability;
 use Cms\Redirect\Domain\Target;
 use Shared\Domain\Event\EventBus;
@@ -49,47 +50,85 @@ final readonly class ResourceRetirement
         Transaction $transaction,
     ): void {
         $address = $this->address?->target();
+        $this->assertLeadsElsewhere($address);
+        $source = $siteResources->addressOf($this->resource);
 
-        // Off the site, it can't be where its own addresses lead.
-        if (null !== $address && $address->equals(Target::leadingTo($this->resource))) {
+        $mutualExclusion->run(
+            $this->keys($address, $source, $redirectRepository),
+            fn () => $transaction->run(fn () => $this->retire($address, $source, $redirectRepository, $eventBus, $siteResources)),
+        );
+    }
+
+    /**
+     * Off the site, it can't be where its own address leads, nor where any
+     * redirect to it does: every choice is checked before anything changes.
+     */
+    private function assertLeadsElsewhere(?Target $address): void
+    {
+        $itself = Target::leadingTo($this->resource);
+
+        if (null !== $address && $address->equals($itself)) {
             throw InvalidRedirect::toItself();
         }
 
-        $source = $siteResources->addressOf($this->resource);
-        $keys = [$this->resource->key()];
-
-        if (null !== $source) {
-            $keys = [...$keys, ...new RedirectKeys($source, $address ?? Target::gone())()];
+        foreach ($this->incoming as $decision) {
+            if (!$decision->deletes() && $decision->target($address)->equals($itself)) {
+                throw InvalidRedirect::toItself();
+            }
         }
+    }
+
+    /**
+     * What it holds: the resource, its address and where it will lead, and
+     * the address of every redirect to it, as every change to a redirect
+     * holds its address, with where each will lead. A redirect to it created
+     * meanwhile isn't held, and has nothing decided, so it is refused.
+     *
+     * @return list<string>
+     */
+    private function keys(?Target $address, ?Source $source, RedirectRepository $redirectRepository): array
+    {
+        $keys = [
+            $this->resource->key(),
+            ...(null === $source ? [] : new RedirectKeys($source, $address ?? Target::gone())()),
+            ...array_map(static fn (Source $incoming): string => 'address:'.$incoming->value(), $redirectRepository->sourcesTargeting($this->resource)),
+        ];
 
         foreach ($this->incoming as $decision) {
             $keys = [...$keys, ...$decision->keys()];
         }
 
-        $mutualExclusion->run($keys, fn () => $transaction->run(function () use ($address, $source, $redirectRepository, $eventBus, $siteResources): void {
-            // Read again while held: no redirect can lead to it meanwhile.
-            foreach ($redirectRepository->findTargeting($this->resource) as $redirect) {
-                $decision = $this->incoming[$redirect->id()->value()] ?? throw InvalidRedirect::undecided($redirect->source());
+        return $keys;
+    }
 
-                if ($decision->deletes()) {
-                    $redirect->delete($redirectRepository, $eventBus);
+    /**
+     * Decides every redirect to it, takes it off the site, then leads its
+     * address, while all of it is held.
+     */
+    private function retire(?Target $address, ?Source $source, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources): void
+    {
+        // Read again while held: no redirect can lead to it meanwhile.
+        foreach ($redirectRepository->findTargeting($this->resource) as $redirect) {
+            $decision = $this->incoming[$redirect->id()->value()] ?? throw InvalidRedirect::undecided($redirect->source());
 
-                    continue;
-                }
+            if ($decision->deletes()) {
+                $redirect->delete($redirectRepository, $eventBus);
 
-                $redirect->retarget($decision->target($address), $siteResources);
-                $redirect->save($redirectRepository, $eventBus);
+                continue;
             }
 
-            ($this->unpublish)();
-
-            if (null === $address || null === $source) {
-                return;
-            }
-
-            $redirect = Redirect::create(RedirectId::random()->value(), $source, $address, $siteResources);
-            new SourceAvailability($redirect)($redirectRepository);
+            $redirect->retarget($decision->target($address), $siteResources);
             $redirect->save($redirectRepository, $eventBus);
-        }));
+        }
+
+        ($this->unpublish)();
+
+        if (null === $address || null === $source) {
+            return;
+        }
+
+        $redirect = Redirect::create(RedirectId::random()->value(), $source, $address, $siteResources);
+        new SourceAvailability($redirect)($redirectRepository);
+        $redirect->save($redirectRepository, $eventBus);
     }
 }

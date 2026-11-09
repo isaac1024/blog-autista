@@ -58,6 +58,16 @@ final class InvalidRedirect extends DomainError
         return new self('Only when its address leads somewhere do the redirects to a resource follow it there.', 'errors.redirect.no_new_target', []);
     }
 
+    public static function changedMeanwhile(Source $source): self
+    {
+        return new self(\sprintf('"%s" was changed meanwhile.', $source->shown()), 'errors.redirect.changed_meanwhile', ['%source%' => $source->shown()]);
+    }
+
+    public static function outlookChanged(): self
+    {
+        return new self('What publishing does to the redirects changed since it was shown.', 'errors.redirect.outlook_changed', []);
+    }
+
     public static function targetOffSite(): self
     {
         return new self('A redirect only leads to a published resource.', 'errors.redirect.target_off_site', []);

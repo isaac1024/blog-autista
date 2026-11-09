@@ -27,9 +27,10 @@ use Symfony\Component\Routing\Requirement\Requirement;
 
 /**
  * Publishes a page as it is saved. When that changes the redirects, it asks
- * first, on a page of its own, and publishes once the editor confirms there.
- * A refused choice goes back to that page as it was made; anything else the
- * page lacks, to its editor.
+ * first, on a page of its own, and publishes once the editor confirms there,
+ * if publishing still does what was shown. A refused choice, or one made on
+ * what changed since, goes back to that page; anything else the page lacks,
+ * to its editor.
  *
  * It reaches the redirects as much as the page, so its coupling says nothing
  * about its design.
@@ -52,16 +53,19 @@ final class PagePublishController extends AbstractController
         $this->csrf->assertValid($request);
 
         $resource = Resource::page($id);
-        $confirmed = PublicationForm::confirmed($request);
+        $outlook = PublicationForm::outlook($request);
 
         try {
-            if (!$confirmed && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst()) {
+            if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst()) {
                 return $this->redirectToRoute('cms_pages_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
             }
 
+            // Straight from the editor, nothing was shown, so publishing must
+            // still change no redirect when it happens.
             new ResourcePublication(
                 $resource,
                 PublicationForm::previous($request, $resource),
+                $outlook ?? '',
                 static function () use ($id, $pageRepository, $eventBus): void {
                     new PagePublisher($id)($pageRepository, $eventBus);
                 },
@@ -71,9 +75,12 @@ final class PagePublishController extends AbstractController
         } catch (DomainError $error) {
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 
-            // A choice about the redirects is told where it was made, as it was.
-            if ($confirmed && $error instanceof InvalidRedirect) {
-                $request->getSession()->set(\sprintf(PagePublishFormController::SAVED, $id), $request->request->all());
+            // What concerns the redirects is told on the confirmation, with
+            // the choices made there, if any, as they were.
+            if ($error instanceof InvalidRedirect) {
+                if (null !== $outlook) {
+                    $request->getSession()->set(\sprintf(PagePublishFormController::SAVED, $id), $request->request->all());
+                }
 
                 return $this->redirectToRoute('cms_pages_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
             }

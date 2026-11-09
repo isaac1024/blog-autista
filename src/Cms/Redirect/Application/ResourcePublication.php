@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Application;
 
+use Cms\Redirect\Domain\InvalidRedirect;
 use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
@@ -23,17 +24,21 @@ use Shared\Domain\Transaction;
  * address it leaves, when it moves, does what the editor says.
  *
  * It holds the resource and both addresses while it works, and keeps all of
- * it or none.
+ * it or none. While held, it checks that publishing still does what the
+ * editor confirmed, by the fingerprint of what was shown: a redirect created
+ * meanwhile at the address it takes is never deleted unseen.
  */
 final readonly class ResourcePublication
 {
     /**
-     * @param ?TargetInput     $previous where the address it leaves leads, when it moves; null leaves that address as it is
-     * @param \Closure(): void $publish  puts the resource on the site
+     * @param PreviousAddressDecision $previous what the address it leaves does, when it moves
+     * @param ?string                 $outlook  the fingerprint of what the editor was shown, empty when nothing; null to publish whatever it does, for a resource whose address never changes
+     * @param \Closure(): void        $publish  puts the resource on the site
      */
     public function __construct(
         private Resource $resource,
-        private ?TargetInput $previous,
+        private PreviousAddressDecision $previous,
+        private ?string $outlook,
         private \Closure $publish,
     ) {}
 
@@ -52,7 +57,7 @@ final readonly class ResourcePublication
     ): void {
         $next = $siteResources->nextAddressOf($this->resource);
         $left = self::left($siteResources->addressOf($this->resource), $next);
-        $target = null === $left ? null : $this->previous?->target();
+        $target = null === $left ? null : $this->previous->target()?->target();
 
         $mutualExclusion->run($this->keys($next, $left, $target), fn () => $transaction->run(
             fn () => $this->publish($next, $left, $target, $redirectRepository, $eventBus, $siteResources),
@@ -66,6 +71,7 @@ final readonly class ResourcePublication
      */
     private function publish(?Source $next, ?Source $left, ?Target $target, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources): void
     {
+        $this->assertConfirmed($redirectRepository, $siteResources);
         ($this->publish)();
 
         // Its address answers it now, so nothing else answers there.
@@ -79,6 +85,27 @@ final readonly class ResourcePublication
 
         if (null !== $left && null !== $target) {
             self::lead($left, $target, $redirectRepository, $eventBus, $siteResources);
+        }
+    }
+
+    /**
+     * Whether publishing, as it would be now, is what the editor was shown,
+     * and the address it leaves, if any, was decided.
+     */
+    private function assertConfirmed(RedirectRepository $redirectRepository, SiteResources $siteResources): void
+    {
+        if (null === $this->outlook) {
+            return;
+        }
+
+        $outlook = new PublicationOutlookFinder($this->resource)($redirectRepository, $siteResources);
+
+        if ($outlook->fingerprint() !== $this->outlook) {
+            throw InvalidRedirect::outlookChanged();
+        }
+
+        if (null !== $outlook->previous && !$this->previous->isDecided()) {
+            throw InvalidRedirect::undecidedPrevious();
         }
     }
 

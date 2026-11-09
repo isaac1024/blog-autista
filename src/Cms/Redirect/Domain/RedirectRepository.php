@@ -20,6 +20,12 @@ interface RedirectRepository
 
     public function find(RedirectId $id): ?Redirect;
 
+    /**
+     * The address of a redirect, which never changes, without reading the
+     * rest: what a change holds before it reads the redirect.
+     */
+    public function sourceOf(RedirectId $id): ?Source;
+
     public function findBySource(Source $source): ?Redirect;
 
     /**
@@ -33,6 +39,14 @@ interface RedirectRepository
      * @return list<Redirect>
      */
     public function findTargeting(Resource $resource): array;
+
+    /**
+     * The addresses of the redirects that lead to the resource, without
+     * reading the rest: what a change holds before it reads them.
+     *
+     * @return list<Source>
+     */
+    public function sourcesTargeting(Resource $resource): array;
 
     /**
      * Every redirect that knows the resource as its origin: one at most,

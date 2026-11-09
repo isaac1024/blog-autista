@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
+use Cms\Redirect\Application\PreviousAddressDecision;
 use Cms\Redirect\Application\PublicationOutlook;
 use Cms\Redirect\Application\TargetInput;
-use Cms\Redirect\Domain\InvalidRedirect;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\ResourceType;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -19,8 +19,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * what the address it leaves does, leading to the page itself unless the
  * editor says otherwise.
  *
- * It posts "confirmed", so publishing knows it was asked, and the choice for
- * the address it leaves under "previous".
+ * It posts the fingerprint of what it showed as "outlook", so publishing
+ * knows it still does that, and the choice for the address it leaves under
+ * "previous".
  */
 final readonly class PublicationForm
 {
@@ -53,7 +54,8 @@ final readonly class PublicationForm
             ], [
                 ...(null === $notice ? [] : [$notice]),
                 ...(null === $outlook->previous ? [] : [$this->previousPanel($outlook, \is_array($posted['previous'] ?? null) ? $posted['previous'] : [])]),
-                new PageComponent('Shared:FormInput', ['name' => 'confirmed', 'type' => 'hidden', 'value' => '1']),
+                // What was shown, so publishing knows it still does that.
+                new PageComponent('Shared:FormInput', ['name' => 'outlook', 'type' => 'hidden', 'value' => $outlook->fingerprint()]),
                 new PageComponent('Shared:ActionBar', [], [
                     new PageComponent('Shared:FormButton', ['label' => $submit]),
                 ]),
@@ -62,29 +64,27 @@ final readonly class PublicationForm
     }
 
     /**
-     * Whether the request comes from this form, so publishing was asked
-     * about first.
+     * The fingerprint of what the form showed, or null when the request
+     * doesn't come from it, so the editor was shown nothing to confirm.
      */
-    public static function confirmed(Request $request): bool
+    public static function outlook(Request $request): ?string
     {
-        return $request->request->getBoolean('confirmed');
+        return $request->request->has('outlook') ? $request->request->getString('outlook') : null;
     }
 
     /**
-     * Where the request says the address the page leaves leads, or null to
-     * leave it as it is.
-     *
-     * @throws InvalidRedirect when it was asked and nothing is chosen
+     * What the request says the address the page leaves does; undecided when
+     * it says nothing, which publishing only accepts while there is none.
      */
-    public static function previous(Request $request, Resource $resource): ?TargetInput
+    public static function previous(Request $request, Resource $resource): PreviousAddressDecision
     {
         $values = RedirectTargetField::fromRequest($request, 'previous');
 
         return match ($values['action']) {
-            self::KEEP => null,
-            self::ITSELF => new TargetInput($resource->type()->value, $resource->id()),
-            '' => self::confirmed($request) ? throw InvalidRedirect::undecidedPrevious() : null,
-            default => RedirectTargetField::target($values),
+            '' => PreviousAddressDecision::undecided(),
+            self::KEEP => PreviousAddressDecision::keep(),
+            self::ITSELF => PreviousAddressDecision::leadTo(new TargetInput($resource->type()->value, $resource->id())),
+            default => PreviousAddressDecision::leadTo(RedirectTargetField::target($values)),
         };
     }
 

@@ -13,6 +13,10 @@ use Shared\Domain\MutualExclusion;
 /**
  * Leads a redirect somewhere else, or says its address is gone. Its address
  * stays: changing it is deleting the redirect and creating another.
+ *
+ * It holds its address, as every change to a redirect does, and the target,
+ * and reads the redirect only then, so it changes what the last change left,
+ * and two changes never tell the site the same revision.
  */
 final readonly class RedirectRetargeter
 {
@@ -24,9 +28,11 @@ final readonly class RedirectRetargeter
     public function __invoke(RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources, MutualExclusion $mutualExclusion): void
     {
         $target = $this->target->target();
-        $redirect = $redirectRepository->find(new RedirectId($this->id)) ?? throw RedirectNotFound::withId($this->id);
+        $id = new RedirectId($this->id);
+        $source = $redirectRepository->sourceOf($id) ?? throw RedirectNotFound::withId($this->id);
 
-        $mutualExclusion->run(new RedirectKeys($redirect->source(), $target)(), function () use ($redirect, $target, $redirectRepository, $eventBus, $siteResources): void {
+        $mutualExclusion->run(new RedirectKeys($source, $target)(), function () use ($id, $target, $redirectRepository, $eventBus, $siteResources): void {
+            $redirect = $redirectRepository->find($id) ?? throw RedirectNotFound::withId($this->id);
             $redirect->retarget($target, $siteResources);
             $redirect->save($redirectRepository, $eventBus);
         });

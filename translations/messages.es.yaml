@@ -590,6 +590,8 @@ errors:
         missing_target: 'Elige a dónde lleva la redirección.'
         target_off_site: 'Solo se puede redirigir a contenido publicado.'
         undecided: 'Elige qué hace %source%: lleva a este contenido, que va a dejar de estar en la web.'
+        changed_meanwhile: 'Alguien ha cambiado %source% mientras tanto. Vuelve a cargar la página y revisa los cambios.'
+        outlook_changed: 'Las redirecciones han cambiado desde que se mostró esta confirmación. Revisa de nuevo qué pasará antes de publicar.'
         to_itself: 'Su dirección no puede llevar al mismo contenido que se despublica: elige otro.'
         undecided_address: 'Elige qué hace su dirección al despublicarlo.'
         undecided_previous: 'Elige qué hace su dirección anterior al publicarla.'

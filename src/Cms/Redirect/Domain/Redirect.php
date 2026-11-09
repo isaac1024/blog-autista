@@ -35,6 +35,15 @@ use Shared\Domain\Event\EventId;
 final class Redirect extends AggregateRoot
 {
     /**
+     * How many times it was saved, which Doctrine counts itself, so a
+     * redirect saved from what was read before another save is refused
+     * rather than overwriting it. Not part of what a redirect is.
+     */
+    #[ORM\Version]
+    #[ORM\Column(type: 'integer', options: ['default' => 1])]
+    private int $version;
+
+    /**
      * One argument per mapped field: Doctrine hydrates it without calling
      * this, and the named constructor starts each field.
      */

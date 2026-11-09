@@ -590,6 +590,8 @@ errors:
         missing_target: 'Choose where the redirect leads.'
         target_off_site: 'A redirect only leads to published content.'
         undecided: 'Choose what %source% does: it leads to this content, which is about to leave the site.'
+        changed_meanwhile: 'Someone changed %source% meanwhile. Reload the page and check the changes.'
+        outlook_changed: 'The redirects changed since this confirmation was shown. Check again what will happen before publishing.'
         to_itself: 'Its address can’t lead to the very content being unpublished: choose another.'
         undecided_address: 'Choose what its address does once unpublished.'
         undecided_previous: 'Choose what its former address does once it is published.'

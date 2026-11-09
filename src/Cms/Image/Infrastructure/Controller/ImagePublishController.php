@@ -7,6 +7,7 @@ namespace Cms\Image\Infrastructure\Controller;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImagePublisher;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Redirect\Application\PreviousAddressDecision;
 use Cms\Redirect\Application\ResourcePublication;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
@@ -44,6 +45,7 @@ final class ImagePublishController extends AbstractController
         try {
             new ResourcePublication(
                 Resource::image($id),
+                PreviousAddressDecision::keep(),
                 null,
                 static function () use ($id, $imageRepository, $eventBus): void {
                     new ImagePublisher($id)($imageRepository, $eventBus);

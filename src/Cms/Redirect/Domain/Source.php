@@ -55,6 +55,14 @@ final readonly class Source
         return new self(new ImageCopy($path, ImageCopy::LARGEST)->fileAddress());
     }
 
+    /**
+     * An address as it was written here, read back from where it was kept.
+     */
+    public static function fromStored(string $value): self
+    {
+        return new self($value);
+    }
+
     public function value(): string
     {
         return $this->value;

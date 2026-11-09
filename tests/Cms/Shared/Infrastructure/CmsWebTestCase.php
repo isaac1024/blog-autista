@@ -58,6 +58,23 @@ abstract class CmsWebTestCase extends WebTestCase
     }
 
     /**
+     * The keys of what the last action said went wrong, left for the page it
+     * goes to.
+     *
+     * @return list<string>
+     */
+    protected static function errorKeys(KernelBrowser $client): array
+    {
+        $flashes = $client->getRequest()->getSession()->getBag('flashes');
+        self::assertInstanceOf(FlashBagInterface::class, $flashes);
+
+        return array_values(array_map(
+            static fn (mixed $notice): string => \is_array($notice) && \is_string($notice['key'] ?? null) ? $notice['key'] : '',
+            $flashes->peek('error'),
+        ));
+    }
+
+    /**
      * Posts as the browser does when the form for the route supplied the token.
      *
      * @param array<string, mixed> $parameters

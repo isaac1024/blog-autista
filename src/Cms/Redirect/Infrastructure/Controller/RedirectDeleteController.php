@@ -8,6 +8,7 @@ use Cms\Redirect\Application\RedirectDeleter;
 use Cms\Redirect\Application\RedirectNotFound;
 use Cms\Redirect\Domain\RedirectRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\MutualExclusion;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -20,12 +21,12 @@ final class RedirectDeleteController extends AbstractController
     public function __construct(private readonly CsrfRequestGuard $csrf) {}
 
     #[Route('/redirects/{id}/delete', name: 'cms_redirects_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, EventBus $eventBus, MutualExclusion $mutualExclusion): Response
     {
         $this->csrf->assertValid($request);
 
         try {
-            new RedirectDeleter($id)($redirectRepository, $eventBus);
+            new RedirectDeleter($id)($redirectRepository, $eventBus, $mutualExclusion);
         } catch (RedirectNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
