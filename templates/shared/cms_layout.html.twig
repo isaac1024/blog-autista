@@ -90,10 +90,13 @@
 {% endblock %}
 
 {#
-    What went wrong with the last action, such as a rule the server refused,
-    told at the top of the page it came back to.
+    What the last action did, or what went wrong with it, such as a rule the
+    server refused, told at the top of the page it came back to.
 #}
 {% block notices %}
+{% for notice in app.flashes('success') %}
+        <twig:Shared:Notice :message="notice.key|trans(notice.parameters)" />
+{% endfor %}
 {% for error in app.flashes('error') %}
         <twig:Shared:Alert :title="'errors.title'|trans" :message="error.key|trans(error.parameters)" />
 {% endfor %}

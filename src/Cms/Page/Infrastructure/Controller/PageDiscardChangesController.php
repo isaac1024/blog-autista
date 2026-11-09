@@ -37,6 +37,8 @@ final class PageDiscardChangesController extends AbstractController
             return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
+        $this->addFlash('success', ['key' => 'cms.notices.page.discarded', 'parameters' => []]);
+
         return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

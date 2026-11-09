@@ -35,6 +35,8 @@ final class PageDeleteController extends AbstractController
             return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
+        $this->addFlash('success', ['key' => 'cms.notices.page.deleted', 'parameters' => []]);
+
         return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
     }
 }

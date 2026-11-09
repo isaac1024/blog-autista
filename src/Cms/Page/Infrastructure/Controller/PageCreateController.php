@@ -22,8 +22,10 @@ final class PageCreateController extends AbstractController
     {
         $csrf->assertValid($request);
 
+        $id = PageId::random()->value();
+
         try {
-            new PageCreator(PageId::random()->value(), $request->request->getString('title'))($pageRepository, $eventBus);
+            new PageCreator($id, $request->request->getString('title'))($pageRepository, $eventBus);
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
@@ -31,6 +33,9 @@ final class PageCreateController extends AbstractController
             return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
         }
 
-        return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
+        $this->addFlash('success', ['key' => 'cms.notices.page.created', 'parameters' => []]);
+
+        // The editor goes on with the page just created.
+        return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

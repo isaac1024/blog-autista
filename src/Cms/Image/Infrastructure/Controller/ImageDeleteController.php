@@ -38,6 +38,8 @@ final class ImageDeleteController extends AbstractController
             return $this->redirectToRoute('cms_images_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
+        $this->addFlash('success', ['key' => 'cms.notices.image.deleted', 'parameters' => []]);
+
         return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
     }
 }

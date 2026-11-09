@@ -42,6 +42,9 @@ final class ImageUpdateController extends AbstractController
             return $this->redirectToRoute('cms_images_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
+        $this->addFlash('success', ['key' => 'cms.notices.image.saved', 'parameters' => []]);
+
+        // The editor stays on the image, to go on with it.
+        return $this->redirectToRoute('cms_images_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

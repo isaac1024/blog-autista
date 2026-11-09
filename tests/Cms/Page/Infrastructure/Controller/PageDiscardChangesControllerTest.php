@@ -49,6 +49,7 @@ final class PageDiscardChangesControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_pages_discard', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects(\sprintf('/pages/%s', $id), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.page.discarded', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(PageMother::published(id: $id, title: 'Sobre mí'), $this->storedPage($page));
     }
 

@@ -53,6 +53,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_images_discard', \sprintf(self::URL, $id));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.discarded', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(ImageMother::published(id: $id, createdAt: '2026-10-01 09:00:00', updatedAt: ClockMother::NOW), $this->storedImage($image));
         self::assertSame([], $this->queuedEvents());
@@ -71,6 +72,7 @@ final class ImageDiscardChangesControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_images_discard', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::successNotices($client));
         self::assertSame([$notice], self::notices($client));
         self::assertEquals($expected, $this->storedImage($image));
         self::assertSame([], $this->queuedEvents());

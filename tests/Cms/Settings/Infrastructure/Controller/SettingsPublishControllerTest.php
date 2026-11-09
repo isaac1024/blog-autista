@@ -52,6 +52,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.settings.published', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(Mother::published($version), $this->storedSettings());
     }
@@ -88,6 +89,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_publish', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::successNotices($client));
         self::assertSame([['key' => 'errors.settings.publication.nothing_to_publish', 'parameters' => []]], self::notices($client));
         self::assertEquals($settings, $this->storedSettings());
         self::assertSame([], $this->queuedEvents());

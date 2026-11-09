@@ -43,7 +43,7 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
         self::assertEquals($page, $this->storedPage($page));
     }
 
-    public function testItTakesThePageOffTheSiteAndGoesBackToTheList(): void
+    public function testItTakesThePageOffTheSiteAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $id = PageIdMother::random()->value();
@@ -51,7 +51,8 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
 
         $this->post($client, 'cms_pages_unpublish', \sprintf(self::URL, $id));
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.page.unpublished', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(PageMother::unpublished(id: $id), $this->storedPage($page));
 
         $events = $this->queuedEvents();

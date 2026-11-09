@@ -44,7 +44,7 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
         self::assertSame([], $this->queuedEvents());
     }
 
-    public function testItTakesTheImageOffTheSiteAndGoesBackToTheLibrary(): void
+    public function testItTakesTheImageOffTheSiteAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $id = ImageIdMother::random()->value();
@@ -52,7 +52,8 @@ final class ImageUnpublishControllerTest extends CmsWebTestCase
 
         $this->post($client, 'cms_images_unpublish', \sprintf(self::URL, $id));
 
-        self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/images/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.unpublished', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(ImageMother::unpublished(id: $id), $this->storedImage($image));
     }
 

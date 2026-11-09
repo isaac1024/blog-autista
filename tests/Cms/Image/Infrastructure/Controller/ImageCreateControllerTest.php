@@ -46,15 +46,17 @@ final class ImageCreateControllerTest extends CmsWebTestCase
         self::assertSame([], self::images());
     }
 
-    public function testItKeepsTheImageAndItsFileAndGoesBackToTheLibrary(): void
+    public function testItKeepsTheImageAndItsFileAndOpensItInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
 
         $this->post($client, 'cms_images_create', self::URL, ['alt' => ImageMother::ALT], ['image' => self::upload()]);
 
-        self::assertResponseRedirects(self::URL, Response::HTTP_SEE_OTHER);
+        $images = self::images();
+        self::assertCount(1, $images);
+        self::assertResponseRedirects('/images/'.$images[0]->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.uploaded', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
-        self::assertCount(1, self::images());
         self::assertCount(1, self::files());
     }
 

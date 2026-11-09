@@ -50,7 +50,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
         self::assertResponseRedirects('http://cms.blogautista.localhost/login');
     }
 
-    public function testItSavesTheTextsAndGoesBackToTheLibrary(): void
+    public function testItSavesTheTextsAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $image = $this->saveImage();
@@ -64,7 +64,8 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
             'caption' => json_encode($caption, \JSON_THROW_ON_ERROR),
         ]));
 
-        self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.saved', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(
             ImageMother::create(
@@ -85,7 +86,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
 
         $this->post($client, 'cms_images_update', \sprintf(self::URL, $image->id()->value()), self::fields());
 
-        self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/images/'.$image->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(
             ImageMother::create(id: $image->id()->value(), createdAt: self::BEFORE, updatedAt: ClockMother::NOW),
             $this->storedImage($image),

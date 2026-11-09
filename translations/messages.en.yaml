@@ -1,4 +1,23 @@
 cms:
+    notices:
+        page:
+            created: 'Page created.'
+            saved: 'Changes saved.'
+            published: 'Page published on the site.'
+            unpublished: 'Page taken off the site.'
+            discarded: 'Changes discarded: the page is back to the published one.'
+            deleted: 'Page deleted.'
+        image:
+            uploaded: 'Image uploaded.'
+            saved: 'Changes saved.'
+            published: 'Image published on the site.'
+            unpublished: 'Image taken off the site.'
+            discarded: 'Changes discarded: the image is back to the published one.'
+            deleted: 'Image deleted.'
+        settings:
+            saved: 'Changes saved.'
+            published: 'Settings published on the site.'
+            discarded: 'Changes discarded: the settings are back to the ones the site uses.'
     nav:
         account: 'Account'
         administration: 'Administration'

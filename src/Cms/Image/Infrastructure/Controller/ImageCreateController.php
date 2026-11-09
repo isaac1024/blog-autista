@@ -29,19 +29,26 @@ final class ImageCreateController extends AbstractController
         $csrf->assertValid($request);
 
         $image = $request->files->get('image');
+        $id = ImageId::random()->value();
 
         try {
             new ImageUploader(
-                ImageId::random()->value(),
+                $id,
                 $request->request->getString('alt'),
                 // The domain refuses an image without its file.
                 $image instanceof UploadedFile && $image->isValid() ? $image->getPathname() : '',
             )($imageRepository, $imageStorage, $eventBus);
         } catch (DomainError $error) {
-            // Told in the library, where it goes back to all the same.
+            // Told in the library, where the upload was made.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
         }
 
-        return $this->redirectToRoute('cms_images', status: Response::HTTP_SEE_OTHER);
+        $this->addFlash('success', ['key' => 'cms.notices.image.uploaded', 'parameters' => []]);
+
+        // The editor goes on with the image just uploaded, which needs a
+        // caption before it can be published.
+        return $this->redirectToRoute('cms_images_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

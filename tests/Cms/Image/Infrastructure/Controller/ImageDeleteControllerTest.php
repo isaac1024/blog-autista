@@ -61,6 +61,7 @@ final class ImageDeleteControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_images_delete', \sprintf(self::URL, $image->id()->value()));
 
         self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.deleted', 'parameters' => []]], self::successNotices($client));
         self::assertNull($this->storedImage($image));
         self::assertFileDoesNotExist(self::file($image));
     }

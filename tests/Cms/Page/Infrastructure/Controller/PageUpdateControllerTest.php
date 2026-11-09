@@ -51,14 +51,15 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         self::assertEquals($page, $this->storedPage($page));
     }
 
-    public function testItSavesTheChangesAndGoesBackToTheList(): void
+    public function testItSavesTheChangesAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $page = $this->savePage();
 
         $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields());
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.page.saved', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(
             PageMother::create(id: $page->id()->value(), title: 'Quién soy', slug: 'quien-soy'),
             $this->storedPage($page),
@@ -85,7 +86,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
             'robots' => 'noindex,follow',
         ]));
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(
             PageMother::create(
                 id: $page->id()->value(),
@@ -163,7 +164,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
         // The editor of the home page has no slug field, so none is posted.
         $this->post($client, 'cms_pages_update', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio'], without: ['slug']));
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Inicio'), $this->storedPage($home));
     }
 
@@ -193,7 +194,7 @@ final class PageUpdateControllerTest extends CmsWebTestCase
             'content' => json_encode($document, \JSON_THROW_ON_ERROR),
         ]));
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertTrue(self::getContainer()->get(RelationRepository::class)->isUsed(ResourceType::Image, '01a1b801-ce58-723d-8234-b76d9105d001'));
         self::assertSame([], $this->queuedEvents());
     }

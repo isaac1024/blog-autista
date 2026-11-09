@@ -65,6 +65,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         ]);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.settings.saved', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(
             Mother::create(
@@ -131,6 +132,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_update', self::URL, $fields);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::successNotices($client));
         self::assertSame([$notice], self::notices($client));
         self::assertEquals($settings, $this->storedSettings());
     }

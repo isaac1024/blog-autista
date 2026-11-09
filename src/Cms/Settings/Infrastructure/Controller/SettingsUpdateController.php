@@ -35,7 +35,11 @@ final class SettingsUpdateController extends AbstractController
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_settings', status: Response::HTTP_SEE_OTHER);
         }
+
+        $this->addFlash('success', ['key' => 'cms.notices.settings.saved', 'parameters' => []]);
 
         return $this->redirectToRoute('cms_settings', status: Response::HTTP_SEE_OTHER);
     }

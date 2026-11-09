@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 
 /**
@@ -41,6 +42,19 @@ abstract class CmsWebTestCase extends WebTestCase
         $client->setServerParameter('REMOTE_ADDR', long2ip(random_int(0x0A000001, 0x0AFFFFFE)));
 
         return $client;
+    }
+
+    /**
+     * What the last action said it did, left for the page it goes to.
+     *
+     * @return array<mixed>
+     */
+    protected static function successNotices(KernelBrowser $client): array
+    {
+        $flashes = $client->getRequest()->getSession()->getBag('flashes');
+        self::assertInstanceOf(FlashBagInterface::class, $flashes);
+
+        return $flashes->peek('success');
     }
 
     /**

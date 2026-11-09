@@ -43,7 +43,7 @@ final class PagePublishControllerTest extends CmsWebTestCase
         self::assertSame([], $this->queuedEvents());
     }
 
-    public function testItPublishesTheSavedVersionAndGoesBackToTheList(): void
+    public function testItPublishesTheSavedVersionAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $id = PageIdMother::random()->value();
@@ -51,7 +51,8 @@ final class PagePublishControllerTest extends CmsWebTestCase
 
         $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $id));
 
-        self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/pages/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.page.published', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi'), $this->storedPage($page));
     }
 

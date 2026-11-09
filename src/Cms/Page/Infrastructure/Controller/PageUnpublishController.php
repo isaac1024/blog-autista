@@ -34,6 +34,9 @@ final class PageUnpublishController extends AbstractController
             return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
-        return $this->redirectToRoute('cms_pages', status: Response::HTTP_SEE_OTHER);
+        $this->addFlash('success', ['key' => 'cms.notices.page.unpublished', 'parameters' => []]);
+
+        // The editor stays on the page, to go on with it.
+        return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

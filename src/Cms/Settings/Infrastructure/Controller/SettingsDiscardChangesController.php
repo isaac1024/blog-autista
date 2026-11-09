@@ -27,9 +27,13 @@ final class SettingsDiscardChangesController extends AbstractController
         } catch (SettingsNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
-            // Told in the editor, where it goes back to all the same.
+            // Told in the editor, where it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_settings', status: Response::HTTP_SEE_OTHER);
         }
+
+        $this->addFlash('success', ['key' => 'cms.notices.settings.discarded', 'parameters' => []]);
 
         return $this->redirectToRoute('cms_settings', status: Response::HTTP_SEE_OTHER);
     }

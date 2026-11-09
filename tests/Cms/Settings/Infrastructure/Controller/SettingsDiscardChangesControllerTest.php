@@ -52,6 +52,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.settings.discarded', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(Mother::published(createdAt: self::BEFORE, updatedAt: ClockMother::NOW), $this->storedSettings());
         self::assertSame([], $this->queuedEvents());
@@ -66,6 +67,7 @@ final class SettingsDiscardChangesControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_discard', self::URL);
 
         self::assertResponseRedirects('/settings', Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::successNotices($client));
         self::assertSame([['key' => 'errors.settings.publication.no_changes_to_discard', 'parameters' => []]], self::notices($client));
         self::assertEquals($expected, $this->storedSettings());
     }

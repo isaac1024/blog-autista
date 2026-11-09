@@ -1,4 +1,23 @@
 cms:
+    notices:
+        page:
+            created: 'Página creada.'
+            saved: 'Cambios guardados.'
+            published: 'Página publicada en la web.'
+            unpublished: 'Página retirada de la web.'
+            discarded: 'Cambios descartados: la página vuelve a ser la publicada.'
+            deleted: 'Página borrada.'
+        image:
+            uploaded: 'Imagen subida.'
+            saved: 'Cambios guardados.'
+            published: 'Imagen publicada en la web.'
+            unpublished: 'Imagen retirada de la web.'
+            discarded: 'Cambios descartados: la imagen vuelve a ser la publicada.'
+            deleted: 'Imagen borrada.'
+        settings:
+            saved: 'Cambios guardados.'
+            published: 'Ajustes publicados en la web.'
+            discarded: 'Cambios descartados: los ajustes vuelven a ser los que usa la web.'
     nav:
         account: 'Cuenta'
         administration: 'Administración'

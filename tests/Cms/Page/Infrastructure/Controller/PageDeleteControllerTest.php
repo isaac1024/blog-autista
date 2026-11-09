@@ -88,6 +88,7 @@ final class PageDeleteControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
 
         self::assertResponseRedirects('/pages', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.page.deleted', 'parameters' => []]], self::successNotices($client));
         self::assertNull($this->storedPage($page));
     }
 

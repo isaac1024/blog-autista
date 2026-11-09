@@ -44,7 +44,7 @@ final class ImagePublishControllerTest extends CmsWebTestCase
         self::assertSame([], $this->queuedEvents());
     }
 
-    public function testItPublishesTheSavedVersionAndGoesBackToTheLibrary(): void
+    public function testItPublishesTheSavedVersionAndStaysInTheEditor(): void
     {
         $client = self::createAuthenticatedClient();
         $id = ImageIdMother::random()->value();
@@ -52,7 +52,8 @@ final class ImagePublishControllerTest extends CmsWebTestCase
 
         $this->post($client, 'cms_images_publish', \sprintf(self::URL, $id));
 
-        self::assertResponseRedirects('/images', Response::HTTP_SEE_OTHER);
+        self::assertResponseRedirects('/images/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.image.published', 'parameters' => []]], self::successNotices($client));
         self::assertSame([], self::notices($client));
         self::assertEquals(ImageMother::published(id: $id), $this->storedImage($image));
     }
