@@ -4,6 +4,9 @@ framework:
         paths:
             - assets/
         missing_import_mode: strict
+        # Every browser the CMS supports reads import maps, so no polyfill is
+        # loaded, least of all from a third party.
+        importmap_polyfill: false
 
 when@prod:
     framework:

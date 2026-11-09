@@ -5,15 +5,35 @@ framework:
 
         # The "app" cache stores to the filesystem by default.
         # The data in this cache should persist between deploys.
-        # Other options include:
+        default_redis_provider: '%env(REDIS_URL)%'
 
-        # Redis
-        #app: cache.adapter.redis
-        #default_redis_provider: redis://localhost
+        pools:
+            # The salt of the day the visits to the site are counted with. It
+            # lives in Redis, never in the database nor its backups, and
+            # expires shortly after the day it belongs to.
+            web.visit_salt.cache:
+                adapter: cache.adapter.redis
+            # How many visits each reader has sent of late, for the limiter
+            # that keeps the counts from being flooded.
+            web.visit_limiter.cache:
+                adapter: cache.adapter.redis
 
-        # APCu (not recommended with heavy random-write workloads as memory fragmentation can cause perf issues)
-        #app: cache.adapter.apcu
+when@test:
+    services:
+        # Kept in memory like cache.adapter.array, but never reset between the
+        # requests of one kernel: Redis keeps them across requests, and the
+        # salt of the day and the limiter rely on it. Each kernel starts empty.
+        web.test.cache.adapter.memory:
+            class: Symfony\Component\Cache\Adapter\ArrayAdapter
+            abstract: true
+            arguments: [0, false]
+            tags:
+                - { name: cache.pool, clearer: cache.default_clearer }
 
-        # Namespaced pools use the above "app" backend by default
-        #pools:
-            #my.dedicated.cache: null
+    framework:
+        cache:
+            pools:
+                web.visit_salt.cache:
+                    adapter: web.test.cache.adapter.memory
+                web.visit_limiter.cache:
+                    adapter: web.test.cache.adapter.memory

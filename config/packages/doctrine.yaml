@@ -21,6 +21,7 @@ doctrine:
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
+            web_visit_id: Web\Analytics\Infrastructure\Persistence\Doctrine\VisitIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
             web_redirect_id: Web\Redirect\Infrastructure\Persistence\Doctrine\RedirectIdType
             web_settings_id: Web\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
@@ -63,6 +64,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Settings/Domain'
                 prefix: 'Cms\Settings\Domain'
+            WebAnalytics:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Analytics/Domain'
+                prefix: 'Web\Analytics\Domain'
             WebImage:
                 type: attribute
                 is_bundle: false

@@ -147,6 +147,18 @@ final class PreviewPageTest extends TestCase
     }
 
     /**
+     * Seeing a preview is no visit to the site.
+     */
+    public function testItCountsNoVisitOfThePreview(): void
+    {
+        $page = PageMother::create(id: self::PAGE, slug: 'sobre-mi');
+
+        $result = $this->preview()(PageResponse::fromPage($page));
+
+        self::assertNull($result->countedPageId);
+    }
+
+    /**
      * A page left without a slug has no address of its own on the site yet.
      */
     public function testItGivesAPageWithoutASlugTheRootOfTheSiteAsItsCanonicalUrl(): void

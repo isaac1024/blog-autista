@@ -25,7 +25,8 @@ final readonly class Page
      * @param list<PageComponent>                                       $header
      * @param list<PageComponent>                                       $main
      * @param list<PageComponent>                                       $footer
-     * @param ?array{src: string, width: int, height: int, alt: string} $image  the image it is shared with, null for none
+     * @param ?array{src: string, width: int, height: int, alt: string} $image         the image it is shared with, null for none
+     * @param ?string                                                   $countedPageId the id its visits are counted by, null for a page whose visits aren't
      */
     private function __construct(
         public string $title,
@@ -38,11 +39,12 @@ final readonly class Page
         public ?string $robots,
         public ?string $canonical,
         public ?array $image,
+        public ?string $countedPageId,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null);
     }
 
     /**
@@ -100,6 +102,7 @@ final readonly class Page
             $robots,
             $canonical,
             $this->image,
+            $this->countedPageId,
         );
     }
 
@@ -120,6 +123,28 @@ final readonly class Page
             $this->robots,
             $this->canonical,
             ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt],
+            $this->countedPageId,
+        );
+    }
+
+    /**
+     * Counts the visits of the page, by the id given, once its reader sees
+     * it: only a page on the site, never a preview nor an error.
+     */
+    public function withCountedVisits(string $pageId): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $pageId,
         );
     }
 
@@ -146,6 +171,7 @@ final readonly class Page
             $this->robots,
             $this->canonical,
             $this->image,
+            $this->countedPageId,
         );
     }
 }

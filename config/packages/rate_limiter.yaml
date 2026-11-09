@@ -1,0 +1,9 @@
+framework:
+    rate_limiter:
+        # The visits a reader may send the site in a minute: far more than
+        # anyone reads, few enough to keep the counts from being flooded.
+        web_visit:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
+            cache_pool: web.visit_limiter.cache

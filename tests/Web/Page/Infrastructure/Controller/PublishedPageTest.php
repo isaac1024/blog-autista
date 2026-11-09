@@ -96,4 +96,23 @@ final class PublishedPageTest extends TestCase
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }
+
+    /**
+     * Its visits are counted, by the id it has on the site.
+     */
+    public function testItCountsTheVisitsOfThePage(): void
+    {
+        $urlGenerator = self::createStub(UrlGeneratorInterface::class);
+        $urlGenerator->method('generate')->willReturn('/sobre-mi.html');
+        $imageRepository = self::createStub(ImageRepository::class);
+        $imageRepository->method('findByIds')->willReturn([]);
+        $pageRepository = self::createStub(PageRepository::class);
+        $pageRepository->method('findByIds')->willReturn([]);
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
+        $page = Page::publish(CmsPagePublishedMother::create(id: self::TARGET));
+
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
+
+        self::assertSame(self::TARGET, $result->countedPageId);
+    }
 }

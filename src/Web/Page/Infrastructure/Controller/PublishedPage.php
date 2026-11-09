@@ -51,9 +51,11 @@ final readonly class PublishedPage
         );
 
         // Search engines may show its images large, in results and Discover.
+        // Its visits are counted; those of a preview or an error never are.
         return ($this->sitePage)(
             $this->siteLayout->page($page->title)
-                ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical),
+                ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
+                ->withCountedVisits($page->id),
             $page->title,
             $page->content,
             $images,

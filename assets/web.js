@@ -1,0 +1,47 @@
+/*
+ * The only script of the public site. Once its reader sees the page, it tells
+ * the site, once: which page, the address of the page they came from, the
+ * campaign of the link, if any, and the time zone of the browser, which says
+ * the country without looking the reader up. It sets no cookie and keeps
+ * nothing in the browser.
+ *
+ * A page prerendered, or opened in a tab never looked at, isn't seen, so it
+ * waits; one shown again from the back-forward cache was already told.
+ */
+const script = document.querySelector('script[data-page]');
+
+if (script) {
+    let sent = false;
+
+    const send = () => {
+        if (sent || document.prerendering || 'visible' !== document.visibilityState) {
+            return;
+        }
+
+        sent = true;
+        const campaign = new URLSearchParams(window.location.search);
+        let zone = '';
+
+        try {
+            zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        } catch {
+            // A browser that tells no time zone counts in no country.
+        }
+
+        const body = new URLSearchParams({
+            page: script.dataset.page,
+            referrer: document.referrer,
+            source: campaign.get('utm_source') || '',
+            medium: campaign.get('utm_medium') || '',
+            zone,
+        });
+
+        if (!navigator.sendBeacon || !navigator.sendBeacon('/v', body)) {
+            fetch('/v', { method: 'POST', body, keepalive: true, credentials: 'omit' }).catch(() => {});
+        }
+    };
+
+    document.addEventListener('visibilitychange', send);
+    document.addEventListener('prerenderingchange', send);
+    send();
+}

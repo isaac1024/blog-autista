@@ -50,7 +50,8 @@ grants privileges to that user.
 | --- | --- | --- |
 | Database | `symfony/orm-pack` | Doctrine ORM + migrations, MariaDB 11.8 |
 | Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; the `worker` service consumes it in development (`docker compose logs -f worker`), cron in production |
-| Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`; consume with `messenger:consume scheduler_default` |
+| Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`, plus tasks of a context such as `#[AsPeriodicTask]` on `Web\Analytics\Infrastructure\Scheduler\NightlyVisitCount`; consume with `messenger:consume scheduler_default` |
+| Visit counts | `symfony/rate-limiter` + Redis | The site counts its visits itself, with no third party: see [Visit counts](#visit-counts) |
 | Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |
 
@@ -62,7 +63,30 @@ migrations live in
 On Webhosting L, wire the 10 available cron jobs to a short-lived consumer, for
 example `php bin/console messenger:consume scheduler_default --time-limit=50`
 every minute, and another one to `php bin/console messenger:consume async
---time-limit=50` for domain events, such as publishing a page.
+--time-limit=50` for domain events, such as publishing a page. The first one
+also counts the visits of the day just over, every night.
+
+## Visit counts
+
+Each page on the site sends its visit, once its reader sees it, from
+`assets/web.js` to `POST /v`, on the site's own host, with no cookie. The visit
+waits in `web_visit` until its day (in Madrid) is over; every night
+`NightlyVisitCount` counts it into `web_visit_total` and deletes it, so what is
+kept tells no reader from another. Readers of a day are told apart by a keyed
+hash of their address and browser, keyed with a salt of the day kept in Redis
+(`web.visit_salt.cache`), never in the database. A limiter, also in Redis,
+takes 60 visits a minute per reader.
+
+- `REDIS_URL` names Redis: the `redis` service locally,
+  `redis:///run/redis_<login>/redis.sock` on the account (enable Redis in
+  konsoleH first). Symfony needs `ext-redis` for it: check `php -m` on the
+  account.
+- `SYMFONY_TRUSTED_PROXIES=private_ranges` makes Symfony read the reader's
+  address from the proxies in front of PHP. If the site logs "A visit came from
+  a private or loopback address", the proxies aren't trusted, and every reader
+  counts as one.
+- Check how Redis behaves when it reaches the memory konsoleH gives it: if it
+  evicts the salt, the readers of that day count twice.
 
 ## Code quality (DDD / SOLID / clean code)
 
@@ -148,9 +172,11 @@ running while changing templates or styles: in the dev environment the
 bundle fails on purpose when there is no built stylesheet.
 
 Shared hosting can't run the Tailwind binary, so build the assets before
-uploading and deploy `public/assets/` with the code. Delete that directory
-locally afterwards: while it exists, development serves those compiled copies
-instead of the current files.
+uploading and deploy `public/assets/` with the code. Upload it without
+deleting the files already there: Varnish keeps pages that name the versioned
+files of the release before, and they must still be found until it lets them
+go. Delete that directory locally afterwards: while it exists, development
+serves those compiled copies instead of the current files.
 
 ```bash
 docker compose exec -u www-data php bin/console importmap:install
@@ -202,9 +228,13 @@ images, from `public/media/`, under `/media/`.
 
 - **No Docker in production.** Webhosting L is shared hosting: the code is
   deployed over SSH/FTP and served by Hetzner's nginx/Apache/PHP-FPM.
-- **Varnish is not included.** The plan can enable it in front of Apache, but
-  for a Symfony app with sessions and CSRF tokens it must be configured with
-  pass rules; adding it later is a deliberate decision, not a default.
+- **Varnish is not included locally.** On the account it runs in front of
+  Apache for the site's host only, set in konsoleH (Einstellungen →
+  Varnish-Konfiguration): "Nocache URLs" `^/v$`, so every visit reaches PHP,
+  and "Strip URL Parameter" `utm_[a-z]+`, `fbclid` and `gclid`, so links shared
+  with a campaign don't split the cache (the page still reads them). Leave it
+  off for the CMS host: Varnish strips the cookies it isn't told to keep, the
+  CMS session among them.
 - **TLS/HTTP/3 are not reproduced.** HTTPS is terminated by Hetzner; local
   traffic is plain HTTP on port 80.
 - **The document root differs.** On the account, the web root is `public_html`.
