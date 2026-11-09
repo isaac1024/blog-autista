@@ -12,7 +12,7 @@ const PREVIEW_WIDTH = 480;
  * enlarged, nor leaves the image.
  */
 export default class extends Controller {
-    static targets = ['source', 'output', 'error', 'editor', 'stage', 'image', 'area', 'status', 'preview'];
+    static targets = ['source', 'output', 'error', 'editor', 'stage', 'area', 'status', 'preview'];
 
     static values = {
         width: Number,
@@ -67,7 +67,12 @@ export default class extends Controller {
 
         this.bitmap = bitmap;
         this.url = URL.createObjectURL(file);
-        this.imageTarget.src = this.url;
+        // Only an image with a file is valid markup, so it exists while there is one.
+        this.image = document.createElement('img');
+        this.image.className = 'block h-auto max-h-[55dvh] w-auto max-w-full';
+        this.image.alt = '';
+        this.image.src = this.url;
+        this.stageTarget.prepend(this.image);
 
         // The largest crop that fits, centred.
         this.maxWidth = Math.min(bitmap.width, Math.floor(bitmap.height * this.ratio));
@@ -311,7 +316,8 @@ export default class extends Controller {
         this.dragging = null;
         this.exported = false;
         this.outputTarget.value = '';
-        this.imageTarget.removeAttribute('src');
+        this.image?.remove();
+        this.image = null;
         this.editorTarget.hidden = true;
         this.errorTarget.hidden = true;
         this.errorTarget.textContent = '';

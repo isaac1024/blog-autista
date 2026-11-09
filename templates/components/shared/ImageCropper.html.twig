@@ -13,9 +13,11 @@
     <input type="file" name="{{ name }}" hidden data-image-cropper-target="output">
 
     <div class="grid gap-4" data-image-cropper-target="editor" hidden>
-        {# The shadow of the area darkens what is left out; the stage clips it to the image. #}
+        {#
+            The shadow of the area darkens what is left out; the stage clips it
+            to the image, which the controller puts first once a file is chosen.
+        #}
         <div class="relative mx-auto w-fit max-w-full overflow-hidden select-none" data-image-cropper-target="stage">
-            <img class="block h-auto max-h-[55dvh] w-auto max-w-full" alt="" data-image-cropper-target="image">
             <div class="absolute cursor-move touch-none outline-2 -outline-offset-2 outline-white shadow-[0_0_0_100vmax_rgb(0_0_0/0.6)] focus-visible:outline-4 focus-visible:outline-focus forced-colors:outline-[Highlight]" tabindex="0" role="group" aria-label="{{ 'ui.cropper.area'|trans }}" aria-describedby="{{ id }}-area-hint" data-image-cropper-target="area" data-action="pointerdown->image-cropper#startMove pointermove->image-cropper#drag pointerup->image-cropper#endDrag pointercancel->image-cropper#endDrag keydown->image-cropper#nudge">
                 <span class="absolute right-0 bottom-0 h-8 w-8 cursor-nwse-resize touch-none border-white bg-accent [border-width:3px_0_0_3px] forced-colors:bg-[Highlight]" aria-hidden="true" data-action="pointerdown->image-cropper#startResize"></span>
             </div>
