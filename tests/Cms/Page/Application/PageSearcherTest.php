@@ -8,6 +8,7 @@ use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PageSearcher;
 use Cms\Page\Application\PagesResponse;
 use Cms\Page\Domain\IdFilter;
+use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Tests\Page\Domain\PageIdMother;
@@ -112,6 +113,31 @@ final class PageSearcherTest extends TestCase
         $repository->method('matching')->willReturn([]);
 
         self::assertEquals(new PagesResponse([], hasMore: false), (new PageSearcher('inexistente', 1, except: null))($repository));
+    }
+
+    #[DataProvider('pageSizes')]
+    public function testItTellsWhetherMorePagesFollow(int $found, int $listed, bool $hasMore): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('matching')->willReturn(array_map(
+            static fn (int $index): Page => PageMother::create(id: \sprintf('01a19e72-b07f-7d78-889c-fa4a14a4fb%02d', $index), title: \sprintf('Página %d', $index), slug: \sprintf('pagina-%d', $index)),
+            range(1, $found),
+        ));
+
+        $pages = (new PageSearcher('', 1, except: null))($repository);
+
+        self::assertCount($listed, $pages->pages);
+        self::assertSame($hasMore, $pages->hasMore);
+    }
+
+    /**
+     * @return iterable<string, array{int, int, bool}>
+     */
+    public static function pageSizes(): iterable
+    {
+        yield 'fewer than a page' => [3, 3, false];
+        yield 'exactly a page' => [PageSearcher::PAGE_SIZE, PageSearcher::PAGE_SIZE, false];
+        yield 'more than a page' => [PageSearcher::PAGE_SIZE + 1, PageSearcher::PAGE_SIZE, true];
     }
 
     #[DataProvider('invalidPages')]

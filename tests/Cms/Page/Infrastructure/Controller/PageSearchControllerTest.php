@@ -94,7 +94,7 @@ final class PageSearchControllerTest extends CmsWebTestCase
     }
 
     /**
-     * A full page of results may have more after it; a shorter one has none.
+     * A page with more results after it says so; the last one doesn't.
      */
     #[SkipDatabaseRollback]
     public function testItTellsWhetherThereMayBeMorePages(): void
@@ -115,6 +115,27 @@ final class PageSearchControllerTest extends CmsWebTestCase
         self::assertCount(PageSearcher::PAGE_SIZE, self::listed($first));
         self::assertFalse($second['more']);
         self::assertCount(1, self::listed($second));
+    }
+
+    /**
+     * A full page with nothing after it has no more, as the search looks one
+     * past it.
+     */
+    #[SkipDatabaseRollback]
+    public function testItTellsAFullLastPageHasNoMore(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $repository = self::getContainer()->get(PageRepository::class);
+
+        for ($index = 1; $index <= PageSearcher::PAGE_SIZE; ++$index) {
+            $repository->save(PageMother::create(id: PageIdMother::random()->value(), title: \sprintf('Página %d', $index), slug: \sprintf('pagina-%d', $index)));
+        }
+
+        $client->request('GET', self::URL);
+        $first = self::json($client);
+
+        self::assertFalse($first['more']);
+        self::assertCount(PageSearcher::PAGE_SIZE, self::listed($first));
     }
 
     public function testItAnswersNotFoundToLeaveOutAnIdThatIsNotAUuid(): void

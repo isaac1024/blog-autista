@@ -8,6 +8,7 @@ use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImageSearcher;
 use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\AltFilter;
+use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
@@ -102,6 +103,31 @@ final class ImageSearcherTest extends TestCase
             ], hasMore: false),
             (new ImageSearcher('', 1))($repository),
         );
+    }
+
+    #[DataProvider('pageSizes')]
+    public function testItTellsWhetherMoreImagesFollow(int $found, int $listed, bool $hasMore): void
+    {
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('matching')->willReturn(array_map(
+            static fn (int $index): Image => ImageMother::create(id: \sprintf('01a1b801-ce58-723d-8234-b76d9105d0%02d', $index)),
+            range(1, $found),
+        ));
+
+        $images = (new ImageSearcher('', 1))($repository);
+
+        self::assertCount($listed, $images->images);
+        self::assertSame($hasMore, $images->hasMore);
+    }
+
+    /**
+     * @return iterable<string, array{int, int, bool}>
+     */
+    public static function pageSizes(): iterable
+    {
+        yield 'fewer than a page' => [3, 3, false];
+        yield 'exactly a page' => [ImageSearcher::PAGE_SIZE, ImageSearcher::PAGE_SIZE, false];
+        yield 'more than a page' => [ImageSearcher::PAGE_SIZE + 1, ImageSearcher::PAGE_SIZE, true];
     }
 
     #[DataProvider('invalidPages')]

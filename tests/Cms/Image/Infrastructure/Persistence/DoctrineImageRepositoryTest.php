@@ -129,6 +129,31 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
     }
 
     /**
+     * In whatever order; an id of no image is left out.
+     */
+    public function testItFindsTheImagesWithTheGivenIds(): void
+    {
+        $circle = ImageMother::create(id: ImageIdMother::random()->value(), alt: 'Círculo naranja sobre fondo azul');
+        $square = ImageMother::create(id: ImageIdMother::random()->value(), alt: 'Cuadrado blanco sobre fondo verde');
+        $repository = $this->repository();
+        $repository->save($circle);
+        $repository->save($square);
+        $repository->save(ImageMother::create(id: ImageIdMother::random()->value(), alt: 'Mano que dibuja con ceras'));
+        $this->entityManager()->clear();
+
+        $found = $repository->findByIds([$square->id(), ImageIdMother::random(), $circle->id()]);
+
+        self::assertEqualsCanonicalizing([$circle, $square], $found);
+    }
+
+    public function testItFindsNoImageWithoutIds(): void
+    {
+        $this->repository()->save(ImageMother::create(id: ImageIdMother::random()->value()));
+
+        self::assertSame([], $this->repository()->findByIds([]));
+    }
+
+    /**
      * The only test that commits its data, which full-text search needs: it
      * saves the images once and checks every kind of criteria against them.
      */
