@@ -16,9 +16,7 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
-use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Tests\Domain\RecordingMutualExclusion;
 use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -26,7 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A redirect leads somewhere else, or is deleted, from where it is edited;
- * its address stays, and the site is told each change.
+ * its address stays. The site reads it as saved: nothing is queued for it.
  */
 final class RedirectChangeControllersTest extends CmsWebTestCase
 {
@@ -39,7 +37,7 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
     private const string OFF_SITE = '0196f3a0-0000-7000-8000-0000000000a3';
     private const string HOST = 'www.blogautista.localhost';
 
-    public function testItLeadsARedirectSomewhereElseAndTellsTheSite(): void
+    public function testItLeadsARedirectSomewhereElse(): void
     {
         $client = $this->client();
 
@@ -48,7 +46,7 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
         self::assertResponseRedirects('/redirects/'.self::REDIRECT, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.notices.redirect.saved', 'parameters' => []]], self::successNotices($client));
         self::assertSame(self::OTHER, $this->stored()?->target()->resource()?->id());
-        self::assertSame(['cms.redirect.saved', 2, self::OTHER], [$this->lastEvent()->name, $this->lastEvent()->body['revision'], $this->lastEvent()->body['target_id']]);
+        self::assertSame([], $this->queuedEvents());
     }
 
     public function testItSaysTheAddressIsGoneWhenTold(): void
@@ -71,7 +69,7 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
         self::assertSame(self::PAGE, $this->stored()?->target()->resource()?->id());
     }
 
-    public function testItDeletesARedirectAndTellsTheSite(): void
+    public function testItDeletesARedirect(): void
     {
         $client = $this->client();
 
@@ -80,7 +78,7 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
         self::assertResponseRedirects('/redirects', Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.notices.redirect.deleted', 'parameters' => []]], self::successNotices($client));
         self::assertNull($this->stored());
-        self::assertSame(['cms.redirect.deleted', 2], [$this->lastEvent()->name, $this->lastEvent()->body['revision']]);
+        self::assertSame([], $this->queuedEvents());
     }
 
     /**
@@ -112,7 +110,6 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
 
         new RedirectRetargeter(self::REDIRECT, new TargetInput('page', self::OTHER))(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             $mutualExclusion,
         );
@@ -125,7 +122,7 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
         $this->client();
         $mutualExclusion = new RecordingMutualExclusion();
 
-        new RedirectDeleter(self::REDIRECT)(self::getContainer()->get(RedirectRepository::class), self::getContainer()->get(EventBus::class), $mutualExclusion);
+        new RedirectDeleter(self::REDIRECT)(self::getContainer()->get(RedirectRepository::class), $mutualExclusion);
 
         self::assertSame(['address:/vieja.html'], $mutualExclusion->lastHeld());
     }
@@ -144,7 +141,6 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
         $pages->save(PageMother::unpublished(id: self::OFF_SITE, title: 'Retirada', slug: 'retirada'));
         new RedirectCreator(self::REDIRECT, 'https://'.self::HOST.'/vieja.html', new TargetInput('page', self::PAGE), self::HOST)(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );
@@ -160,13 +156,5 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
     private function stored(): ?Redirect
     {
         return self::getContainer()->get(RedirectRepository::class)->find(new RedirectId(self::REDIRECT));
-    }
-
-    private function lastEvent(): DomainEventMessage
-    {
-        $events = $this->queuedEvents();
-        self::assertNotSame([], $events);
-
-        return $events[array_key_last($events)];
     }
 }

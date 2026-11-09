@@ -50,7 +50,7 @@ final class ImagePublishController extends AbstractController
                 static function () use ($id, $imageRepository, $eventBus): void {
                     new ImagePublisher($id)($imageRepository, $eventBus);
                 },
-            )($this->redirectRepository, $eventBus, $this->siteResources, $this->mutualExclusion, $this->transaction);
+            )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

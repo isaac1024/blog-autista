@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Tests\Page\Infrastructure\Controller;
 
+use Doctrine\DBAL\Connection;
 use Shared\Infrastructure\Ui\Page\Page as PaintedPage;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -14,9 +15,6 @@ use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Infrastructure\Controller\PublishedPage;
-use Web\Redirect\Application\RedirectSaver;
-use Web\Redirect\Domain\CmsRedirectSaved;
-use Web\Redirect\Domain\RedirectRepository;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
@@ -214,10 +212,14 @@ final class RedirectedReferencesTest extends KernelTestCase
         return $found;
     }
 
+    /**
+     * A redirect as the CMS keeps it, which the site reads as it is.
+     */
     private function redirect(string $id, string $source, ?string $targetType, ?string $targetId, string $originType, string $originId, string $changedAt = '2026-11-09 10:00'): void
     {
-        new RedirectSaver(new CmsRedirectSaved($id, $source, $targetType, $targetId, $originType, $originId, 'event-'.$id, new \DateTimeImmutable($changedAt), 1))(
-            self::getContainer()->get(RedirectRepository::class),
-        );
+        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+            'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
+            'origin_type' => $originType, 'origin_id' => $originId, 'created_at' => $changedAt, 'updated_at' => $changedAt, 'version' => 1,
+        ]);
     }
 }

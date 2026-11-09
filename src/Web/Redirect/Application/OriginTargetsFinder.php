@@ -8,8 +8,7 @@ use Web\Redirect\Domain\RedirectRepository;
 
 /**
  * Finds where the redirects of the last addresses of resources off the site
- * lead, by those resources; while two know one, as the site catches up with
- * the CMS, the one last changed does.
+ * lead, by those resources; should two know one, the one last changed does.
  */
 final readonly class OriginTargetsFinder
 {

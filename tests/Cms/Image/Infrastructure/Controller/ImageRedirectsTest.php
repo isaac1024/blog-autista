@@ -17,7 +17,6 @@ use Cms\Redirect\Domain\Source;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Response;
@@ -74,7 +73,6 @@ final class ImageRedirectsTest extends CmsWebTestCase
             'www.blogautista.localhost',
         )(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );

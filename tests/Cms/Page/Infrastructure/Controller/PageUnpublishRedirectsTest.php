@@ -179,7 +179,6 @@ final class PageUnpublishRedirectsTest extends CmsWebTestCase
             fn () => new PageUnpublisher(self::PAGE)(self::getContainer()->get(PageRepository::class), self::getContainer()->get(EventBus::class), self::getContainer()->get(PageRedirects::class)),
         )(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             $mutualExclusion,
             self::getContainer()->get(Transaction::class),
@@ -245,7 +244,6 @@ final class PageUnpublishRedirectsTest extends CmsWebTestCase
     {
         new RedirectCreator($id, 'https://'.self::HOST.$path, new TargetInput('page', self::PAGE), self::HOST)(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );

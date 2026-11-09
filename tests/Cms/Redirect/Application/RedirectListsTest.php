@@ -15,7 +15,6 @@ use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Tests\Page\Domain\PageMother;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -92,7 +91,6 @@ final class RedirectListsTest extends KernelTestCase
         // Ids are time-ordered, so each is newer than the one before.
         new RedirectCreator(RedirectId::random()->value(), 'https://'.self::HOST.$path, new TargetInput(null === $target ? null : 'page', $target), self::HOST)(
             $this->repository(),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );

@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Cms\Redirect\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
-use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
-use Shared\Domain\Event\EventBus;
-use Shared\Domain\Event\EventId;
 
 /**
  * An address of the site that leads to a resource on it, with a permanent
@@ -32,7 +29,7 @@ use Shared\Domain\Event\EventId;
 #[ORM\UniqueConstraint(name: 'uniq_cms_redirect_source', columns: ['source'])]
 #[ORM\Index(name: 'idx_cms_redirect_target', columns: ['target_type', 'target_id'])]
 #[ORM\Index(name: 'idx_cms_redirect_origin', columns: ['origin_type', 'origin_id'])]
-final class Redirect extends AggregateRoot
+final class Redirect
 {
     /**
      * How many times it was saved, which Doctrine counts itself, so a
@@ -59,8 +56,6 @@ final class Redirect extends AggregateRoot
         private Origin $origin,
         #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
         private Timeline $timeline,
-        #[ORM\Column]
-        private int $revision,
     ) {}
 
     /**
@@ -76,17 +71,13 @@ final class Redirect extends AggregateRoot
         self::assertLeadsTo($source, $target, $siteResources);
         $last = $siteResources->lastAt($source);
 
-        $redirect = new self(
+        return new self(
             new RedirectId($id),
             $source,
             $target,
             null === $last ? Origin::none() : Origin::from($last),
             Timeline::start(Clock::now()),
-            0,
         );
-        $redirect->changed();
-
-        return $redirect;
     }
 
     /**
@@ -101,7 +92,6 @@ final class Redirect extends AggregateRoot
         self::assertLeadsTo($this->source, $target, $siteResources);
         $this->target = $target;
         $this->timeline = $this->timeline->updated(Clock::now());
-        $this->changed();
     }
 
     /**
@@ -117,32 +107,22 @@ final class Redirect extends AggregateRoot
 
         $this->origin = Origin::none();
         $this->timeline = $this->timeline->updated(Clock::now());
-        $this->changed();
     }
 
     /**
-     * Saves the redirect, then tells the rest of the system what happened to
-     * it since it was loaded. It takes its events before saving, so the saved
-     * redirect holds none, and none is told twice.
+     * Saves the redirect: the site answers its address as saved from then on.
      */
-    public function save(RedirectRepository $redirectRepository, EventBus $eventBus): void
+    public function save(RedirectRepository $redirectRepository): void
     {
-        $events = $this->pullDomainEvents();
         $redirectRepository->save($this);
-        $eventBus->publish(...$events);
     }
 
     /**
      * Deletes the redirect, so its address answers nothing any longer.
      */
-    public function delete(RedirectRepository $redirectRepository, EventBus $eventBus): void
+    public function delete(RedirectRepository $redirectRepository): void
     {
-        ++$this->revision;
-        $this->record(new RedirectDeleted($this->id->value(), EventId::random()->value(), Clock::now(), $this->revision));
-
-        $events = $this->pullDomainEvents();
         $redirectRepository->delete($this);
-        $eventBus->publish(...$events);
     }
 
     public function id(): RedirectId
@@ -194,27 +174,5 @@ final class Redirect extends AggregateRoot
         if (!$siteResources->isOnSite($resource)) {
             throw InvalidRedirect::targetOffSite();
         }
-    }
-
-    /**
-     * Tells the site where the address leads now.
-     */
-    private function changed(): void
-    {
-        ++$this->revision;
-        $target = $this->target->resource();
-        $origin = $this->origin->resource();
-
-        $this->record(new RedirectSaved(
-            $this->id->value(),
-            $this->source->value(),
-            $target?->type()->value,
-            $target?->id(),
-            $origin?->type()->value,
-            $origin?->id(),
-            EventId::random()->value(),
-            Clock::now(),
-            $this->revision,
-        ));
     }
 }

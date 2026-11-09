@@ -56,7 +56,7 @@ final class ImageUnpublishController extends AbstractController
                 static function () use ($id, $imageRepository, $eventBus, $imageRedirects): void {
                     new ImageUnpublisher($id)($imageRepository, $eventBus, $imageRedirects);
                 },
-            )($this->redirectRepository, $eventBus, $this->siteResources, $this->mutualExclusion, $this->transaction);
+            )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

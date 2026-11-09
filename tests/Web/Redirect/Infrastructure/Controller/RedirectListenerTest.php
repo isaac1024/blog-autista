@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Tests\Redirect\Infrastructure\Controller;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -13,9 +14,6 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
-use Web\Redirect\Application\RedirectSaver;
-use Web\Redirect\Domain\CmsRedirectSaved;
-use Web\Redirect\Domain\RedirectRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 
@@ -118,27 +116,11 @@ final class RedirectListenerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
-    /**
-     * Two redirects at one address while the site catches up with the CMS,
-     * which deleted one and created the other: the one changed last answers.
-     */
-    public function testTheRedirectChangedLastAnswersAnAddressTwoShare(): void
-    {
-        $client = $this->site();
-        // The one changed last is the older one, so order by change, not by id.
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/vieja.html', null, null, '2026-11-09 10:00');
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/vieja.html', 'page', self::PAGE, '2026-11-09 11:00');
-
-        $client->request('GET', self::HOST.'/vieja.html');
-
-        self::assertResponseRedirects('/destino.html', Response::HTTP_MOVED_PERMANENTLY);
-    }
-
     public function testEachAddressIsAnsweredByItsOwnRedirect(): void
     {
         $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/a-destino.html', 'page', self::PAGE, '2026-11-09 10:00');
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/a-portada.html', 'page', self::HOME, '2026-11-09 11:00');
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/a-destino.html', 'page', self::PAGE);
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/a-portada.html', 'page', self::HOME);
 
         $client->request('GET', self::HOST.'/a-destino.html');
 
@@ -241,10 +223,14 @@ final class RedirectListenerTest extends WebTestCase
         return $client;
     }
 
-    private function redirect(string $id, string $source, ?string $targetType, ?string $targetId, string $changedAt = '2026-11-09 10:00'): void
+    /**
+     * A redirect as the CMS keeps it, which the site reads as it is.
+     */
+    private function redirect(string $id, string $source, ?string $targetType, ?string $targetId): void
     {
-        new RedirectSaver(new CmsRedirectSaved($id, $source, $targetType, $targetId, null, null, 'event-'.$id, new \DateTimeImmutable($changedAt), 1))(
-            self::getContainer()->get(RedirectRepository::class),
-        );
+        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+            'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
+            'origin_type' => null, 'origin_id' => null, 'created_at' => '2026-11-09 10:00', 'updated_at' => '2026-11-09 10:00', 'version' => 1,
+        ]);
     }
 }

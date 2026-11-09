@@ -9,7 +9,6 @@ use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\SourceAvailability;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 
 /**
@@ -28,15 +27,15 @@ final readonly class RedirectCreator
         private string $siteHost,
     ) {}
 
-    public function __invoke(RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources, MutualExclusion $mutualExclusion): void
+    public function __invoke(RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): void
     {
         $source = Source::fromUrl($this->url, $this->siteHost);
         $target = $this->target->target();
 
-        $mutualExclusion->run(new RedirectKeys($source, $target)(), function () use ($source, $target, $redirectRepository, $eventBus, $siteResources): void {
+        $mutualExclusion->run(new RedirectKeys($source, $target)(), function () use ($source, $target, $redirectRepository, $siteResources): void {
             $redirect = Redirect::create($this->id, $source, $target, $siteResources);
             new SourceAvailability($redirect)($redirectRepository);
-            $redirect->save($redirectRepository, $eventBus);
+            $redirect->save($redirectRepository);
         });
     }
 }

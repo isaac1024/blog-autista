@@ -97,7 +97,6 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $shown = $this->outlook();
         new RedirectRetargeter(self::REDIRECT, new TargetInput(null, null))(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );
@@ -225,7 +224,6 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
             fn () => new PagePublisher(self::PAGE)(self::getContainer()->get(PageRepository::class), self::getContainer()->get(EventBus::class)),
         )(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             $mutualExclusion,
             self::getContainer()->get(Transaction::class),
@@ -296,7 +294,6 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
 
         new RedirectCreator(self::REDIRECT, 'https://'.self::HOST.$path, new TargetInput('page', $target), self::HOST)(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         );

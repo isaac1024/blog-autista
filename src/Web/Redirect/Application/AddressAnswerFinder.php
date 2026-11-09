@@ -15,7 +15,8 @@ use Web\Redirect\Domain\TargetAddresses;
  *
  * The copies of an image share one redirect, the one of its file, and each
  * width leads to the same width of the target. A redirect to a resource the
- * site doesn't have yet, as it catches up with the CMS, answers nothing.
+ * site doesn't have yet, while the CMS's publication of it is still on its
+ * way to the site, answers nothing.
  */
 final readonly class AddressAnswerFinder
 {

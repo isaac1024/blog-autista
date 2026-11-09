@@ -13,7 +13,6 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\SourceAvailability;
 use Cms\Redirect\Domain\Target;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
 
@@ -50,7 +49,6 @@ final readonly class ResourcePublication
      */
     public function __invoke(
         RedirectRepository $redirectRepository,
-        EventBus $eventBus,
         SiteResources $siteResources,
         MutualExclusion $mutualExclusion,
         Transaction $transaction,
@@ -60,7 +58,7 @@ final readonly class ResourcePublication
         $target = null === $left ? null : $this->previous->target()?->target();
 
         $mutualExclusion->run($this->keys($next, $left, $target), fn () => $transaction->run(
-            fn () => $this->publish($next, $left, $target, $redirectRepository, $eventBus, $siteResources),
+            fn () => $this->publish($next, $left, $target, $redirectRepository, $siteResources),
         ));
     }
 
@@ -69,22 +67,22 @@ final readonly class ResourcePublication
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
-    private function publish(?Source $next, ?Source $left, ?Target $target, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources): void
+    private function publish(?Source $next, ?Source $left, ?Target $target, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
         $this->assertConfirmed($redirectRepository, $siteResources);
         ($this->publish)();
 
         // Its address answers it now, so nothing else answers there.
         $replaced = null === $next ? null : $redirectRepository->findBySource($next);
-        $replaced?->delete($redirectRepository, $eventBus);
+        $replaced?->delete($redirectRepository);
 
         foreach ($redirectRepository->findByOrigin($this->resource) as $redirect) {
             $redirect->forgetOrigin();
-            $redirect->save($redirectRepository, $eventBus);
+            $redirect->save($redirectRepository);
         }
 
         if (null !== $left && null !== $target) {
-            self::lead($left, $target, $redirectRepository, $eventBus, $siteResources);
+            self::lead($left, $target, $redirectRepository, $siteResources);
         }
     }
 
@@ -140,7 +138,7 @@ final readonly class ResourcePublication
      * Leads the address it left where the editor says: the redirect there
      * changes, or one is created.
      */
-    private static function lead(Source $left, Target $target, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources): void
+    private static function lead(Source $left, Target $target, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
         $redirect = $redirectRepository->findBySource($left);
 
@@ -151,6 +149,6 @@ final readonly class ResourcePublication
             $redirect->retarget($target, $siteResources);
         }
 
-        $redirect->save($redirectRepository, $eventBus);
+        $redirect->save($redirectRepository);
     }
 }

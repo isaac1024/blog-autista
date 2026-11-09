@@ -56,7 +56,7 @@ final class PageUnpublishController extends AbstractController
                 static function () use ($id, $pageRepository, $eventBus, $pageRedirects): void {
                     new PageUnpublisher($id)($pageRepository, $eventBus, $pageRedirects);
                 },
-            )($this->redirectRepository, $eventBus, $this->siteResources, $this->mutualExclusion, $this->transaction);
+            )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

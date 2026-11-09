@@ -213,7 +213,10 @@ images, from `public/media/`, under `/media/`.
   again. Events carry the publication revision of their page, image or
   settings, and the site uses it to ignore events that arrive late; an event
   queued by an older release has none and fails until it lands in the
-  `failed` transport. Inspect those with `messenger:failed:show` and, rather
+  `failed` transport. The redirects no longer travel as events: the site reads
+  them from the table the CMS keeps them in, so a `cms.redirect.saved` or
+  `cms.redirect.deleted` event left by a release before that fails too; let
+  the queue drain before deploying it. Inspect those with `messenger:failed:show` and, rather
   than retrying them, publish again from the CMS whatever they concerned.
 - A page published at an address another page had until just before waits
   for the event that frees it: the site tries again a minute later, up to the

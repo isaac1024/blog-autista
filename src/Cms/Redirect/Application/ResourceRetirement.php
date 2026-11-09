@@ -13,7 +13,6 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\SourceAvailability;
 use Cms\Redirect\Domain\Target;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
 
@@ -44,7 +43,6 @@ final readonly class ResourceRetirement
 
     public function __invoke(
         RedirectRepository $redirectRepository,
-        EventBus $eventBus,
         SiteResources $siteResources,
         MutualExclusion $mutualExclusion,
         Transaction $transaction,
@@ -55,7 +53,7 @@ final readonly class ResourceRetirement
 
         $mutualExclusion->run(
             $this->keys($address, $source, $redirectRepository),
-            fn () => $transaction->run(fn () => $this->retire($address, $source, $redirectRepository, $eventBus, $siteResources)),
+            fn () => $transaction->run(fn () => $this->retire($address, $source, $redirectRepository, $siteResources)),
         );
     }
 
@@ -105,20 +103,20 @@ final readonly class ResourceRetirement
      * Decides every redirect to it, takes it off the site, then leads its
      * address, while all of it is held.
      */
-    private function retire(?Target $address, ?Source $source, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources): void
+    private function retire(?Target $address, ?Source $source, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
         // Read again while held: no redirect can lead to it meanwhile.
         foreach ($redirectRepository->findTargeting($this->resource) as $redirect) {
             $decision = $this->incoming[$redirect->id()->value()] ?? throw InvalidRedirect::undecided($redirect->source());
 
             if ($decision->deletes()) {
-                $redirect->delete($redirectRepository, $eventBus);
+                $redirect->delete($redirectRepository);
 
                 continue;
             }
 
             $redirect->retarget($decision->target($address), $siteResources);
-            $redirect->save($redirectRepository, $eventBus);
+            $redirect->save($redirectRepository);
         }
 
         ($this->unpublish)();
@@ -129,6 +127,6 @@ final readonly class ResourceRetirement
 
         $redirect = Redirect::create(RedirectId::random()->value(), $source, $address, $siteResources);
         new SourceAvailability($redirect)($redirectRepository);
-        $redirect->save($redirectRepository, $eventBus);
+        $redirect->save($redirectRepository);
     }
 }

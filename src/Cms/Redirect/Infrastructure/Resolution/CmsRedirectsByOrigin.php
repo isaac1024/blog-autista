@@ -11,7 +11,7 @@ use Shared\Domain\Redirect\RedirectsByOrigin;
 
 /**
  * Outbound adapter that answers from the redirects of the CMS, so a preview
- * follows them as they are saved, as the site will once it catches up.
+ * follows them as they are saved, as the site does.
  */
 final readonly class CmsRedirectsByOrigin implements RedirectsByOrigin
 {

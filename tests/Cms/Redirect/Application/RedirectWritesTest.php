@@ -16,23 +16,17 @@ use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Tests\Page\Domain\PageMother;
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
-use Shared\Infrastructure\Event\DomainEventMessage;
-use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
  * Two changes to a redirect run one after the other, each on what the other
- * saved, so the site is told every change with a revision of its own, in the
- * order they happened. Here the other change is the request that held the
- * address while this one waited for it: it saves just before this one is let
- * through.
+ * saved, so neither undoes the other. Here the other change is the request
+ * that held the address while this one waited for it: it saves just before
+ * this one is let through.
  */
 final class RedirectWritesTest extends KernelTestCase
 {
-    use QueuedDomainEvents;
-
     private const string REDIRECT = '0196f3a0-0000-7000-8000-0000000000e9';
     private const string PAGE_A = '0196f3a0-0000-7000-8000-0000000000aa';
     private const string PAGE_B = '0196f3a0-0000-7000-8000-0000000000bb';
@@ -50,38 +44,31 @@ final class RedirectWritesTest extends KernelTestCase
 
     public function testItLeadsWhatAnotherChangeSavedWhileItWaitedSomewhereElse(): void
     {
-        [$redirects, $eventBus, $siteResources] = $this->ports();
+        [$redirects, $siteResources] = $this->ports();
 
-        new RedirectRetargeter(self::REDIRECT, new TargetInput('page', self::PAGE_B))($redirects, $eventBus, $siteResources, $this->afterAnotherChange());
+        new RedirectRetargeter(self::REDIRECT, new TargetInput('page', self::PAGE_B))($redirects, $siteResources, $this->afterAnotherChange());
 
-        self::assertSame(['revision' => 3, 'target_id' => self::PAGE_B], $this->stored());
-        $event = $this->lastEvent();
-        self::assertSame('cms.redirect.saved', $event->name);
-        self::assertSame(3, $event->body['revision']);
+        self::assertSame(['version' => 3, 'target_id' => self::PAGE_B], $this->stored());
     }
 
-    public function testItTellsTheDeletionAfterTheChangeSavedWhileItWaited(): void
+    public function testItDeletesWhatAnotherChangeSavedWhileItWaited(): void
     {
         new RedirectDeleter(self::REDIRECT)(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             $this->afterAnotherChange(),
         );
 
         self::assertNull(self::getContainer()->get(RedirectRepository::class)->find(new RedirectId(self::REDIRECT)));
-        $event = $this->lastEvent();
-        self::assertSame('cms.redirect.deleted', $event->name);
-        self::assertSame(3, $event->body['revision']);
     }
 
     /**
      * A change that saves a redirect it read before another change saved it
-     * is refused, rather than overwriting it with the same revision.
+     * is refused, rather than overwriting what that one saved.
      */
     public function testItRefusesToSaveARedirectReadBeforeAnotherChangeSavedIt(): void
     {
         $stale = $this->readNow();
-        $this->changedMeanwhile(revision: 2, version: 2, target: self::PAGE_A);
+        $this->changedMeanwhile(version: 2, target: self::PAGE_A);
 
         $stale->retarget(new TargetInput('page', self::PAGE_B)->target(), self::getContainer()->get(SiteResources::class));
 
@@ -91,13 +78,12 @@ final class RedirectWritesTest extends KernelTestCase
     }
 
     /**
-     * @return array{RedirectRepository, EventBus, SiteResources, MutualExclusion}
+     * @return array{RedirectRepository, SiteResources, MutualExclusion}
      */
     private function ports(): array
     {
         return [
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             self::getContainer()->get(MutualExclusion::class),
         ];
@@ -110,7 +96,7 @@ final class RedirectWritesTest extends KernelTestCase
     private function afterAnotherChange(): MutualExclusion
     {
         $mutualExclusion = self::getContainer()->get(MutualExclusion::class);
-        $meanwhile = fn () => $this->changedMeanwhile(revision: 2, version: 2, target: self::PAGE_A);
+        $meanwhile = fn () => $this->changedMeanwhile(version: 2, target: self::PAGE_A);
 
         return new readonly class($mutualExclusion, $meanwhile) implements MutualExclusion {
             /**
@@ -145,33 +131,25 @@ final class RedirectWritesTest extends KernelTestCase
     /**
      * What another request saving the redirect leaves in the database.
      */
-    private function changedMeanwhile(int $revision, int $version, string $target): void
+    private function changedMeanwhile(int $version, string $target): void
     {
         self::getContainer()->get(EntityManagerInterface::class)->getConnection()->executeStatement(
-            "UPDATE cms_redirect SET revision = ?, version = ?, target_type = 'page', target_id = ? WHERE id = ?",
-            [$revision, $version, $target, self::REDIRECT],
+            "UPDATE cms_redirect SET version = ?, target_type = 'page', target_id = ? WHERE id = ?",
+            [$version, $target, self::REDIRECT],
         );
     }
 
     /**
-     * @return array{revision: int, target_id: ?string}
+     * @return array{version: int, target_id: ?string}
      */
     private function stored(): array
     {
-        /** @var array{revision: int|string, target_id: ?string} $row */
+        /** @var array{version: int|string, target_id: ?string} $row */
         $row = self::getContainer()->get(EntityManagerInterface::class)->getConnection()->fetchAssociative(
-            'SELECT revision, target_id FROM cms_redirect WHERE id = ?',
+            'SELECT version, target_id FROM cms_redirect WHERE id = ?',
             [self::REDIRECT],
         );
 
-        return ['revision' => (int) $row['revision'], 'target_id' => $row['target_id']];
-    }
-
-    private function lastEvent(): DomainEventMessage
-    {
-        $events = $this->queuedEvents();
-        self::assertNotSame([], $events);
-
-        return $events[array_key_last($events)];
+        return ['version' => (int) $row['version'], 'target_id' => $row['target_id']];
     }
 }

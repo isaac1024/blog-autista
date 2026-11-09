@@ -69,7 +69,7 @@ final class PagePublishController extends AbstractController
                 static function () use ($id, $pageRepository, $eventBus): void {
                     new PagePublisher($id)($pageRepository, $eventBus);
                 },
-            )($this->redirectRepository, $eventBus, $this->siteResources, $this->mutualExclusion, $this->transaction);
+            )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

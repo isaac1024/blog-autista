@@ -9,7 +9,6 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Shared\Domain\DomainError;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +26,7 @@ final class RedirectCreateController extends AbstractController
     ) {}
 
     #[Route('/redirects', name: 'cms_redirects_create', methods: ['POST'])]
-    public function __invoke(Request $request, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
+    public function __invoke(Request $request, RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
     {
         $this->csrf->assertValid($request);
 
@@ -37,7 +36,6 @@ final class RedirectCreateController extends AbstractController
         try {
             new RedirectCreator($id, $source, RedirectTargetField::target(RedirectTargetField::fromRequest($request, '')), $this->webHost)(
                 $redirectRepository,
-                $eventBus,
                 $siteResources,
                 $mutualExclusion,
             );

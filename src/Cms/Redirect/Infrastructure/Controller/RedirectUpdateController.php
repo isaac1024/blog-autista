@@ -9,7 +9,6 @@ use Cms\Redirect\Application\RedirectRetargeter;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Shared\Domain\DomainError;
-use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,12 +22,12 @@ final class RedirectUpdateController extends AbstractController
     public function __construct(private readonly CsrfRequestGuard $csrf) {}
 
     #[Route('/redirects/{id}', name: 'cms_redirects_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, EventBus $eventBus, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
+    public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
     {
         $this->csrf->assertValid($request);
 
         try {
-            new RedirectRetargeter($id, RedirectTargetField::target(RedirectTargetField::fromRequest($request, '')))($redirectRepository, $eventBus, $siteResources, $mutualExclusion);
+            new RedirectRetargeter($id, RedirectTargetField::target(RedirectTargetField::fromRequest($request, '')))($redirectRepository, $siteResources, $mutualExclusion);
         } catch (RedirectNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

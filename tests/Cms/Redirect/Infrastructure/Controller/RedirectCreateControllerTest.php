@@ -17,8 +17,6 @@ use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Tests\Domain\RecordingMutualExclusion;
 use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -39,7 +37,7 @@ final class RedirectCreateControllerTest extends CmsWebTestCase
     private const string OFF_SITE = '0196f3a0-0000-7000-8000-0000000000a2';
     private const string IMAGE = '0196f3a0-0000-7000-8000-0000000000c2';
 
-    public function testItCreatesARedirectToAPageAndTellsTheSite(): void
+    public function testItCreatesARedirectToAPage(): void
     {
         $client = $this->client();
 
@@ -48,9 +46,9 @@ final class RedirectCreateControllerTest extends CmsWebTestCase
         $redirect = $this->redirectAt('/vieja.html');
         self::assertResponseRedirects('/redirects/'.$redirect?->id()->value(), Response::HTTP_SEE_OTHER);
         self::assertSame(self::PAGE, $redirect?->target()->resource()?->id());
-        $event = $this->lastEvent();
-        self::assertSame('cms.redirect.saved', $event->name);
-        self::assertSame(['source' => '/vieja.html', 'target_type' => 'page', 'target_id' => self::PAGE, 'origin_type' => null, 'origin_id' => null, 'revision' => 1], $event->body);
+        self::assertNull($redirect->origin()->resource());
+        // The site reads it as saved: nothing is queued for it.
+        self::assertSame([], $this->queuedEvents());
         self::assertSame([['key' => 'cms.notices.redirect.created', 'parameters' => []]], self::successNotices($client));
     }
 
@@ -75,7 +73,6 @@ final class RedirectCreateControllerTest extends CmsWebTestCase
 
         new RedirectCreator(RedirectId::random()->value(), self::SITE.'/vieja.html', new TargetInput('page', self::PAGE), 'www.blogautista.localhost')(
             self::getContainer()->get(RedirectRepository::class),
-            self::getContainer()->get(EventBus::class),
             self::getContainer()->get(SiteResources::class),
             $mutualExclusion,
         );
@@ -223,13 +220,5 @@ final class RedirectCreateControllerTest extends CmsWebTestCase
     private function redirectAt(string $path): ?Redirect
     {
         return self::getContainer()->get(RedirectRepository::class)->findBySource(Source::fromPath($path));
-    }
-
-    private function lastEvent(): DomainEventMessage
-    {
-        $events = $this->queuedEvents();
-        self::assertNotSame([], $events);
-
-        return $events[array_key_last($events)];
     }
 }
