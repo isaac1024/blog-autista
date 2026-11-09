@@ -56,7 +56,7 @@ final readonly class RetirementForm
      * @return list<PageComponent>
      *
      * PHPMD measures it over the limits only when it analyses the whole
-     * source tree; on its own, it is within them.
+     * source tree; on its own, it is within them
      *
      * @SuppressWarnings("PHPMD.NPathComplexity")
      */

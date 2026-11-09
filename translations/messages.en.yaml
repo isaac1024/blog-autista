@@ -147,6 +147,23 @@ cms:
                 delete:
                     label: 'Delete the redirect'
                     hint: 'The site will say it can’t find the address (404).'
+        publish:
+            subtitle: 'Publishing it changes the redirects of the blog. Check what will happen before publishing it.'
+            replaced: 'Publishing it deletes the redirect of %address%, which now leads to: %target%. That address will show this page.'
+            replaced_origin: 'Publishing it deletes the redirect of %address%, which now leads to: %target%. That address will show this page, and what links to or embeds this content will stop showing it: %origin%.'
+            previous:
+                title: 'Its former address'
+                description: 'It was at %previous% and will be at %next%.'
+                legend: 'What %previous% does once it is published'
+                itself:
+                    label: 'Lead to this page'
+                    hint: 'Whoever comes by the former address sees the page at its new one.'
+                keep:
+                    label: 'Leave its redirect as it is'
+                    hint: 'It already leads to: %target%.'
+                keep_none:
+                    label: 'Let it not be found'
+                    hint: 'The site will say it can’t find the former address (404).'
         last_address:
             title: 'Its last address'
             not_found: 'It was at %address%, which now leads nowhere: the site says it can’t find it.'
@@ -319,6 +336,9 @@ cms:
             title: 'Discard the changes?'
             description: 'The page “%title%” will go back to the version published on the site. The changes saved since then will be lost. This cannot be undone.'
             submit: 'Yes, discard the changes'
+        publish:
+            page_title: 'Publish “%title%”'
+            submit: 'Publish the page'
         unpublish:
             trigger: 'Unpublish'
             page_title: 'Unpublish “%title%”'
@@ -572,6 +592,7 @@ errors:
         undecided: 'Choose what %source% does: it leads to this content, which is about to leave the site.'
         to_itself: 'Its address can’t lead to the very content being unpublished: choose another.'
         undecided_address: 'Choose what its address does once unpublished.'
+        undecided_previous: 'Choose what its former address does once it is published.'
         no_new_target: 'A redirect can only lead where its address leads if that address leads to other content.'
         image_to_other: 'The address of an image only leads to another image.'
         other_to_image: 'Only the address of an image leads to an image.'
@@ -617,6 +638,7 @@ errors:
             without_meta_description: 'The page can’t be published without a meta description.'
             nothing_to_publish: 'The page is published as it is: there is nothing to publish.'
             not_published: 'Only a published page can be unpublished.'
+            address_on_site: 'A published page keeps its address on the site.'
             redirected: 'Redirects lead to this page, so it can’t be unpublished until they lead elsewhere.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             unique_page: 'This page is unique, so it can’t be unpublished.'

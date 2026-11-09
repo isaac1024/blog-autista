@@ -7,8 +7,14 @@ namespace Cms\Image\Infrastructure\Controller;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImagePublisher;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Redirect\Application\ResourcePublication;
+use Cms\Redirect\Domain\RedirectRepository;
+use Cms\Redirect\Domain\Resource;
+use Cms\Redirect\Domain\SiteResources;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\MutualExclusion;
+use Shared\Domain\Transaction;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,13 +24,31 @@ use Symfony\Component\Routing\Requirement\Requirement;
 
 final class ImagePublishController extends AbstractController
 {
+    public function __construct(
+        private readonly CsrfRequestGuard $csrf,
+        private readonly RedirectRepository $redirectRepository,
+        private readonly SiteResources $siteResources,
+        private readonly MutualExclusion $mutualExclusion,
+        private readonly Transaction $transaction,
+    ) {}
+
+    /**
+     * The address of an image never changes, so publishing it asks nothing:
+     * a redirect at it goes, as the image answers it again.
+     */
     #[Route('/images/{id}/publish', name: 'cms_images_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, ImageRepository $imageRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, ImageRepository $imageRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
+        $this->csrf->assertValid($request);
 
         try {
-            new ImagePublisher($id)($imageRepository, $eventBus);
+            new ResourcePublication(
+                Resource::image($id),
+                null,
+                static function () use ($id, $imageRepository, $eventBus): void {
+                    new ImagePublisher($id)($imageRepository, $eventBus);
+                },
+            )($this->redirectRepository, $eventBus, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

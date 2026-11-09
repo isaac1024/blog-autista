@@ -96,6 +96,22 @@ final class Redirect extends AggregateRoot
     }
 
     /**
+     * Forgets the resource that was at its address, once it is back on the
+     * site: the address is only an address from then on, and what links to
+     * that resource reaches it again.
+     */
+    public function forgetOrigin(): void
+    {
+        if (null === $this->origin->resource()) {
+            return;
+        }
+
+        $this->origin = Origin::none();
+        $this->timeline = $this->timeline->updated(Clock::now());
+        $this->changed();
+    }
+
+    /**
      * Saves the redirect, then tells the rest of the system what happened to
      * it since it was loaded. It takes its events before saving, so the saved
      * redirect holds none, and none is told twice.

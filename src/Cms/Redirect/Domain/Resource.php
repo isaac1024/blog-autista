@@ -37,6 +37,11 @@ final readonly class Resource
         return $this->id;
     }
 
+    public function equals(self $other): bool
+    {
+        return $this->type === $other->type && $this->id === $other->id;
+    }
+
     /**
      * Its name for whatever keeps changes over it apart, such as "page:<id>".
      */

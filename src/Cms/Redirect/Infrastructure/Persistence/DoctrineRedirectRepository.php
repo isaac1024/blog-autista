@@ -86,6 +86,15 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
     }
 
     #[\Override]
+    public function findByOrigin(Resource $resource): array
+    {
+        return $this->entityManager->getRepository(Redirect::class)->findBy([
+            'origin.type' => $resource->type(),
+            'origin.id' => $resource->id(),
+        ]);
+    }
+
+    #[\Override]
     public function matching(Criteria $criteria): array
     {
         $queryBuilder = $this->entityManager->createQueryBuilder()

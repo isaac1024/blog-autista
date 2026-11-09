@@ -35,6 +35,14 @@ interface RedirectRepository
     public function findTargeting(Resource $resource): array;
 
     /**
+     * Every redirect that knows the resource as its origin: one at most,
+     * that of its last address.
+     *
+     * @return list<Redirect>
+     */
+    public function findByOrigin(Resource $resource): array;
+
+    /**
      * @return list<Redirect>
      */
     public function matching(Criteria $criteria): array;

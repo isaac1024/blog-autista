@@ -276,6 +276,19 @@ final class Page extends AggregateRoot
     }
 
     /**
+     * Forgets the address it last had on the site, once another page is
+     * published there: it was the last of that other page from then on.
+     */
+    public function loseLastAddress(): void
+    {
+        if (PageStatus::Published === $this->status) {
+            throw InvalidPublication::addressOnSite();
+        }
+
+        $this->lastSiteSlug = null;
+    }
+
+    /**
      * Brings the version being edited back to the one on the site.
      */
     public function discardChanges(): void

@@ -60,6 +60,11 @@ final readonly class Source
         return $this->value;
     }
 
+    public function equals(self $other): bool
+    {
+        return $this->value === $other->value;
+    }
+
     /**
      * Where the CMS keeps the file of the image whose copies it is the
      * address of, or null when it is the address of no image.

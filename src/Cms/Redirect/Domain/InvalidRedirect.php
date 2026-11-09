@@ -48,6 +48,11 @@ final class InvalidRedirect extends DomainError
         return new self('Choose what the address does once it is off the site.', 'errors.redirect.undecided_address', []);
     }
 
+    public static function undecidedPrevious(): self
+    {
+        return new self('Choose what the address the page leaves does.', 'errors.redirect.undecided_previous', []);
+    }
+
     public static function noNewTarget(): self
     {
         return new self('Only when its address leads somewhere do the redirects to a resource follow it there.', 'errors.redirect.no_new_target', []);

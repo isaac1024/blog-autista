@@ -88,6 +88,21 @@ final readonly class CmsSiteResources implements SiteResources
     }
 
     #[\Override]
+    public function nextAddressOf(Resource $resource): ?Source
+    {
+        if (ResourceType::Image === $resource->type()) {
+            // The file of an image never changes, nor does its address.
+            $image = new ImagesFinder([$resource->id()])($this->imageRepository)[0] ?? null;
+
+            return null === $image ? null : Source::ofImage($image->path);
+        }
+
+        $slug = (new PagesFinder([$resource->id()])($this->pageRepository)[0] ?? null)?->slug;
+
+        return null === $slug ? null : Source::fromPath($this->siteRoutes->pagePath($slug));
+    }
+
+    #[\Override]
     public function lastAt(Source $source): ?Resource
     {
         $imagePath = $source->imagePath();

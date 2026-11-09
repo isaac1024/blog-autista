@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
+use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
@@ -16,7 +17,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * What the last address of a page or an image off the site answers, for its
  * editor: the redirect there, to edit it, or nothing, and a way to create
- * one. A resource on the site, or never on it, has none to show.
+ * one. A resource on the site, or never on it, has none to show. A page also
+ * tells when publishing it would delete the redirect at its address.
  */
 final readonly class LastAddressPanel
 {
@@ -26,15 +28,21 @@ final readonly class LastAddressPanel
         private RedirectNames $redirectNames,
         private TranslatorInterface $translator,
         private UrlGeneratorInterface $urlGenerator,
+        private ReplacedRedirectNotice $replacedRedirectNotice,
     ) {}
 
     /**
      * The editor of a page, with what its last address answers right after
-     * where it stands, so it is seen before anything else.
+     * where it stands, so it is seen before anything else, and whether
+     * publishing deletes the redirect at the address it is saved with.
      */
     public function onPage(Page $layout, string $pageId): Page
     {
-        return $this->onto($layout, Resource::page($pageId));
+        $resource = Resource::page($pageId);
+        $layout = $this->onto($layout, $resource);
+        $notice = ($this->replacedRedirectNotice)(new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources));
+
+        return null === $notice ? $layout : $layout->withMain($notice->name, $notice->props, $notice->children);
     }
 
     /**

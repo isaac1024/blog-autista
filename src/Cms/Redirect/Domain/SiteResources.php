@@ -32,6 +32,13 @@ interface SiteResources
     public function addressOf(Resource $resource): ?Source;
 
     /**
+     * The address the resource will have on the site once it is published
+     * as it is saved now; null when it will have none a redirect could
+     * answer, such as the home page, at the root.
+     */
+    public function nextAddressOf(Resource $resource): ?Source;
+
+    /**
      * The resource off the site whose last address it is, or null when none
      * is: an address never had one, or another resource took it since.
      */

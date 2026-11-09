@@ -38,6 +38,11 @@ final class InvalidPublication extends DomainError
         return new self('A page that redirects lead to stays on the site until they lead elsewhere.', 'errors.page.publication.redirected', []);
     }
 
+    public static function addressOnSite(): self
+    {
+        return new self('A page on the site keeps its address there.', 'errors.page.publication.address_on_site', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published page with unpublished changes has changes to discard.', 'errors.page.publication.no_changes_to_discard', []);

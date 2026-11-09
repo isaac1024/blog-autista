@@ -147,6 +147,23 @@ cms:
                 delete:
                     label: 'Borrar la redirección'
                     hint: 'La web dirá que no encuentra la dirección (404).'
+        publish:
+            subtitle: 'Publicarla cambia las redirecciones del blog. Revisa qué pasará antes de publicarla.'
+            replaced: 'Al publicarla, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará esta página.'
+            replaced_origin: 'Al publicarla, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará esta página, y lo que enlaza o incluye este contenido dejará de mostrarlo: %origin%.'
+            previous:
+                title: 'Su dirección anterior'
+                description: 'Estaba en %previous% y pasará a estar en %next%.'
+                legend: 'Qué hace %previous% al publicarla'
+                itself:
+                    label: 'Llevar a esta página'
+                    hint: 'Quien llegue por la dirección anterior verá la página en su dirección nueva.'
+                keep:
+                    label: 'Dejar su redirección como está'
+                    hint: 'Ya lleva a: %target%.'
+                keep_none:
+                    label: 'Dejar que no se encuentre'
+                    hint: 'La web dirá que no encuentra la dirección anterior (404).'
         last_address:
             title: 'Su última dirección'
             not_found: 'Estaba en %address%, que ahora no lleva a ningún sitio: la web dice que no la encuentra.'
@@ -319,6 +336,9 @@ cms:
             title: '¿Descartar los cambios?'
             description: 'La página «%title%» volverá a ser la que está publicada en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
             submit: 'Sí, descartar los cambios'
+        publish:
+            page_title: 'Publicar «%title%»'
+            submit: 'Publicar la página'
         unpublish:
             trigger: 'Despublicar'
             page_title: 'Despublicar «%title%»'
@@ -572,6 +592,7 @@ errors:
         undecided: 'Elige qué hace %source%: lleva a este contenido, que va a dejar de estar en la web.'
         to_itself: 'Su dirección no puede llevar al mismo contenido que se despublica: elige otro.'
         undecided_address: 'Elige qué hace su dirección al despublicarlo.'
+        undecided_previous: 'Elige qué hace su dirección anterior al publicarla.'
         no_new_target: 'Una redirección solo puede llevar a donde lleve su dirección si esa dirección lleva a otro contenido.'
         image_to_other: 'La dirección de una imagen solo puede llevar a otra imagen.'
         other_to_image: 'Solo la dirección de una imagen puede llevar a una imagen.'
@@ -617,6 +638,7 @@ errors:
             without_meta_description: 'La página no se puede publicar sin meta descripción.'
             nothing_to_publish: 'La página ya está publicada tal como está: no hay nada que publicar.'
             not_published: 'Solo se puede despublicar una página publicada.'
+            address_on_site: 'Una página publicada conserva su dirección en la web.'
             redirected: 'Hay redirecciones que llevan a esta página, así que no se puede despublicar hasta que lleven a otro sitio.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'

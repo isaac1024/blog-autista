@@ -100,7 +100,8 @@ final class PagePublishControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $client->request('GET', \sprintf(self::URL, PageIdMother::random()->value()));
+        // GET serves the form that confirms what publishing does to the redirects.
+        $client->request('PUT', \sprintf(self::URL, PageIdMother::random()->value()));
 
         self::assertResponseStatusCodeSame(Response::HTTP_METHOD_NOT_ALLOWED);
     }
