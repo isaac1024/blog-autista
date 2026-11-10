@@ -28,15 +28,16 @@ final readonly class UserRows
      */
     public function __invoke(array $users): array
     {
-        $ids = static fn (ResourceType $type): array => array_values(array_map(
-            static fn (UserResponse $user): string => $user->id,
-            array_filter($users, static fn (UserResponse $user): bool => $type->value === $user->type),
-        ));
+        $ids = [ResourceType::Page->value => [], ResourceType::Image->value => [], ResourceType::Settings->value => []];
+
+        foreach ($users as $user) {
+            $ids[$user->type][] = $user->id;
+        }
 
         return [
-            ...($this->pageUserRows)($ids(ResourceType::Page)),
-            ...($this->imageUserRows)($ids(ResourceType::Image)),
-            ...($this->settingsUserRows)($ids(ResourceType::Settings)),
+            ...($this->pageUserRows)($ids[ResourceType::Page->value]),
+            ...($this->imageUserRows)($ids[ResourceType::Image->value]),
+            ...($this->settingsUserRows)($ids[ResourceType::Settings->value]),
         ];
     }
 }

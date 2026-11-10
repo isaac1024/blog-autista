@@ -22,8 +22,7 @@
         // tested for what it decides and held to the contract of the
         // components it composes, so nothing of it is ignored.
         "global-ignore": [
-            "*\\Controller\\*::page",
-            "*\\Controller\\*::row"
+            "*\\Controller\\*::page"
         ]
     },
     "timeout": 60,
