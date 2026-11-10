@@ -27,7 +27,7 @@ final class PageComponents
     public static function find(Page|PageComponent $in, string $name, array $props): array
     {
         return array_values(array_filter(
-            self::flatten($in instanceof Page ? [...$in->header, ...$in->main, ...$in->footer] : $in->children),
+            self::flatten($in instanceof Page ? [...$in->header, ...$in->main, ...$in->footer] : self::within($in)),
             static fn (PageComponent $component): bool => self::matches($component, $name, $props),
         ));
     }
@@ -44,6 +44,18 @@ final class PageComponents
         Assert::assertCount(1, $found, \sprintf('Expected one %s with %s.', $name, json_encode($props, \JSON_THROW_ON_ERROR)));
 
         return $found[0];
+    }
+
+    /**
+     * The components within a component: its children, then those its props
+     * hold, such as the fields of each option of a choice, as Twig paints
+     * them too.
+     *
+     * @return list<PageComponent>
+     */
+    public static function within(PageComponent $component): array
+    {
+        return [...$component->children, ...self::held($component->props)];
     }
 
     /**
@@ -75,9 +87,29 @@ final class PageComponents
 
         foreach ($components as $component) {
             $flat[] = $component;
-            array_push($flat, ...self::flatten($component->children));
+            array_push($flat, ...self::flatten(self::within($component)));
         }
 
         return $flat;
+    }
+
+    /**
+     * @param array<mixed> $values
+     *
+     * @return list<PageComponent>
+     */
+    private static function held(array $values): array
+    {
+        $held = [];
+
+        foreach ($values as $value) {
+            if ($value instanceof PageComponent) {
+                $held[] = $value;
+            } elseif (\is_array($value)) {
+                array_push($held, ...self::held($value));
+            }
+        }
+
+        return $held;
     }
 }

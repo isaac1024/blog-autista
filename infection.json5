@@ -19,14 +19,11 @@
         // composition to the ui-check harness, not to PHPUnit, so mutating it
         // only yields unkillable mutants. The action that handles the request
         // keeps every mutator. A composer taken out of its controller is
-        // tested for its decisions, so only its declarations are ignored,
-        // below.
+        // tested for what it decides and held to the contract of the
+        // components it composes, so nothing of it is ignored.
         "global-ignore": [
             "*\\Controller\\*::page",
-            "*\\Controller\\*::row",
-            // The panels of the redirects only choose what an editor reads.
-            "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
-            "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke"
+            "*\\Controller\\*::row"
         ]
     },
     "timeout": 60,

@@ -46,8 +46,8 @@ final class ComponentContracts
     }
 
     /**
-     * Every control that takes no label of its own is named by a label
-     * pointing at it.
+     * Every control that takes no label of its own, and is seen, is named by
+     * a label pointing at it.
      */
     private static function assertControlsLabelled(Page $page): void
     {
@@ -58,6 +58,11 @@ final class ComponentContracts
 
         foreach (self::LABELLED_CONTROLS as $name) {
             foreach (PageComponents::find($page, $name, []) as $control) {
+                // A hidden field is neither seen nor filled in, so it takes no label.
+                if ('hidden' === ($control->props['type'] ?? null)) {
+                    continue;
+                }
+
                 Assert::assertContains($control->props['id'] ?? null, $labelled, \sprintf('%s "%s" has no label pointing at it.', $name, json_encode($control->props['id'] ?? null, \JSON_THROW_ON_ERROR)));
             }
         }
@@ -90,7 +95,7 @@ final class ComponentContracts
 
         self::assertMounts($reflection, $parameters, $props, $path);
 
-        foreach ($component->children as $index => $child) {
+        foreach (PageComponents::within($component) as $index => $child) {
             self::assertComponent($child, \sprintf('%s[%d] %s', $path, $index, $child->name));
         }
     }

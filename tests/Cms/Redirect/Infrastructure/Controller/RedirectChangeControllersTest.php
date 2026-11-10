@@ -66,6 +66,21 @@ final class RedirectChangeControllersTest extends CmsWebTestCase
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/redirects/'.self::REDIRECT, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.redirect.target_off_site', 'parameters' => []]], self::errorNotices($client));
+        self::assertSame([], self::successNotices($client));
+        self::assertSame(self::PAGE, $this->stored()?->target()->resource()?->id());
+    }
+
+    /**
+     * @param array<string, string> $form
+     */
+    #[DataProvider('changes')]
+    public function testItRefusesAChangeWithoutTheTokenOfItsForm(string $route, string $suffix, array $form): void
+    {
+        $client = $this->client();
+
+        $client->request('POST', $this->url(self::REDIRECT).$suffix, $form);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
         self::assertSame(self::PAGE, $this->stored()?->target()->resource()?->id());
     }
 

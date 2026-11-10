@@ -7,6 +7,7 @@ namespace Cms\Redirect\Infrastructure\Controller;
 use Cms\Redirect\Application\IncomingRedirectsFinder;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\ResourceType;
+use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -27,7 +28,7 @@ final readonly class IncomingRedirectsPanel
 
     public function __invoke(ResourceType $type, string $id, string $name): PageComponent
     {
-        $redirects = new IncomingRedirectsFinder($type, $id, 1)($this->redirectRepository);
+        $redirects = new IncomingRedirectsFinder($type, $id, ListPagination::FIRST_PAGE)($this->redirectRepository);
         $texts = \sprintf('cms.redirects.incoming.%s', $type->value);
 
         if ([] === $redirects->redirects) {
