@@ -25,17 +25,8 @@
             "*\\Controller\\*::page",
             "*\\Controller\\*::row",
             "*\\Controller\\*::address",
-            "*\\Controller\\*Controller::slugField",
-            "*\\Controller\\*Controller::homeAddress",
-            "*\\Controller\\*Controller::searchEngineSection",
-            "*\\Controller\\*Controller::pageActions",
             "*\\Controller\\*Controller::formActions",
-            "*\\Controller\\*Controller::confirmModal",
             "*\\Controller\\*::uploadModal",
-            "*\\Controller\\*::imageActions",
-            "*\\Controller\\*Controller::titleField",
-            "*\\Controller\\*Controller::dates",
-            "*\\Controller\\*::images",
             // The panels of the redirects only choose what an editor reads.
             "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
             "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke"
