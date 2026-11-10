@@ -6,6 +6,7 @@ namespace Shared\Tests\Infrastructure\Translation;
 
 use PHPUnit\Framework\Assert;
 use Symfony\Component\Translation\IdentityTranslator;
+use Symfony\Component\Translation\Loader\XliffFileLoader;
 use Symfony\Component\Translation\Loader\YamlFileLoader;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Contracts\Translation\LocaleAwareInterface;
@@ -24,10 +25,24 @@ final class CatalogueTranslator implements LocaleAwareInterface, TranslatorInter
 
     private const string DOMAIN = 'messages';
 
+    /**
+     * Domains the site takes from its libraries rather than translating
+     * itself, with where each keeps its catalogue of a locale.
+     */
+    private const array LIBRARY_DOMAINS = [
+        'security' => __DIR__.'/../../../../vendor/symfony/security-core/Resources/translations/security.%s.xlf',
+    ];
+
     private const string PLACEHOLDER = '/%[a-z_]+%/';
 
     /**
-     * Keyed by locale, one for each language the site is translated to.
+     * The parameter the translator picks the plural form of a message by.
+     */
+    private const string PLURAL_COUNT = '%count%';
+
+    /**
+     * Keyed by locale, one for each language the site is translated to,
+     * holding its own domain and those of its libraries.
      *
      * @var ?array<string, MessageCatalogue>
      */
@@ -54,11 +69,15 @@ final class CatalogueTranslator implements LocaleAwareInterface, TranslatorInter
                 $catalogue->defines($id, $domain ?? self::DOMAIN),
                 \sprintf('The "%s" catalogue doesn\'t define "%s".', $catalogueLocale, $id),
             );
-            // Every placeholder of the message is given its value, and nothing else is.
+            // Every placeholder of the message is given its value, and nothing
+            // else is, but the count that picks its plural, painted or not.
             preg_match_all(self::PLACEHOLDER, $catalogue->get($id, $domain ?? self::DOMAIN), $matches);
             $placeholders = array_values(array_unique($matches[0]));
             sort($placeholders);
-            Assert::assertSame($placeholders, $given, \sprintf('"%s" in the "%s" catalogue takes other parameters than those given.', $id, $catalogueLocale));
+            Assert::assertSame($placeholders, array_values(array_filter(
+                $given,
+                static fn (int|string $placeholder): bool => self::PLURAL_COUNT !== $placeholder || \in_array(self::PLURAL_COUNT, $placeholders, true),
+            )), \sprintf('"%s" in the "%s" catalogue takes other parameters than those given.', $id, $catalogueLocale));
         }
 
         if ([] === $parameters) {
@@ -95,12 +114,19 @@ final class CatalogueTranslator implements LocaleAwareInterface, TranslatorInter
         if (null === self::$catalogues) {
             self::$catalogues = [];
             $loader = new YamlFileLoader();
+            $libraryLoader = new XliffFileLoader();
             $files = glob(self::TRANSLATIONS.self::DOMAIN.'.*.yaml');
             Assert::assertIsArray($files, 'The catalogues of the site could not be listed.');
 
             foreach ($files as $file) {
                 $locale = explode('.', basename($file))[1];
-                self::$catalogues[$locale] = $loader->load($file, $locale, self::DOMAIN);
+                $catalogue = $loader->load($file, $locale, self::DOMAIN);
+
+                foreach (self::LIBRARY_DOMAINS as $domain => $path) {
+                    $catalogue->addCatalogue($libraryLoader->load(\sprintf($path, $locale), $locale, $domain));
+                }
+
+                self::$catalogues[$locale] = $catalogue;
             }
 
             Assert::assertNotEmpty(self::$catalogues, 'No catalogue of the site was found.');
