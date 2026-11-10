@@ -69,8 +69,6 @@ final readonly class SiteErrorListener
         $layout = $this->siteLayout->page($this->siteErrorPage->title($gone));
         $homeUrl = $this->urlGenerator->generate('web_home');
 
-        return $this->pageRenderer->render($gone
-            ? $this->siteErrorPage->gone($layout, $homeUrl)
-            : $this->siteErrorPage->notFound($layout, $homeUrl));
+        return $this->pageRenderer->render($this->siteErrorPage->paint($layout, $gone, $homeUrl));
     }
 }

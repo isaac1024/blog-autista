@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Settings\Infrastructure\Controller;
 
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Uuid;
 use Shared\Infrastructure\Ui\Page\Page;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Domain\Image;
@@ -64,11 +65,16 @@ final class SiteLayoutTest extends TestCase
             footerMenu: [['page_id' => self::HOME, 'label' => null], ['page_id' => Event::PAGE, 'label' => null]],
         ));
         $pages = self::createStub(PageRepository::class);
-        $pages->method('findByIds')->willReturn([
+        $onSite = [
             SitePage::publish(CmsPagePublishedMother::create(id: Event::PAGE, title: 'Sobre mí', slug: 'sobre-mi')),
             SitePage::publish(CmsPagePublishedMother::create(id: Event::OTHER_PAGE, title: 'Contacto', slug: 'contacto', type: PageType::Contact)),
             SitePage::publish(CmsPagePublishedMother::create(id: self::HOME, title: 'Inicio', slug: null, type: PageType::Home)),
-        ]);
+        ];
+        // Only the pages asked for are found, as the site would.
+        $pages->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(
+            $onSite,
+            static fn (SitePage $page): bool => \in_array($page->id()->value(), array_map(static fn (mixed $id): string => $id instanceof Uuid ? $id->value() : '', $ids), true),
+        )));
         $images = self::createStub(ImageRepository::class);
         $images->method('findByIds')->willReturn([]);
 

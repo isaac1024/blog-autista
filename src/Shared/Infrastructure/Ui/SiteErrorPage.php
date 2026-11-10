@@ -16,26 +16,14 @@ final readonly class SiteErrorPage
 {
     public function __construct(private TranslatorInterface $translator) {}
 
-    public function notFound(Page $layout, string $homeUrl): Page
-    {
-        return $this->paint($layout, 'not_found', $homeUrl);
-    }
-
-    public function gone(Page $layout, string $homeUrl): Page
-    {
-        return $this->paint($layout, 'gone', $homeUrl);
-    }
-
     /**
-     * The title to start the layout with, so the browser tab says it too.
+     * The page of an address the site doesn't answer, or no longer does,
+     * in the layout its title started, leading home.
      */
-    public function title(bool $gone): string
+    public function paint(Page $layout, bool $gone, string $homeUrl): Page
     {
-        return $this->translator->trans(\sprintf('site.%s.title', $gone ? 'gone' : 'not_found'));
-    }
+        $reason = self::reason($gone);
 
-    private function paint(Page $layout, string $reason, string $homeUrl): Page
-    {
         return $layout
             ->withMain('Shared:PageTitle', [
                 'title' => $this->translator->trans(\sprintf('site.%s.title', $reason)),
@@ -45,5 +33,18 @@ final readonly class SiteErrorPage
                 'url' => $homeUrl,
                 'label' => $this->translator->trans('site.home'),
             ]);
+    }
+
+    /**
+     * The title to start the layout with, so the browser tab says it too.
+     */
+    public function title(bool $gone): string
+    {
+        return $this->translator->trans(\sprintf('site.%s.title', self::reason($gone)));
+    }
+
+    private static function reason(bool $gone): string
+    {
+        return $gone ? 'gone' : 'not_found';
     }
 }

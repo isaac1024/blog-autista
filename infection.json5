@@ -13,17 +13,7 @@
         ]
     },
     "mutators": {
-        "@default": true,
-        // Controllers that still compose their page from Twig components, in
-        // page() and the private methods that build its parts, leave that
-        // composition to the ui-check harness, not to PHPUnit, so mutating it
-        // only yields unkillable mutants. The action that handles the request
-        // keeps every mutator. A composer taken out of its controller is
-        // tested for what it decides and held to the contract of the
-        // components it composes, so nothing of it is ignored.
-        "global-ignore": [
-            "*\\Controller\\*::page"
-        ]
+        "@default": true
     },
     "timeout": 60,
     "threads": "auto",
