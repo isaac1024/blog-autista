@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Redirect\Infrastructure\Controller;
 
+use Cms\Redirect\Application\TargetInput;
 use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -14,6 +15,7 @@ use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Shared\Tests\Infrastructure\Ui\PageComponents;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The field that says where an address leads: under which names it posts,
@@ -68,6 +70,49 @@ final class RedirectTargetFieldTest extends TestCase
         $options = PageComponents::one($field, 'Shared:FormChoice', [])->props['options'];
         self::assertIsArray($options);
         self::assertSame(['keep', 'image', 'gone', 'later'], array_column($options, 'value'));
+    }
+
+    /**
+     * What is posted is read as the field posts it, under its prefix, and
+     * anything else, or nothing, as empty.
+     */
+    public function testItReadsWhatIsPostedUnderItsPrefix(): void
+    {
+        $request = Request::create('/', 'POST', [
+            'action' => 'page',
+            'page_id' => 'una',
+            'incoming' => ['x' => ['action' => 'image', 'image_id' => 'otra', 'page_id' => ['no']]],
+        ]);
+
+        self::assertSame(['action' => 'page', 'page_id' => 'una', 'image_id' => ''], RedirectTargetField::fromRequest($request, ''));
+        $incoming = $request->request->all('incoming')['x'] ?? null;
+        self::assertIsArray($incoming);
+        self::assertSame(['action' => 'image', 'page_id' => '', 'image_id' => 'otra'], RedirectTargetField::values($incoming));
+    }
+
+    /**
+     * The choice names where it leads: the page or the image picked for it,
+     * or nowhere; any other choice is a kind of target as it is, and no
+     * choice at all leads to no page, which the redirect refuses.
+     *
+     * @param array{action: string, page_id: string, image_id: string} $values
+     */
+    #[DataProvider('choices')]
+    public function testItTellsWhereTheChoiceLeads(array $values, TargetInput $target): void
+    {
+        self::assertEquals($target, RedirectTargetField::target($values));
+    }
+
+    /**
+     * @return iterable<string, array{array{action: string, page_id: string, image_id: string}, TargetInput}>
+     */
+    public static function choices(): iterable
+    {
+        yield 'a page' => [['action' => 'page', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('page', 'p')];
+        yield 'an image' => [['action' => 'image', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('image', 'i')];
+        yield 'nowhere' => [['action' => 'gone', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput(null, null)];
+        yield 'another kind' => [['action' => 'script', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('script', null)];
+        yield 'no choice at all' => [['action' => '', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('page', null)];
     }
 
     /**

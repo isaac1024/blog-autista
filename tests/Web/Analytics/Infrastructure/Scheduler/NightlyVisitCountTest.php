@@ -11,6 +11,7 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Web\Analytics\Application\VisitRecorder;
 use Web\Analytics\Domain\DailySalt;
 use Web\Analytics\Domain\PublishedPages;
+use Web\Analytics\Domain\VisitId;
 use Web\Analytics\Domain\VisitRepository;
 use Web\Analytics\Infrastructure\Scheduler\NightlyVisitCount;
 use Web\Page\Domain\Page;
@@ -119,7 +120,7 @@ final class NightlyVisitCountTest extends KernelTestCase
     private function visit(string $page, string $address, string $userAgent = self::BROWSER, string $referrer = '', string $zone = ''): void
     {
         try {
-            new VisitRecorder($page, $referrer, '', '', $zone, $address, $userAgent, [self::SITE])(
+            new VisitRecorder(VisitId::random()->value(), $page, $referrer, '', '', $zone, $address, $userAgent, [self::SITE])(
                 self::getContainer()->get(VisitRepository::class),
                 self::getContainer()->get(PublishedPages::class),
                 self::getContainer()->get(DailySalt::class),

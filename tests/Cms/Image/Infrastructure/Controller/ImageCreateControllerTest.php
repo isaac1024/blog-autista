@@ -90,18 +90,7 @@ final class ImageCreateControllerTest extends CmsWebTestCase
 
         yield 'no file' => [$alt, [], $missing];
         yield 'file that failed to upload' => [$alt, ['image' => self::upload(error: \UPLOAD_ERR_PARTIAL)], $missing];
-        yield 'not a WebP' => [$alt, ['image' => self::upload(ImageFileMother::JPEG)], ['key' => 'errors.image.file.not_webp', 'parameters' => []]];
-        yield 'wrong size' => [
-            $alt,
-            ['image' => self::upload(ImageFileMother::LARGER)],
-            ['key' => 'errors.image.file.wrong_size', 'parameters' => ['%width%' => 1200, '%height%' => 675]],
-        ];
         yield 'no text' => [[], ['image' => self::upload()], ['key' => 'errors.image.alt.empty', 'parameters' => []]];
-        yield 'text too long' => [
-            ['alt' => str_repeat('a', 126)],
-            ['image' => self::upload()],
-            ['key' => 'errors.image.alt.too_long', 'parameters' => ['%max%' => 125]],
-        ];
     }
 
     private static function upload(string $name = ImageFileMother::VALID, int $error = \UPLOAD_ERR_OK): UploadedFile

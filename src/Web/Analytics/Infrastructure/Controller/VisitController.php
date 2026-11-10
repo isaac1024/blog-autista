@@ -21,6 +21,7 @@ use Web\Analytics\Application\VisitRecorder;
 use Web\Analytics\Domain\DailySalt;
 use Web\Analytics\Domain\Day;
 use Web\Analytics\Domain\PublishedPages;
+use Web\Analytics\Domain\VisitId;
 use Web\Analytics\Domain\VisitRepository;
 
 /**
@@ -30,6 +31,12 @@ use Web\Analytics\Domain\VisitRepository;
  *
  * A visit that breaks a rule of the domain is refused as unprocessable: it
  * comes from no form, so there is no page to tell it on.
+ *
+ * Until the rate limit of the visits is a service of its own, it reaches the
+ * limiter and the day it hashes the address by itself, one dependency past
+ * what PHPMD allows.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 final class VisitController extends AbstractController
 {
@@ -68,6 +75,7 @@ final class VisitController extends AbstractController
 
         try {
             new VisitRecorder(
+                VisitId::random()->value(),
                 $payload->page,
                 $payload->referrer,
                 $payload->source,

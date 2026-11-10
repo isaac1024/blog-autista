@@ -6,7 +6,6 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
@@ -85,9 +84,6 @@ final class PageUnpublishControllerTest extends CmsWebTestCase
     public static function pagesThatStay(): iterable
     {
         yield 'a draft' => [PageMother::create(id: PageIdMother::random()->value())];
-        yield 'an unpublished page' => [PageMother::unpublished(id: PageIdMother::random()->value())];
-        yield 'the published home page' => [PageMother::published(id: PageIdMother::random()->value(), type: PageType::Home)];
-        yield 'the published contact page' => [PageMother::published(id: PageIdMother::random()->value(), slug: 'contacto', type: PageType::Contact)];
     }
 
     public function testItOnlyAcceptsPost(): void

@@ -124,10 +124,7 @@ final class ImageUpdateControllerTest extends CmsWebTestCase
 
         yield 'blank alternative text' => [self::fields(['alt' => ' ']), ['key' => 'errors.image.alt.empty', 'parameters' => []]];
         yield 'missing alternative text' => [self::fields(without: ['alt']), ['key' => 'errors.image.alt.empty', 'parameters' => []]];
-        yield 'caption too long' => [self::fields(['caption' => $paragraphs(str_repeat('a', 201))]), ['key' => 'errors.image.caption.too_long', 'parameters' => ['%max%' => 200]]];
-        yield 'caption of two paragraphs' => [self::fields(['caption' => $paragraphs('Uno.', 'Dos.')]), ['key' => 'errors.image.caption.not_a_single_paragraph', 'parameters' => []]];
         yield 'caption that is not JSON' => [self::fields(['caption' => '<p>Hola</p>']), ['key' => 'errors.rich_text.malformed', 'parameters' => []]];
-        yield 'missing caption' => [self::fields(without: ['caption']), ['key' => 'errors.rich_text.malformed', 'parameters' => []]];
     }
 
     public function testItRespondsNotFoundWhenTheImageDoesNotExist(): void

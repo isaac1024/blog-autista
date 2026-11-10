@@ -21,6 +21,12 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * What a page is saved with, and why an edit is refused, is told by
+ * PageUpdaterTest, and how its content is read by TiptapRichTextTest; here,
+ * how the editor is answered: what it reads of the request, where it goes
+ * once saved or refused, and what it tells.
+ */
 final class PageUpdateControllerTest extends CmsWebTestCase
 {
     use ClockSensitiveTrait;
@@ -121,63 +127,8 @@ final class PageUpdateControllerTest extends CmsWebTestCase
     public static function invalidFields(): iterable
     {
         yield 'invalid title' => [self::fields(['title' => ' '])];
-        yield 'invalid slug' => [self::fields(['slug' => 'Quién Soy'])];
         yield 'missing title' => [self::fields(without: ['title'])];
-        yield 'missing content' => [self::fields(without: ['content'])];
         yield 'content that is not JSON' => [self::fields(['content' => '<p>Hola</p>'])];
-        yield 'content with a block the editor does not offer' => [self::fields(['content' => '{"type":"doc","content":[{"type":"video","attrs":{"src":"x.mp4"}}]}'])];
-        yield 'content with a heading level a page does not allow' => [self::fields(['content' => json_encode(['type' => 'doc', 'content' => [
-            ['type' => 'heading', 'attrs' => ['level' => 2], 'content' => [['type' => 'text', 'text' => 'A']]],
-            ['type' => 'heading', 'attrs' => ['level' => 3], 'content' => [['type' => 'text', 'text' => 'B']]],
-            ['type' => 'heading', 'attrs' => ['level' => 4], 'content' => [['type' => 'text', 'text' => 'C']]],
-        ]], \JSON_THROW_ON_ERROR)])];
-        yield 'meta description too long' => [self::fields(['meta_description' => str_repeat('a', 201)])];
-        yield 'unknown robots directive' => [self::fields(['robots' => 'noindex'])];
-        yield 'missing robots directive' => [self::fields(without: ['robots'])];
-    }
-
-    public function testItGoesBackAndKeepsThePageWhenAnotherPageHasTheSlug(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $page = $this->savePage();
-        self::getContainer()->get(PageRepository::class)->save(
-            PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'),
-        );
-
-        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $page->id()->value()), self::fields(['slug' => 'contacto']));
-
-        // The request edits the very instance saved above before the slug check
-        // fails, so the stored page is compared against a fresh copy instead.
-        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
-        self::assertEquals(
-            PageMother::create(id: $page->id()->value(), title: 'Sobre mí', slug: 'sobre-mi'),
-            $this->storedPage($page),
-        );
-    }
-
-    public function testItSavesTheHomePageWithoutASlug(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
-        self::getContainer()->get(PageRepository::class)->save($home);
-
-        // The editor of the home page has no slug field, so none is posted.
-        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio'], without: ['slug']));
-
-        self::assertResponseRedirects('/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
-        self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Inicio'), $this->storedPage($home));
-    }
-
-    public function testItGoesBackAndKeepsTheHomePageWhenItIsGivenASlug(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $home = PageMother::home(id: PageIdMother::random()->value(), title: 'Portada');
-        self::getContainer()->get(PageRepository::class)->save($home);
-
-        $this->post($client, 'cms_pages_update', \sprintf(self::URL, $home->id()->value()), self::fields(['title' => 'Inicio', 'slug' => 'inicio']));
-
-        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$home->id()->value(), Response::HTTP_SEE_OTHER);
-        self::assertEquals(PageMother::home(id: $home->id()->value(), title: 'Portada'), $this->storedPage($home));
     }
 
     /**

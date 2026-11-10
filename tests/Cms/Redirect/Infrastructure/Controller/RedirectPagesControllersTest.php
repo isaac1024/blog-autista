@@ -65,7 +65,7 @@ final class RedirectPagesControllersTest extends CmsWebTestCase
 
     /**
      * Every shape the list takes is painted, narrowed to a resource or not;
-     * what isn't a resource leaves it searching.
+     * which resource a target names is told by NarrowedTargetTest.
      */
     #[DataProvider('listQueries')]
     public function testItOpensTheListOfRedirects(string $query): void
@@ -86,9 +86,7 @@ final class RedirectPagesControllersTest extends CmsWebTestCase
         yield 'a search' => ['?source=%20vieja%20'];
         yield 'a page past the end' => ['?page=9'];
         yield 'those leading to a page' => ['?target=page:'.self::PAGE];
-        yield 'a resource without an id' => ['?target=page'];
-        yield 'a resource of no kind' => ['?target=video:'.self::PAGE];
-        yield 'a resource with no id of one' => ['?target=page:sobre-mi'];
+        yield 'what narrows it to nothing' => ['?target=page:sobre-mi'];
     }
 
     public function testItAnswersNotFoundForAnInvalidPageNumberOfTheList(): void

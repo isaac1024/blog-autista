@@ -7,10 +7,7 @@ namespace Cms\Redirect\Infrastructure\Controller;
 use Cms\Redirect\Application\IncomingRedirectsFinder;
 use Cms\Redirect\Application\RedirectSearcher;
 use Cms\Redirect\Domain\RedirectRepository;
-use Cms\Redirect\Domain\Resource;
-use Cms\Redirect\Domain\ResourceType;
 use Shared\Domain\Criteria\InvalidCriteria;
-use Shared\Domain\DomainError;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,7 +36,7 @@ final class RedirectListController extends AbstractController
         #[MapQueryParameter]
         string $target = '',
     ): Response {
-        $resource = self::resource($target);
+        $resource = NarrowedTarget::fromQuery($target);
 
         try {
             $redirects = null === $resource
@@ -50,20 +47,5 @@ final class RedirectListController extends AbstractController
         }
 
         return $this->pageRenderer->render(($this->redirectList)($redirects, $source, $resource, $page));
-    }
-
-    /**
-     * The resource the list is narrowed to, written as "page:<id>", if any.
-     */
-    private static function resource(string $target): ?Resource
-    {
-        [$type, $id] = [...explode(':', $target, 2), ''];
-        $type = ResourceType::tryFrom($type);
-
-        try {
-            return null === $type ? null : new Resource($type, $id);
-        } catch (DomainError) {
-            return null;
-        }
     }
 }

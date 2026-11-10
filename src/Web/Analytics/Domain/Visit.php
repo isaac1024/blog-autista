@@ -15,7 +15,9 @@ use Doctrine\ORM\Mapping as ORM;
  * No event tells of it: there is one for every page seen, and nothing else
  * needs to know.
  *
- * Its constructor takes all of its state, one parameter each, as Doctrine maps it.
+ * Its constructor takes all of its state, one parameter each, as Doctrine
+ * maps it: Doctrine hydrates it without calling it, and record() starts each
+ * field.
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
@@ -24,7 +26,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'idx_web_visit_day', columns: ['day'])]
 final class Visit
 {
-    private function __construct(
+    public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'web_visit_id')]
         private readonly VisitId $id,
@@ -44,10 +46,10 @@ final class Visit
         private readonly ?string $country,
     ) {}
 
-    public static function record(PageId $pageId, Day $day, Arrival $arrival, Reader $reader): self
+    public static function record(VisitId $id, PageId $pageId, Day $day, Arrival $arrival, Reader $reader): self
     {
         return new self(
-            VisitId::random(),
+            $id,
             $pageId->value(),
             $day->date(),
             $arrival->channel(),

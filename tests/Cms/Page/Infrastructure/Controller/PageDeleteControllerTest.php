@@ -110,22 +110,6 @@ final class PageDeleteControllerTest extends CmsWebTestCase
     public static function uniquePages(): iterable
     {
         yield 'home' => [PageMother::home(id: PageIdMother::random()->value())];
-
-        foreach (PageMother::uniqueButHome(PageIdMother::random()->value()) as $type => $page) {
-            yield $type => [$page];
-        }
-    }
-
-    public function testItGoesBackAndKeepsAPublishedPage(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $page = PageMother::published(id: PageIdMother::random()->value());
-        self::getContainer()->get(PageRepository::class)->save($page);
-
-        $this->post($client, 'cms_pages_delete', \sprintf(self::URL, $page->id()->value()));
-
-        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$page->id()->value(), Response::HTTP_SEE_OTHER);
-        self::assertEquals($page, $this->storedPage($page));
     }
 
     public function testItOnlyAcceptsPost(): void

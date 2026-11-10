@@ -13,6 +13,7 @@ use Web\Analytics\Domain\PublishedPages;
 use Web\Analytics\Domain\Reader;
 use Web\Analytics\Domain\UserAgent;
 use Web\Analytics\Domain\Visit;
+use Web\Analytics\Domain\VisitId;
 use Web\Analytics\Domain\VisitRepository;
 
 /**
@@ -31,6 +32,7 @@ final readonly class VisitRecorder
      * @param list<string> $siteHosts the hosts of the blog, whose pages are within the site
      */
     public function __construct(
+        private string $id,
         private string $pageId,
         private string $referrer,
         private string $campaignSource,
@@ -58,7 +60,7 @@ final readonly class VisitRecorder
 
         $day = Day::today();
 
-        Visit::record($pageId, $day, $arrival, Reader::from($dailySalt->forDay($day), $this->address, $userAgent, $country))
+        Visit::record(new VisitId($this->id), $pageId, $day, $arrival, Reader::from($dailySalt->forDay($day), $this->address, $userAgent, $country))
             ->save($visitRepository);
     }
 }

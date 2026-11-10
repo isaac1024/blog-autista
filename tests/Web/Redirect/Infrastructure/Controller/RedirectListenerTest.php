@@ -18,8 +18,10 @@ use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 
 /**
- * The site answers an address it has nothing of its own at by its redirect:
- * a permanent redirect to where the target is now, or gone.
+ * What an address answers, however it is asked for, is told by
+ * AddressAnswerFinderTest; here, how the site answers it: a permanent
+ * redirect kept a while, a page gone, or nothing, only to what is read, and
+ * never over a page of its own.
  */
 final class RedirectListenerTest extends WebTestCase
 {
@@ -65,8 +67,6 @@ final class RedirectListenerTest extends WebTestCase
      */
     public static function widths(): iterable
     {
-        yield 'the smallest' => [400];
-        yield 'the middle one' => [800];
         yield 'the largest' => [1200];
     }
 
@@ -128,18 +128,6 @@ final class RedirectListenerTest extends WebTestCase
     }
 
     /**
-     * An address longer than any a redirect is kept at has none.
-     */
-    public function testItFindsNothingAtAnAddressLongerThanAnyRedirectHas(): void
-    {
-        $client = $this->site();
-
-        $client->request('GET', self::HOST.'/'.str_repeat('a', 300).'.html');
-
-        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-    }
-
-    /**
      * @return iterable<string, array{?string, int}>
      */
     public static function imagesWithNothing(): iterable
@@ -173,9 +161,6 @@ final class RedirectListenerTest extends WebTestCase
     public static function sameAddresses(): iterable
     {
         yield 'with capitals' => ['/Guía-Antigua.html'];
-        yield 'all in capitals, accents too' => ['/GUÍA-ANTIGUA.html'];
-        yield 'encoded in capitals' => ['/gu%C3%ADa-antigua.html'];
-        yield 'through a dot segment' => ['/blog/../guía-antigua.html'];
     }
 
     /**

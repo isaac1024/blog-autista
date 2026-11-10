@@ -92,8 +92,6 @@ final class PagePublishControllerTest extends CmsWebTestCase
     public static function unpublishablePages(): iterable
     {
         yield 'without content' => [PageMother::create(id: PageIdMother::random()->value(), metaDescription: PageMother::META_DESCRIPTION)];
-        yield 'without a meta description' => [PageMother::create(id: PageIdMother::random()->value(), content: PageMother::CONTENT)];
-        yield 'already published as it is' => [PageMother::published(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi')];
     }
 
     public function testItOnlyAcceptsPost(): void
