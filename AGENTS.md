@@ -1,28 +1,24 @@
 # AGENTS.md
 
 This is a Symfony project. Check `composer.json` for the exact Symfony/PHP version
-in use, and read `symfony.lock` to see which recipes ran. Don't assume Doctrine,
-Twig, API Platform, Messenger, or Lock are installed unless one of those says so.
+in use, and read `symfony.lock` to see which recipes ran.
 
-## Ask before generating
+## Stack
 
-If the task doesn't specify, ask rather than guess:
-
-- Persistence: Doctrine ORM, Doctrine ODM, or none?
-- Interface: server-rendered (Twig), API (Serializer, maybe API Platform), or both?
-- Auth: SecurityBundle, and which authenticator?
-
-If you can't ask (no interactive channel), state the assumption you're making and
-pick the smallest option (e.g. no persistence layer) rather than scaffolding a
-full stack nobody asked for.
+Persistence is Doctrine ORM with migrations, on MariaDB. The interface is
+server-rendered Twig with Symfony UX Twig Components. Auth is SecurityBundle with
+`form_login`. Lock and Messenger are installed. For anything outside this stack,
+ask rather than guess.
 
 ## Adding features: Flex, not hand-wiring
 
 Install new capabilities with `composer require <package>` (e.g. `symfony/lock`,
 `symfony/messenger`, `orm-pack`) and let the Flex recipe register the bundle and
 generate its config. Don't hand-edit `config/bundles.php` or hand-write a bundle's
-base config; that's what the recipe is for. Don't skip a good-fit component just
-because it isn't installed yet; installing it is one command.
+base config; that's what the recipe is for. Every new package, including making a
+transitive dependency direct, is proposed to the user first and installed only
+after they agree. When a Symfony component fits, propose it rather than
+hand-writing the infrastructure.
 
 ## Conventions
 
@@ -57,7 +53,7 @@ Three specifics worth spelling out, because they are easy to get wrong:
 - Bind request data with `#[MapRequestPayload]` / `#[MapQueryString]` on action
   arguments, which wires up Serializer and Validator for you, instead of calling
   `json_decode()` or `SerializerInterface` by hand. If neither package is
-  installed yet, `composer require` them rather than falling back to manual
+  installed yet, propose installing them rather than falling back to manual
   parsing.
 - Use constructor property promotion, and `readonly` for DTOs and value objects.
 - Use `symfony/lock` (`LockFactory`) for mutual exclusion. A hand-built flag or
@@ -65,28 +61,29 @@ Three specifics worth spelling out, because they are easy to get wrong:
 
 ## Everyday workflow
 
-- Run the app with `symfony serve -d`, and commands with `symfony console ...`
-  (or `bin/console` when the Symfony CLI isn't available).
-- When something fails, read `var/log/dev.log` and the web profiler
-  (`/_profiler`) before changing code.
+- The app runs in Docker Compose, a local copy of the Hetzner hosting stack:
+  `docker compose up -d --build`, then commands with
+  `docker compose exec -u www-data php bin/console ...` (Composer:
+  `docker compose run --rm -u www-data php composer ...`).
+- When something fails, read the logs under `var/log/` before changing code.
 - If `maker-bundle` is installed, prefer `bin/console make:*` with every argument
   passed up front and `--no-interaction` where supported: makers prompt on a
   terminal by default, which hangs a non-interactive shell. If a maker still
   needs interactive input, hand-write the code instead.
-- If Doctrine ORM is installed, schema changes go through migrations
-  (`bin/console make:migration`, then `doctrine:migrations:migrate`), never
-  `doctrine:schema:update` or hand-written SQL.
+- Schema changes go through migrations (`bin/console make:migration`, then
+  `doctrine:migrations:migrate`), never `doctrine:schema:update` or hand-written SQL.
 - `.env` is committed and holds defaults only. Real secrets belong in `.env.local`
   (git-ignored) or the secrets vault (`bin/console secrets:set`), read via
   `%env(...)%`.
 
 ## Testing
 
-Install `symfony/test-pack` if it isn't already. Functional/HTTP tests extend
-`WebTestCase`; service-level tests extend `KernelTestCase`. Run
-`php bin/phpunit` (falls back to `vendor/bin/phpunit`). A feature isn't done
-until it has a test that exercises it the way a caller would, an HTTP request for
-a controller or a service call for a service, not just "it didn't throw."
+Functional/HTTP tests extend `WebTestCase`; service-level tests extend
+`KernelTestCase`. Run `composer test` (paratest), or `composer test:serial` for
+plain PHPUnit. A task isn't done until
+it has tests that exercise it the way a caller would, an HTTP request for a
+controller or a service call for a service, not just "it didn't throw." A task
+done step by step can leave its testing for the final step.
 
 Don't test the interface with PHPUnit. No `assertSelector*` and no assertions on
 markup, CSS classes or UI copy. PHPUnit covers HTTP behavior (status codes,
@@ -98,8 +95,8 @@ gate; the W3C CSS3 validator cannot parse its modern output.
 ## Code style
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
-superset). Run `vendor/bin/php-cs-fixer fix` if `friendsofphp/php-cs-fixer` is
-installed; it isn't part of the skeleton by default.
+superset). `composer cs` fixes PHP style and `composer twig:cs` fixes Twig style;
+`composer check` runs the whole gate (style, phpmd, phpstan, schema validation, tests).
 
 ## Discover, don't guess
 
