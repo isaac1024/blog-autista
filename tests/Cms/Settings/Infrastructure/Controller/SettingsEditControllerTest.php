@@ -11,6 +11,10 @@ use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * What the editor offers is told by SettingsEditorTest; here, that it is
+ * served, and painted, for every shape of settings it composes.
+ */
 final class SettingsEditControllerTest extends CmsWebTestCase
 {
     private const string URL = 'http://cms.blogautista.localhost/settings';
@@ -49,6 +53,7 @@ final class SettingsEditControllerTest extends CmsWebTestCase
 
         yield 'a draft with only a name' => [Mother::create()];
         yield 'a draft with everything' => [Mother::create($everything)];
+        yield 'published settings as they are on the site' => [Mother::published($everything)];
         yield 'published settings with changes' => [Mother::published($everything, Mother::version())];
     }
 

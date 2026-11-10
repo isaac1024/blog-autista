@@ -27,14 +27,21 @@ final class Panel
     public array $children = [];
 
     /**
-     * A disclosure opens by its title, so it can't go without one.
+     * A disclosure opens by its title, and a description is painted under
+     * the title it describes, so neither goes without one.
      *
      * @param list<\Shared\Infrastructure\Ui\Page\PageComponent> $children
      */
     public function mount(?string $title = null, ?string $description = null, array $children = [], string $variant = 'default'): void
     {
-        if ('disclosure' === $variant && (null === $title || '' === $title)) {
+        $untitled = null === $title || '' === $title;
+
+        if ($untitled && 'disclosure' === $variant) {
             throw new \InvalidArgumentException('A disclosure panel needs a title to open it by.');
+        }
+
+        if ($untitled && null !== $description) {
+            throw new \InvalidArgumentException('A panel needs a title for its description to be painted under.');
         }
 
         $this->title = $title;

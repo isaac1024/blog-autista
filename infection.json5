@@ -24,7 +24,6 @@
         "global-ignore": [
             "*\\Controller\\*::page",
             "*\\Controller\\*::row",
-            "*\\Controller\\*Controller::formActions",
             // The panels of the redirects only choose what an editor reads.
             "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
             "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke"
