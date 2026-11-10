@@ -26,10 +26,10 @@ final class LockFactoryMutualExclusionTest extends TestCase
         $result = new LockFactoryMutualExclusion(new LockFactory($store))->run(['page:b', 'address:/x.html', 'page:b', 'image:a'], static function () use ($store, &$held): string {
             $held = $store->held();
 
-            return 'done';
+            return implode(',', $held);
         });
 
-        self::assertSame('done', $result);
+        self::assertSame('address:/x.html,image:a,page:b', $result);
         self::assertSame(['address:/x.html', 'image:a', 'page:b'], $store->taken);
         self::assertSame(['address:/x.html', 'image:a', 'page:b'], $held);
         self::assertSame([], $store->held());
@@ -38,13 +38,15 @@ final class LockFactoryMutualExclusionTest extends TestCase
     public function testItLetsTheKeysGoWhenTheWorkFails(): void
     {
         $store = new RecordingStore();
+        $failure = null;
 
         try {
             new LockFactoryMutualExclusion(new LockFactory($store))->run(['page:b', 'image:a'], static fn () => throw new \RuntimeException('Refused.'));
-            self::fail('The work did not fail.');
         } catch (\RuntimeException $exception) {
-            self::assertSame('Refused.', $exception->getMessage());
+            $failure = $exception->getMessage();
         }
+
+        self::assertSame('Refused.', $failure, 'The failure of the work goes on to its caller.');
 
         self::assertSame(['image:a', 'page:b'], $store->taken);
         self::assertSame([], $store->held());

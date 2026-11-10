@@ -187,8 +187,9 @@ final class PagePublishRedirectsTest extends CmsWebTestCase
         $this->post($client, 'cms_pages_publish', \sprintf(self::URL, self::PAGE), ['outlook' => $this->outlook(), 'previous' => ['action' => 'keep']]);
 
         $former = $this->redirectAt('/sobre-mi.html');
-        self::assertSame(self::OTHER, $former?->target()->resource()?->id());
-        self::assertNull($former?->origin()->resource());
+        self::assertNotNull($former);
+        self::assertSame(self::OTHER, $former->target()->resource()?->id());
+        self::assertNull($former->origin()->resource());
     }
 
     /**

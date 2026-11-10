@@ -117,9 +117,10 @@ final readonly class TiptapRichText
     {
         $content = self::content($node, $path);
         $last = array_key_last($content);
+        $sourcePath = \sprintf('%s.content[%d]', $path, $last);
         $source = null;
 
-        if (null !== $last && 'quoteSource' === self::type($content[$last], $sourcePath = \sprintf('%s.content[%d]', $path, $last))) {
+        if (null !== $last && 'quoteSource' === self::type($content[$last], $sourcePath)) {
             $source = self::plainText(self::node($content[$last], 'quoteSource', $sourcePath), $sourcePath);
             $node['content'] = \array_slice($content, 0, $last);
         }
