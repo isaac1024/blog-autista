@@ -45,10 +45,12 @@ use Shared\Domain\RichText\RichTextFeatures;
  * Its rules reach every value object, error and event of the page, so its
  * coupling grows with what a page is rather than with how it is designed;
  * so do its methods, one per rule and per thing told of it, such as each of
- * its slugs.
+ * its slugs, and the branches of those rules, which have to hold together as
+ * the boundary of one page.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  * @SuppressWarnings("PHPMD.TooManyMethods")
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_page')]

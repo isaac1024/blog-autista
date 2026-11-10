@@ -110,7 +110,7 @@ final class TiptapRichTextTest extends TestCase
         yield 'empty paragraphs and items are dropped from their blocks' => [
             [
                 ['type' => 'blockquote', 'content' => [['type' => 'paragraph'], self::paragraph('Cita')]],
-                ['type' => 'bulletList', 'content' => [self::item('Uno'), ['type' => 'listItem', 'content' => [['type' => 'paragraph']]]]],
+                ['type' => 'bulletList', 'content' => [['type' => 'listItem', 'content' => [['type' => 'paragraph']]], self::item('Uno')]],
             ],
             [
                 ['type' => 'quote', 'paragraphs' => [[['text' => 'Cita']]]],
