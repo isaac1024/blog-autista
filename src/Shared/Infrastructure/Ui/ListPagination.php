@@ -14,6 +14,11 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  */
 final readonly class ListPagination
 {
+    /**
+     * The page a list opens at, which its links lead to without a number.
+     */
+    public const int FIRST_PAGE = 1;
+
     public function __construct(
         private TranslatorInterface $translator,
         private UrlGeneratorInterface $urlGenerator,
@@ -29,7 +34,7 @@ final readonly class ListPagination
         return [
             'label' => $this->translator->trans('cms.pagination.label'),
             'current' => $this->translator->trans('cms.pagination.current', ['%page%' => $page]),
-            'previousUrl' => $page > 1 ? $this->url($route, $parameters, $page - 1) : null,
+            'previousUrl' => $page > self::FIRST_PAGE ? $this->url($route, $parameters, $page - 1) : null,
             'previousLabel' => $this->translator->trans('cms.pagination.previous'),
             'nextUrl' => $hasMore ? $this->url($route, $parameters, $page + 1) : null,
             'nextLabel' => $this->translator->trans('cms.pagination.next'),
@@ -43,6 +48,6 @@ final readonly class ListPagination
      */
     private function url(string $route, array $parameters, int $page): string
     {
-        return $this->urlGenerator->generate($route, 1 === $page ? $parameters : [...$parameters, 'page' => $page]);
+        return $this->urlGenerator->generate($route, self::FIRST_PAGE === $page ? $parameters : [...$parameters, 'page' => $page]);
     }
 }
