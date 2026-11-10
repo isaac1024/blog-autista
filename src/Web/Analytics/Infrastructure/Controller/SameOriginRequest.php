@@ -7,12 +7,15 @@ namespace Web\Analytics\Infrastructure\Controller;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Tells a request a page of the site made from one another site made: the
- * browser says so in Sec-Fetch-Site, or, in one too old for it, in Origin.
+ * Tells a request a page of the same origin made, scheme, host and port,
+ * from one any other made: the browser says so in Sec-Fetch-Site, or, in one
+ * too old for it, in Origin.
+ *
+ * Only a browser is held to it: any other client can say what it likes.
  */
 final readonly class SameOriginRequest
 {
-    public static function isFromSite(Request $request, string $siteHost): bool
+    public static function isFromSite(Request $request): bool
     {
         $site = $request->headers->get('Sec-Fetch-Site');
 
@@ -20,8 +23,6 @@ final readonly class SameOriginRequest
             return 'same-origin' === $site;
         }
 
-        $origin = $request->headers->get('Origin');
-
-        return null !== $origin && $siteHost === parse_url($origin, \PHP_URL_HOST);
+        return $request->getSchemeAndHttpHost() === $request->headers->get('Origin');
     }
 }

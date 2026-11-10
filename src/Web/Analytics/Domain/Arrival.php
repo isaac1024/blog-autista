@@ -9,9 +9,11 @@ namespace Web\Analytics\Domain;
  * the site, the source that sent them, which is the campaign's name or the
  * domain of the page they left.
  *
- * A campaign's medium or known source says the channel; else the address of
- * the page they left does. A campaign of an unknown source with no such page
- * still came from somewhere, so it is a referral rather than direct.
+ * A page of the site left is no entry, whatever campaign its link names: the
+ * reader was already on the site. Else a campaign's medium or known source
+ * says the channel, and failing those the address of the page they left
+ * does. A campaign of an unknown source with no such page still came from
+ * somewhere, so it is a referral rather than direct.
  */
 final readonly class Arrival
 {
@@ -40,9 +42,10 @@ final readonly class Arrival
 
         $source = self::campaignSource($campaignSource);
         $host = self::host($referrer);
-        $channel = Channel::ofMedium(strtolower(trim($campaignMedium)))
+        $channel = self::channelWithin($host, $siteHosts)
+            ?? Channel::ofMedium(strtolower(trim($campaignMedium)))
             ?? (null === $source ? null : Channel::ofSourceName($source))
-            ?? self::channelOfHost($host, $siteHosts)
+            ?? (null === $host ? null : Channel::ofHost($host))
             ?? (null === $source ? Channel::Direct : Channel::Referral);
 
         if (!$channel->isEntry()) {
@@ -95,15 +98,13 @@ final readonly class Arrival
     }
 
     /**
+     * Internal for a page of the site left, none for any other.
+     *
      * @param list<string> $siteHosts
      */
-    private static function channelOfHost(?string $host, array $siteHosts): ?Channel
+    private static function channelWithin(?string $host, array $siteHosts): ?Channel
     {
-        if (null === $host) {
-            return null;
-        }
-
-        return \in_array($host, $siteHosts, true) ? Channel::Internal : Channel::ofHost($host);
+        return null !== $host && \in_array($host, $siteHosts, true) ? Channel::Internal : null;
     }
 
     /**

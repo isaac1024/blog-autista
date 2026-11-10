@@ -1,7 +1,10 @@
 framework:
     rate_limiter:
-        # The visits a reader may send the site in a minute: far more than
+        # The visits one address may send the site in a minute: far more than
         # anyone reads, few enough to keep the counts from being flooded.
+        # Readers behind the same address (a NAT, an office) share it, and a
+        # client that is no browser can still forge visits within it: the
+        # counts are only as true as those who send them.
         web_visit:
             policy: sliding_window
             limit: 60

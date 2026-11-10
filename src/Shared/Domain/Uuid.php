@@ -7,15 +7,20 @@ namespace Shared\Domain;
 use Symfony\Component\Uid\Uuid as SymfonyUuid;
 
 /**
- * Base value object for identifiers expressed as an RFC 4122 UUID.
+ * Base value object for identifiers expressed as an RFC 4122 UUID, kept in
+ * lowercase as the database gives them back, however they were written.
  */
 abstract readonly class Uuid implements \Stringable
 {
-    final public function __construct(private string $value)
+    private string $value;
+
+    final public function __construct(string $value)
     {
         if (!SymfonyUuid::isValid($value)) {
             throw InvalidUuid::withValue($value);
         }
+
+        $this->value = strtolower($value);
     }
 
     #[\Override]

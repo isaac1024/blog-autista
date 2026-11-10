@@ -14,6 +14,12 @@ final readonly class Days
 {
     public const string TIME_ZONE = 'Europe/Madrid';
 
+    /**
+     * The hour of Madrid by which the nightly count is done: it runs between
+     * 00:10 and 02:10, as summer time moves it.
+     */
+    public const int NIGHTLY_COUNT_DONE_BY = 3;
+
     private function __construct(
         private \DateTimeImmutable $first,
         private \DateTimeImmutable $last,
@@ -34,6 +40,18 @@ final readonly class Days
         $today = self::todayInMadrid();
 
         return new self($today->modify(\sprintf('-%d days', $period->days())), $today->modify('-1 day'));
+    }
+
+    /**
+     * Whether a day still kept uncounted should have been counted by now: any
+     * before yesterday, and yesterday once the night's count is done.
+     */
+    public static function isOverdue(string $day): bool
+    {
+        $now = Clock::now()->setTimezone(new \DateTimeZone(self::TIME_ZONE));
+        $due = self::todayInMadrid()->modify($now >= $now->setTime(self::NIGHTLY_COUNT_DONE_BY, 0) ? '-1 day' : '-2 days');
+
+        return $day <= $due->format('Y-m-d');
     }
 
     public function first(): string

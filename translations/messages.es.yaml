@@ -53,6 +53,9 @@ cms:
             table: 'Ver como tabla'
             day: 'Día'
             unit: 'vistas'
+        uncounted:
+            title: 'La cuenta nocturna no se ha hecho.'
+            message: 'Quedan visitas sin contar desde el %day%, y de ellas el sitio aún distingue a un lector de otro. Comprueba que el cron ejecute «messenger:consume scheduler_default».'
         pages:
             caption: 'Páginas'
             name: 'Página'

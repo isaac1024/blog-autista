@@ -60,6 +60,7 @@ final class VisitControllerTest extends WebTestCase
         yield 'no page left' => ['', '', '', 'direct', null];
         yield 'a page of the site' => [self::HOST.'/otra.html', '', '', 'internal', null];
         yield 'the CMS' => ['http://cms.blogautista.localhost/pages', '', '', 'internal', null];
+        yield 'a page of the site, though its link names a campaign' => [self::HOST.'/otra.html', 'instagram', 'social', 'internal', null];
         yield 'webmail, though on a search engine' => ['https://mail.google.com/', '', '', 'email', 'mail.google.com'];
         yield 'an AI assistant, though on a search engine' => ['https://gemini.google.com/', '', '', 'ai', 'gemini.google.com'];
         yield 'another AI assistant' => ['https://chatgpt.com/', '', '', 'ai', 'chatgpt.com'];
@@ -248,6 +249,8 @@ final class VisitControllerTest extends WebTestCase
         yield 'another site' => [['HTTP_SEC_FETCH_SITE' => 'cross-site']];
         yield 'another host of the same site' => [['HTTP_SEC_FETCH_SITE' => 'same-site']];
         yield 'another origin' => [['HTTP_ORIGIN' => 'https://example.org']];
+        yield 'the host of the site under another scheme' => [['HTTP_ORIGIN' => 'https://www.blogautista.localhost']];
+        yield 'the host of the site at another port' => [['HTTP_ORIGIN' => 'http://www.blogautista.localhost:8080']];
         yield 'no word of where it comes from' => [[]];
     }
 
@@ -263,6 +266,19 @@ final class VisitControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
         self::assertSame([], $this->visits());
+    }
+
+    /**
+     * An id written in capitals is the same page, kept as the CMS names it.
+     */
+    public function testItKeepsThePageAsItsIdIsWrittenOnTheSite(): void
+    {
+        $client = $this->clientWithPage();
+
+        $this->visit($client, page: strtoupper(self::PAGE));
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NO_CONTENT);
+        self::assertSame(self::PAGE, $this->visits()[0]['page_id']);
     }
 
     public function testItRefusesAVisitToAPageOffTheSite(): void

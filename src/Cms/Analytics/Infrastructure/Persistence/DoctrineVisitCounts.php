@@ -54,4 +54,12 @@ final readonly class DoctrineVisitCounts implements VisitCounts
 
         return $counts;
     }
+
+    #[\Override]
+    public function oldestUncountedDay(): ?string
+    {
+        $day = $this->connection->fetchOne('SELECT MIN(day) FROM web_visit');
+
+        return \is_string($day) ? $day : null;
+    }
 }

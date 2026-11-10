@@ -6,7 +6,8 @@ namespace Cms\Analytics\Application;
 
 /**
  * The visits to the site over a period ending yesterday, day by day, and
- * those of today so far.
+ * those of today so far; and, when the nightly count is late, the oldest day
+ * it left uncounted, whose readers the site still tells apart.
  */
 final readonly class VisitReport
 {
@@ -17,5 +18,6 @@ final readonly class VisitReport
         public VisitSummary $period,
         public array $days,
         public VisitSummary $today,
+        public ?string $uncountedSince,
     ) {}
 }

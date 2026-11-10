@@ -31,11 +31,13 @@ final readonly class VisitReportFinder
     {
         $days = Days::endingYesterday($this->period);
         $counts = $visitCounts->during($days);
+        $uncounted = $visitCounts->oldestUncountedDay();
 
         return new VisitReport(
             $this->summary($counts, $pageTitles),
             self::days($days, $counts),
             $this->summary($visitCounts->during(Days::today()), $pageTitles),
+            null !== $uncounted && Days::isOverdue($uncounted) ? $uncounted : null,
         );
     }
 

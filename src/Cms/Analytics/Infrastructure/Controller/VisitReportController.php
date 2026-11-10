@@ -68,6 +68,13 @@ final class VisitReportController extends AbstractController
                 ], Period::cases()),
             ]);
 
+        if (null !== $report->uncountedSince) {
+            $page = $page->withMain('Shared:Alert', [
+                'title' => $this->trans('cms.analytics.uncounted.title'),
+                'message' => $this->trans('cms.analytics.uncounted.message', ['%day%' => new \DateTimeImmutable($report->uncountedSince)->format('j/n/Y')]),
+            ]);
+        }
+
         if (0 === $report->period->views && 0 === $report->today->views) {
             return $page->withMain('Shared:EmptyState', [
                 'title' => $this->trans('cms.analytics.empty.title'),

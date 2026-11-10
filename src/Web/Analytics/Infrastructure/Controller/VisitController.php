@@ -52,7 +52,7 @@ final class VisitController extends AbstractController
         PublishedPages $publishedPages,
         DailySalt $dailySalt,
     ): Response {
-        if (!SameOriginRequest::isFromSite($request, $this->webHost)) {
+        if (!SameOriginRequest::isFromSite($request)) {
             throw new AccessDeniedHttpException('A visit is only taken from a page of the site.');
         }
 

@@ -53,6 +53,9 @@ cms:
             table: 'Show as a table'
             day: 'Day'
             unit: 'views'
+        uncounted:
+            title: 'The nightly count has not run.'
+            message: 'Visits are left uncounted since %day%, and for them the site still tells one reader from another. Check that cron runs “messenger:consume scheduler_default”.'
         pages:
             caption: 'Pages'
             name: 'Page'

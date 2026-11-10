@@ -14,4 +14,10 @@ interface VisitCounts
      * @return list<Count>
      */
     public function during(Days $days): array;
+
+    /**
+     * The oldest day the site still keeps the visits of, not counted yet,
+     * or none when it keeps none.
+     */
+    public function oldestUncountedDay(): ?string;
 }

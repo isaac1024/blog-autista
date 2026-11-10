@@ -14,6 +14,7 @@ use Cms\Analytics\Domain\VisitCounts;
 use Cms\Page\Domain\PageRepository;
 use Cms\Tests\Page\Domain\PageMother;
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -92,6 +93,50 @@ final class VisitReportFinderTest extends KernelTestCase
         self::assertSame(self::rows([new ReportRow('direct', null, 1, 1)]), self::rows($report->today->channels));
     }
 
+    /**
+     * A day before yesterday still kept means the nightly count is late.
+     */
+    public function testItTellsTheOldestDayTheNightlyCountMissed(): void
+    {
+        self::assertSame('2026-11-05', $this->report()->uncountedSince);
+    }
+
+    /**
+     * @return iterable<string, array{string, ?string}>
+     */
+    public static function nightsOfYesterday(): iterable
+    {
+        yield 'before the count is done' => ['2026-11-09 02:59:59 Europe/Madrid', null];
+        yield 'once it is done' => ['2026-11-09 03:00:00 Europe/Madrid', '2026-11-08'];
+        yield 'once it is done, told in universal time' => ['2026-11-09 02:00:00 UTC', '2026-11-08'];
+    }
+
+    /**
+     * Yesterday is only late once the night's count is done.
+     */
+    #[DataProvider('nightsOfYesterday')]
+    public function testYesterdayIsLateOnceTheNightIsOver(string $now, ?string $uncountedSince): void
+    {
+        self::bootKernel();
+        self::mockTime($now);
+        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f104', 'page_id' => self::PAGE, 'day' => '2026-11-08', 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
+
+        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
+
+        self::assertSame($uncountedSince, $report->uncountedSince);
+    }
+
+    public function testTodayIsNeverLate(): void
+    {
+        self::bootKernel();
+        self::mockTime('2026-11-09 23:59:59 Europe/Madrid');
+        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f105', 'page_id' => self::PAGE, 'day' => '2026-11-09', 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
+
+        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
+
+        self::assertNull($report->uncountedSince);
+    }
+
     public function testItReportsNothingWhenNothingWasCounted(): void
     {
         self::bootKernel();
@@ -101,6 +146,7 @@ final class VisitReportFinderTest extends KernelTestCase
 
         self::assertSame([0, 0, [], [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->pages, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
         self::assertCount(7, $report->days);
+        self::assertNull($report->uncountedSince);
     }
 
     public function testThePeriodsLookAsFarBackAsTheySay(): void

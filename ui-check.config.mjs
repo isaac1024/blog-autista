@@ -65,6 +65,12 @@ if (cmsSession) {
             path: '/images',
             headers: cmsHeaders,
         },
+        {
+            name: 'cms-analytics',
+            host: cmsHost,
+            path: '/analytics',
+            headers: cmsHeaders,
+        },
     );
 }
 
