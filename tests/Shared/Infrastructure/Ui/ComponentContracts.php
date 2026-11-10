@@ -152,7 +152,10 @@ final class ComponentContracts
         );
 
         try {
-            $reflection->getMethod('mount')->invokeArgs($reflection->newInstance(), $arguments);
+            // Called as Twig calls it, from outside the component.
+            $mount = [$reflection->newInstance(), 'mount'];
+            Assert::assertIsCallable($mount, \sprintf('%s can\'t be mounted from outside.', $path));
+            $mount(...$arguments);
         } catch (\Throwable $exception) {
             Assert::fail(\sprintf('%s refuses its props: %s', $path, $exception->getMessage()));
         }
@@ -165,7 +168,9 @@ final class ComponentContracts
      */
     private static function mountParameters(\ReflectionClass $reflection): array
     {
-        if (!$reflection->hasMethod('mount')) {
+        // Twig mounts a component only by a public mount(); without one, it
+        // writes each prop to the public property of its name.
+        if (!$reflection->hasMethod('mount') || !$reflection->getMethod('mount')->isPublic()) {
             return [];
         }
 

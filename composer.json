@@ -117,8 +117,8 @@
         "test": "paratest",
         "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
-        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection",
-        "infection:diff": "XDEBUG_MODE=coverage infection --git-diff-lines --git-diff-base=master",
+        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection --with-uncovered",
+        "infection:diff": "XDEBUG_MODE=coverage infection --with-uncovered --git-diff-lines --git-diff-base=master",
         "check": [
             "@cs:check",
             "@twig:cs:check",

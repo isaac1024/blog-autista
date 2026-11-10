@@ -7,6 +7,8 @@ namespace Shared\Tests\Infrastructure\Ui;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\RichText\RichText;
+use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 
 final class RichTextComponentsTest extends TestCase
@@ -181,5 +183,54 @@ final class RichTextComponentsTest extends TestCase
             ],
             [['href' => null, 'runs' => [['text' => 'Lee ', 'bold' => false], ['text' => 'el borrador', 'bold' => true], ['text' => ' luego.', 'bold' => false]]]],
         ];
+    }
+
+    /**
+     * Every kind of block is painted by its own component, with what it
+     * says, as the component takes it.
+     */
+    public function testItPaintsEveryKindOfBlockWithWhatItSays(): void
+    {
+        $components = new RichTextComponents()(RichText::fromArray(['version' => 1, 'blocks' => [
+            ['type' => 'heading', 'level' => 2, 'text' => [['text' => 'Título']]],
+            ['type' => 'quote', 'paragraphs' => [[['text' => 'Cita']]], 'source' => 'Alguien'],
+            ['type' => 'list', 'style' => 'ordered', 'items' => [[['text' => 'Uno']]]],
+            ['type' => 'list', 'style' => 'unordered', 'items' => [[['text' => 'Dos']]]],
+            ['type' => 'callout', 'variant' => 'important', 'paragraphs' => [[['text' => 'Ojo']]]],
+        ]]), [], []);
+        ComponentContracts::assertHonoured(Page::create('Contenido')->withMain('Shared:Prose', [], $components));
+
+        self::assertSame(
+            [
+                ['Shared:ContentHeading', ['level' => 2]],
+                ['Shared:ContentQuote', ['source' => 'Alguien']],
+                ['Shared:ContentList', ['ordered' => true]],
+                ['Shared:ContentList', ['ordered' => false]],
+                ['Shared:ContentCallout', ['variant' => 'important']],
+            ],
+            array_map(static fn (PageComponent $component): array => [
+                $component->name,
+                array_diff_key($component->props, array_flip(['text', 'paragraphs', 'items'])),
+            ], $components),
+        );
+    }
+
+    /**
+     * A widget whose page isn't on the site, or an image off it, leaves out
+     * only itself: the rest of the content is still painted.
+     */
+    public function testItPaintsTheRestOfTheContentAfterWhatItLeavesOut(): void
+    {
+        $components = new RichTextComponents()(RichText::fromArray(['version' => 1, 'blocks' => [
+            ['type' => 'widget', 'kind' => 'related_page', 'page_id' => self::MISSING],
+            ['type' => 'paragraph', 'text' => [['text' => 'Después']]],
+            ['type' => 'widget', 'kind' => 'related_page', 'page_id' => self::PUBLISHED],
+            ['type' => 'paragraph', 'text' => [['text' => 'Al final']]],
+        ]]), [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']]);
+
+        self::assertSame(
+            ['Shared:ContentParagraph', 'Shared:ContentRelatedPage', 'Shared:ContentParagraph'],
+            array_map(static fn (PageComponent $component): string => $component->name, $components),
+        );
     }
 }

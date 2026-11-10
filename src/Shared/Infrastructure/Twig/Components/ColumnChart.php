@@ -45,7 +45,7 @@ final class ColumnChart
      */
     public function peak(): int
     {
-        return max(1, ...array_map(static fn (array $point): int => $point['value'], $this->points));
+        return max([1, ...array_map(static fn (array $point): int => $point['value'], $this->points)]);
     }
 
     /**
