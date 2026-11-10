@@ -14,25 +14,27 @@
     },
     "mutators": {
         "@default": true,
-        // Controllers compose their page from Twig components in page() and
-        // the private methods that build its parts. That composition is
-        // checked by the ui-check harness, not by PHPUnit, so mutating it only
-        // yields unkillable mutants. The action that handles the request keeps
-        // every mutator.
+        // Controllers that still compose their page from Twig components, in
+        // page() and the private methods that build its parts, leave that
+        // composition to the ui-check harness, not to PHPUnit, so mutating it
+        // only yields unkillable mutants. The action that handles the request
+        // keeps every mutator. A composer taken out of its controller is
+        // tested for its decisions, so only its declarations are ignored,
+        // below.
         "global-ignore": [
             "*\\Controller\\*::page",
             "*\\Controller\\*::row",
             "*\\Controller\\*::address",
-            "*\\Controller\\*::slugField",
-            "*\\Controller\\*::homeAddress",
-            "*\\Controller\\*::searchEngineSection",
-            "*\\Controller\\*::pageActions",
-            "*\\Controller\\*::formActions",
-            "*\\Controller\\*::confirmModal",
+            "*\\Controller\\*Controller::slugField",
+            "*\\Controller\\*Controller::homeAddress",
+            "*\\Controller\\*Controller::searchEngineSection",
+            "*\\Controller\\*Controller::pageActions",
+            "*\\Controller\\*Controller::formActions",
+            "*\\Controller\\*Controller::confirmModal",
             "*\\Controller\\*::uploadModal",
             "*\\Controller\\*::imageActions",
-            "*\\Controller\\*::titleField",
-            "*\\Controller\\*::dates",
+            "*\\Controller\\*Controller::titleField",
+            "*\\Controller\\*Controller::dates",
             "*\\Controller\\*::images",
             // The panels of the redirects only choose what an editor reads.
             "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
