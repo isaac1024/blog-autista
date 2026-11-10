@@ -32,6 +32,13 @@ final class DataTable
      */
     public function mount(string $caption, array $columns, array $rows): void
     {
+        // Each row fills every column: its name, then one figure for each.
+        foreach ($rows as $row) {
+            if (\count($row['figures']) !== \count($columns) - 1) {
+                throw new \InvalidArgumentException(\sprintf('A row of "%s" has %d figures for %d columns.', $caption, \count($row['figures']), \count($columns)));
+            }
+        }
+
         $this->caption = $caption;
         $this->columns = $columns;
         $this->rows = $rows;

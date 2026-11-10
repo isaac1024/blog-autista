@@ -29,11 +29,11 @@ use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Ui\Page\Page as ComposedPage;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Shared\Tests\Infrastructure\Ui\PageComponents;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * The decisions the editor of a page makes: what it offers, and where it
@@ -47,7 +47,7 @@ final class PageEditorTest extends TestCase
 
     private const string ID = '01a19e72-b07f-7d78-889c-fa4a14a4fb95';
 
-    private const string SITE = 'https://www.blogautista.localhost';
+    private const string SITE = RouteNameUrlGenerator::SITE;
 
     private const string PREVIEW = 'https://cms.blogautista.localhost/pages/preview?signature=firmada';
 
@@ -367,19 +367,7 @@ final class PageEditorTest extends TestCase
 
     private function edit(Page $page): ComposedPage
     {
-        $urlGenerator = self::createStub(UrlGeneratorInterface::class);
-        $urlGenerator->method('generate')->willReturnCallback(
-            static function (string $name, array $parameters = [], int $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH): string {
-                $slug = $parameters['slug'] ?? null;
-                $path = match ($name) {
-                    'web_home' => '/',
-                    'web_page' => \is_string($slug) ? '/'.$slug.'.html' : '',
-                    default => '/'.$name.([] === $parameters ? '' : '?'.http_build_query($parameters)),
-                };
-
-                return UrlGeneratorInterface::ABSOLUTE_URL === $referenceType ? self::SITE.$path : $path;
-            },
-        );
+        $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
         $siteResources = self::createStub(SiteResources::class);
         $siteResources->method('isOnSite')->willReturn(true);

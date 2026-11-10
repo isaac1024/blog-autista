@@ -38,13 +38,7 @@
             "*\\Controller\\*::images",
             // The panels of the redirects only choose what an editor reads.
             "Cms\\Redirect\\Infrastructure\\Controller\\LastAddressPanel::panel",
-            "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke",
-            // The report of the visits only lays out what its finder found.
-            "Cms\\Analytics\\Infrastructure\\Controller\\VisitReportController::stats",
-            "Cms\\Analytics\\Infrastructure\\Controller\\VisitReportController::chart",
-            "Cms\\Analytics\\Infrastructure\\Controller\\VisitReportController::breakdowns",
-            "Cms\\Analytics\\Infrastructure\\Controller\\VisitReportController::table",
-            "Cms\\Analytics\\Infrastructure\\Controller\\VisitReportController::figure"
+            "Cms\\Redirect\\Infrastructure\\Controller\\IncomingRedirectsPanel::__invoke"
         ]
     },
     "timeout": 60,

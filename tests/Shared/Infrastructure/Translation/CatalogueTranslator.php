@@ -14,8 +14,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * A translator for unit tests that fails on any key the catalogues of the
  * site don't define, in every language it is in, or that is given other
- * parameters than its placeholders, and otherwise answers the key itself: a
- * test tells which text is chosen without reading the text.
+ * parameters than its placeholders, and otherwise answers the key itself,
+ * followed by what its placeholders are given: a test tells which text is
+ * chosen, and with what, without reading the text.
  */
 final class CatalogueTranslator implements LocaleAwareInterface, TranslatorInterface
 {
@@ -60,7 +61,18 @@ final class CatalogueTranslator implements LocaleAwareInterface, TranslatorInter
             Assert::assertSame($placeholders, $given, \sprintf('"%s" in the "%s" catalogue takes other parameters than those given.', $id, $catalogueLocale));
         }
 
-        return $this->identity->trans($id, $parameters, $domain, $locale);
+        if ([] === $parameters) {
+            return $id;
+        }
+
+        // What each placeholder is given shows next to the key, in order.
+        ksort($parameters);
+
+        return \sprintf('%s(%s)', $id, implode(', ', array_map(
+            static fn (string $placeholder, mixed $value): string => \sprintf('%s=%s', $placeholder, \is_scalar($value) || $value instanceof \Stringable ? (string) $value : get_debug_type($value)),
+            array_keys($parameters),
+            $parameters,
+        )));
     }
 
     #[\Override]
