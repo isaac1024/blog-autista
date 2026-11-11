@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Web\Redirect\Infrastructure\Controller;
+namespace Web\Redirect\Infrastructure\Site;
 
 use Shared\Domain\ImageCopy;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;

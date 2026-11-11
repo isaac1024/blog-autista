@@ -13,13 +13,13 @@ use Web\Image\Domain\Image;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
-use Web\Page\Domain\PageType;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 
 /**
  * What an address answers, however it is asked for, is told by
- * AddressAnswerFinderTest; here, how the site answers it: a permanent
+ * AddressAnswerFinderTest, and where each resource is served by
+ * SiteTargetAddressesTest; here, how the site answers it: a permanent
  * redirect kept a while, a page gone, or nothing, only to what is read, and
  * never over a page of its own.
  */
@@ -27,7 +27,6 @@ final class RedirectListenerTest extends WebTestCase
 {
     private const string HOST = 'http://www.blogautista.localhost';
     private const string PAGE = '0196f3a0-0000-7000-8000-0000000000b1';
-    private const string HOME = '0196f3a0-0000-7000-8000-0000000000b2';
     private const string IMAGE = '0196f3a0-0000-7000-8000-0000000000c1';
 
     public function testItRedirectsForGoodToThePageItLeadsTo(): void
@@ -50,35 +49,6 @@ final class RedirectListenerTest extends WebTestCase
         $client->request('GET', self::HOST.'/vieja.html?utm_source=boletin');
 
         self::assertResponseRedirects('/destino.html?utm_source=boletin', Response::HTTP_MOVED_PERMANENTLY);
-    }
-
-    public function testItRedirectsToTheHomePageAtTheRoot(): void
-    {
-        $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/vieja.html', 'page', self::HOME);
-
-        $client->request('GET', self::HOST.'/vieja.html');
-
-        self::assertResponseRedirects('/', Response::HTTP_MOVED_PERMANENTLY);
-    }
-
-    /**
-     * @return iterable<string, array{int}>
-     */
-    public static function widths(): iterable
-    {
-        yield 'the largest' => [1200];
-    }
-
-    #[DataProvider('widths')]
-    public function testItRedirectsEveryCopyOfAnImageToTheSameWidthOfTheTarget(int $width): void
-    {
-        $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9', 'image', self::IMAGE);
-
-        $client->request('GET', \sprintf('%s/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9-%dw.webp', self::HOST, $width));
-
-        self::assertResponseRedirects(\sprintf('/media/2026/11/%s-%dw.webp', self::IMAGE, $width), Response::HTTP_MOVED_PERMANENTLY);
     }
 
     public function testItSaysAnAddressIsGoneWhenItsRedirectLeadsNowhere(): void
@@ -116,17 +86,6 @@ final class RedirectListenerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
-    public function testEachAddressIsAnsweredByItsOwnRedirect(): void
-    {
-        $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/a-destino.html', 'page', self::PAGE);
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/a-portada.html', 'page', self::HOME);
-
-        $client->request('GET', self::HOST.'/a-destino.html');
-
-        self::assertResponseRedirects('/destino.html', Response::HTTP_MOVED_PERMANENTLY);
-    }
-
     /**
      * @return iterable<string, array{?string, int}>
      */
@@ -156,29 +115,6 @@ final class RedirectListenerTest extends WebTestCase
     }
 
     /**
-     * @return iterable<string, array{string}>
-     */
-    public static function sameAddresses(): iterable
-    {
-        yield 'with capitals' => ['/Guía-Antigua.html'];
-    }
-
-    /**
-     * An address is written one way only, so it matches however the browser
-     * asks for it.
-     */
-    #[DataProvider('sameAddresses')]
-    public function testItAnswersAnAddressHoweverItIsAskedFor(string $path): void
-    {
-        $client = $this->site();
-        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/gu%c3%ada-antigua.html', 'page', self::PAGE);
-
-        $client->request('GET', self::HOST.$path);
-
-        self::assertResponseRedirects('/destino.html', Response::HTTP_MOVED_PERMANENTLY);
-    }
-
-    /**
      * An address no route answers, so the site finds nothing there whatever
      * the method.
      */
@@ -193,8 +129,22 @@ final class RedirectListenerTest extends WebTestCase
     }
 
     /**
-     * A client whose kernel holds the site: a page, the home page and an
-     * image, as the CMS published them.
+     * The CMS finds nothing at an address of its own: the redirects are the
+     * site's alone.
+     */
+    public function testItOnlyRedirectsWhatTheSiteIsAskedFor(): void
+    {
+        $client = $this->site();
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/archivo/viejo', 'page', self::PAGE);
+
+        $client->request('GET', 'http://cms.blogautista.localhost/archivo/viejo');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * A client whose kernel holds the site: a page and an image, as the CMS
+     * published them.
      */
     private function site(): KernelBrowser
     {
@@ -202,7 +152,6 @@ final class RedirectListenerTest extends WebTestCase
         $client->disableReboot();
         $pages = self::getContainer()->get(PageRepository::class);
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Destino', slug: 'destino')));
-        $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::HOME, title: 'Portada', slug: null, type: PageType::Home)));
         self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/'.self::IMAGE.'.webp')));
 
         return $client;

@@ -11,6 +11,7 @@ use Web\Redirect\Application\AddressAnswerFinder;
 use Web\Redirect\Domain\Redirect;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Redirect\Domain\TargetAddresses;
+use Web\Tests\Redirect\Domain\RedirectMother;
 
 /**
  * What the site answers at an address it has nothing of its own at: where
@@ -24,12 +25,12 @@ final class AddressAnswerFinderTest extends TestCase
 
     public function testItLeadsWhereTheTargetOfTheRedirectIsNow(): void
     {
-        self::assertEquals(AddressAnswer::movedTo('/destino.html'), $this->answer('/vieja.html', ['/vieja.html' => new Redirect('page', self::PAGE, null)]));
+        self::assertEquals(AddressAnswer::movedTo('/destino.html'), $this->answer('/vieja.html', ['/vieja.html' => RedirectMother::create(targetId: self::PAGE)]));
     }
 
     public function testItSaysTheAddressIsGoneWhenItsRedirectLeadsNowhere(): void
     {
-        self::assertEquals(AddressAnswer::gone(), $this->answer('/vieja.html', ['/vieja.html' => new Redirect(null, null, null)]));
+        self::assertEquals(AddressAnswer::gone(), $this->answer('/vieja.html', ['/vieja.html' => RedirectMother::gone()]));
     }
 
     /**
@@ -49,8 +50,8 @@ final class AddressAnswerFinderTest extends TestCase
      */
     public static function nothing(): iterable
     {
-        yield 'an address without a redirect' => ['/vieja.html', ['/otra.html' => new Redirect('page', self::PAGE, null)]];
-        yield 'a target off the site' => ['/vieja.html', ['/vieja.html' => new Redirect('page', '0196f3a0-0000-7000-8000-0000000000ff', null)]];
+        yield 'an address without a redirect' => ['/vieja.html', ['/otra.html' => RedirectMother::create(targetId: self::PAGE)]];
+        yield 'a target off the site' => ['/vieja.html', ['/vieja.html' => RedirectMother::create(targetId: '0196f3a0-0000-7000-8000-0000000000ff')]];
         yield 'an address longer than any redirect has' => ['/'.str_repeat('a', 300).'.html', []];
     }
 
@@ -69,7 +70,7 @@ final class AddressAnswerFinderTest extends TestCase
     #[DataProvider('sameAddresses')]
     public function testItAnswersAnAddressHoweverItIsAskedFor(string $path): void
     {
-        self::assertEquals(AddressAnswer::movedTo('/destino.html'), $this->answer($path, ['/gu%c3%ada-antigua.html' => new Redirect('page', self::PAGE, null)]));
+        self::assertEquals(AddressAnswer::movedTo('/destino.html'), $this->answer($path, ['/gu%c3%ada-antigua.html' => RedirectMother::create(targetId: self::PAGE)]));
     }
 
     /**
@@ -91,7 +92,7 @@ final class AddressAnswerFinderTest extends TestCase
     {
         $answer = $this->answer(
             \sprintf('/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9-%dw.webp', $width),
-            ['/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9' => new Redirect('image', self::IMAGE, null)],
+            ['/media/2026/11/0196f3a0-0000-7000-8000-0000000000c9' => RedirectMother::create(targetType: 'image', targetId: self::IMAGE)],
         );
 
         self::assertEquals(AddressAnswer::movedTo(\sprintf('/media/2026/11/%s-%dw.webp', self::IMAGE, $width)), $answer);
