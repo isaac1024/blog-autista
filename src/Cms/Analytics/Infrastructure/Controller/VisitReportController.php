@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Analytics\Infrastructure\Controller;
 
 use Cms\Analytics\Application\VisitReportFinder;
+use Cms\Analytics\Domain\InvalidPeriod;
 use Cms\Analytics\Domain\PageTitles;
 use Cms\Analytics\Domain\Period;
 use Cms\Analytics\Domain\VisitCounts;
@@ -32,8 +33,12 @@ final class VisitReportController extends AbstractController
         #[MapQueryParameter]
         int $days = Period::Month->value,
     ): Response {
-        $period = Period::tryFrom($days) ?? throw $this->createNotFoundException(\sprintf('The report covers no period of %d days.', $days));
+        try {
+            $report = new VisitReportFinder($days)($visitCounts, $pageTitles);
+        } catch (InvalidPeriod $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        }
 
-        return $this->pageRenderer->render(($this->visitReportPage)($period, new VisitReportFinder($period)($visitCounts, $pageTitles)));
+        return $this->pageRenderer->render(($this->visitReportPage)($days, $report));
     }
 }

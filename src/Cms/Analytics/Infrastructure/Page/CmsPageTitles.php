@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Cms\Analytics\Infrastructure\Page;
 
 use Cms\Analytics\Domain\PageTitles;
-use Cms\Page\Domain\PageId;
+use Cms\Page\Application\PagesFinder;
 use Cms\Page\Domain\PageRepository;
-use Shared\Domain\DomainError;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /**
@@ -21,20 +20,10 @@ final readonly class CmsPageTitles implements PageTitles
     #[\Override]
     public function titlesOf(array $pageIds): array
     {
-        $ids = [];
-
-        foreach ($pageIds as $pageId) {
-            try {
-                $ids[] = new PageId($pageId);
-            } catch (DomainError) {
-                // Not the id of a page: none to name.
-            }
-        }
-
         $titles = [];
 
-        foreach ($this->pageRepository->findByIds($ids) as $page) {
-            $titles[$page->id()->value()] = $page->title()->value();
+        foreach (new PagesFinder($pageIds)($this->pageRepository) as $page) {
+            $titles[$page->id] = $page->title;
         }
 
         return $titles;

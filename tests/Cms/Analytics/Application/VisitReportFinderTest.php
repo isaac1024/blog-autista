@@ -8,157 +8,222 @@ use Cms\Analytics\Application\DayViews;
 use Cms\Analytics\Application\ReportRow;
 use Cms\Analytics\Application\VisitReport;
 use Cms\Analytics\Application\VisitReportFinder;
+use Cms\Analytics\Domain\Count;
+use Cms\Analytics\Domain\Days;
+use Cms\Analytics\Domain\Dimension;
 use Cms\Analytics\Domain\PageTitles;
 use Cms\Analytics\Domain\Period;
 use Cms\Analytics\Domain\VisitCounts;
-use Cms\Page\Domain\PageRepository;
-use Cms\Tests\Page\Domain\PageMother;
-use Doctrine\DBAL\Connection;
+use Cms\Tests\Analytics\Domain\CountMother;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use PHPUnit\Framework\TestCase;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
- * The report read from the tables the site counts its visits in: the days
- * it counted, and those it still keeps the visits of, counted as read.
+ * The report of what the site counted over a period ending yesterday, day
+ * by day, and of today so far, and whether the nightly count is late. It is
+ * 2026-11-09 in Madrid, so yesterday is 2026-11-08.
  */
-final class VisitReportFinderTest extends KernelTestCase
+final class VisitReportFinderTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
 
-    private const string PAGE = '01a1b801-ce58-723d-8234-b76d9105f001';
+    private const string NOW = '2026-11-09 10:00:00 Europe/Madrid';
+    private const string PAGE = CountMother::PAGE;
     private const string OTHER_PAGE = '01a1b801-ce58-723d-8234-b76d9105f002';
     private const string DELETED_PAGE = '01a1b801-ce58-723d-8234-b76d9105f003';
 
-    public function testItAddsUpTheDaysOfThePeriodUpToYesterday(): void
+    #[\Override]
+    protected function setUp(): void
     {
-        $report = $this->report();
-
-        self::assertSame([12, 10], [$report->period->views, $report->period->visitors]);
-        self::assertSame(self::rows([
-            new ReportRow(self::PAGE, 'Sobre mí', 8, 7),
-            new ReportRow(self::DELETED_PAGE, null, 4, 3),
-        ]), self::rows($report->period->pages));
-        self::assertSame(self::rows([new ReportRow('search', null, 7, 6), new ReportRow('direct', null, 2, 2)]), self::rows($report->period->channels));
-        self::assertSame(self::rows([new ReportRow('mobile', null, 9, 8), new ReportRow('desktop', null, 3, 2)]), self::rows($report->period->devices));
+        self::mockTime(self::NOW);
     }
 
     /**
-     * Sources too small to show apart are grouped last; the cut is three
-     * entries over the days read.
+     * It reads the period ending yesterday, and today apart.
      */
-    public function testItGroupsTheSmallestSources(): void
+    public function testItReadsThePeriodEndingYesterdayAndTodayApart(): void
     {
-        $report = $this->report();
+        $asked = [];
+        $visitCounts = $this->createMock(VisitCounts::class);
+        $visitCounts->expects(self::exactly(2))->method('during')->willReturnCallback(static function (Days $days) use (&$asked): array {
+            $asked[] = [$days->first(), $days->last()];
 
-        self::assertSame(self::rows([
-            new ReportRow('google.es', null, 6, 5),
-            new ReportRow('foro.example.org', null, 3, 3),
-            new ReportRow(null, null, 3, 2),
-        ]), self::rows($report->period->sources));
+            return [];
+        });
+        $visitCounts->method('oldestUncountedDay')->willReturn(null);
+
+        new VisitReportFinder(Period::Week->days())($visitCounts, self::titles());
+
+        self::assertSame([['2026-11-02', '2026-11-08'], ['2026-11-09', '2026-11-09']], $asked);
+    }
+
+    public function testItAddsUpTheDaysOfThePeriod(): void
+    {
+        $report = self::report([
+            CountMother::create(day: '2026-11-02', views: 10, visitors: 8),
+            CountMother::create(day: '2026-11-05', views: 2, visitors: 2),
+            CountMother::create(day: '2026-11-02', dimension: Dimension::Page, value: self::PAGE, views: 6, visitors: 5),
+            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: self::PAGE, views: 2, visitors: 2),
+            CountMother::create(day: '2026-11-02', dimension: Dimension::Page, value: self::DELETED_PAGE, views: 4, visitors: 3),
+            CountMother::create(day: '2026-11-02', dimension: Dimension::Device, value: 'mobile', views: 7, visitors: 6),
+            CountMother::create(day: '2026-11-05', dimension: Dimension::Device, value: 'mobile', views: 2, visitors: 2),
+            CountMother::create(day: '2026-11-02', dimension: Dimension::Device, value: 'desktop', views: 3, visitors: 2),
+        ]);
+
+        self::assertSame([12, 10], [$report->period->views, $report->period->visitors]);
+        self::assertEquals([new ReportRow(self::PAGE, 'Sobre mí', 8, 7), new ReportRow(self::DELETED_PAGE, null, 4, 3)], $report->period->pages);
+        self::assertEquals([new ReportRow('mobile', null, 9, 8), new ReportRow('desktop', null, 3, 2)], $report->period->devices);
+    }
+
+    /**
+     * The channels count entries to the site: those from within it are left
+     * out.
+     */
+    public function testItLeavesOutTheVisitsFromWithinTheSiteOfTheChannels(): void
+    {
+        $report = self::report([
+            CountMother::create(dimension: Dimension::Channel, value: 'search', views: 5, visitors: 4),
+            CountMother::create(dimension: Dimension::Channel, value: 'internal', views: 3, visitors: 2),
+            CountMother::create(dimension: Dimension::Channel, value: 'direct', views: 2, visitors: 2),
+        ]);
+
+        self::assertEquals([new ReportRow('search', null, 5, 4), new ReportRow('direct', null, 2, 2)], $report->period->channels);
+    }
+
+    /**
+     * @param list<Count>     $counts
+     * @param list<ReportRow> $sources
+     */
+    #[DataProvider('sources')]
+    public function testItGroupsTheSourcesTooSmallToShowApart(array $counts, array $sources): void
+    {
+        self::assertSame(self::rows($sources), self::rows(self::report($counts)->period->sources));
+    }
+
+    /**
+     * The cut is three entries over the days read.
+     *
+     * @return iterable<string, array{list<Count>, list<ReportRow>}>
+     */
+    public static function sources(): iterable
+    {
+        $source = static fn (string $value, int $views, int $visitors, string $day = CountMother::DAY): Count => CountMother::create(day: $day, dimension: Dimension::Source, value: $value, views: $views, visitors: $visitors);
+
+        yield 'some too small' => [
+            [$source('google.es', 4, 3), $source('google.es', 2, 2, '2026-11-05'), $source('foro.example.org', 3, 3), $source('blog.example.org', 2, 1), $source('otro.example.org', 1, 1)],
+            [new ReportRow('google.es', null, 6, 5), new ReportRow('foro.example.org', null, 3, 3), new ReportRow(null, null, 3, 2)],
+        ];
+        yield 'none too small' => [
+            [$source('google.es', 5, 4), $source('foro.example.org', 3, 3)],
+            [new ReportRow('google.es', null, 5, 4), new ReportRow('foro.example.org', null, 3, 3)],
+        ];
+        yield 'all too small' => [
+            [$source('blog.example.org', 2, 1), $source('otro.example.org', 1, 1)],
+            [new ReportRow(null, null, 3, 2)],
+        ];
     }
 
     public function testItTellsAnUnknownCountryApart(): void
     {
-        $report = $this->report();
+        $report = self::report([
+            CountMother::create(dimension: Dimension::Country, value: 'ES', views: 6, visitors: 5),
+            CountMother::create(dimension: Dimension::Country, value: '', views: 4, visitors: 3),
+            CountMother::create(dimension: Dimension::Country, value: 'MX', views: 2, visitors: 2),
+        ]);
 
-        self::assertSame(self::rows([
-            new ReportRow('ES', null, 6, 5),
-            new ReportRow(null, null, 4, 3),
-            new ReportRow('MX', null, 2, 2),
-        ]), self::rows($report->period->countries));
+        self::assertSame(self::rows([new ReportRow('ES', null, 6, 5), new ReportRow(null, null, 4, 3), new ReportRow('MX', null, 2, 2)]), self::rows($report->period->countries));
+    }
+
+    /**
+     * Among the equally seen, the values come in their order, digits kept
+     * as text.
+     */
+    public function testItOrdersTheEquallySeenByTheirValue(): void
+    {
+        $report = self::report([
+            CountMother::create(dimension: Dimension::Source, value: 'zeta.example.org', views: 3, visitors: 3),
+            CountMother::create(dimension: Dimension::Source, value: '123', views: 3, visitors: 3),
+            CountMother::create(dimension: Dimension::Source, value: 'alfa.example.org', views: 3, visitors: 3),
+        ]);
+
+        self::assertSame(['123', 'alfa.example.org', 'zeta.example.org'], array_map(static fn (ReportRow $row): ?string => $row->value, $report->period->sources));
     }
 
     public function testItGivesEveryDayOfThePeriodEvenWithNoVisit(): void
     {
-        $report = $this->report();
+        $report = self::report([
+            CountMother::create(day: '2026-11-02', views: 10),
+            CountMother::create(day: '2026-11-05', views: 2),
+            // Two counts of one day add up.
+            CountMother::create(day: '2026-11-05', views: 1),
+            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: self::PAGE, views: 2),
+        ]);
 
-        self::assertSame(self::days([
+        self::assertEquals([
             new DayViews('2026-11-02', 10),
             new DayViews('2026-11-03', 0),
             new DayViews('2026-11-04', 0),
-            new DayViews('2026-11-05', 2),
+            new DayViews('2026-11-05', 3),
             new DayViews('2026-11-06', 0),
             new DayViews('2026-11-07', 0),
             new DayViews('2026-11-08', 0),
-        ]), self::days($report->days));
+        ], $report->days);
     }
 
     public function testItCountsTodayApart(): void
     {
-        $report = $this->report();
+        $report = self::report([CountMother::create(views: 10, visitors: 8)], today: [
+            CountMother::create(day: '2026-11-09'),
+            CountMother::create(day: '2026-11-09', dimension: Dimension::Page, value: self::OTHER_PAGE),
+        ]);
 
         self::assertSame([1, 1], [$report->today->views, $report->today->visitors]);
-        self::assertSame(self::rows([new ReportRow(self::OTHER_PAGE, 'Otra página', 1, 1)]), self::rows($report->today->pages));
-        self::assertSame(self::rows([new ReportRow('direct', null, 1, 1)]), self::rows($report->today->channels));
-    }
-
-    /**
-     * A day before yesterday still kept means the nightly count is late.
-     */
-    public function testItTellsTheOldestDayTheNightlyCountMissed(): void
-    {
-        self::assertSame('2026-11-05', $this->report()->uncountedSince);
-    }
-
-    /**
-     * @return iterable<string, array{string, ?string}>
-     */
-    public static function nightsOfYesterday(): iterable
-    {
-        yield 'before the count is done' => ['2026-11-09 02:59:59 Europe/Madrid', null];
-        yield 'once it is done' => ['2026-11-09 03:00:00 Europe/Madrid', '2026-11-08'];
-        yield 'once it is done, told in universal time' => ['2026-11-09 02:00:00 UTC', '2026-11-08'];
-    }
-
-    /**
-     * Yesterday is only late once the night's count is done.
-     */
-    #[DataProvider('nightsOfYesterday')]
-    public function testYesterdayIsLateOnceTheNightIsOver(string $now, ?string $uncountedSince): void
-    {
-        self::bootKernel();
-        self::mockTime($now);
-        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f104', 'page_id' => self::PAGE, 'day' => '2026-11-08', 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
-
-        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
-
-        self::assertSame($uncountedSince, $report->uncountedSince);
-    }
-
-    public function testTodayIsNeverLate(): void
-    {
-        self::bootKernel();
-        self::mockTime('2026-11-09 23:59:59 Europe/Madrid');
-        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f105', 'page_id' => self::PAGE, 'day' => '2026-11-09', 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
-
-        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
-
-        self::assertNull($report->uncountedSince);
+        self::assertEquals([new ReportRow(self::OTHER_PAGE, 'Otra página', 1, 1)], $report->today->pages);
     }
 
     public function testItReportsNothingWhenNothingWasCounted(): void
     {
-        self::bootKernel();
-        self::mockTime('2026-11-09 10:00:00 Europe/Madrid');
-
-        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
+        $report = self::report([]);
 
         self::assertSame([0, 0, [], [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->pages, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
         self::assertCount(7, $report->days);
         self::assertNull($report->uncountedSince);
     }
 
+    /**
+     * @return iterable<string, array{string, ?string, ?string}>
+     */
+    public static function uncountedDays(): iterable
+    {
+        yield 'none' => [self::NOW, null, null];
+        yield 'a day before yesterday' => [self::NOW, '2026-11-05', '2026-11-05'];
+        yield 'yesterday, before the count is done' => ['2026-11-09 02:59:59 Europe/Madrid', '2026-11-08', null];
+        yield 'yesterday, once it is done' => ['2026-11-09 03:00:00 Europe/Madrid', '2026-11-08', '2026-11-08'];
+        yield 'yesterday, once it is done, told in universal time' => ['2026-11-09 02:00:00 UTC', '2026-11-08', '2026-11-08'];
+        yield 'today, which is never late' => ['2026-11-09 23:59:59 Europe/Madrid', '2026-11-09', null];
+    }
+
+    /**
+     * A day still kept uncounted is late once the nightly count should have
+     * counted it.
+     */
+    #[DataProvider('uncountedDays')]
+    public function testItTellsTheOldestDayTheNightlyCountMissed(string $now, ?string $oldest, ?string $late): void
+    {
+        self::mockTime($now);
+
+        self::assertSame($late, self::report([], uncounted: $oldest)->uncountedSince);
+    }
+
     public function testThePeriodsLookAsFarBackAsTheySay(): void
     {
-        self::bootKernel();
-        self::mockTime('2026-11-09 10:00:00 Europe/Madrid');
+        foreach (Period::cases() as $period) {
+            $days = self::report([], period: $period)->days;
 
-        foreach ([Period::Week, Period::Month, Period::Quarter] as $period) {
-            $days = new VisitReportFinder($period)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class))->days;
-
-            self::assertCount($period->days(), $days);
-            self::assertSame('2026-11-08', $days[\count($days) - 1]->day);
+            self::assertSame([$period->days(), '2026-11-08'], [\count($days), $days[\count($days) - 1]->day]);
         }
     }
 
@@ -168,42 +233,38 @@ final class VisitReportFinderTest extends KernelTestCase
      */
     public function testItTellsTheDaysAsMadridDoes(): void
     {
-        self::bootKernel();
         self::mockTime('2026-11-08 23:30:00 UTC');
 
-        $days = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class))->days;
+        $days = self::report([])->days;
 
         self::assertSame('2026-11-08', $days[\count($days) - 1]->day);
     }
 
-    /**
-     * With no source too small, none is grouped; every page still on the
-     * CMS has its name.
-     */
-    public function testItGroupsNoSourceWhenNoneIsTooSmall(): void
+    public function testItRefusesAPeriodTheReportDoesNotCover(): void
     {
-        self::bootKernel();
-        self::mockTime('2026-11-09 10:00:00 Europe/Madrid');
-        $pages = self::getContainer()->get(PageRepository::class);
-        $pages->save(PageMother::create(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi'));
-        $pages->save(PageMother::create(id: self::OTHER_PAGE, title: 'Otra página', slug: 'otra-pagina'));
-        $connection = self::getContainer()->get(Connection::class);
-        foreach ([
-            ['source', 'google.es', 5, 4],
-            ['source', 'foro.example.org', 3, 3],
-            ['page', self::PAGE, 5, 4],
-            ['page', self::OTHER_PAGE, 3, 3],
-        ] as [$dimension, $value, $views, $visitors]) {
-            $connection->insert('web_visit_total', ['day' => '2026-11-08', 'dimension' => $dimension, 'value' => $value, 'views' => $views, 'visitors' => $visitors]);
-        }
+        $visitCounts = $this->createMock(VisitCounts::class);
+        $visitCounts->expects(self::never())->method('during');
 
-        $report = new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
-
-        self::assertSame(self::rows([new ReportRow('google.es', null, 5, 4), new ReportRow('foro.example.org', null, 3, 3)]), self::rows($report->period->sources));
-        self::assertSame(self::rows([new ReportRow(self::PAGE, 'Sobre mí', 5, 4), new ReportRow(self::OTHER_PAGE, 'Otra página', 3, 3)]), self::rows($report->period->pages));
+        self::assertTells('errors.analytics.unknown_period', ['%days%' => 14], static fn () => new VisitReportFinder(14)($visitCounts, self::titles()));
     }
 
     /**
+     * @param list<Count> $counts those of the period
+     * @param list<Count> $today  those of today
+     */
+    private static function report(array $counts, array $today = [], ?string $uncounted = null, Period $period = Period::Week): VisitReport
+    {
+        $visitCounts = self::createStub(VisitCounts::class);
+        // Today is the only run of days that ends where it begins.
+        $visitCounts->method('during')->willReturnCallback(static fn (Days $days): array => $days->first() === $days->last() ? $today : $counts);
+        $visitCounts->method('oldestUncountedDay')->willReturn($uncounted);
+
+        return new VisitReportFinder($period->days())($visitCounts, self::titles());
+    }
+
+    /**
+     * Rows as plain values, so a null value is told from an empty one.
+     *
      * @param list<ReportRow> $rows
      *
      * @return list<array{?string, ?string, int, int}>
@@ -214,54 +275,17 @@ final class VisitReportFinderTest extends KernelTestCase
     }
 
     /**
-     * @param list<DayViews> $days
-     *
-     * @return list<array{string, int}>
+     * The titles of the pages still on the CMS; the deleted one has none.
      */
-    private static function days(array $days): array
+    private static function titles(): PageTitles
     {
-        return array_map(static fn (DayViews $day): array => [$day->day, $day->views], $days);
-    }
+        $titles = self::createStub(PageTitles::class);
+        $titles->method('titlesOf')->willReturnCallback(static fn (array $ids): array => array_filter(
+            [self::PAGE => 'Sobre mí', self::OTHER_PAGE => 'Otra página'],
+            static fn (string $id): bool => \in_array($id, $ids, true),
+            \ARRAY_FILTER_USE_KEY,
+        ));
 
-    private function report(): VisitReport
-    {
-        self::bootKernel();
-        self::mockTime('2026-11-09 10:00:00 Europe/Madrid');
-        $pages = self::getContainer()->get(PageRepository::class);
-        $pages->save(PageMother::create(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi'));
-        $pages->save(PageMother::create(id: self::OTHER_PAGE, title: 'Otra página', slug: 'otra-pagina'));
-        $connection = self::getContainer()->get(Connection::class);
-
-        // Counted already: a day of the period, and one before it.
-        foreach ([
-            ['2026-11-01', 'site', '', 100, 100],
-            ['2026-11-02', 'site', '', 10, 8],
-            ['2026-11-02', 'page', self::PAGE, 6, 5],
-            ['2026-11-02', 'page', self::DELETED_PAGE, 4, 3],
-            ['2026-11-02', 'channel', 'search', 5, 4],
-            ['2026-11-02', 'channel', 'internal', 3, 2],
-            ['2026-11-02', 'channel', 'direct', 2, 2],
-            ['2026-11-02', 'source', 'google.es', 4, 3],
-            ['2026-11-02', 'source', 'foro.example.org', 3, 3],
-            ['2026-11-02', 'source', 'blog.example.org', 2, 1],
-            ['2026-11-02', 'source', 'otro.example.org', 1, 1],
-            ['2026-11-02', 'device', 'mobile', 7, 6],
-            ['2026-11-02', 'device', 'desktop', 3, 2],
-            ['2026-11-02', 'country', 'ES', 6, 5],
-            ['2026-11-02', 'country', '', 4, 3],
-        ] as [$day, $dimension, $value, $views, $visitors]) {
-            $connection->insert('web_visit_total', ['day' => $day, 'dimension' => $dimension, 'value' => $value, 'views' => $views, 'visitors' => $visitors]);
-        }
-
-        // Still kept: a day the nightly count missed, and today.
-        foreach ([
-            ['01a1b801-ce58-723d-8234-b76d9105f101', self::PAGE, '2026-11-05', 'search', 'google.es', 'a', 'mobile', 'MX'],
-            ['01a1b801-ce58-723d-8234-b76d9105f102', self::PAGE, '2026-11-05', 'search', 'google.es', 'b', 'mobile', 'MX'],
-            ['01a1b801-ce58-723d-8234-b76d9105f103', self::OTHER_PAGE, '2026-11-09', 'direct', null, 'a', 'desktop', 'ES'],
-        ] as [$id, $page, $day, $channel, $source, $reader, $device, $country]) {
-            $connection->insert('web_visit', ['id' => $id, 'page_id' => $page, 'day' => $day, 'channel' => $channel, 'source' => $source, 'reader' => str_repeat($reader, 64), 'device' => $device, 'country' => $country]);
-        }
-
-        return new VisitReportFinder(Period::Week)(self::getContainer()->get(VisitCounts::class), self::getContainer()->get(PageTitles::class));
+        return $titles;
     }
 }

@@ -284,7 +284,7 @@ final class VisitReportPageTest extends TestCase
         $translator = new CatalogueTranslator();
         $translator->setLocale($locale);
 
-        $page = new VisitReportPage(new RouteNameUrlGenerator(), $translator, new CountryNames())($period, $report);
+        $page = new VisitReportPage(new RouteNameUrlGenerator(), $translator, new CountryNames())($period->days(), $report);
         // Whatever a test asks, the report gives every component what it takes.
         ComponentContracts::assertHonoured($page);
 

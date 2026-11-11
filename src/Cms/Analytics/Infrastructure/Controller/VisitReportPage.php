@@ -32,9 +32,11 @@ final readonly class VisitReportPage
     /**
      * Composes the whole page from Twig components, so it is long by design.
      *
+     * @param int $days the days of the period shown
+     *
      * @SuppressWarnings("PHPMD.ExcessiveMethodLength")
      */
-    public function __invoke(Period $current, VisitReport $report): Page
+    public function __invoke(int $days, VisitReport $report): Page
     {
         $page = CmsLayout::page(\sprintf('%s · CMS', $this->trans('cms.analytics.title')))
             ->withMain('Shared:PageTitle', [
@@ -46,7 +48,7 @@ final readonly class VisitReportPage
                 'links' => array_map(fn (Period $period): array => [
                     'label' => $this->trans('cms.analytics.periods.days', ['%days%' => $period->days()]),
                     'url' => $this->urlGenerator->generate('cms_analytics', ['days' => $period->days()]),
-                    'current' => $period === $current,
+                    'current' => $period->days() === $days,
                 ], Period::cases()),
             ]);
 
@@ -69,7 +71,7 @@ final readonly class VisitReportPage
                 $this->stats($report->today, 'cms.analytics.visitors'),
                 ...$this->breakdowns($report->today, false),
             ])
-            ->withMain('Shared:Panel', ['title' => $this->trans('cms.analytics.period.title', ['%days%' => $current->days()])], [
+            ->withMain('Shared:Panel', ['title' => $this->trans('cms.analytics.period.title', ['%days%' => $days])], [
                 $this->stats($report->period, 'cms.analytics.daily_visitors', $this->trans('cms.analytics.daily_visitors_hint')),
                 $this->chart($report->days),
                 ...$this->breakdowns($report->period, true),

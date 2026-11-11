@@ -13,6 +13,14 @@ enum Period: int
     case Month = 30;
     case Quarter = 90;
 
+    /**
+     * @throws InvalidPeriod when the report covers no period of those days
+     */
+    public static function fromDays(int $days): self
+    {
+        return self::tryFrom($days) ?? throw InvalidPeriod::ofDays($days);
+    }
+
     public function days(): int
     {
         return $this->value;
