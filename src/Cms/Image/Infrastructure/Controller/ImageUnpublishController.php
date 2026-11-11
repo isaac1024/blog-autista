@@ -13,7 +13,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
-use Cms\Redirect\Infrastructure\Controller\RetirementForm;
+use Cms\Redirect\Infrastructure\Controller\RetirementRequest;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
@@ -53,8 +53,8 @@ final class ImageUnpublishController extends AbstractController
             new ResourceRetirement(
                 RedirectId::random()->value(),
                 Resource::image($id),
-                RetirementForm::addressDecision($request),
-                RetirementForm::incomingDecisions($request),
+                RetirementRequest::address($request),
+                RetirementRequest::incoming($request),
                 static function () use ($id, $imageRepository, $eventBus, $imageRedirects): void {
                     new ImageUnpublisher($id)($imageRepository, $eventBus, $imageRedirects);
                 },

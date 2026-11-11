@@ -14,7 +14,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
-use Cms\Redirect\Infrastructure\Controller\PublicationForm;
+use Cms\Redirect\Infrastructure\Controller\PublicationRequest;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
@@ -54,7 +54,7 @@ final class PagePublishController extends AbstractController
         $this->csrf->assertValid($request);
 
         $resource = Resource::page($id);
-        $outlook = PublicationForm::outlook($request);
+        $outlook = PublicationRequest::outlook($request);
 
         try {
             if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst) {
@@ -66,7 +66,7 @@ final class PagePublishController extends AbstractController
             new ResourcePublication(
                 RedirectId::random()->value(),
                 $resource,
-                PublicationForm::previous($request, $resource),
+                PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
                 static function () use ($id, $pageRepository, $eventBus): void {
                     new PagePublisher($id)($pageRepository, $eventBus);

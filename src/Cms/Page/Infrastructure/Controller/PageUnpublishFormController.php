@@ -7,17 +7,12 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
-use Cms\Redirect\Domain\Resource;
-use Cms\Redirect\Infrastructure\Controller\RetirementForm;
-use Shared\Infrastructure\Ui\CmsLayout;
-use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Where a page is taken off the site: it asks what becomes of its address,
@@ -33,8 +28,7 @@ final class PageUnpublishFormController extends AbstractController
 
     public function __construct(
         private readonly PageRenderer $pageRenderer,
-        private readonly TranslatorInterface $translator,
-        private readonly RetirementForm $retirementForm,
+        private readonly PageUnpublishForm $pageUnpublishForm,
     ) {}
 
     #[Route('/pages/{id}/unpublish', name: 'cms_pages_unpublish_form', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -53,29 +47,7 @@ final class PageUnpublishFormController extends AbstractController
         }
 
         $saved = $request->getSession()->remove(\sprintf(self::SAVED, $id));
-        $title = $this->translator->trans('cms.pages.unpublish.page_title', ['%title%' => $page->title]);
 
-        $layout = CmsLayout::page(\sprintf('%s · CMS', $title))
-            ->withMain('Shared:PageTitle', [
-                'title' => $title,
-                'subtitle' => $this->translator->trans('cms.redirects.retire.subtitle'),
-            ], [
-                new PageComponent('Shared:ButtonLink', [
-                    'url' => $this->generateUrl('cms_pages_edit', ['id' => $id]),
-                    'label' => $this->translator->trans('cms.pages.unpublish.back'),
-                ]),
-            ]);
-
-        foreach (($this->retirementForm)(
-            Resource::page($id),
-            $this->generateUrl('cms_pages_unpublish', ['id' => $id]),
-            'cms_pages_unpublish',
-            $this->translator->trans('cms.pages.unpublish.submit'),
-            \is_array($saved) ? $saved : [],
-        ) as $component) {
-            $layout = $layout->withMain($component->name, $component->props, $component->children);
-        }
-
-        return $this->pageRenderer->render($layout);
+        return $this->pageRenderer->render(($this->pageUnpublishForm)($page, \is_array($saved) ? $saved : []));
     }
 }

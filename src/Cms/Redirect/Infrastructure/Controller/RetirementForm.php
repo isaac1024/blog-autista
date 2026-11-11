@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Cms\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\RedirectResponse;
-use Cms\Redirect\Application\TargetInput;
-use Cms\Redirect\Domain\IncomingDecision;
-use Cms\Redirect\Domain\InvalidRedirect;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Domain\SiteResources;
 use Shared\Infrastructure\Ui\Page\PageComponent;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -23,23 +19,10 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * resource off the site. Nothing is chosen for the editor: each choice is
  * made, and confirmed by sending the form.
  *
- * It posts the choice for its own address under "address", and that for
- * each redirect under "incoming[<id>]".
+ * What it posts is read by RetirementRequest.
  */
 final readonly class RetirementForm
 {
-    /**
-     * The choice that leaves its address with nothing, so it isn't found.
-     */
-    private const string NOT_FOUND = 'none';
-
-    /**
-     * The choice that leads a redirect where the address of the resource will.
-     */
-    private const string SAME = 'same';
-
-    private const string DELETE = 'delete';
-
     public function __construct(
         private TranslatorInterface $translator,
         private RedirectTargetField $redirectTargetField,
@@ -83,56 +66,6 @@ final readonly class RetirementForm
     }
 
     /**
-     * Where the request says the address of the resource leads once it is
-     * off the site, or null to leave it not found.
-     *
-     * @throws InvalidRedirect when nothing is chosen for it
-     */
-    public static function addressDecision(Request $request): ?TargetInput
-    {
-        $values = RedirectTargetField::fromRequest($request, 'address');
-
-        if (self::NOT_FOUND === $values['action']) {
-            return null;
-        }
-
-        if ('' === $values['action']) {
-            throw InvalidRedirect::undecidedAddress();
-        }
-
-        return RedirectTargetField::target($values);
-    }
-
-    /**
-     * What the request says of each redirect that leads to the resource, by
-     * its id; one with nothing chosen is left out.
-     *
-     * @return array<string, IncomingDecision>
-     */
-    public static function incomingDecisions(Request $request): array
-    {
-        $decisions = [];
-        $posted = $request->request->all('incoming');
-
-        foreach ($posted as $id => $fields) {
-            $values = RedirectTargetField::values(\is_array($fields) ? $fields : []);
-
-            $decision = match ($values['action']) {
-                '' => null,
-                self::SAME => IncomingDecision::sameAsAddress(),
-                self::DELETE => IncomingDecision::delete(),
-                default => IncomingDecision::leadingTo(RedirectTargetField::target($values)->target()),
-            };
-
-            if (null !== $decision) {
-                $decisions[(string) $id] = $decision;
-            }
-        }
-
-        return $decisions;
-    }
-
-    /**
      * What its own address does once it is off the site, if it has one.
      *
      * @param array<array-key, mixed> $posted
@@ -158,7 +91,7 @@ final readonly class RetirementForm
                 [$resource->type()->isImage() ? ResourceType::Image : ResourceType::Page],
                 RedirectTargetField::values($posted),
                 [],
-                [$this->option(self::NOT_FOUND, 'cms.redirects.retire.address.not_found')],
+                [$this->option(RetirementRequest::NOT_FOUND, 'cms.redirects.retire.address.not_found')],
             ),
         ]);
     }
@@ -184,8 +117,8 @@ final readonly class RetirementForm
                 : $this->translator->trans('cms.redirects.retire.incoming.legend_origin', ['%source%' => $redirect->source, '%origin%' => $names[$redirect->id]['origin']]),
             $redirect->image ? [ResourceType::Image] : [ResourceType::Page],
             RedirectTargetField::values(self::part($posted, $redirect->id)),
-            [$this->option(self::SAME, 'cms.redirects.retire.incoming.same')],
-            [$this->option(self::DELETE, 'cms.redirects.retire.incoming.delete')],
+            [$this->option(RetirementRequest::SAME, 'cms.redirects.retire.incoming.same')],
+            [$this->option(RetirementRequest::DELETE, 'cms.redirects.retire.incoming.delete')],
         ), $incoming));
     }
 

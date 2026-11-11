@@ -7,17 +7,12 @@ namespace Cms\Image\Infrastructure\Controller;
 use Cms\Image\Application\ImageFinder;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\ImageRepository;
-use Cms\Redirect\Domain\Resource;
-use Cms\Redirect\Infrastructure\Controller\RetirementForm;
-use Shared\Infrastructure\Ui\CmsLayout;
-use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Where an image is taken off the site: it asks what becomes of its
@@ -33,8 +28,7 @@ final class ImageUnpublishFormController extends AbstractController
 
     public function __construct(
         private readonly PageRenderer $pageRenderer,
-        private readonly TranslatorInterface $translator,
-        private readonly RetirementForm $retirementForm,
+        private readonly ImageUnpublishForm $imageUnpublishForm,
     ) {}
 
     #[Route('/images/{id}/unpublish', name: 'cms_images_unpublish_form', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -53,29 +47,7 @@ final class ImageUnpublishFormController extends AbstractController
         }
 
         $saved = $request->getSession()->remove(\sprintf(self::SAVED, $id));
-        $title = $this->translator->trans('cms.images.unpublish.page_title', ['%alt%' => $image->alt]);
 
-        $layout = CmsLayout::page(\sprintf('%s · CMS', $title))
-            ->withMain('Shared:PageTitle', [
-                'title' => $title,
-                'subtitle' => $this->translator->trans('cms.redirects.retire.subtitle'),
-            ], [
-                new PageComponent('Shared:ButtonLink', [
-                    'url' => $this->generateUrl('cms_images_edit', ['id' => $id]),
-                    'label' => $this->translator->trans('cms.images.unpublish.back'),
-                ]),
-            ]);
-
-        foreach (($this->retirementForm)(
-            Resource::image($id),
-            $this->generateUrl('cms_images_unpublish', ['id' => $id]),
-            'cms_images_unpublish',
-            $this->translator->trans('cms.images.unpublish.submit'),
-            \is_array($saved) ? $saved : [],
-        ) as $component) {
-            $layout = $layout->withMain($component->name, $component->props, $component->children);
-        }
-
-        return $this->pageRenderer->render($layout);
+        return $this->pageRenderer->render(($this->imageUnpublishForm)($image, \is_array($saved) ? $saved : []));
     }
 }
