@@ -18,8 +18,8 @@
  * does not understand its modern at-rules; a successful
  * `bin/console tailwind:build` is the CSS syntax gate.
  *
- * Pages, server command, Lighthouse form factors and thresholds live in
- * `ui-check.config.mjs`.
+ * Pages, server command and port, Lighthouse form factors and thresholds live
+ * in `ui-check.config.mjs`. A server command of null uses one already running.
  *
  *   npm run ui:check
  *   npm run ui:check -- --page=cms-login
@@ -42,7 +42,8 @@ const REPORT_DIR = path.join(ROOT, 'var', 'ui-check');
 const CONFIG_FILE = process.env.UI_CHECK_CONFIG
     ? path.resolve(ROOT, process.env.UI_CHECK_CONFIG)
     : path.join(ROOT, 'ui-check.config.mjs');
-const PORT = Number(process.env.UI_CHECK_PORT ?? 8099);
+// Set once the config is read: UI_CHECK_PORT, else server.port, else 8099.
+let PORT = Number(process.env.UI_CHECK_PORT ?? 8099);
 const VNU_JAR = path.join(ROOT, 'node_modules', 'vnu-jar', 'build', 'dist', 'vnu.jar');
 
 const LH_CATEGORIES = ['performance', 'accessibility', 'best-practices'];
@@ -269,7 +270,7 @@ async function waitForServer(server, page, bind) {
     const deadline = Date.now() + 30_000;
 
     while (Date.now() < deadline) {
-        if (server.exitCode !== null) {
+        if (server && server.exitCode !== null) {
             throw new Error(`Server exited early with code ${server.exitCode}`);
         }
 
@@ -862,6 +863,7 @@ async function main() {
     validateOnly();
 
     const config = await loadConfig();
+    PORT = Number(process.env.UI_CHECK_PORT ?? config.server?.port ?? 8099);
     const allPages = config.pages.map(normalizePage);
     const pages =
         pageFilter.size === 0
@@ -887,8 +889,14 @@ async function main() {
 
     try {
         if (needsServer) {
-            console.log(dim(`Starting server on ${bind}:${PORT}`));
-            server = startServer(config, bind);
+            // A command of null means the server is already running.
+            if (config.server?.command === null) {
+                console.log(dim(`Using the server on ${bind}:${PORT}`));
+            } else {
+                console.log(dim(`Starting server on ${bind}:${PORT}`));
+                server = startServer(config, bind);
+            }
+
             await waitForServer(server, pages[0], bind);
         }
 

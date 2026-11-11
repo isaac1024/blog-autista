@@ -27,15 +27,22 @@
  *   - thresholds:  per-page overrides for the Lighthouse thresholds
  *   - formFactors: per-page override of `lighthouse.formFactors`
  *
+ * The pages are read from the app running in Docker (`docker compose up -d`),
+ * through its edge on port 80, as a browser reaches it: the PHP of the host
+ * has no driver for the database.
+ *
  * Set `CMS_HOST` and `WEB_HOST` when the development contexts use custom hosts.
  * Authenticated CMS pages are included when `CMS_SESSION_COOKIE` holds a valid
- * PHPSESSID from a logged-in development session; the page editor also needs
- * `CMS_PAGE_ID`, the id of an existing page. Pages of the site are included
- * with `WEB_PAGE_SLUG` and `WEB_HOME`, once published.
+ * PHPSESSID from a logged-in development session. Those of one page, one
+ * image or one redirect need its id: `CMS_PAGE_ID` and `CMS_IMAGE_ID` of a
+ * published one, whose form that takes it off the site is checked too, and
+ * `CMS_REDIRECT_ID`. Pages of the site are included with `WEB_PAGE_SLUG` and
+ * `WEB_HOME`, once published.
  *
- * `server.command` supports `{bind}` and `{port}` placeholders. The default
- * checks are HTML, contrast and Lighthouse; run a subset with
- * `--only=html,lighthouse` and a subset of pages with `--page=cms-login`.
+ * `server.command` supports `{bind}` and `{port}` placeholders, or is null to
+ * use a server already running at `server.port`. The default checks are HTML,
+ * contrast and Lighthouse; run a subset with `--only=html,lighthouse` and a
+ * subset of pages with `--page=cms-login`.
  */
 
 const cmsHost = process.env.CMS_HOST ?? 'cms.blogautista.localhost';
@@ -51,38 +58,41 @@ const pages = [
     },
 ];
 
+const cmsPage = (name, path) => ({ name, host: cmsHost, path, headers: cmsHeaders });
+
 if (cmsSession) {
     pages.push(
-        {
-            name: 'cms-pages',
-            host: cmsHost,
-            path: '/pages',
-            headers: cmsHeaders,
-        },
-        {
-            name: 'cms-images',
-            host: cmsHost,
-            path: '/images',
-            headers: cmsHeaders,
-        },
-        {
-            name: 'cms-analytics',
-            host: cmsHost,
-            path: '/analytics',
-            headers: cmsHeaders,
-        },
+        cmsPage('cms-pages', '/pages'),
+        cmsPage('cms-images', '/images'),
+        cmsPage('cms-redirects', '/redirects'),
+        cmsPage('cms-redirect-new', '/redirects/new'),
+        cmsPage('cms-settings', '/settings'),
+        cmsPage('cms-analytics', '/analytics'),
     );
 }
 
-// The editor needs an existing page: set CMS_PAGE_ID to the id of one in the dev database.
-if (cmsSession && process.env.CMS_PAGE_ID) {
-    pages.push({
-        name: 'cms-page-edit',
-        host: cmsHost,
-        path: `/pages/${process.env.CMS_PAGE_ID}`,
-        headers: cmsHeaders,
-    });
+const pageId = process.env.CMS_PAGE_ID;
+if (cmsSession && pageId) {
+    pages.push(
+        cmsPage('cms-page-edit', `/pages/${pageId}`),
+        cmsPage('cms-page-unpublish', `/pages/${pageId}/unpublish`),
+        cmsPage('cms-page-relations', `/pages/${pageId}/relations`),
+    );
 }
+
+const imageId = process.env.CMS_IMAGE_ID;
+if (cmsSession && imageId) {
+    pages.push(
+        cmsPage('cms-image-edit', `/images/${imageId}`),
+        cmsPage('cms-image-unpublish', `/images/${imageId}/unpublish`),
+    );
+}
+
+const redirectId = process.env.CMS_REDIRECT_ID;
+if (cmsSession && redirectId) {
+    pages.push(cmsPage('cms-redirect-edit', `/redirects/${redirectId}`));
+}
+
 // The site only serves published pages: set WEB_PAGE_SLUG to the slug of one
 // published in the dev database, and WEB_HOME to check the home page once it
 // is published.
@@ -104,12 +114,10 @@ if (process.env.WEB_HOME) {
 
 export default {
     server: {
+        // The edge of `docker compose`, already running.
         bind: '127.0.0.1',
-        command: ['php', '-S', '{bind}:{port}', '-t', 'public', 'tools/router.php'],
-        env: {
-            APP_ENV: 'dev',
-            APP_DEBUG: '0',
-        },
+        port: 80,
+        command: null,
     },
 
     lighthouse: {
