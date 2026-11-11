@@ -16,19 +16,7 @@
         ]
     },
     "mutators": {
-        "@default": true,
-        // Twig writes every prop a component doesn't mount to the public
-        // property of its name, so hiding a mount() that only assigns them
-        // changes nothing. A mount() that decides more, such as Panel's, is
-        // tested for what it refuses and works out, whatever calls it.
-        "PublicVisibility": {
-            "ignore": ["Shared\\Infrastructure\\Twig\\Components\\*::mount"]
-        },
-        // Every kind of block has its arm, so the default one is never
-        // reached; PHPStan asks for it, as it can't tell the match is whole.
-        "MatchArmRemoval": {
-            "ignore": ["Shared\\Infrastructure\\Ui\\RichTextComponents::block"]
-        }
+        "@default": true
     },
     "timeout": 60,
     "threads": "auto",
