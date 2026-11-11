@@ -9,6 +9,7 @@ use Cms\Image\Application\ImageUnpublisher;
 use Cms\Image\Domain\ImageRedirects;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Redirect\Application\ResourceRetirement;
+use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -50,6 +51,7 @@ final class ImageUnpublishController extends AbstractController
 
         try {
             new ResourceRetirement(
+                RedirectId::random()->value(),
                 Resource::image($id),
                 RetirementForm::addressDecision($request),
                 RetirementForm::incomingDecisions($request),

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Application;
 
-use Cms\Redirect\Domain\InvalidRedirect;
+use Cms\Redirect\Domain\IncomingDecision;
 use Cms\Redirect\Domain\Redirect;
-use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
+use Cms\Redirect\Domain\Retirement;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\SourceAvailability;
@@ -20,8 +20,9 @@ use Shared\Domain\Transaction;
  * Takes a resource off the site with what the editor decided of its
  * addresses: first every redirect that leads to it, each where the editor
  * says, since none may lead to a resource off the site; then the resource
- * itself; then its own address, which leads somewhere else, says it is gone,
- * or, with no choice made, is no longer found.
+ * itself; then its own address, which leads somewhere else by the redirect
+ * of the id given, says it is gone, or, with no choice made, is no longer
+ * found.
  *
  * It holds the resource, its address and every target while it works, and
  * keeps all of it or none: a resource is never off the site without the
@@ -30,11 +31,13 @@ use Shared\Domain\Transaction;
 final readonly class ResourceRetirement
 {
     /**
-     * @param ?TargetInput                    $address   where its address leads once it is off the site; null to leave it not found
-     * @param array<string, IncomingDecision> $incoming  what to do with each redirect that leads to it, by its id
-     * @param \Closure(): void                $unpublish takes the resource off the site
+     * @param string                          $redirectId the id of the redirect its address gets, if it leads anywhere
+     * @param ?TargetInput                    $address    where its address leads once it is off the site; null to leave it not found
+     * @param array<string, IncomingDecision> $incoming   what to do with each redirect that leads to it, by its id
+     * @param \Closure(): void                $unpublish  takes the resource off the site
      */
     public function __construct(
+        private string $redirectId,
         private Resource $resource,
         private ?TargetInput $address,
         private array $incoming,
@@ -47,33 +50,13 @@ final readonly class ResourceRetirement
         MutualExclusion $mutualExclusion,
         Transaction $transaction,
     ): void {
-        $address = $this->address?->target();
-        $this->assertLeadsElsewhere($address);
+        $retirement = new Retirement($this->resource, $this->address?->target(), $this->incoming);
         $source = $siteResources->addressOf($this->resource);
 
         $mutualExclusion->run(
-            $this->keys($address, $source, $redirectRepository),
-            fn () => $transaction->run(fn () => $this->retire($address, $source, $redirectRepository, $siteResources)),
+            $this->keys($retirement, $source, $redirectRepository),
+            fn () => $transaction->run(fn () => $this->retire($retirement, $source, $redirectRepository, $siteResources)),
         );
-    }
-
-    /**
-     * Off the site, it can't be where its own address leads, nor where any
-     * redirect to it does: every choice is checked before anything changes.
-     */
-    private function assertLeadsElsewhere(?Target $address): void
-    {
-        $itself = Target::leadingTo($this->resource);
-
-        if (null !== $address && $address->equals($itself)) {
-            throw InvalidRedirect::toItself();
-        }
-
-        foreach ($this->incoming as $decision) {
-            if (!$decision->deletes() && $decision->target($address)->equals($itself)) {
-                throw InvalidRedirect::toItself();
-            }
-        }
     }
 
     /**
@@ -84,48 +67,36 @@ final readonly class ResourceRetirement
      *
      * @return list<string>
      */
-    private function keys(?Target $address, ?Source $source, RedirectRepository $redirectRepository): array
+    private function keys(Retirement $retirement, ?Source $source, RedirectRepository $redirectRepository): array
     {
-        $keys = [
+        return [
             $this->resource->key(),
-            ...(null === $source ? [] : new RedirectKeys($source, $address ?? Target::gone())()),
+            ...(null === $source ? [] : new RedirectKeys($source, $retirement->address() ?? Target::gone())()),
             ...array_map(static fn (Source $incoming): string => 'address:'.$incoming->value(), $redirectRepository->sourcesTargeting($this->resource)),
+            ...array_map(static fn (Resource $target): string => $target->key(), $retirement->incomingTargets()),
         ];
-
-        foreach ($this->incoming as $decision) {
-            $keys = [...$keys, ...$decision->keys()];
-        }
-
-        return $keys;
     }
 
     /**
      * Decides every redirect to it, takes it off the site, then leads its
      * address, while all of it is held.
      */
-    private function retire(?Target $address, ?Source $source, RedirectRepository $redirectRepository, SiteResources $siteResources): void
+    private function retire(Retirement $retirement, ?Source $source, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
         // Read again while held: no redirect can lead to it meanwhile.
         foreach ($redirectRepository->findTargeting($this->resource) as $redirect) {
-            $decision = $this->incoming[$redirect->id()->value()] ?? throw InvalidRedirect::undecided($redirect->source());
-
-            if ($decision->deletes()) {
-                $redirect->delete($redirectRepository);
-
-                continue;
-            }
-
-            $redirect->retarget($decision->target($address), $siteResources);
-            $redirect->save($redirectRepository);
+            $redirect->followRetirement($retirement, $redirectRepository, $siteResources);
         }
 
         ($this->unpublish)();
+
+        $address = $retirement->address();
 
         if (null === $address || null === $source) {
             return;
         }
 
-        $redirect = Redirect::create(RedirectId::random()->value(), $source, $address, $siteResources);
+        $redirect = Redirect::create($this->redirectId, $source, $address, $siteResources);
         new SourceAvailability($redirect)($redirectRepository);
         $redirect->save($redirectRepository);
     }

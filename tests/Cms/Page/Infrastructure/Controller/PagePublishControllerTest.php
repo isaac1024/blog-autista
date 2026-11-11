@@ -6,8 +6,11 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Infrastructure\Controller\PagePublishFormController;
+use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Redirect\Domain\RedirectMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -92,6 +95,49 @@ final class PagePublishControllerTest extends CmsWebTestCase
     public static function unpublishablePages(): iterable
     {
         yield 'without content' => [PageMother::create(id: PageIdMother::random()->value(), metaDescription: PageMother::META_DESCRIPTION)];
+    }
+
+    /**
+     * When publishing changes a redirect, straight from the editor it asks
+     * first on its confirmation: nothing went wrong.
+     */
+    public function testItAsksFirstOnItsConfirmationWhenPublishingChangesARedirect(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PageIdMother::random()->value();
+        $page = $this->savePage(self::publishableDraft($id));
+        $this->savePage(PageMother::published(id: RedirectMother::PAGE, title: 'Otra', slug: 'otra'));
+        self::getContainer()->get(RedirectRepository::class)->save(RedirectMother::create(source: '/sobre-mi.html'));
+        $expected = clone $page;
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $id));
+
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$id.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([], self::errorNotices($client));
+        self::assertEquals($expected, $this->storedPage($page));
+    }
+
+    /**
+     * What it refuses of the redirects is told on the confirmation, which
+     * comes back with what was sent. Why is told by ResourcePublicationTest.
+     */
+    public function testItGoesBackToItsConfirmationWithWhatWasSentWhenARedirectIsRefused(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PageIdMother::random()->value();
+        $page = $this->savePage(self::publishableDraft($id));
+        $this->savePage(PageMother::published(id: RedirectMother::PAGE, title: 'Otra', slug: 'otra'));
+        self::getContainer()->get(RedirectRepository::class)->save(RedirectMother::create(source: '/sobre-mi.html'));
+        $expected = clone $page;
+
+        $this->post($client, 'cms_pages_publish', \sprintf(self::URL, $id), ['outlook' => 'stale']);
+
+        self::assertResponseRedirects('http://cms.blogautista.localhost/pages/'.$id.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($expected, $this->storedPage($page));
+        $saved = $client->getRequest()->getSession()->get(\sprintf(PagePublishFormController::SAVED, $id));
+        self::assertIsArray($saved);
+        self::assertSame('stale', $saved['outlook'] ?? null);
     }
 
     public function testItOnlyAcceptsPost(): void

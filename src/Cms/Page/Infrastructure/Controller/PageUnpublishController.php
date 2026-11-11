@@ -9,6 +9,7 @@ use Cms\Page\Application\PageUnpublisher;
 use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
 use Cms\Redirect\Application\ResourceRetirement;
+use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -50,6 +51,7 @@ final class PageUnpublishController extends AbstractController
 
         try {
             new ResourceRetirement(
+                RedirectId::random()->value(),
                 Resource::page($id),
                 RetirementForm::addressDecision($request),
                 RetirementForm::incomingDecisions($request),

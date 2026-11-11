@@ -59,7 +59,7 @@ final class PagePublishFormController extends AbstractController
 
         $outlook = new PublicationOutlookFinder(Resource::page($id))($this->redirectRepository, $this->siteResources);
 
-        if (!$page->hasSomethingToPublish || !$outlook->asksFirst()) {
+        if (!$page->hasSomethingToPublish || !$outlook->asksFirst) {
             return $this->redirectToRoute('cms_pages_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Application;
 
-use Cms\Redirect\Domain\InvalidRedirect;
+use Cms\Redirect\Domain\Publication;
 use Cms\Redirect\Domain\Redirect;
-use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
-use Cms\Redirect\Domain\SourceAvailability;
 use Cms\Redirect\Domain\Target;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
@@ -20,41 +18,39 @@ use Shared\Domain\Transaction;
  * Publishes a resource and keeps the redirects true to it: the address it
  * takes answers it, so a redirect there goes; it is on the site again, so no
  * redirect knows it as the one that was at its address any longer; and the
- * address it leaves, when it moves, does what the editor says.
+ * address it leaves, when it moves, does what the editor says, by the
+ * redirect of the id given when it has none yet.
  *
  * It holds the resource and both addresses while it works, and keeps all of
  * it or none. While held, it checks that publishing still does what the
- * editor confirmed, by the fingerprint of what was shown: a redirect created
- * meanwhile at the address it takes is never deleted unseen.
+ * editor confirmed: a redirect created meanwhile at the address it takes is
+ * never deleted unseen.
  */
 final readonly class ResourcePublication
 {
     /**
-     * @param PreviousAddressDecision $previous what the address it leaves does, when it moves
-     * @param ?string                 $outlook  the fingerprint of what the editor was shown, empty when nothing; null to publish whatever it does, for a resource whose address never changes
-     * @param \Closure(): void        $publish  puts the resource on the site
+     * @param string                  $redirectId the id of the redirect the address it leaves gets, if it has none
+     * @param PreviousAddressDecision $previous   what the address it leaves does, when it moves
+     * @param ?string                 $outlook    the fingerprint of what the editor was shown, empty when nothing; null to publish whatever it does, for a resource whose address never changes
+     * @param \Closure(): void        $publish    puts the resource on the site
      */
     public function __construct(
+        private string $redirectId,
         private Resource $resource,
         private PreviousAddressDecision $previous,
         private ?string $outlook,
         private \Closure $publish,
     ) {}
 
-    /**
-     * PHPMD measures it over the limits only when it analyses the whole
-     * source tree; on its own, it is within them.
-     *
-     * @SuppressWarnings("PHPMD.CyclomaticComplexity")
-     */
     public function __invoke(
         RedirectRepository $redirectRepository,
         SiteResources $siteResources,
         MutualExclusion $mutualExclusion,
         Transaction $transaction,
     ): void {
-        $next = $siteResources->nextAddressOf($this->resource);
-        $left = self::left($siteResources->addressOf($this->resource), $next);
+        $publication = Publication::now($this->resource, $redirectRepository, $siteResources);
+        $next = $publication->next();
+        $left = $publication->left();
         $target = null === $left ? null : $this->previous->target()?->target();
 
         $mutualExclusion->run($this->keys($next, $left, $target), fn () => $transaction->run(
@@ -69,7 +65,10 @@ final readonly class ResourcePublication
      */
     private function publish(?Source $next, ?Source $left, ?Target $target, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
-        $this->assertConfirmed($redirectRepository, $siteResources);
+        if (null !== $this->outlook) {
+            Publication::now($this->resource, $redirectRepository, $siteResources)->assertConfirmed($this->outlook, $this->previous->isDecided());
+        }
+
         ($this->publish)();
 
         // Its address answers it now, so nothing else answers there.
@@ -82,38 +81,8 @@ final readonly class ResourcePublication
         }
 
         if (null !== $left && null !== $target) {
-            self::lead($left, $target, $redirectRepository, $siteResources);
+            $this->lead($left, $target, $redirectRepository, $siteResources);
         }
-    }
-
-    /**
-     * Whether publishing, as it would be now, is what the editor was shown,
-     * and the address it leaves, if any, was decided.
-     */
-    private function assertConfirmed(RedirectRepository $redirectRepository, SiteResources $siteResources): void
-    {
-        if (null === $this->outlook) {
-            return;
-        }
-
-        $outlook = new PublicationOutlookFinder($this->resource)($redirectRepository, $siteResources);
-
-        if ($outlook->fingerprint() !== $this->outlook) {
-            throw InvalidRedirect::outlookChanged();
-        }
-
-        if (null !== $outlook->previous && !$this->previous->isDecided()) {
-            throw InvalidRedirect::undecidedPrevious();
-        }
-    }
-
-    /**
-     * The address it leaves: the one it has, or last had, when it moves to
-     * another.
-     */
-    private static function left(?Source $current, ?Source $next): ?Source
-    {
-        return null === $current || null === $next || $current->equals($next) ? null : $current;
     }
 
     /**
@@ -138,13 +107,13 @@ final readonly class ResourcePublication
      * Leads the address it left where the editor says: the redirect there
      * changes, or one is created.
      */
-    private static function lead(Source $left, Target $target, RedirectRepository $redirectRepository, SiteResources $siteResources): void
+    private function lead(Source $left, Target $target, RedirectRepository $redirectRepository, SiteResources $siteResources): void
     {
         $redirect = $redirectRepository->findBySource($left);
 
+        // None is there, so none other can take it while it is held.
         if (null === $redirect) {
-            $redirect = Redirect::create(RedirectId::random()->value(), $left, $target, $siteResources);
-            new SourceAvailability($redirect)($redirectRepository);
+            $redirect = Redirect::create($this->redirectId, $left, $target, $siteResources);
         } else {
             $redirect->retarget($target, $siteResources);
         }

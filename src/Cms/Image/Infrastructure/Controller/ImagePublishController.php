@@ -9,6 +9,7 @@ use Cms\Image\Application\ImagePublisher;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Redirect\Application\PreviousAddressDecision;
 use Cms\Redirect\Application\ResourcePublication;
+use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -44,6 +45,7 @@ final class ImagePublishController extends AbstractController
 
         try {
             new ResourcePublication(
+                RedirectId::random()->value(),
                 Resource::image($id),
                 PreviousAddressDecision::keep(),
                 null,

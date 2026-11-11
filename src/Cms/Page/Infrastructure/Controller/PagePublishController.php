@@ -10,6 +10,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Application\ResourcePublication;
 use Cms\Redirect\Domain\InvalidRedirect;
+use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -56,13 +57,14 @@ final class PagePublishController extends AbstractController
         $outlook = PublicationForm::outlook($request);
 
         try {
-            if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst()) {
+            if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst) {
                 return $this->redirectToRoute('cms_pages_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
             }
 
             // Straight from the editor, nothing was shown, so publishing must
             // still change no redirect when it happens.
             new ResourcePublication(
+                RedirectId::random()->value(),
                 $resource,
                 PublicationForm::previous($request, $resource),
                 $outlook ?? '',

@@ -8,7 +8,8 @@ use Shared\Domain\MutualExclusion;
 
 /**
  * Mutual exclusion that runs the work at once, telling which keys each run
- * held, so a test knows what a change holds while it checks and saves.
+ * held, so a test knows what a change holds while it checks and saves,
+ * and whether it reads and saves while it holds them.
  */
 final class RecordingMutualExclusion implements MutualExclusion
 {
@@ -17,14 +18,29 @@ final class RecordingMutualExclusion implements MutualExclusion
      */
     private array $held = [];
 
+    private bool $holding = false;
+
     #[\Override]
     public function run(array $keys, \Closure $work): mixed
     {
         $keys = array_values(array_unique($keys));
         sort($keys);
         $this->held[] = $keys;
+        $this->holding = true;
 
-        return $work();
+        try {
+            return $work();
+        } finally {
+            $this->holding = false;
+        }
+    }
+
+    /**
+     * Whether a run is holding its keys now.
+     */
+    public function isHolding(): bool
+    {
+        return $this->holding;
     }
 
     /**

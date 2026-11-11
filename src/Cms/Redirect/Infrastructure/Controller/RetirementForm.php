@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
-use Cms\Redirect\Application\IncomingDecision;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Application\TargetInput;
+use Cms\Redirect\Domain\IncomingDecision;
 use Cms\Redirect\Domain\InvalidRedirect;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
@@ -121,7 +121,7 @@ final readonly class RetirementForm
                 '' => null,
                 self::SAME => IncomingDecision::sameAsAddress(),
                 self::DELETE => IncomingDecision::delete(),
-                default => IncomingDecision::leadingTo(RedirectTargetField::target($values)),
+                default => IncomingDecision::leadingTo(RedirectTargetField::target($values)->target()),
             };
 
             if (null !== $decision) {

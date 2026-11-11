@@ -55,7 +55,7 @@ final readonly class PublicationForm
                 ...(null === $notice ? [] : [$notice]),
                 ...(null === $outlook->previous ? [] : [$this->previousPanel($outlook, \is_array($posted['previous'] ?? null) ? $posted['previous'] : [])]),
                 // What was shown, so publishing knows it still does that.
-                new PageComponent('Shared:FormInput', ['name' => 'outlook', 'type' => 'hidden', 'value' => $outlook->fingerprint()]),
+                new PageComponent('Shared:FormInput', ['name' => 'outlook', 'type' => 'hidden', 'value' => $outlook->fingerprint]),
                 new PageComponent('Shared:ActionBar', [], [
                     new PageComponent('Shared:FormButton', ['label' => $submit]),
                 ]),

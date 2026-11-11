@@ -95,6 +95,26 @@ final class Redirect
     }
 
     /**
+     * Does what the editor decided of it as the resource it leads to goes off
+     * the site: it is deleted, or leads where it was told and is saved.
+     *
+     * @throws InvalidRedirect when nothing was decided of it
+     */
+    public function followRetirement(Retirement $retirement, RedirectRepository $redirectRepository, SiteResources $siteResources): void
+    {
+        $decision = $retirement->decisionFor($this);
+
+        if ($decision->deletes()) {
+            $this->delete($redirectRepository);
+
+            return;
+        }
+
+        $this->retarget($decision->target($retirement->address()), $siteResources);
+        $this->save($redirectRepository);
+    }
+
+    /**
      * Forgets the resource that was at its address, once it is back on the
      * site: the address is only an address from then on, and what links to
      * that resource reaches it again.

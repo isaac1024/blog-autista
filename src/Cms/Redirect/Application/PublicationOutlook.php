@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Application;
 
+use Cms\Redirect\Domain\Publication;
+
 /**
- * What publishing a resource as it is saved does to the redirects: the one
- * at the address it takes, which goes, and the address it leaves, which an
- * editor says what to do with.
+ * What publishing a resource as it is saved does to the redirects, as the
+ * CMS shows it: the one at the address it takes, which goes, and the address
+ * it leaves, which an editor says what to do with.
  */
 final readonly class PublicationOutlook
 {
@@ -16,40 +18,30 @@ final readonly class PublicationOutlook
      * @param ?RedirectResponse $replaced         the redirect at that address, which publishing deletes; null for none, or one of its own former address
      * @param ?string           $previous         the address it leaves for another, as shown; null when it keeps its own, or had none
      * @param ?RedirectResponse $previousRedirect the redirect at the address it leaves, if any
+     * @param bool              $asksFirst        whether publishing has something to tell or ask first
+     * @param string            $fingerprint      what was told and asked, in short, so a confirmation is known to be of what publishing does now; empty when nothing is
      */
     public function __construct(
         public ?string $next,
         public ?RedirectResponse $replaced,
         public ?string $previous,
         public ?RedirectResponse $previousRedirect,
+        public bool $asksFirst,
+        public string $fingerprint,
     ) {}
 
-    /**
-     * Whether publishing has something to tell or ask first.
-     */
-    public function asksFirst(): bool
+    public static function fromPublication(Publication $publication): self
     {
-        return null !== $this->replaced || null !== $this->previous;
-    }
+        $replaced = $publication->replaced();
+        $leftRedirect = $publication->leftRedirect();
 
-    /**
-     * What was told and asked, in short, so a confirmation is known to be of
-     * what publishing does now: empty when nothing is, and different once a
-     * redirect it tells of, or an address it asks about, changed.
-     */
-    public function fingerprint(): string
-    {
-        if (!$this->asksFirst()) {
-            return '';
-        }
-
-        return hash('sha256', json_encode([
-            $this->next,
-            $this->previous,
-            ...array_map(
-                static fn (?RedirectResponse $redirect): ?array => null === $redirect ? null : [$redirect->id, $redirect->targetType, $redirect->targetId, $redirect->originType, $redirect->originId],
-                [$this->replaced, $this->previousRedirect],
-            ),
-        ], \JSON_THROW_ON_ERROR));
+        return new self(
+            $publication->next()?->shown(),
+            null === $replaced ? null : RedirectResponse::fromRedirect($replaced),
+            $publication->left()?->shown(),
+            null === $leftRedirect ? null : RedirectResponse::fromRedirect($leftRedirect),
+            $publication->asksFirst(),
+            $publication->fingerprint(),
+        );
     }
 }
