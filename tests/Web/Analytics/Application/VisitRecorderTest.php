@@ -47,10 +47,7 @@ final class VisitRecorderTest extends TestCase
      */
     public function testItRecordsTheVisitOfAPageOnTheSite(): void
     {
-        self::assertEquals(
-            VisitMother::create(channel: Channel::Search, source: 'google.es', reader: VisitMother::READER, country: 'ES'),
-            $this->record(referrer: 'https://www.google.es/', zone: 'Europe/Madrid'),
-        );
+        $this->assertRecords(VisitMother::create(channel: Channel::Search, source: 'google.es', reader: VisitMother::READER, country: 'ES'), referrer: 'https://www.google.es/', zone: 'Europe/Madrid');
     }
 
     public function testItTellsThePageIsOffTheSite(): void
@@ -84,8 +81,8 @@ final class VisitRecorderTest extends TestCase
      */
     public function testItRecordsTheLongestVisitItAllows(): void
     {
-        self::assertNotNull($this->record(referrer: 'https://example.org/'.str_repeat('a', 2028), source: str_repeat('a', 200), medium: str_repeat('a', 200), zone: str_repeat('a', 64)));
-        self::assertNotNull($this->record(referrer: 'https://example.org/'.str_repeat('ñ', 2028), zone: str_repeat('ñ', 64)));
+        $this->assertRecords(VisitMother::create(channel: Channel::Referral, source: 'example.org'), referrer: 'https://example.org/'.str_repeat('a', 2028), source: str_repeat('a', 200), medium: str_repeat('a', 200), zone: str_repeat('a', 64));
+        $this->assertRecords(VisitMother::create(channel: Channel::Referral, source: 'example.org'), referrer: 'https://example.org/'.str_repeat('ñ', 2028), zone: str_repeat('ñ', 64));
     }
 
     /**
@@ -93,7 +90,7 @@ final class VisitRecorderTest extends TestCase
      */
     public function testItKeepsAVisitFromAnAddressItCannotRead(): void
     {
-        self::assertEquals(VisitMother::create(reader: VisitMother::reader(address: 'unknown')), $this->record(address: 'unknown'));
+        $this->assertRecords(VisitMother::create(reader: VisitMother::reader(address: 'unknown')), address: 'unknown');
     }
 
     /**
@@ -101,7 +98,7 @@ final class VisitRecorderTest extends TestCase
      */
     public function testItKeepsThePageAsItsIdIsWrittenOnTheSite(): void
     {
-        self::assertEquals(VisitMother::create(), $this->record(page: strtoupper(self::PAGE)));
+        $this->assertRecords(VisitMother::create(), page: strtoupper(self::PAGE));
     }
 
     /**
@@ -184,31 +181,25 @@ final class VisitRecorderTest extends TestCase
     #[DataProvider('arrivals')]
     public function testItTellsWhereTheReaderCameFrom(string $referrer, string $source, string $medium, string $channel, ?string $expectedSource): void
     {
-        self::assertEquals(
-            VisitMother::create(channel: Channel::from($channel), source: $expectedSource),
-            $this->record(referrer: $referrer, source: $source, medium: $medium),
-        );
+        $this->assertRecords(VisitMother::create(channel: Channel::from($channel), source: $expectedSource), referrer: $referrer, source: $source, medium: $medium);
     }
 
     #[DataProvider('timeZones')]
     public function testItTellsTheCountryByTheTimeZoneOfTheBrowser(string $zone, ?string $country): void
     {
-        self::assertEquals(VisitMother::create(country: $country), $this->record(zone: $zone));
+        $this->assertRecords(VisitMother::create(country: $country), zone: $zone);
     }
 
     #[DataProvider('devices')]
     public function testItTellsThePhoneFromTheComputer(string $userAgent, string $device): void
     {
-        self::assertEquals(
-            VisitMother::create(reader: VisitMother::reader(userAgent: $userAgent), device: Device::from($device)),
-            $this->record(userAgent: $userAgent),
-        );
+        $this->assertRecords(VisitMother::create(reader: VisitMother::reader(userAgent: $userAgent), device: Device::from($device)), userAgent: $userAgent);
     }
 
     #[DataProvider('robots')]
     public function testItCountsNoRobot(string $userAgent): void
     {
-        self::assertNull($this->record(userAgent: $userAgent));
+        $this->assertRecords(null, userAgent: $userAgent);
     }
 
     /**
@@ -226,6 +217,7 @@ final class VisitRecorderTest extends TestCase
         self::assertEquals($visit('2001:db8:1:2:aaaa::1'), $visit('2001:db8:1:2:bbbb::2'), 'Another address of the same IPv6 network');
         self::assertNotEquals($visit('2001:db8:1:2:aaaa::1'), $visit('2001:db8:1:3::1'), 'Another IPv6 network');
         self::assertEquals($visit('203.0.113.8'), $visit('::ffff:203.0.113.8'), 'An IPv4 address written as IPv6');
+        self::assertNotEquals($visit('unknown'), $visit('desconocida'), 'Another address the request cannot read');
     }
 
     /**
@@ -236,7 +228,7 @@ final class VisitRecorderTest extends TestCase
     {
         self::mockTime('2026-11-08 10:00:00');
 
-        self::assertEquals(VisitMother::create(day: '2026-11-08', reader: VisitMother::reader(day: '2026-11-08')), $this->record());
+        $this->assertRecords(VisitMother::create(day: '2026-11-08', reader: VisitMother::reader(day: '2026-11-08')));
         self::assertNotSame(VisitMother::READER, VisitMother::reader(day: '2026-11-08'));
     }
 
@@ -247,12 +239,37 @@ final class VisitRecorderTest extends TestCase
     {
         self::mockTime('2026-11-07 23:30:00 UTC');
 
-        self::assertEquals(VisitMother::create(day: '2026-11-08', reader: VisitMother::reader(day: '2026-11-08')), $this->record());
+        $this->assertRecords(VisitMother::create(day: '2026-11-08', reader: VisitMother::reader(day: '2026-11-08')));
     }
 
     /**
-     * The visit the recorder saves, by the id the tests give it, with a salt
-     * of its own for each day; null when it saves none.
+     * Records the visit, expecting the recorder to save the one given, by
+     * the id the tests give it, or none.
+     */
+    private function assertRecords(
+        ?Visit $expected,
+        string $page = self::PAGE,
+        string $referrer = '',
+        string $source = '',
+        string $medium = '',
+        string $zone = '',
+        string $address = VisitMother::ADDRESS,
+        string $userAgent = self::BROWSER,
+    ): void {
+        $visitRepository = $this->createMock(VisitRepository::class);
+
+        if (null === $expected) {
+            $visitRepository->expects(self::never())->method('save');
+        } else {
+            $visitRepository->expects(self::once())->method('save')->with(self::equalTo($expected));
+        }
+
+        self::recorder($page, $referrer, $source, $medium, $zone, $address, $userAgent)($visitRepository, self::publishedPages(true), self::dailySalt());
+    }
+
+    /**
+     * The visit the recorder saves, to tell one from another; null when it
+     * saves none.
      */
     private function record(
         string $page = self::PAGE,
@@ -264,22 +281,38 @@ final class VisitRecorderTest extends TestCase
         string $userAgent = self::BROWSER,
         bool $published = true,
     ): ?Visit {
-        $publishedPages = self::createStub(PublishedPages::class);
-        $publishedPages->method('contains')->willReturn($published);
-        $dailySalt = self::createStub(DailySalt::class);
-        $dailySalt->method('forDay')->willReturnCallback(VisitMother::salt(...));
         $saved = null;
         $visitRepository = $this->createMock(VisitRepository::class);
         $visitRepository->expects(self::atMost(1))->method('save')->willReturnCallback(static function (Visit $visit) use (&$saved): void {
             $saved = $visit;
         });
 
-        new VisitRecorder(VisitMother::ID, $page, $referrer, $source, $medium, $zone, $address, $userAgent, ['www.blogautista.localhost', 'cms.blogautista.localhost'])(
-            $visitRepository,
-            $publishedPages,
-            $dailySalt,
-        );
+        self::recorder($page, $referrer, $source, $medium, $zone, $address, $userAgent)($visitRepository, self::publishedPages($published), self::dailySalt());
 
         return $saved;
+    }
+
+    private static function recorder(string $page, string $referrer, string $source, string $medium, string $zone, string $address, string $userAgent): VisitRecorder
+    {
+        return new VisitRecorder(VisitMother::ID, $page, $referrer, $source, $medium, $zone, $address, $userAgent, ['www.blogautista.localhost', 'cms.blogautista.localhost']);
+    }
+
+    private static function publishedPages(bool $published): PublishedPages
+    {
+        $publishedPages = self::createStub(PublishedPages::class);
+        $publishedPages->method('contains')->willReturn($published);
+
+        return $publishedPages;
+    }
+
+    /**
+     * A salt of its own for each day.
+     */
+    private static function dailySalt(): DailySalt
+    {
+        $dailySalt = self::createStub(DailySalt::class);
+        $dailySalt->method('forDay')->willReturnCallback(VisitMother::salt(...));
+
+        return $dailySalt;
     }
 }

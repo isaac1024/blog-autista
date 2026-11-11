@@ -46,6 +46,20 @@ final class VisitControllerTest extends WebTestCase
         ]], $this->visits());
     }
 
+    /**
+     * Which pages are within the site is told by VisitRecorderTest; here,
+     * that the site and the CMS are.
+     */
+    public function testItTakesTheSiteAndTheCmsAsWithinTheSite(): void
+    {
+        $client = $this->clientWithPage();
+
+        $this->visit($client, referrer: self::HOST.'/otra.html');
+        $this->visit($client, referrer: 'http://cms.blogautista.localhost/pages', address: '203.0.113.2');
+
+        self::assertSame(['internal', 'internal'], array_column($this->visits(), 'channel'));
+    }
+
     public function testTheAnswerIsKeptByNoCacheAndSetsNoCookie(): void
     {
         $client = $this->clientWithPage();

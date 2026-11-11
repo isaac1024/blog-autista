@@ -7,11 +7,12 @@ namespace Web\Analytics\Infrastructure\Page;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Web\Analytics\Domain\PageId;
 use Web\Analytics\Domain\PublishedPages;
-use Web\Page\Domain\PageId as SitePageId;
+use Web\Page\Application\PublishedPagesFinder;
 use Web\Page\Domain\PageRepository;
 
 /**
- * Outbound adapter that tells the pages on the site by the pages the site serves.
+ * Outbound adapter that asks the pages the site serves whether a page is
+ * on it.
  */
 #[AsAlias(PublishedPages::class)]
 final readonly class SitePublishedPages implements PublishedPages
@@ -21,6 +22,6 @@ final readonly class SitePublishedPages implements PublishedPages
     #[\Override]
     public function contains(PageId $pageId): bool
     {
-        return null !== $this->pageRepository->find(new SitePageId($pageId->value()));
+        return [] !== new PublishedPagesFinder([$pageId->value()])($this->pageRepository);
     }
 }
