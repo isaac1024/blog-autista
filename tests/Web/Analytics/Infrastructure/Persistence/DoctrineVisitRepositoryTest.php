@@ -6,6 +6,7 @@ namespace Web\Tests\Analytics\Infrastructure\Persistence;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Analytics\Domain\Channel;
 use Web\Analytics\Domain\Day;
@@ -21,6 +22,8 @@ use Web\Tests\Analytics\Domain\VisitMother;
  */
 final class DoctrineVisitRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     private const string OTHER_PAGE = '01a1b801-ce58-723d-8234-b76d9105e202';
     private const string ONE = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     private const string TWO = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -84,6 +87,14 @@ final class DoctrineVisitRepositoryTest extends KernelTestCase
         ], $this->totals(VisitMother::DAY));
         // Only the day counted is forgotten.
         self::assertSame(['2026-11-08'], $this->connection()->fetchFirstColumn('SELECT day FROM web_visit'));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTablesAreTheOnesMapped(): void
+    {
+        self::assertTablesAreMapped('web_visit', 'web_visit_total');
     }
 
     private function save(Visit $visit): void

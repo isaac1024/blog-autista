@@ -22,6 +22,7 @@ use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -31,6 +32,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  */
 final class DoctrineRedirectRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
     use DomainErrorAssertions;
 
     private const string FIRST = '0196f3a0-0000-7000-8000-0000000000e1';
@@ -171,6 +173,14 @@ final class DoctrineRedirectRepositoryTest extends KernelTestCase
         $stale->retarget(Target::leadingTo(Resource::page(RedirectMother::PAGE)), self::onSite());
 
         self::assertTells('errors.redirect.changed_meanwhile', ['%source%' => '/vieja.html'], fn () => $this->repository()->save($stale));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('cms_redirect');
     }
 
     /**

@@ -9,10 +9,13 @@ use Cms\Tests\Settings\Domain\SettingsIdMother;
 use Cms\Tests\Settings\Domain\SettingsMother as Mother;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class DoctrineSettingsRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     public function testItFindsNoSettingsBeforeTheyAreCreated(): void
     {
         self::assertNull($this->repository()->find());
@@ -65,6 +68,14 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
         $this->expectException(UniqueConstraintViolationException::class);
 
         $repository->save(Mother::create(id: SettingsIdMother::random()->value()));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('cms_settings');
     }
 
     private function repository(): SettingsRepository

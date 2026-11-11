@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Page\Infrastructure\Persistence;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
@@ -15,6 +16,8 @@ use Web\Tests\Page\Domain\PageIdMother;
 
 final class DoctrinePageRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     public function testItSavesThePageSoItCanBeReadBack(): void
     {
         $page = Page::publish(CmsPagePublishedMother::create(metaDescription: null, robots: Robots::NoindexNofollow));
@@ -82,6 +85,14 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
 
         self::assertNull($this->repository()->findBySlug('sobre-mi'));
         self::assertNotNull($this->repository()->findBySlug('contacto'));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('web_page');
     }
 
     private function repository(): PageRepository

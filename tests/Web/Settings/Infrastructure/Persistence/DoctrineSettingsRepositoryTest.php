@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Settings\Infrastructure\Persistence;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
@@ -12,6 +13,8 @@ use Web\Tests\Settings\Domain\CmsSettingsPublishedMother as Event;
 
 final class DoctrineSettingsRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     public function testItFindsNoSettingsUntilTheCmsPublishesThem(): void
     {
         self::assertNull($this->repository()->find());
@@ -43,6 +46,14 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
         $this->entityManager()->clear();
 
         self::assertEquals($settings, $this->repository()->find());
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('web_settings');
     }
 
     private function repository(): SettingsRepository

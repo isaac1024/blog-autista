@@ -6,6 +6,7 @@ namespace Web\Tests\Image\Infrastructure\Persistence;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Image\Domain\Image;
 use Web\Image\Domain\ImageRepository;
@@ -14,6 +15,8 @@ use Web\Tests\Image\Domain\ImageIdMother;
 
 final class DoctrineImageRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     /**
      * Every field comes back as saved: its texts at their longest, where the
      * CMS keeps its file and the last event it took.
@@ -72,6 +75,14 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
 
         self::assertNull($repository->find($deletedId));
         self::assertEquals($kept, $repository->find($keptId));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('web_image');
     }
 
     private function repository(): ImageRepository

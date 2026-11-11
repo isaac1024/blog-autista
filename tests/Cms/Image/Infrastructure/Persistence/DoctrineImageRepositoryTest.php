@@ -16,6 +16,7 @@ use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\DomainErrorAssertions;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -26,6 +27,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  */
 final class DoctrineImageRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
     use DomainErrorAssertions;
 
     /**
@@ -193,6 +195,14 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
         self::assertTells('errors.criteria.unknown_field', ['%field%' => 'path'], fn () => $this->repository()->matching(
             new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('path', OrderDirection::Ascending), offset: 0),
         ));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('cms_image');
     }
 
     /**

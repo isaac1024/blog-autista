@@ -24,6 +24,7 @@ use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -34,6 +35,8 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  */
 final class DoctrinePageRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     /**
      * The one set of pages every assertion runs against. Titles keyed by id,
      * oldest first: page ids are time-ordered UUIDs. Every title has
@@ -385,6 +388,14 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $this->expectExceptionObject(InvalidCriteria::unknownField('createdAt'));
 
         $this->repository()->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('createdAt', OrderDirection::Ascending), offset: 0));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('cms_page');
     }
 
     /**

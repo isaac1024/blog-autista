@@ -8,10 +8,13 @@ use Cms\Relation\Domain\Relation;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Relation\Domain\CmsPageImagesUsedMother as Ids;
+use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class DoctrineRelationRepositoryTest extends KernelTestCase
 {
+    use MappedTables;
+
     private const string OTHER_PAGE = '01a19e72-b07f-7d78-889c-fa4a14a4fb96';
 
     private const string SETTINGS = '01a1c0de-5e77-7a5e-8a11-000000000001';
@@ -129,6 +132,14 @@ final class DoctrineRelationRepositoryTest extends KernelTestCase
         $this->repository()->replace(ResourceType::Page, Ids::PAGE, ResourceType::Image, [Ids::IMAGE]);
 
         self::assertSame([], $this->repository()->usersOf(ResourceType::Image, Ids::OTHER_IMAGE, 10, 0));
+    }
+
+    /**
+     * What the entity maps is what the migrations built.
+     */
+    public function testItsTableIsTheOneMapped(): void
+    {
+        self::assertTablesAreMapped('cms_relation');
     }
 
     /**
