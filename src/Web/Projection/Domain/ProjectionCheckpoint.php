@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Web\Projection\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * Last revision applied to an aggregate, kept even when its public resource
@@ -25,7 +24,10 @@ final class ProjectionCheckpoint
         #[ORM\Column]
         private int $revision,
     ) {
-        if ('' === $projection || !Uuid::isValid($aggregateId) || $revision < 0) {
+        // Rejects what is no id of any aggregate.
+        new AggregateId($aggregateId);
+
+        if ('' === $projection || $revision < 0) {
             throw new \InvalidArgumentException('The projection checkpoint is invalid.');
         }
     }
