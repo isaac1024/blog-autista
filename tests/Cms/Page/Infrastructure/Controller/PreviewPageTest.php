@@ -22,6 +22,7 @@ use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Settings\Domain\SettingsMother;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\RichTextComponents;
+use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -120,6 +121,22 @@ final class PreviewPageTest extends TestCase
             ['label' => 'Aviso legal', 'url' => '/aviso-legal.html'],
             ['label' => 'Cookies', 'url' => '/cookies.html'],
         ], $result->footer[0]->props['links']);
+    }
+
+    /**
+     * The default image of the published settings is shared with the page,
+     * while it is on the site.
+     */
+    public function testItSharesTheDefaultImageOfThePublishedSettings(): void
+    {
+        $settings = SettingsMother::published(published: SettingsMother::version(defaultImage: self::PUBLISHED_IMAGE));
+        $images = [self::PUBLISHED_IMAGE => ImageMother::published(id: self::PUBLISHED_IMAGE), self::DRAFT_IMAGE => ImageMother::create(id: self::DRAFT_IMAGE)];
+
+        $shared = $this->preview(images: $images, settings: $settings)(PageResponse::fromPage(PageMother::create(id: self::PAGE)));
+        $offSite = $this->preview(images: $images, settings: SettingsMother::published(published: SettingsMother::version(defaultImage: self::DRAFT_IMAGE)))(PageResponse::fromPage(PageMother::create(id: self::PAGE)));
+
+        self::assertSame(SiteMedia::shareImage(ImageMother::path(self::PUBLISHED_IMAGE)->value(), ImageMother::ALT), $shared->image);
+        self::assertNull($offSite->image);
     }
 
     public function testItPaintsNoChromeWhileTheSettingsAreNotPublished(): void

@@ -32,6 +32,7 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
 
         self::assertNull($repository->findByIdentifier('someone-else'));
         self::assertFalse($repository->existsByIdentifier('someone-else'));
+        self::assertNull($repository->credentialsVersion('someone-else'));
     }
 
     #[DataProvider('incompleteCredentials')]

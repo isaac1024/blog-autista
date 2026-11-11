@@ -248,6 +248,14 @@ final class PageUpdaterTest extends TestCase
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '/contacto.html']]]),
             InvalidRichText::malformed('blocks[0].text[0].page_id', 'the id of a page'),
         ];
+        yield 'widget of no kind the blog has' => [
+            Text::stored(['type' => 'widget', 'kind' => 'map', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']),
+            InvalidRichText::malformed('blocks[0].kind', 'a known kind of widget'),
+        ];
+        yield 'widget showing anything but a page' => [
+            Text::stored(['type' => 'widget', 'kind' => 'related_page', 'page_id' => 'sobre-mi']),
+            InvalidRichText::malformed('blocks[0].page_id', 'the id of a page'),
+        ];
         yield 'link to the page itself' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'esta página', 'marks' => ['link'], 'page_id' => PageIdMother::DEFAULT_VALUE]]]),
             InvalidContent::linksItself(),

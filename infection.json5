@@ -28,6 +28,22 @@
         // reached; PHPStan asks for it, as it can't tell the match is whole.
         "MatchArmRemoval": {
             "ignore": ["Shared\\Infrastructure\\Ui\\RichTextComponents::block"]
+        },
+        // A Doctrine type takes mixed and must refuse a PHP value of another
+        // type, but Doctrine only ever hands it what the column holds, a
+        // string, or what the entity maps, so no repository reaches the
+        // refusal. Nor does one reach a column that is no JSON: every JSON
+        // column has a json_valid check, so the database refuses it first.
+        // What a repository can reach, a JSON value of the wrong shape, is
+        // tested by reading a corrupt row back.
+        "ArrayItemRemoval": {
+            "ignoreSourceCodeByRegex": ["throw InvalidType::new\\(.+"]
+        },
+        "Throw_": {
+            "ignoreSourceCodeByRegex": [
+                "throw InvalidType::new\\(.+",
+                "throw ValueNotConvertible::new\\(\\$value, self::class, \\$exception->getMessage\\(\\), \\$exception\\);"
+            ]
         }
     },
     "timeout": 60,

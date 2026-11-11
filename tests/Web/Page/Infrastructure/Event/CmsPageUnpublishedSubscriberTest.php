@@ -21,7 +21,7 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
 {
     public function testItTakesOffTheSiteThePageTheCmsUnpublishes(): void
     {
-        $this->pageOnTheSite('2026-11-07 09:00:00');
+        $this->pageOnTheSite();
 
         $this->handle(2);
 
@@ -30,7 +30,7 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
 
     public function testItKeepsThePageWhenItWasPublishedAgainAfterwards(): void
     {
-        $this->pageOnTheSite('2026-11-07 11:00:00', 2);
+        $this->pageOnTheSite(2);
 
         $this->handle();
 
@@ -39,12 +39,12 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
 
     public function testItKeepsThePageOffTheSiteWhenItsPublicationIsDeliveredAgain(): void
     {
-        $this->pageOnTheSite('2026-11-07 09:00:00');
-        $this->pageOnTheSite('2026-11-07 10:00:00', 2);
+        $this->pageOnTheSite();
+        $this->pageOnTheSite(2);
         $this->handle(3);
 
         // The queue retries the second publication, which it took for failed.
-        $this->pageOnTheSite('2026-11-07 10:00:00', 2);
+        $this->pageOnTheSite(2);
 
         self::assertNull($this->storedPage());
     }
@@ -60,12 +60,12 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
     {
         $this->handle(2);
 
-        $this->pageOnTheSite('2026-11-07 09:00:00');
+        $this->pageOnTheSite();
 
         self::assertNull($this->storedPage());
     }
 
-    private function pageOnTheSite(string $publishedOn, int $revision = 1): void
+    private function pageOnTheSite(int $revision = 1): void
     {
         $body = CmsPagePublishedMother::body();
         $body['revision'] = $revision;

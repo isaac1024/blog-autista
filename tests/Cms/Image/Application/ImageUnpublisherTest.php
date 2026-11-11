@@ -77,6 +77,21 @@ final class ImageUnpublisherTest extends TestCase
         yield 'an unpublished image' => [ImageMother::unpublished()];
     }
 
+    /**
+     * While a redirect leads to it, the image stays on the site.
+     */
+    public function testItKeepsOnTheSiteAnImageARedirectLeadsTo(): void
+    {
+        $image = ImageMother::published();
+        $repository = $this->createMock(ImageRepository::class);
+        $repository->method('find')->willReturn($image);
+        $repository->expects(self::never())->method('save');
+        $imageRedirects = $this->createMock(ImageRedirects::class);
+        $imageRedirects->expects(self::once())->method('isTargeted')->with(self::equalTo($image->id()))->willReturn(true);
+
+        self::assertTells('errors.image.publication.redirected', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), $imageRedirects));
+    }
+
     public function testItFailsWhenTheImageDoesNotExist(): void
     {
         $repository = self::createStub(ImageRepository::class);

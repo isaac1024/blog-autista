@@ -7,11 +7,13 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUpdater;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImagePagesLinked;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
@@ -28,6 +30,8 @@ final class ImageUpdaterTest extends TestCase
      * When the images edited here were uploaded and last changed.
      */
     private const string BEFORE = '2026-10-01 09:00:00';
+
+    private const string LINKED = '01a1b801-ce58-723d-8234-b76d9105e001';
 
     #[\Override]
     protected function setUp(): void
@@ -191,6 +195,36 @@ final class ImageUpdaterTest extends TestCase
         yield 'caption with a heading' => [$alt, Text::stored(Text::heading(2, 'Título')), 'errors.rich_text.not_allowed', []];
         yield 'caption with a list' => [$alt, Text::stored(['type' => 'list', 'style' => 'unordered', 'items' => [Text::text('Uno')]]), 'errors.rich_text.not_allowed', []];
         yield 'caption in an unknown format' => [$alt, ['version' => 2, 'blocks' => []], 'errors.rich_text.unsupported_version', []];
+    }
+
+    /**
+     * A caption that links to other pages than before tells which it links
+     * to now, at once.
+     */
+    public function testItTellsThePagesTheCaptionLinksToOnceTheyChange(): void
+    {
+        $id = ImageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(self::image($id, Text::stored(Text::paragraph('Pie anterior.'))));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof ImagePagesLinked
+                && $id === $event->aggregateId()
+                && ['page_ids' => [self::LINKED]] === $event->toPrimitives(),
+        ));
+
+        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus);
+    }
+
+    public function testItTellsNothingWhenTheCaptionLinksToTheSamePages(): void
+    {
+        $id = ImageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(self::image($id, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with();
+
+        (new ImageUpdater($id, 'Otro texto alternativo', Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus);
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void

@@ -8,7 +8,9 @@ use Cms\Settings\Domain\SettingsRepository;
 use Cms\Tests\Settings\Domain\SettingsIdMother;
 use Cms\Tests\Settings\Domain\SettingsMother as Mother;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -68,6 +70,31 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
         $this->expectException(UniqueConstraintViolationException::class);
 
         $repository->save(Mother::create(id: SettingsIdMother::random()->value()));
+    }
+
+    /**
+     * A column the database holds corrupt is refused, never read as
+     * something else. The database itself refuses what is no JSON.
+     */
+    #[DataProvider('corruptColumns')]
+    public function testItRefusesToReadAColumnTheDatabaseHoldsCorrupt(string $column, string $value): void
+    {
+        $this->repository()->save(Mother::published());
+        $this->entityManager()->getConnection()->executeStatement(\sprintf('UPDATE cms_settings SET %s = ?', $column), [$value]);
+        $this->entityManager()->clear();
+
+        $this->expectException(ValueNotConvertible::class);
+
+        $this->repository()->find();
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function corruptColumns(): iterable
+    {
+        yield 'a menu that is no list' => ['main_menu', '"texto"'];
+        yield 'a version on the site without its name' => ['published_version', '{}'];
     }
 
     /**

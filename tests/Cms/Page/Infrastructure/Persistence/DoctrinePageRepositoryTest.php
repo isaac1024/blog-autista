@@ -17,6 +17,7 @@ use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Page\Domain\SlugMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
+use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Domain\Criteria\Criteria;
@@ -388,6 +389,33 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $this->expectExceptionObject(InvalidCriteria::unknownField('createdAt'));
 
         $this->repository()->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('createdAt', OrderDirection::Ascending), offset: 0));
+    }
+
+    /**
+     * A column the database holds corrupt is refused, never read as
+     * something else. The database itself refuses what is no JSON.
+     */
+    #[DataProvider('corruptColumns')]
+    public function testItRefusesToReadAColumnTheDatabaseHoldsCorrupt(string $column, string $value): void
+    {
+        $page = PageMother::published();
+        $this->repository()->save($page);
+        $this->entityManager()->getConnection()->executeStatement(\sprintf('UPDATE cms_page SET %s = ? WHERE id = ?', $column), [$value, $page->id()->value()]);
+        $this->entityManager()->clear();
+
+        $this->expectException(ValueNotConvertible::class);
+
+        $this->repository()->find($page->id());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function corruptColumns(): iterable
+    {
+        yield 'content that is no object' => ['content', '"texto"'];
+        yield 'a version on the site that is no object' => ['published_version', '"texto"'];
+        yield 'a version on the site without its title' => ['published_version', '{}'];
     }
 
     /**

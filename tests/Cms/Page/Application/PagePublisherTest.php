@@ -15,6 +15,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Page\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -72,6 +73,41 @@ final class PagePublisherTest extends TestCase
             PageMother::unpublished(id: $id, title: 'Sobre mí', slug: 'sobre-mi'),
             PageMother::published(id: $id, title: 'Sobre mí', slug: 'sobre-mi', publicationRevision: 3),
         ];
+    }
+
+    /**
+     * Its address is its last from then on: the page off the site that last
+     * had it loses it, so it no longer answers for what was there.
+     */
+    public function testItTakesTheLastAddressOfThePageOffTheSiteThatHadIt(): void
+    {
+        $page = PageMother::create(title: 'Sobre mí', slug: 'sobre-mi', content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION);
+        $former = PageMother::unpublished(id: '01a19e72-b07f-7d78-889c-fa4a14a4fb96', title: 'Retirada', slug: 'sobre-mi');
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(self::equalTo(SlugMother::create('sobre-mi')))->willReturn($former);
+        $saved = [];
+        $repository->expects(self::exactly(2))->method('save')->willReturnCallback(static function (Page $page) use (&$saved): void {
+            $saved[] = [$page->id()->value(), $page->lastSiteSlug()?->value()];
+        });
+
+        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class));
+
+        self::assertSame([[$page->id()->value(), 'sobre-mi'], ['01a19e72-b07f-7d78-889c-fa4a14a4fb96', null]], $saved);
+    }
+
+    /**
+     * The page found at its address may be itself, as it was before.
+     */
+    public function testItKeepsItsOwnLastAddress(): void
+    {
+        $page = PageMother::unpublished(title: 'Sobre mí', slug: 'sobre-mi');
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->method('findOffSiteByLastSiteSlug')->willReturn($page);
+        $repository->expects(self::once())->method('save');
+
+        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class));
     }
 
     public function testItTellsTheSiteWhatToServe(): void

@@ -75,6 +75,18 @@ final class TiptapRichTextTest extends TestCase
             [['type' => 'blockquote', 'content' => [self::paragraph('Uno'), self::paragraph('Dos')]]],
             [['type' => 'quote', 'paragraphs' => [[['text' => 'Uno']], [['text' => 'Dos']]]]],
         ];
+        yield 'quote with whom it is from, as plain text' => [
+            [['type' => 'blockquote', 'content' => [self::paragraph('Uno'), ['type' => 'quoteSource', 'content' => [self::text(' Ana'), self::text(' Pérez ')]]]]],
+            [['type' => 'quote', 'paragraphs' => [[['text' => 'Uno']]], 'source' => 'Ana Pérez']],
+        ];
+        yield 'quote whose source is left blank' => [
+            [['type' => 'blockquote', 'content' => [self::paragraph('Uno'), ['type' => 'quoteSource']]]],
+            [['type' => 'quote', 'paragraphs' => [[['text' => 'Uno']]]]],
+        ];
+        yield 'widget, by the page it shows' => [
+            [['type' => 'widget', 'attrs' => ['kind' => 'related_page', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']]],
+            [['type' => 'widget', 'kind' => 'related_page', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
+        ];
         yield 'callout' => [
             [['type' => 'callout', 'attrs' => ['variant' => 'note'], 'content' => [self::paragraph('Ojo')]]],
             [['type' => 'callout', 'variant' => 'note', 'paragraphs' => [[['text' => 'Ojo']]]]],
@@ -184,6 +196,22 @@ final class TiptapRichTextTest extends TestCase
                 ['type' => 'tableHeader', 'content' => [self::paragraph('Uno'), self::paragraph('Dos')]],
             ]]]]]),
             InvalidRichText::malformed('document.content[0].content[0].content[0].content', 'a single paragraph'),
+        ];
+        yield 'source of a quote with marks' => [
+            self::document([['type' => 'blockquote', 'content' => [self::paragraph('Uno'), ['type' => 'quoteSource', 'content' => [self::text('Ana', 'bold')]]]]]),
+            InvalidRichText::malformed('document.content[0].content[1].content[0].marks', 'empty: this text takes no marks'),
+        ];
+        yield 'source of a quote holding something other than text' => [
+            self::document([['type' => 'blockquote', 'content' => [self::paragraph('Uno'), ['type' => 'quoteSource', 'content' => [self::paragraph('Ana')]]]]]),
+            InvalidRichText::malformed('document.content[0].content[1].content[0].type', '"text"'),
+        ];
+        yield 'source of a quote whose text is not a string' => [
+            self::document([['type' => 'blockquote', 'content' => [self::paragraph('Uno'), ['type' => 'quoteSource', 'content' => [['type' => 'text', 'text' => 5]]]]]]),
+            InvalidRichText::malformed('document.content[0].content[1].content[0].text', 'a string'),
+        ];
+        yield 'attributes that are not an object' => [
+            self::document([['type' => 'callout', 'attrs' => 'note', 'content' => [self::paragraph('Ojo')]]]),
+            InvalidRichText::malformed('document.content[0].attrs', 'an object'),
         ];
         yield 'text linking two pages' => [
             self::document([['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Enlace', 'marks' => [

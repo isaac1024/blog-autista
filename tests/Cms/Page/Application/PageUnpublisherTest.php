@@ -92,6 +92,23 @@ final class PageUnpublisherTest extends TestCase
         }
     }
 
+    /**
+     * While a redirect leads to it, the page stays on the site.
+     */
+    public function testItKeepsOnTheSiteAPageARedirectLeadsTo(): void
+    {
+        $page = PageMother::published();
+        $repository = $this->createMock(PageRepository::class);
+        $repository->method('find')->willReturn($page);
+        $repository->expects(self::never())->method('save');
+        $pageRedirects = $this->createMock(PageRedirects::class);
+        $pageRedirects->expects(self::once())->method('isTargeted')->with(self::equalTo($page->id()))->willReturn(true);
+
+        $this->expectExceptionObject(InvalidPublication::redirected());
+
+        (new PageUnpublisher($page->id()->value()))($repository, self::createStub(EventBus::class), $pageRedirects);
+    }
+
     public function testItThrowsWhenThePageDoesNotExist(): void
     {
         $id = PageIdMother::DEFAULT_VALUE;

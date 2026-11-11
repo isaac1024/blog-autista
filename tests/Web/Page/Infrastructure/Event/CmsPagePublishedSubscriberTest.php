@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Page\Infrastructure\Event;
 
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
 use Shared\Infrastructure\Event\EventRetry;
@@ -85,6 +86,45 @@ final class CmsPagePublishedSubscriberTest extends KernelTestCase
         } catch (\UnexpectedValueException) {
             self::assertNull($this->storedPage());
         }
+    }
+
+    /**
+     * A publication with a revision none can have is refused.
+     */
+    public function testItRefusesAPublicationWithARevisionNoneHas(): void
+    {
+        try {
+            $this->handle(CmsPagePublishedMother::body(), 0);
+            self::fail('A publication with no revision was taken.');
+        } catch (\InvalidArgumentException) {
+            self::assertNull($this->storedPage());
+        }
+    }
+
+    /**
+     * Whatever the body lacks of what the CMS sends, the message is refused.
+     *
+     * @param array<string, mixed> $changes
+     */
+    #[DataProvider('malformedBodies')]
+    public function testItRefusesAPublicationWhoseBodyTheCmsNeverSends(array $changes): void
+    {
+        try {
+            $this->handle(array_merge(CmsPagePublishedMother::body(), $changes));
+            self::fail('A publication the CMS never sends was taken.');
+        } catch (\UnexpectedValueException) {
+            self::assertNull($this->storedPage());
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function malformedBodies(): iterable
+    {
+        yield 'a title that is no string' => [['title' => null]];
+        yield 'a slug that is neither a string nor nothing' => [['slug' => 5]];
+        yield 'content that is no array' => [['content' => 'Hola']];
     }
 
     /**

@@ -10,7 +10,9 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
+use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\Order;
 use Shared\Domain\Criteria\OrderDirection;
@@ -195,6 +197,32 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
         self::assertTells('errors.criteria.unknown_field', ['%field%' => 'path'], fn () => $this->repository()->matching(
             new Criteria(limit: Criteria::MAX_LIMIT, filters: [], order: new Order('path', OrderDirection::Ascending), offset: 0),
         ));
+    }
+
+    /**
+     * A column the database holds corrupt is refused, never read as
+     * something else. The database itself refuses what is no JSON.
+     */
+    #[DataProvider('corruptColumns')]
+    public function testItRefusesToReadAColumnTheDatabaseHoldsCorrupt(string $column, string $value): void
+    {
+        $image = ImageMother::published(id: ImageIdMother::random()->value());
+        $this->repository()->save($image);
+        $this->entityManager()->getConnection()->executeStatement(\sprintf('UPDATE cms_image SET %s = ? WHERE id = ?', $column), [$value, $image->id()->value()]);
+        $this->entityManager()->clear();
+
+        $this->expectException(ValueNotConvertible::class);
+
+        $this->repository()->find($image->id());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function corruptColumns(): iterable
+    {
+        yield 'a caption that is no object' => ['caption', '"texto"'];
+        yield 'a version on the site without its alternative text' => ['published_version', '{}'];
     }
 
     /**

@@ -10,7 +10,9 @@ use Cms\Authentication\Domain\AdministratorRepository;
 use Cms\Authentication\Infrastructure\Security\AdministratorUserProvider;
 use Cms\Tests\Authentication\Domain\AdministratorMother;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
+use Symfony\Component\Security\Core\User\InMemoryUser;
 
 final class AdministratorUserProviderTest extends TestCase
 {
@@ -66,6 +68,16 @@ final class AdministratorUserProviderTest extends TestCase
         $this->expectException(UserNotFoundException::class);
 
         $provider->refreshUser($user);
+    }
+
+    /**
+     * Only the administrators it provides are refreshed from the session.
+     */
+    public function testItRefusesToRefreshAUserItDoesNotProvide(): void
+    {
+        $this->expectException(UnsupportedUserException::class);
+
+        $this->provider(null)->refreshUser(new InMemoryUser('admin', null));
     }
 
     private function provider(?Administrator $administrator): AdministratorUserProvider

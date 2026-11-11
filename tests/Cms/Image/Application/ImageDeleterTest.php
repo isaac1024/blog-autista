@@ -7,6 +7,7 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageDeleter;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImagePagesLinked;
 use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
@@ -15,8 +16,10 @@ use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RichText\RichTextMother as Text;
 
 final class ImageDeleterTest extends TestCase
 {
@@ -54,6 +57,24 @@ final class ImageDeleterTest extends TestCase
     {
         yield 'a draft' => [ImageMother::create()];
         yield 'an unpublished image' => [ImageMother::unpublished()];
+    }
+
+    /**
+     * An image deleted links to no page any longer, told at once.
+     */
+    public function testItTellsTheImageLinksToNoPageOnceDeleted(): void
+    {
+        $id = ImageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(ImageMother::create(id: $id, caption: Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof ImagePagesLinked
+                && $id === $event->aggregateId()
+                && ['page_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new ImageDeleter($id))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus);
     }
 
     public function testItKeepsTheFileWhenTheImageCannotBeDeleted(): void

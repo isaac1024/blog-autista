@@ -46,6 +46,16 @@ final class CmsPagePagesLinkedSubscriberTest extends KernelTestCase
     }
 
     /**
+     * A body the CMS never sends is refused, and relates nothing.
+     */
+    public function testItRefusesPagesThatAreNotAListOfIds(): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+
+        self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage('cms.page.pages_linked', Ids::PAGE, ['page_ids' => [5]]));
+    }
+
+    /**
      * @param list<string> $pageIds
      */
     private function handle(array $pageIds): void
