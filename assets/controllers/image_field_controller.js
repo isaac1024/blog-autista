@@ -52,6 +52,7 @@ export default class extends Controller {
         const image = this.image;
         this.removeTarget.hidden = id === '';
         this.thumbnailTarget.hidden = true;
+        this.thumbnailTarget.replaceChildren();
         this.stateTarget.textContent = '';
 
         if (id === '') {
@@ -64,7 +65,13 @@ export default class extends Controller {
             this.descriptionTarget.textContent = unknown;
         } else {
             // Decorative: the text next to it says which image it is.
-            this.thumbnailTarget.src = image.thumbnail;
+            const thumbnail = document.createElement('img');
+            thumbnail.className = 'block aspect-video h-auto w-28 object-cover';
+            thumbnail.src = image.thumbnail;
+            thumbnail.alt = '';
+            thumbnail.width = 112;
+            thumbnail.height = 63;
+            this.thumbnailTarget.replaceChildren(thumbnail);
             this.thumbnailTarget.hidden = false;
             this.descriptionTarget.textContent = image.alt;
             this.stateTarget.textContent = image.published ? image.status : `${image.status}. ${offSite}`;

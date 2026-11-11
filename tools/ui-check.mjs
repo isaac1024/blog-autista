@@ -698,12 +698,67 @@ async function launchChrome(pages, bind) {
     });
 }
 
+/**
+ * The headers Lighthouse sends with every request. The Host is the page's
+ * own, and the cookies go in the browser instead: Chrome sends none it is
+ * handed as a header.
+ */
 function lighthouseHeaders(page) {
     const headers = Object.entries(page.headers).filter(
-        ([name]) => name.toLowerCase() !== 'host',
+        ([name]) => !['host', 'cookie'].includes(name.toLowerCase()),
     );
 
     return headers.length > 0 ? Object.fromEntries(headers) : undefined;
+}
+
+/**
+ * The cookies of the page's Cookie header, for the host it is served at.
+ */
+function pageCookies(page) {
+    const header = Object.entries(page.headers).find(([name]) => name.toLowerCase() === 'cookie')?.[1];
+
+    return String(header ?? '')
+        .split(';')
+        .map((pair) => pair.trim())
+        .filter((pair) => pair.includes('='))
+        .map((pair) => {
+            const index = pair.indexOf('=');
+
+            return { name: pair.slice(0, index), value: pair.slice(index + 1), domain: page.host, path: '/' };
+        });
+}
+
+/**
+ * Puts the cookies in the browser through the DevTools protocol, so Chrome
+ * sends them as it would a session of its own.
+ */
+async function setBrowserCookies(chrome, cookies) {
+    const version = await new Promise((resolve, reject) => {
+        request(`http://127.0.0.1:${chrome.port}/json/version`, (res) => {
+            let body = '';
+            res.on('data', (chunk) => {
+                body += chunk;
+            });
+            res.on('end', () => resolve(JSON.parse(body)));
+        }).on('error', reject).end();
+    });
+
+    await new Promise((resolve, reject) => {
+        const socket = new WebSocket(version.webSocketDebuggerUrl);
+        socket.addEventListener('open', () => {
+            socket.send(JSON.stringify({ id: 1, method: 'Storage.setCookies', params: { cookies } }));
+        });
+        socket.addEventListener('message', (event) => {
+            const message = JSON.parse(String(event.data));
+            if (message.id !== 1) {
+                return;
+            }
+
+            socket.close();
+            message.error ? reject(new Error(message.error.message)) : resolve();
+        });
+        socket.addEventListener('error', () => reject(new Error('Could not reach Chrome to set the cookies.')));
+    });
 }
 
 function failingAudits(lhr, category) {
@@ -730,6 +785,12 @@ function failingAudits(lhr, category) {
 
 async function checkLighthouse(page, chrome, thresholds, formFactor) {
     const emulation = LIGHTHOUSE_FORM_FACTORS[formFactor];
+    const cookies = pageCookies(page);
+
+    if (cookies.length > 0) {
+        await setBrowserCookies(chrome, cookies);
+    }
+
     const runnerResult = await lighthouse(publicUrl(page), {
         port: chrome.port,
         output: 'json',
@@ -737,6 +798,8 @@ async function checkLighthouse(page, chrome, thresholds, formFactor) {
         onlyCategories: LH_CATEGORIES,
         ...emulation,
         extraHeaders: lighthouseHeaders(page),
+        // Clearing the storage would take the cookies just set.
+        disableStorageReset: cookies.length > 0,
     });
 
     if (!runnerResult) {

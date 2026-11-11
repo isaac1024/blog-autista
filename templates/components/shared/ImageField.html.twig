@@ -17,7 +17,8 @@
     <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ hint }}</p>
     <input type="hidden" name="{{ name }}" value="{{ value }}" data-image-field-target="input">
     <div class="flex flex-wrap items-center gap-4 rounded-control border-2 border-border bg-surface p-3" id="{{ id }}-current">
-        <img class="block aspect-video h-auto w-28 flex-none object-cover" src="" alt="" width="112" height="63" data-image-field-target="thumbnail" hidden>
+        {# The controller puts the thumbnail of the image chosen here: no image, no element without a source. #}
+        <span class="block w-28 flex-none" data-image-field-target="thumbnail" hidden></span>
         <p class="m-0 grid min-w-0 gap-1">
             <span class="font-bold" data-image-field-target="description">{{ value ? labels.loading : labels.empty }}</span>
             <span class="text-[1rem] text-muted" data-image-field-target="state"></span>
