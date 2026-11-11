@@ -8,7 +8,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
-use Shared\Domain\Event\EventId;
 
 /**
  * The settings of the site: the name of the blog, the image it is shared
@@ -120,8 +119,6 @@ final class Settings extends AggregateRoot
             $this->version->defaultImage()?->value(),
             $this->version->mainMenu()->toArray(),
             $this->version->footerMenu()->toArray(),
-            EventId::random()->value(),
-            Clock::now(),
             $this->publicationRevision,
         ));
     }
@@ -221,11 +218,11 @@ final class Settings extends AggregateRoot
         $after = $this->resourcesUsed();
 
         if ($before['images'] !== $after['images']) {
-            $this->record(new SettingsImagesUsed($this->id->value(), $after['images'], EventId::random()->value(), Clock::now()));
+            $this->record(new SettingsImagesUsed($this->id->value(), $after['images']));
         }
 
         if ($before['pages'] !== $after['pages']) {
-            $this->record(new SettingsPagesLinked($this->id->value(), $after['pages'], EventId::random()->value(), Clock::now()));
+            $this->record(new SettingsPagesLinked($this->id->value(), $after['pages']));
         }
     }
 

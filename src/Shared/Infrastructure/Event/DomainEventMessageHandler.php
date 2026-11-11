@@ -27,12 +27,7 @@ final readonly class DomainEventMessageHandler
         foreach ($this->subscribers as $subscriber) {
             foreach ($subscriber::subscribedTo() as $eventClass) {
                 if ($eventClass::eventName() === $message->name) {
-                    $subscriber->handle($eventClass::fromPrimitives(
-                        $message->aggregateId,
-                        $message->body,
-                        $message->eventId,
-                        new \DateTimeImmutable($message->occurredOn),
-                    ));
+                    $subscriber->handle($eventClass::fromPrimitives($message->aggregateId, $message->body));
                 }
             }
         }

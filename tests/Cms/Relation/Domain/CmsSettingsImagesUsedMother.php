@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Cms\Tests\Relation\Domain;
 
 use Cms\Relation\Domain\CmsSettingsImagesUsed;
-use Shared\Domain\Event\EventId;
-use Shared\Tests\Domain\ClockMother;
 
 /**
  * Builds the event of the settings telling the images they use, as relations take it.
@@ -24,6 +22,6 @@ final class CmsSettingsImagesUsedMother
      */
     public static function create(string $settings = self::SETTINGS, array $imageIds = [self::IMAGE]): CmsSettingsImagesUsed
     {
-        return new CmsSettingsImagesUsed($settings, $imageIds, EventId::random()->value(), ClockMother::now());
+        return new CmsSettingsImagesUsed($settings, $imageIds);
     }
 }

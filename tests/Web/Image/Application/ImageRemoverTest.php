@@ -35,7 +35,7 @@ final class ImageRemoverTest extends TestCase
                 $steps[] = 'copies';
             });
 
-        (new ImageRemover(CmsImageUnpublishedMother::create(occurredOn: '2026-11-07 11:00:00')))($repository, $variants);
+        (new ImageRemover(CmsImageUnpublishedMother::create()))($repository, $variants);
 
         self::assertSame(['copies', 'image'], $steps);
     }

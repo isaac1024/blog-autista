@@ -8,7 +8,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
-use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -134,8 +133,6 @@ final class Image extends AggregateRoot
             // A publishable version has a caption.
             $this->version->caption()?->toArray() ?? RichText::empty()->toArray(),
             $this->path->value(),
-            EventId::random()->value(),
-            Clock::now(),
             $this->publicationRevision,
         ));
     }
@@ -157,7 +154,7 @@ final class Image extends AggregateRoot
         $this->status = ImageStatus::Unpublished;
         ++$this->publicationRevision;
 
-        $this->record(new ImageUnpublished($this->id->value(), EventId::random()->value(), Clock::now(), $this->publicationRevision));
+        $this->record(new ImageUnpublished($this->id->value(), $this->publicationRevision));
     }
 
     /**
@@ -257,7 +254,7 @@ final class Image extends AggregateRoot
 
         // An image deleted links to no page any longer.
         if ([] !== $this->pagesLinked()) {
-            $this->record(new ImagePagesLinked($this->id->value(), [], EventId::random()->value(), Clock::now()));
+            $this->record(new ImagePagesLinked($this->id->value(), []));
         }
 
         $events = $this->pullDomainEvents();
@@ -317,7 +314,7 @@ final class Image extends AggregateRoot
         $after = $this->pagesLinked();
 
         if ($before !== $after) {
-            $this->record(new ImagePagesLinked($this->id->value(), $after, EventId::random()->value(), Clock::now()));
+            $this->record(new ImagePagesLinked($this->id->value(), $after));
         }
     }
 

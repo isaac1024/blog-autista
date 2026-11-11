@@ -216,7 +216,10 @@ images, from `public/media/`, under `/media/`.
   `failed` transport. The redirects no longer travel as events: the site reads
   them from the table the CMS keeps them in, so a `cms.redirect.saved` or
   `cms.redirect.deleted` event left by a release before that fails too; let
-  the queue drain before deploying it. Inspect those with `messenger:failed:show` and, rather
+  the queue drain before deploying it. Messages are kept with PHP's
+  `serialize()`, so one queued by a release whose message had other fields
+  (the event id and date dropped after `cf187d9`) can't be read by the next
+  one at all: the queue must be empty before such a release goes up. Inspect those with `messenger:failed:show` and, rather
   than retrying them, publish again from the CMS whatever they concerned.
 - A page published at an address another page had until just before waits
   for the event that frees it: the site tries again a minute later, up to the

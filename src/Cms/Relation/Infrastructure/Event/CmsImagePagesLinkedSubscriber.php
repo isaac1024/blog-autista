@@ -7,7 +7,7 @@ namespace Cms\Relation\Infrastructure\Event;
 use Cms\Relation\Application\ImageLinksRelator;
 use Cms\Relation\Domain\CmsImagePagesLinked;
 use Cms\Relation\Domain\RelationRepository;
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 
 /**
@@ -25,7 +25,7 @@ final readonly class CmsImagePagesLinkedSubscriber implements DomainEventSubscri
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsImagePagesLinked) {
             new ImageLinksRelator($event)($this->relationRepository);

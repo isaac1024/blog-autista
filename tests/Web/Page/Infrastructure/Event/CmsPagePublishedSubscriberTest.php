@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Web\Tests\Page\Infrastructure\Event;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\EventId;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
 use Shared\Infrastructure\Event\EventRetry;
-use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
@@ -43,7 +41,7 @@ final class CmsPagePublishedSubscriberTest extends KernelTestCase
     {
         $this->handle(CmsPagePublishedMother::body());
 
-        $this->handle(CmsPagePublishedMother::body(title: 'Quién soy', slug: 'quien-soy'), '2026-11-07 11:00:00', 2);
+        $this->handle(CmsPagePublishedMother::body(title: 'Quién soy', slug: 'quien-soy'), 2);
 
         $page = $this->storedPage();
         self::assertNotNull($page);
@@ -53,9 +51,9 @@ final class CmsPagePublishedSubscriberTest extends KernelTestCase
 
     public function testItKeepsThePageWhenAnEarlierVersionArrivesLate(): void
     {
-        $this->handle(CmsPagePublishedMother::body(title: 'Quién soy'), '2026-11-07 11:00:00', 2);
+        $this->handle(CmsPagePublishedMother::body(title: 'Quién soy'), 2);
 
-        $this->handle(CmsPagePublishedMother::body(title: 'Sobre mí'), '2026-11-07 09:00:00');
+        $this->handle(CmsPagePublishedMother::body(title: 'Sobre mí'));
 
         self::assertSame('Quién soy', $this->storedPage()?->title());
     }
@@ -92,26 +90,24 @@ final class CmsPagePublishedSubscriberTest extends KernelTestCase
     /**
      * @param array<string, mixed> $body
      */
-    private function handle(array $body, string $occurredOn = ClockMother::NOW, int $revision = 1, string $id = PageIdMother::DEFAULT_VALUE): void
+    private function handle(array $body, int $revision = 1, string $id = PageIdMother::DEFAULT_VALUE): void
     {
         $body['revision'] = $revision;
 
-        $this->dispatch('cms.page.published', $id, $body, $occurredOn);
+        $this->dispatch('cms.page.published', $id, $body);
     }
 
     /**
      * @param array<string, mixed> $body
      */
-    private function dispatch(string $name, string $id, array $body, string $occurredOn = ClockMother::NOW): void
+    private function dispatch(string $name, string $id, array $body): void
     {
         // As the worker does after each message, so the projection reads
         // what it keeps from the database, not from Doctrine's memory.
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             $name,
-            EventId::random()->value(),
             $id,
-            ClockMother::now($occurredOn)->format(\DATE_ATOM),
             $body,
         ));
     }

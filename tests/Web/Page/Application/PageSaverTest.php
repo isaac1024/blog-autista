@@ -31,7 +31,7 @@ final class PageSaverTest extends TestCase
 
     public function testItReplacesThePageOnTheSiteWithTheVersionPublishedLater(): void
     {
-        $later = CmsPagePublishedMother::create(title: 'Contacto', slug: 'contacto', type: PageType::Contact, metaDescription: null, occurredOn: self::LATER);
+        $later = CmsPagePublishedMother::create(title: 'Contacto', slug: 'contacto', type: PageType::Contact, metaDescription: null, lastPublishedAt: self::LATER);
         $repository = $this->createMock(PageRepository::class);
         $repository->method('find')->willReturn(Page::publish(CmsPagePublishedMother::create()));
         $repository->expects(self::once())->method('save')->with(self::equalTo(Page::publish($later)));

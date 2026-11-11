@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Cms\Relation\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\ReceivedEvent;
 
 /**
  * The images a page of the CMS embeds changed. Relations declare it on their
  * own, by the name the pages publish it under.
  */
-final readonly class CmsPageImagesUsed extends DomainEvent
+final readonly class CmsPageImagesUsed extends ReceivedEvent
 {
     /**
      * @param list<string> $imageIds
@@ -19,10 +19,8 @@ final readonly class CmsPageImagesUsed extends DomainEvent
     public function __construct(
         string $aggregateId,
         private array $imageIds,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId);
     }
 
     #[\Override]
@@ -32,15 +30,9 @@ final readonly class CmsPageImagesUsed extends DomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
-        return new static($aggregateId, new EventBody($body)->stringList('image_ids'), $eventId, $occurredOn);
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return ['image_ids' => $this->imageIds];
+        return new static($aggregateId, new EventBody($body)->stringList('image_ids'));
     }
 
     /**

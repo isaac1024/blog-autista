@@ -29,7 +29,6 @@ final class DoctrineImageRepositoryTest extends KernelTestCase
             alt: str_repeat('á', 125),
             caption: Text::stored(Text::paragraph(str_repeat('é', 200))),
             path: '2027/01/'.$id->value().'.webp',
-            occurredOn: '2027-01-31 23:59:59',
         ));
 
         $this->repository()->save($image);

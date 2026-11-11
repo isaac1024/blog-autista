@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Event;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
 /**
@@ -15,9 +15,9 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 interface DomainEventSubscriber
 {
     /**
-     * @return list<class-string<DomainEvent>>
+     * @return list<class-string<ReceivedEvent>>
      */
     public static function subscribedTo(): array;
 
-    public function handle(DomainEvent $event): void;
+    public function handle(ReceivedEvent $event): void;
 }

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Web\Image\Domain;
 
 use Shared\Domain\Event\EventBody;
-use Shared\Domain\Event\RevisedDomainEvent;
+use Shared\Domain\Event\RevisedReceivedEvent;
 
 /**
  * The CMS took an image off the site.
  */
-final readonly class CmsImageUnpublished extends RevisedDomainEvent
+final readonly class CmsImageUnpublished extends RevisedReceivedEvent
 {
     #[\Override]
     public static function eventName(): string
@@ -19,14 +19,8 @@ final readonly class CmsImageUnpublished extends RevisedDomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
-        return new static($aggregateId, $eventId, $occurredOn, new EventBody($body)->integer('revision'));
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return ['revision' => $this->revision()];
+        return new static($aggregateId, new EventBody($body)->integer('revision'));
     }
 }

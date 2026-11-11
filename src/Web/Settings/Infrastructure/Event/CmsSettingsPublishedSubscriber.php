@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Settings\Infrastructure\Event;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Projection\Domain\Projection;
 use Web\Settings\Application\SettingsSaver;
@@ -28,7 +28,7 @@ final readonly class CmsSettingsPublishedSubscriber implements DomainEventSubscr
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsSettingsPublished) {
             $this->projection->apply('settings', $event, function () use ($event): void {

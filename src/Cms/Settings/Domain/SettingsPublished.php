@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Settings\Domain;
 
-use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedDomainEvent;
 
 /**
@@ -27,39 +26,15 @@ final readonly class SettingsPublished extends RevisedDomainEvent
         private ?string $defaultImageId,
         private array $mainMenu,
         private array $footerMenu,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
     public static function eventName(): string
     {
         return 'cms.settings.published';
-    }
-
-    #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
-    {
-        $version = SettingsVersion::fromPrimitives(
-            \is_string($body['name'] ?? null) ? $body['name'] : '',
-            \is_string($body['default_image_id'] ?? null) ? $body['default_image_id'] : '',
-            \is_array($body['main_menu'] ?? null) ? $body['main_menu'] : [],
-            \is_array($body['footer_menu'] ?? null) ? $body['footer_menu'] : [],
-        );
-
-        return new static(
-            $aggregateId,
-            $version->name()->value(),
-            $version->defaultImage()?->value(),
-            $version->mainMenu()->toArray(),
-            $version->footerMenu()->toArray(),
-            $eventId,
-            $occurredOn,
-            new EventBody($body)->integer('revision'),
-        );
     }
 
     #[\Override]

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Web\Tests\Image\Infrastructure\Event;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\EventId;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
-use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
@@ -55,19 +53,19 @@ final class CmsImageSubscribersTest extends KernelTestCase
         $caption = Text::stored(Text::paragraph('Otro pie.'));
         $this->handle('cms.image.published', CmsImagePublishedMother::body());
 
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto', caption: $caption), '2026-11-07 11:00:00', 2);
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto', caption: $caption), 2);
 
         self::assertEquals(
-            Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption, occurredOn: '2026-11-07 11:00:00')),
+            Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption)),
             $this->storedImage(),
         );
     }
 
     public function testItKeepsTheTextsWhenAnEarlierVersionArrivesLate(): void
     {
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 11:00:00', 2);
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), 2);
 
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(), '2026-11-07 09:00:00');
+        $this->handle('cms.image.published', CmsImagePublishedMother::body());
 
         self::assertSame('Otro texto', $this->storedImage()?->alt());
     }
@@ -76,7 +74,7 @@ final class CmsImageSubscribersTest extends KernelTestCase
     {
         $this->handle('cms.image.published', CmsImagePublishedMother::body());
 
-        $this->handle('cms.image.unpublished', [], '2026-11-07 11:00:00', 2);
+        $this->handle('cms.image.unpublished', [], 2);
 
         self::assertNull($this->storedImage());
         self::assertSame([], $this->copies());
@@ -84,9 +82,9 @@ final class CmsImageSubscribersTest extends KernelTestCase
 
     public function testItKeepsTheImageWhenItsUnpublicationArrivesAfterALaterPublication(): void
     {
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(), '2026-11-07 11:00:00', 2);
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(), 2);
 
-        $this->handle('cms.image.unpublished', [], '2026-11-07 09:00:00');
+        $this->handle('cms.image.unpublished', []);
 
         self::assertNotNull($this->storedImage());
         self::assertSame(['400w', '800w', '1200w'], $this->copies());
@@ -95,11 +93,11 @@ final class CmsImageSubscribersTest extends KernelTestCase
     public function testItKeepsTheImageAndItsCopiesOffTheSiteWhenItsPublicationIsDeliveredAgain(): void
     {
         $this->handle('cms.image.published', CmsImagePublishedMother::body());
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 10:00:00', 2);
-        $this->handle('cms.image.unpublished', [], '2026-11-07 11:00:00', 3);
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), 2);
+        $this->handle('cms.image.unpublished', [], 3);
 
         // The queue retries the second publication, which it took for failed.
-        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), '2026-11-07 10:00:00', 2);
+        $this->handle('cms.image.published', CmsImagePublishedMother::body(alt: 'Otro texto'), 2);
 
         self::assertNull($this->storedImage());
         self::assertSame([], $this->copies());
@@ -118,7 +116,7 @@ final class CmsImageSubscribersTest extends KernelTestCase
     /**
      * @param array<string, mixed> $body
      */
-    private function handle(string $name, array $body, string $occurredOn = ClockMother::NOW, int $revision = 1): void
+    private function handle(string $name, array $body, int $revision = 1): void
     {
         $body['revision'] = $revision;
 
@@ -127,9 +125,7 @@ final class CmsImageSubscribersTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             $name,
-            EventId::random()->value(),
             ImageIdMother::DEFAULT_VALUE,
-            ClockMother::now($occurredOn)->format(\DATE_ATOM),
             $body,
         ));
     }

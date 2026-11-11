@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Page\Infrastructure\Event;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Page\Application\PageRemover;
 use Web\Page\Domain\CmsPageUnpublished;
@@ -28,7 +28,7 @@ final readonly class CmsPageUnpublishedSubscriber implements DomainEventSubscrib
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsPageUnpublished) {
             $this->projection->apply('page', $event, function () use ($event): void {

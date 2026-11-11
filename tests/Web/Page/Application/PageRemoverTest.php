@@ -16,7 +16,7 @@ final class PageRemoverTest extends TestCase
 {
     public function testItTakesThePageOffTheSite(): void
     {
-        $page = Page::publish(CmsPagePublishedMother::create(occurredOn: '2026-11-07 09:00:00'));
+        $page = Page::publish(CmsPagePublishedMother::create(lastPublishedAt: '2026-11-07 09:00:00'));
         $repository = $this->createMock(PageRepository::class);
         $repository->expects(self::once())
             ->method('find')

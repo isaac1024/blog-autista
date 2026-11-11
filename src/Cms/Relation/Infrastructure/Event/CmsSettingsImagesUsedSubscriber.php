@@ -7,7 +7,7 @@ namespace Cms\Relation\Infrastructure\Event;
 use Cms\Relation\Application\SettingsImagesRelator;
 use Cms\Relation\Domain\CmsSettingsImagesUsed;
 use Cms\Relation\Domain\RelationRepository;
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 
 /**
@@ -25,7 +25,7 @@ final readonly class CmsSettingsImagesUsedSubscriber implements DomainEventSubsc
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsSettingsImagesUsed) {
             new SettingsImagesRelator($event)($this->relationRepository);

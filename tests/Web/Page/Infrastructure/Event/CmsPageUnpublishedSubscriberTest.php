@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Web\Tests\Page\Infrastructure\Event;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\EventId;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
-use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
@@ -77,9 +75,7 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.page.published',
-            EventId::random()->value(),
             PageIdMother::DEFAULT_VALUE,
-            ClockMother::now($publishedOn)->format(\DATE_ATOM),
             $body,
         ));
     }
@@ -91,9 +87,7 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.page.unpublished',
-            EventId::random()->value(),
             PageIdMother::DEFAULT_VALUE,
-            ClockMother::now()->format(\DATE_ATOM),
             ['revision' => $revision],
         ));
     }

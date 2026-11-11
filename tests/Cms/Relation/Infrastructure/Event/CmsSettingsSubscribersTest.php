@@ -9,10 +9,8 @@ use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Relation\Domain\CmsPageImagesUsedMother;
 use Cms\Tests\Relation\Domain\CmsSettingsImagesUsedMother as Images;
 use Cms\Tests\Relation\Domain\CmsSettingsPagesLinkedMother as Pages;
-use Shared\Domain\Event\EventId;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
-use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
@@ -66,9 +64,7 @@ final class CmsSettingsSubscribersTest extends KernelTestCase
         $image = Images::IMAGE;
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.page.images_used',
-            EventId::random()->value(),
             CmsPageImagesUsedMother::PAGE,
-            ClockMother::now()->format(\DATE_ATOM),
             ['image_ids' => [$image]],
         ));
         $this->handle('cms.settings.images_used', ['image_ids' => [$image]]);
@@ -85,9 +81,7 @@ final class CmsSettingsSubscribersTest extends KernelTestCase
     {
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             $name,
-            EventId::random()->value(),
             Images::SETTINGS,
-            ClockMother::now()->format(\DATE_ATOM),
             $body,
         ));
     }

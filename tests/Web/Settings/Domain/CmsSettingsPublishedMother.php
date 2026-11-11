@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Web\Tests\Settings\Domain;
 
-use Shared\Domain\Event\EventId;
-use Shared\Tests\Domain\ClockMother;
 use Web\Settings\Domain\CmsSettingsPublished;
 
 /**
  * Builds the event of the CMS publishing its settings, as the site takes it:
  *
  *     CmsSettingsPublishedMother::create()
- *     CmsSettingsPublishedMother::create(name: 'Otro nombre', occurredOn: '2026-11-07 11:00:00')
+ *     CmsSettingsPublishedMother::create(name: 'Otro nombre')
  *     CmsSettingsPublishedMother::body()
  */
 final class CmsSettingsPublishedMother
@@ -60,10 +58,9 @@ final class CmsSettingsPublishedMother
         ?string $defaultImageId = self::IMAGE,
         array $mainMenu = self::MAIN_MENU,
         array $footerMenu = self::FOOTER_MENU,
-        string $occurredOn = ClockMother::NOW,
         string $id = self::ID,
         int $revision = 1,
     ): CmsSettingsPublished {
-        return new CmsSettingsPublished($id, $name, $defaultImageId, $mainMenu, $footerMenu, EventId::random()->value(), ClockMother::now($occurredOn), $revision);
+        return new CmsSettingsPublished($id, $name, $defaultImageId, $mainMenu, $footerMenu, $revision);
     }
 }

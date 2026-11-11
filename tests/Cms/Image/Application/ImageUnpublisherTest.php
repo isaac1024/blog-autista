@@ -50,7 +50,6 @@ final class ImageUnpublisherTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof ImageUnpublished
                 && $id === $event->aggregateId()
-                && ClockMother::now()->format(\DATE_ATOM) === $event->occurredOn()->format(\DATE_ATOM)
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 

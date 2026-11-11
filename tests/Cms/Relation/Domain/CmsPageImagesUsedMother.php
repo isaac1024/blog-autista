@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Cms\Tests\Relation\Domain;
 
 use Cms\Relation\Domain\CmsPageImagesUsed;
-use Shared\Domain\Event\EventId;
-use Shared\Tests\Domain\ClockMother;
 
 /**
  * Builds the event of a page telling the images it embeds, as relations take it.
@@ -24,6 +22,6 @@ final class CmsPageImagesUsedMother
      */
     public static function create(string $page = self::PAGE, array $imageIds = [self::IMAGE]): CmsPageImagesUsed
     {
-        return new CmsPageImagesUsed($page, $imageIds, EventId::random()->value(), ClockMother::now());
+        return new CmsPageImagesUsed($page, $imageIds);
     }
 }

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Cms\Tests\Relation\Domain;
 
 use Cms\Relation\Domain\CmsSettingsPagesLinked;
-use Shared\Domain\Event\EventId;
-use Shared\Tests\Domain\ClockMother;
 
 /**
  * Builds the event of the settings telling the pages their menus lead to, as
@@ -25,6 +23,6 @@ final class CmsSettingsPagesLinkedMother
      */
     public static function create(string $settings = self::SETTINGS, array $pageIds = [self::PAGE]): CmsSettingsPagesLinked
     {
-        return new CmsSettingsPagesLinked($settings, $pageIds, EventId::random()->value(), ClockMother::now());
+        return new CmsSettingsPagesLinked($settings, $pageIds);
     }
 }

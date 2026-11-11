@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Image\Domain;
 
-use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedDomainEvent;
-use Shared\Domain\RichText\RichText;
 
 /**
  * An image was put on the site, or its version there replaced, with all the
@@ -27,33 +25,15 @@ final readonly class ImagePublished extends RevisedDomainEvent
         private string $alt,
         private array $caption,
         private string $path,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
     public static function eventName(): string
     {
         return 'cms.image.published';
-    }
-
-    #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
-    {
-        $body = new EventBody($body);
-
-        return new static(
-            $aggregateId,
-            $body->string('alt'),
-            RichText::fromArray($body->array('caption'))->toArray(),
-            $body->string('path'),
-            $eventId,
-            $occurredOn,
-            $body->integer('revision'),
-        );
     }
 
     #[\Override]

@@ -74,7 +74,6 @@ final class ImagePublisherTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof ImagePublished
                 && $id === $event->aggregateId()
-                && ClockMother::now()->format(\DATE_ATOM) === $event->occurredOn()->format(\DATE_ATOM)
                 && ['alt' => 'Otro texto', 'caption' => $caption, 'path' => '2026/11/'.$id.'.webp', 'revision' => 2] === $event->toPrimitives(),
         ));
 

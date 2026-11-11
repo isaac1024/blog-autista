@@ -91,7 +91,6 @@ final class PagePublisherTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof PagePublished
                 && $id === $event->aggregateId()
-                && ClockMother::now()->format(\DATE_ATOM) === $event->occurredOn()->format(\DATE_ATOM)
                 && [
                     'type' => 'contact',
                     'title' => 'Contacto',

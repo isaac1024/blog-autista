@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Web\Page\Domain;
 
 use Shared\Domain\Event\EventBody;
-use Shared\Domain\Event\RevisedDomainEvent;
+use Shared\Domain\Event\RevisedReceivedEvent;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -17,7 +17,7 @@ use Shared\Domain\RichText\RichText;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class CmsPagePublished extends RevisedDomainEvent
+final readonly class CmsPagePublished extends RevisedReceivedEvent
 {
     public function __construct(
         string $aggregateId,
@@ -29,11 +29,9 @@ final readonly class CmsPagePublished extends RevisedDomainEvent
         private Robots $robots,
         private \DateTimeImmutable $firstPublishedAt,
         private \DateTimeImmutable $lastPublishedAt,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
@@ -43,7 +41,7 @@ final readonly class CmsPagePublished extends RevisedDomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
         $body = new EventBody($body);
         $metaDescription = $body->string('meta_description');
@@ -58,26 +56,8 @@ final readonly class CmsPagePublished extends RevisedDomainEvent
             Robots::from($body->string('robots')),
             new \DateTimeImmutable($body->string('first_published_at')),
             new \DateTimeImmutable($body->string('last_published_at')),
-            $eventId,
-            $occurredOn,
             $body->integer('revision'),
         );
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return [
-            'type' => $this->type->value,
-            'title' => $this->title,
-            'slug' => $this->slug,
-            'content' => $this->content->toArray(),
-            'meta_description' => (string) $this->metaDescription,
-            'robots' => $this->robots->value,
-            'first_published_at' => $this->firstPublishedAt->format(\DATE_ATOM),
-            'last_published_at' => $this->lastPublishedAt->format(\DATE_ATOM),
-            'revision' => $this->revision(),
-        ];
     }
 
     public function type(): PageType

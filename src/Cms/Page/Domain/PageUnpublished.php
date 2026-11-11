@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
-use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedDomainEvent;
 
 /**
@@ -16,12 +15,6 @@ final readonly class PageUnpublished extends RevisedDomainEvent
     public static function eventName(): string
     {
         return 'cms.page.unpublished';
-    }
-
-    #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
-    {
-        return new static($aggregateId, $eventId, $occurredOn, new EventBody($body)->integer('revision'));
     }
 
     #[\Override]

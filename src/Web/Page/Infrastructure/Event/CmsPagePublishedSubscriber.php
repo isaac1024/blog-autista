@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Page\Infrastructure\Event;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Shared\Infrastructure\Event\EventRetry;
 use Web\Page\Application\PageSaver;
@@ -37,7 +37,7 @@ final readonly class CmsPagePublishedSubscriber implements DomainEventSubscriber
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsPagePublished) {
             try {

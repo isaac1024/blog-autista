@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
-use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
 use Shared\Domain\RichText\Mark;
@@ -245,8 +244,6 @@ final class Page extends AggregateRoot
             $this->version->seo()->robots()->value,
             ($this->timeline->firstPublishedAt() ?? $now)->format(\DATE_ATOM),
             $now->format(\DATE_ATOM),
-            EventId::random()->value(),
-            $now,
             $this->publicationRevision,
         ));
     }
@@ -274,7 +271,7 @@ final class Page extends AggregateRoot
         $this->publishedSlug = null;
         ++$this->publicationRevision;
 
-        $this->record(new PageUnpublished($this->id->value(), EventId::random()->value(), Clock::now(), $this->publicationRevision));
+        $this->record(new PageUnpublished($this->id->value(), $this->publicationRevision));
     }
 
     /**
@@ -374,11 +371,11 @@ final class Page extends AggregateRoot
         $used = $this->resourcesUsed();
 
         if ([] !== $used['images']) {
-            $this->record(new PageImagesUsed($this->id->value(), [], EventId::random()->value(), Clock::now()));
+            $this->record(new PageImagesUsed($this->id->value(), []));
         }
 
         if ([] !== $used['pages']) {
-            $this->record(new PagePagesLinked($this->id->value(), [], EventId::random()->value(), Clock::now()));
+            $this->record(new PagePagesLinked($this->id->value(), []));
         }
 
         $events = $this->pullDomainEvents();
@@ -469,11 +466,11 @@ final class Page extends AggregateRoot
         $after = $this->resourcesUsed();
 
         if ($before['images'] !== $after['images']) {
-            $this->record(new PageImagesUsed($this->id->value(), $after['images'], EventId::random()->value(), Clock::now()));
+            $this->record(new PageImagesUsed($this->id->value(), $after['images']));
         }
 
         if ($before['pages'] !== $after['pages']) {
-            $this->record(new PagePagesLinked($this->id->value(), $after['pages'], EventId::random()->value(), Clock::now()));
+            $this->record(new PagePagesLinked($this->id->value(), $after['pages']));
         }
     }
 

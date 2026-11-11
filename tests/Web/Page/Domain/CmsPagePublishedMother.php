@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Web\Tests\Page\Domain;
 
-use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
 use Web\Page\Domain\CmsPagePublished;
@@ -59,7 +58,7 @@ final class CmsPagePublishedMother
         PageType $type = PageType::Standard,
         ?string $metaDescription = 'Quién escribe este blog sobre autismo y por qué.',
         Robots $robots = Robots::IndexFollow,
-        string $occurredOn = ClockMother::NOW,
+        string $lastPublishedAt = ClockMother::NOW,
         array $content = self::CONTENT,
         int $revision = 1,
     ): CmsPagePublished {
@@ -72,9 +71,7 @@ final class CmsPagePublishedMother
             $metaDescription,
             $robots,
             ClockMother::now(),
-            ClockMother::now($occurredOn),
-            EventId::random()->value(),
-            ClockMother::now($occurredOn),
+            ClockMother::now($lastPublishedAt),
             $revision,
         );
     }

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
-use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedDomainEvent;
-use Shared\Domain\RichText\RichText;
 
 /**
  * A page went on the site, or its version there was replaced, with all the
@@ -32,38 +30,15 @@ final readonly class PagePublished extends RevisedDomainEvent
         private string $robots,
         private string $firstPublishedAt,
         private string $lastPublishedAt,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
     public static function eventName(): string
     {
         return 'cms.page.published';
-    }
-
-    #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
-    {
-        $body = new EventBody($body);
-
-        return new static(
-            $aggregateId,
-            $body->string('type'),
-            $body->string('title'),
-            $body->nullableString('slug'),
-            RichText::fromArray($body->array('content'))->toArray(),
-            $body->string('meta_description'),
-            $body->string('robots'),
-            $body->string('first_published_at'),
-            $body->string('last_published_at'),
-            $eventId,
-            $occurredOn,
-            $body->integer('revision'),
-        );
     }
 
     #[\Override]

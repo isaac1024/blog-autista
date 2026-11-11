@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Web\Image\Domain;
 
 use Shared\Domain\Event\EventBody;
-use Shared\Domain\Event\RevisedDomainEvent;
+use Shared\Domain\Event\RevisedReceivedEvent;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -17,7 +17,7 @@ use Shared\Domain\RichText\RichText;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class CmsImagePublished extends RevisedDomainEvent
+final readonly class CmsImagePublished extends RevisedReceivedEvent
 {
     /**
      * @param string $path where the CMS keeps its file, relative to its image storage
@@ -27,11 +27,9 @@ final readonly class CmsImagePublished extends RevisedDomainEvent
         private string $alt,
         private RichText $caption,
         private string $path,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
@@ -41,7 +39,7 @@ final readonly class CmsImagePublished extends RevisedDomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
         $body = new EventBody($body);
 
@@ -50,21 +48,8 @@ final readonly class CmsImagePublished extends RevisedDomainEvent
             $body->string('alt'),
             RichText::fromArray($body->array('caption')),
             $body->string('path'),
-            $eventId,
-            $occurredOn,
             $body->integer('revision'),
         );
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return [
-            'alt' => $this->alt,
-            'caption' => $this->caption->toArray(),
-            'path' => $this->path,
-            'revision' => $this->revision(),
-        ];
     }
 
     public function alt(): string

@@ -46,10 +46,10 @@ final class ImageSaverTest extends TestCase
         $repository = $this->createMock(ImageRepository::class);
         $repository->method('find')->willReturn(Image::publish(CmsImagePublishedMother::create()));
         $repository->expects(self::once())->method('save')->with(self::equalTo(
-            Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption, occurredOn: '2026-11-07 11:00:00')),
+            Image::publish(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption)),
         ));
 
-        (new ImageSaver(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption, occurredOn: '2026-11-07 11:00:00')))(
+        (new ImageSaver(CmsImagePublishedMother::create(alt: 'Otro texto', caption: $caption)))(
             $repository,
             self::createStub(ImageVariants::class),
         );

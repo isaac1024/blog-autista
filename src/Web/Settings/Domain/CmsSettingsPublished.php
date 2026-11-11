@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Web\Settings\Domain;
 
 use Shared\Domain\Event\EventBody;
-use Shared\Domain\Event\RevisedDomainEvent;
+use Shared\Domain\Event\RevisedReceivedEvent;
 
 /**
  * The CMS put its settings on the site, or replaced their version there, with
@@ -16,7 +16,7 @@ use Shared\Domain\Event\RevisedDomainEvent;
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
-final readonly class CmsSettingsPublished extends RevisedDomainEvent
+final readonly class CmsSettingsPublished extends RevisedReceivedEvent
 {
     /**
      * @param ?string                                      $defaultImageId null for none
@@ -29,11 +29,9 @@ final readonly class CmsSettingsPublished extends RevisedDomainEvent
         private ?string $defaultImageId,
         private array $mainMenu,
         private array $footerMenu,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         int $revision,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn, $revision);
+        parent::__construct($aggregateId, $revision);
     }
 
     #[\Override]
@@ -43,7 +41,7 @@ final readonly class CmsSettingsPublished extends RevisedDomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
         $body = new EventBody($body);
 
@@ -53,22 +51,8 @@ final readonly class CmsSettingsPublished extends RevisedDomainEvent
             $body->nullableString('default_image_id'),
             self::menu($body->array('main_menu')),
             self::menu($body->array('footer_menu')),
-            $eventId,
-            $occurredOn,
             $body->integer('revision'),
         );
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return [
-            'name' => $this->name,
-            'default_image_id' => $this->defaultImageId,
-            'main_menu' => $this->mainMenu,
-            'footer_menu' => $this->footerMenu,
-            'revision' => $this->revision(),
-        ];
     }
 
     public function name(): string

@@ -6,7 +6,7 @@ namespace Web\Projection\Infrastructure;
 
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
-use Shared\Domain\Event\RevisedDomainEvent;
+use Shared\Domain\Event\RevisedReceivedEvent;
 use Web\Projection\Domain\Projection;
 use Web\Projection\Domain\ProjectionCheckpoint;
 
@@ -18,7 +18,7 @@ final readonly class DoctrineProjection implements Projection
     public function __construct(private EntityManagerInterface $entityManager) {}
 
     #[\Override]
-    public function apply(string $name, RevisedDomainEvent $event, \Closure $apply): void
+    public function apply(string $name, RevisedReceivedEvent $event, \Closure $apply): void
     {
         $connection = $this->entityManager->getConnection();
         $connection->beginTransaction();

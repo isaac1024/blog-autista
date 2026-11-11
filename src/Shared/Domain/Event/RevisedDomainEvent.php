@@ -13,15 +13,13 @@ abstract readonly class RevisedDomainEvent extends DomainEvent
 {
     public function __construct(
         string $aggregateId,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
         private int $revision,
     ) {
         if ($revision < 1) {
             throw new \InvalidArgumentException('The event revision must be positive.');
         }
 
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId);
     }
 
     public function revision(): int

@@ -22,7 +22,7 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
 
     /**
      * Every field comes back as saved: the name at its longest, the image,
-     * both menus with and without labels, and the last event taken.
+     * both menus with and without labels.
      */
     public function testItSavesTheSettingsSoTheyCanBeReadBack(): void
     {
@@ -30,7 +30,7 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
             static fn (int $page): array => ['page_id' => \sprintf('01a19e72-b07f-7d78-889c-fa4a14a4fc%02d', $page), 'label' => 1 === $page % 2 ? str_repeat('é', 40) : null],
             range(1, 8),
         );
-        $settings = Settings::publish(Event::create(str_repeat('á', 60), Event::IMAGE, $menu, array_reverse($menu), '2027-01-31 23:59:59'));
+        $settings = Settings::publish(Event::create(str_repeat('á', 60), Event::IMAGE, $menu, array_reverse($menu)));
 
         $this->repository()->save($settings);
         $this->entityManager()->clear();

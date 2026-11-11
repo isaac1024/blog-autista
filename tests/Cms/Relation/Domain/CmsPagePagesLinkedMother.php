@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Cms\Tests\Relation\Domain;
 
 use Cms\Relation\Domain\CmsPagePagesLinked;
-use Shared\Domain\Event\EventId;
-use Shared\Tests\Domain\ClockMother;
 
 /**
  * Builds the event of a page telling the pages it links to, as relations take it.
@@ -22,6 +20,6 @@ final class CmsPagePagesLinkedMother
      */
     public static function create(string $page = self::PAGE, array $pageIds = [self::LINKED]): CmsPagePagesLinked
     {
-        return new CmsPagePagesLinked($page, $pageIds, EventId::random()->value(), ClockMother::now());
+        return new CmsPagePagesLinked($page, $pageIds);
     }
 }

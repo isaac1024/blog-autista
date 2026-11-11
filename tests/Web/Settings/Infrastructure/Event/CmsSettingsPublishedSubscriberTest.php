@@ -6,10 +6,8 @@ namespace Web\Tests\Settings\Infrastructure\Event;
 
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Shared\Domain\Event\EventId;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
-use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
@@ -64,18 +62,18 @@ final class CmsSettingsPublishedSubscriberTest extends KernelTestCase
     {
         $this->handle(Event::body());
 
-        $this->handle(Event::body(name: 'Otro nombre', mainMenu: []), '2026-11-07 11:00:00', 2);
+        $this->handle(Event::body(name: 'Otro nombre', mainMenu: []), 2);
 
-        self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre', mainMenu: [], occurredOn: '2026-11-07 11:00:00')), $this->storedSettings());
+        self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre', mainMenu: [])), $this->storedSettings());
     }
 
     public function testItKeepsTheSettingsWhenAnEarlierVersionArrivesLate(): void
     {
-        $this->handle(Event::body(name: 'Otro nombre'), '2026-11-07 11:00:00', 2);
+        $this->handle(Event::body(name: 'Otro nombre'), 2);
 
-        $this->handle(Event::body(), '2026-11-07 09:00:00');
+        $this->handle(Event::body());
 
-        self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre', occurredOn: '2026-11-07 11:00:00')), $this->storedSettings());
+        self::assertEquals(Settings::publish(Event::create(name: 'Otro nombre')), $this->storedSettings());
     }
 
     public function testItUsesTheRevisionToOrderVersionsFromTheSameSecond(): void
@@ -90,7 +88,7 @@ final class CmsSettingsPublishedSubscriberTest extends KernelTestCase
     /**
      * @param array<string, mixed> $body
      */
-    private function handle(array $body, string $occurredOn = ClockMother::NOW, int $revision = 1): void
+    private function handle(array $body, int $revision = 1): void
     {
         $body['revision'] = $revision;
 
@@ -99,9 +97,7 @@ final class CmsSettingsPublishedSubscriberTest extends KernelTestCase
         self::getContainer()->get(EntityManagerInterface::class)->clear();
         self::getContainer()->get(DomainEventMessageHandler::class)(new DomainEventMessage(
             'cms.settings.published',
-            EventId::random()->value(),
             Event::ID,
-            ClockMother::now($occurredOn)->format(\DATE_ATOM),
             $body,
         ));
     }

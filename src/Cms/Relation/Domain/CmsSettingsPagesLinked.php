@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Cms\Relation\Domain;
 
-use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBody;
+use Shared\Domain\Event\ReceivedEvent;
 
 /**
  * The pages the menus of the CMS lead to changed. Relations declare it on
  * their own, by the name the settings publish it under.
  */
-final readonly class CmsSettingsPagesLinked extends DomainEvent
+final readonly class CmsSettingsPagesLinked extends ReceivedEvent
 {
     /**
      * @param list<string> $pageIds
@@ -19,10 +19,8 @@ final readonly class CmsSettingsPagesLinked extends DomainEvent
     public function __construct(
         string $aggregateId,
         private array $pageIds,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId);
     }
 
     #[\Override]
@@ -32,15 +30,9 @@ final readonly class CmsSettingsPagesLinked extends DomainEvent
     }
 
     #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
+    public static function fromPrimitives(string $aggregateId, array $body): static
     {
-        return new static($aggregateId, new EventBody($body)->stringList('page_ids'), $eventId, $occurredOn);
-    }
-
-    #[\Override]
-    public function toPrimitives(): array
-    {
-        return ['page_ids' => $this->pageIds];
+        return new static($aggregateId, new EventBody($body)->stringList('page_ids'));
     }
 
     /**

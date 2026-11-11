@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Image\Infrastructure\Event;
 
-use Shared\Domain\Event\DomainEvent;
+use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Image\Application\ImageSaver;
 use Web\Image\Domain\CmsImagePublished;
@@ -30,7 +30,7 @@ final readonly class CmsImagePublishedSubscriber implements DomainEventSubscribe
     }
 
     #[\Override]
-    public function handle(DomainEvent $event): void
+    public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsImagePublished) {
             $this->projection->apply('image', $event, function () use ($event): void {

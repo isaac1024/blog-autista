@@ -15,9 +15,7 @@ final readonly class DomainEventMessage
      */
     public function __construct(
         public string $name,
-        public string $eventId,
         public string $aggregateId,
-        public string $occurredOn,
         public array $body,
     ) {}
 }

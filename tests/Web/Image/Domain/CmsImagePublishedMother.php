@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Web\Tests\Image\Domain;
 
-use Shared\Domain\Event\EventId;
 use Shared\Domain\RichText\RichText;
-use Shared\Tests\Domain\ClockMother;
 use Web\Image\Domain\CmsImagePublished;
 
 /**
  * Builds the event of the CMS publishing an image, as the site takes it:
  *
  *     CmsImagePublishedMother::create()
- *     CmsImagePublishedMother::create(alt: 'Otro texto', occurredOn: '2026-11-07 11:00:00')
+ *     CmsImagePublishedMother::create(alt: 'Otro texto')
  *     CmsImagePublishedMother::body()
  */
 final class CmsImagePublishedMother
@@ -62,9 +60,8 @@ final class CmsImagePublishedMother
         string $alt = self::ALT,
         array $caption = self::CAPTION,
         string $path = self::PATH,
-        string $occurredOn = ClockMother::NOW,
         int $revision = 1,
     ): CmsImagePublished {
-        return new CmsImagePublished($id, $alt, RichText::fromArray($caption), $path, EventId::random()->value(), ClockMother::now($occurredOn), $revision);
+        return new CmsImagePublished($id, $alt, RichText::fromArray($caption), $path, $revision);
     }
 }

@@ -6,7 +6,6 @@ namespace Cms\Image\Domain;
 
 use Shared\Domain\Event\DeliveredImmediately;
 use Shared\Domain\Event\DomainEvent;
-use Shared\Domain\Event\EventBody;
 
 /**
  * The pages the caption of an image links to changed: those of the version
@@ -22,22 +21,14 @@ final readonly class ImagePagesLinked extends DomainEvent implements DeliveredIm
     public function __construct(
         string $aggregateId,
         private array $pageIds,
-        string $eventId,
-        \DateTimeImmutable $occurredOn,
     ) {
-        parent::__construct($aggregateId, $eventId, $occurredOn);
+        parent::__construct($aggregateId);
     }
 
     #[\Override]
     public static function eventName(): string
     {
         return 'cms.image.pages_linked';
-    }
-
-    #[\Override]
-    public static function fromPrimitives(string $aggregateId, array $body, string $eventId, \DateTimeImmutable $occurredOn): static
-    {
-        return new static($aggregateId, new EventBody($body)->stringList('page_ids'), $eventId, $occurredOn);
     }
 
     #[\Override]
