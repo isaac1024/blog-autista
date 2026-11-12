@@ -92,6 +92,18 @@ checks belong to the `ui-check` harness (`npm run ui:check`). The harness runs
 Lighthouse at both desktop and mobile widths. Tailwind's build is the CSS syntax
 gate; the W3C CSS3 validator cannot parse its modern output.
 
+Pure JavaScript logic uses `node:test` under `tests/Unit/`. Browser interactions
+use Playwright under `tests/Browser/`, with isolated fixtures that load the real
+controllers and AssetMapper vendor modules without Symfony or a database. Run
+`npm run test:js` for both suites, or `npm run test:browser` for the browser
+suite. Install its local Chromium first with `npm run test:browser:install`.
+Browser failures are written under `var/browser-tests/`.
+
+Run `npm run check:js` for the frontend gate: ESLint, the strict TypeScript
+`checkJs` pilot and both test suites. The pilot is deliberately limited by
+`jsconfig.json` to the pure rich-text calculation and shared helpers; expand it
+module by module rather than enabling it wholesale over untyped Tiptap code.
+
 ## Code style
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived

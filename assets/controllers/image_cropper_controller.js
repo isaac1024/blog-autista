@@ -41,6 +41,7 @@ export default class extends Controller {
 
     async load() {
         this.clear();
+        const request = this.loadRequest;
         const file = this.sourceTarget.files[0];
 
         if (!file) {
@@ -53,7 +54,16 @@ export default class extends Controller {
             // Turned as the camera says, as the <img> shows it.
             bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
         } catch {
-            this.fail(this.unreadableValue);
+            if (request === this.loadRequest) {
+                this.fail(this.unreadableValue);
+            }
+
+            return;
+        }
+
+        // Another file was chosen, or the controller was cleared, meanwhile.
+        if (request !== this.loadRequest) {
+            bitmap.close();
 
             return;
         }
@@ -233,16 +243,31 @@ export default class extends Controller {
 
     /* Sending the crop. */
 
-    submit(event) {
+    async submit(event) {
         // Without an image, the required field has already stopped the form.
         if (!this.crop || this.exported) {
             return;
         }
 
+        // An export already running must not let the form go without its crop.
         event.preventDefault();
+
+        if (this.exporting) {
+            return;
+        }
+
+        this.exporting = true;
+        const request = this.loadRequest;
         const submitter = event.submitter;
 
-        this.encode().then((blob) => {
+        try {
+            const blob = await this.encode();
+
+            // A new file owns the form now; this crop belongs to the old one.
+            if (request !== this.loadRequest) {
+                return;
+            }
+
             if (!blob || blob.type !== 'image/webp') {
                 this.fail(this.unsupportedValue);
 
@@ -254,7 +279,15 @@ export default class extends Controller {
             this.outputTarget.files = files.files;
             this.exported = true;
             this.form.requestSubmit(submitter);
-        });
+        } catch {
+            if (request === this.loadRequest) {
+                this.fail(this.unsupportedValue);
+            }
+        } finally {
+            if (request === this.loadRequest) {
+                this.exporting = false;
+            }
+        }
     }
 
     /**
@@ -305,6 +338,9 @@ export default class extends Controller {
     }
 
     clear() {
+        // Invalidates any decoding or encoding that belongs to the old image.
+        this.loadRequest = (this.loadRequest ?? 0) + 1;
+
         if (this.url) {
             URL.revokeObjectURL(this.url);
             this.url = null;
@@ -315,6 +351,7 @@ export default class extends Controller {
         this.crop = null;
         this.dragging = null;
         this.exported = false;
+        this.exporting = false;
         this.outputTarget.value = '';
         this.image?.remove();
         this.image = null;

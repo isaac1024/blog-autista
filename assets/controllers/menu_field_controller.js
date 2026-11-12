@@ -1,4 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
+import { notifyForm } from '../shared/forms.js';
+import { fetchJson } from '../shared/http.js';
 
 /*
  * Edits a menu of pages: adds pages searched by title, moves entries with
@@ -19,6 +21,7 @@ export default class extends Controller {
     };
 
     connect() {
+        this.abortController = new AbortController();
         this.pages = new Map();
         this.missing = new Set();
         this.unknown = false;
@@ -26,6 +29,10 @@ export default class extends Controller {
         this.addTarget.hidden = false;
         this.refresh();
         this.lookUp(this.rowTargets.map((row) => row.dataset.pageId));
+    }
+
+    disconnect() {
+        this.abortController.abort();
     }
 
     /* Entries */
@@ -57,7 +64,7 @@ export default class extends Controller {
         this.announce(this.labelsValue.removed.replace('%title%', title));
         // The focus stays in the menu: on the next entry, or else on the button that adds one.
         (next?.querySelector('[data-field="remove"]') ?? this.addTarget).focus();
-        this.notifyForm();
+        notifyForm(this.element);
     }
 
     add(page) {
@@ -80,7 +87,7 @@ export default class extends Controller {
         this.refresh();
         this.announce(this.labelsValue.added.replace('%title%', page.title));
         row.querySelector('[data-field="label"]').focus();
-        this.notifyForm();
+        notifyForm(this.element);
     }
 
     /** Where an entry moved, told, with the focus kept on the button pressed while it still can move. */
@@ -89,7 +96,7 @@ export default class extends Controller {
         this.announce(message.replace('%title%', this.titleOf(row.dataset.pageId)));
         const button = row.querySelector(`[data-field="${direction}"]`);
         (button.getAttribute('aria-disabled') === 'true' ? row.querySelector(`[data-field="${direction === 'up' ? 'down' : 'up'}"]`) : button).focus();
-        this.notifyForm();
+        notifyForm(this.element);
     }
 
     /** Renumbers the fields of every entry, and draws what the menu holds. */
@@ -153,22 +160,29 @@ export default class extends Controller {
             return;
         }
 
+        const { signal } = this.abortController;
+
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', ids.join(','));
 
+        let found = null;
+
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            found = (await fetchJson(url, signal)).pages;
+        } catch {
+            // Told on each entry below: the pages may well exist.
+        }
 
-            if (!response.ok) {
-                throw new Error(String(response.status));
-            }
+        // The menu was disconnected meanwhile: this answer is for no one.
+        if (signal.aborted) {
+            return;
+        }
 
-            const found = (await response.json()).pages;
+        if (found === null) {
+            this.unknown = true;
+        } else {
             found.forEach((page) => this.pages.set(page.id, page));
             ids.filter((id) => !this.pages.has(id)).forEach((id) => this.missing.add(id));
-        } catch {
-            // Told on each entry: the pages may well exist.
-            this.unknown = true;
         }
 
         this.refresh();
@@ -201,6 +215,7 @@ export default class extends Controller {
 
     async load() {
         const request = ++this.query.request;
+        const { signal } = this.abortController;
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('title', this.searchTarget.value);
         url.searchParams.set('page', String(this.query.page));
@@ -208,14 +223,13 @@ export default class extends Controller {
         let result = null;
 
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            result = response.ok ? await response.json() : null;
+            result = await fetchJson(url, signal);
         } catch {
             // Told below, like an answer that isn't ok.
         }
 
-        // A newer search went out meanwhile: this answer is stale.
-        if (request !== this.query.request) {
+        // A newer search went out, or the menu was disconnected meanwhile.
+        if (signal.aborted || request !== this.query.request) {
             return;
         }
 
@@ -270,8 +284,4 @@ export default class extends Controller {
         this.statusTarget.textContent = message;
     }
 
-    /** Changing fields from a script fires no event, so tell whoever watches the form. */
-    notifyForm() {
-        this.element.dispatchEvent(new Event('input', { bubbles: true }));
-    }
 }

@@ -1,4 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
+import { notifyForm } from '../shared/forms.js';
+import { fetchJson } from '../shared/http.js';
 
 /*
  * Edits one optional image of the library: shows the one chosen, as the CMS
@@ -16,6 +18,7 @@ export default class extends Controller {
     };
 
     connect() {
+        this.abortController = new AbortController();
         this.chooseTarget.hidden = false;
         this.image = null;
         this.draw();
@@ -25,23 +28,30 @@ export default class extends Controller {
         }
     }
 
+    disconnect() {
+        this.abortController.abort();
+    }
+
     async lookUp(id) {
+        const { signal } = this.abortController;
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', id);
 
+        // Told as unknown while it can't be checked: the image may well exist.
+        let image;
+
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-
-            if (!response.ok) {
-                throw new Error(String(response.status));
-            }
-
-            this.image = (await response.json()).images.find((image) => image.id === id) ?? false;
+            image = (await fetchJson(url, signal)).images.find((found) => found.id === id) ?? false;
         } catch {
-            // Told as unknown: the image may well exist.
-            this.image = undefined;
+            image = undefined;
         }
 
+        // The field was disconnected meanwhile: this answer is for no one.
+        if (signal.aborted) {
+            return;
+        }
+
+        this.image = image;
         this.draw();
     }
 
@@ -85,7 +95,7 @@ export default class extends Controller {
         this.draw();
         this.statusTarget.textContent = this.labelsValue.chosen.replace('%alt%', image.alt);
         this.chooseTarget.focus();
-        this.notifyForm();
+        notifyForm(this.inputTarget);
     }
 
     remove() {
@@ -94,7 +104,7 @@ export default class extends Controller {
         this.draw();
         this.statusTarget.textContent = this.labelsValue.removed;
         this.chooseTarget.focus();
-        this.notifyForm();
+        notifyForm(this.inputTarget);
     }
 
     openDialog() {
@@ -108,19 +118,19 @@ export default class extends Controller {
 
         const request = (this.request ?? 0) + 1;
         this.request = request;
+        const { signal } = this.abortController;
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('alt', this.searchTarget.value);
         let images = null;
 
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            images = response.ok ? (await response.json()).images : null;
+            images = (await fetchJson(url, signal)).images;
         } catch {
             // Told below, like an answer that isn't ok.
         }
 
-        // A newer search went out meanwhile: this answer is stale.
-        if (request !== this.request) {
+        // A newer search went out, or the field was disconnected meanwhile.
+        if (signal.aborted || request !== this.request) {
             return;
         }
 
@@ -167,8 +177,4 @@ export default class extends Controller {
         return item;
     }
 
-    /** Changing the field from a script fires no event, so tell whoever watches the form. */
-    notifyForm() {
-        this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
-    }
 }

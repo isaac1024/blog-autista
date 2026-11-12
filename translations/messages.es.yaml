@@ -619,6 +619,8 @@ ui:
             none: 'Ninguna imagen coincide con la búsqueda.'
             loading: 'Cargando la imagen…'
             missing: 'Esta imagen ya no existe en la biblioteca.'
+            unknown: 'No se ha podido comprobar la imagen.'
+            error: 'No se ha podido buscar. Inténtalo de nuevo.'
             off_site: 'No se verá en la web hasta que la publiques.'
             embedded: 'Imagen:'
         widget:

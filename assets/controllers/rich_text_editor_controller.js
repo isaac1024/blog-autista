@@ -1,7 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
-import { Editor, Extension, Mark, Node, mergeAttributes } from '@tiptap/core';
-import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
-import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { Editor } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 import { Document } from '@tiptap/extension-document';
 import { Paragraph } from '@tiptap/extension-paragraph';
 import { Text } from '@tiptap/extension-text';
@@ -11,7 +10,16 @@ import { Blockquote } from '@tiptap/extension-blockquote';
 import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
-import { Suggestion } from '@tiptap/suggestion';
+import { BlockMover } from '../rich_text/block_mover.js';
+import { isHeading, onHeading, topLevelBlocks } from '../rich_text/block_movement.js';
+import { EmbeddedImage } from '../rich_text/embedded_image.js';
+import { Widget } from '../rich_text/widget.js';
+import { PageLink, pageLinksKey } from '../rich_text/page_link.js';
+import { Callout } from '../rich_text/callout.js';
+import { QuoteSource } from '../rich_text/quote_source.js';
+import { SlashMenu } from '../rich_text/slash_menu.js';
+import { notifyForm } from '../shared/forms.js';
+import { fetchJson } from '../shared/http.js';
 import 'prosemirror-view/style/prosemirror.min.css';
 import 'prosemirror-tables/style/tables.min.css';
 
@@ -30,564 +38,6 @@ import 'prosemirror-tables/style/tables.min.css';
  * section when the cursor is on a heading. The outline of the headings keeps
  * long content manageable.
  */
-
-/** Paragraphs set apart with a visible label, never just a colour. */
-const Callout = Node.create({
-    name: 'callout',
-    group: 'block',
-    content: 'paragraph+',
-    defining: true,
-
-    addOptions() {
-        return { labels: {} };
-    },
-
-    addAttributes() {
-        return {
-            variant: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('data-variant'),
-                renderHTML: (attributes) => ({ 'data-variant': attributes.variant }),
-            },
-        };
-    },
-
-    parseHTML() {
-        return [{ tag: 'div[data-callout]' }];
-    },
-
-    renderHTML({ node, HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, {
-            'data-callout': '',
-            'data-label': this.options.labels[node.attrs.variant] ?? '',
-            role: 'note',
-        }), 0];
-    },
-});
-
-/**
- * Where a quote comes from, written as plain text at its end. Enter leaves
- * the quote for a new paragraph; Backspace on an empty source removes it.
- */
-const QuoteSource = Node.create({
-    name: 'quoteSource',
-    content: 'text*',
-    marks: '',
-    defining: true,
-
-    addOptions() {
-        return { hint: '' };
-    },
-
-    parseHTML() {
-        return [{ tag: 'div[data-quote-source]' }];
-    },
-
-    // Tiptap's Placeholder only marks top-level blocks, so the source carries its own hint.
-    renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes, { 'data-quote-source': '', 'data-placeholder': this.options.hint }), 0];
-    },
-
-    addCommands() {
-        return {
-            /** Takes the cursor to the source of the current quote, adding it if it has none. */
-            focusQuoteSource: () => ({ tr, state, dispatch }) => {
-                const quote = currentQuote(state);
-
-                if (quote === null) {
-                    return false;
-                }
-
-                if (dispatch) {
-                    const { node, pos } = quote;
-                    let end = pos + node.nodeSize - 1;
-
-                    if (node.lastChild.type.name !== this.name) {
-                        tr.insert(end, this.type.create());
-                        end += 2;
-                    }
-
-                    tr.setSelection(TextSelection.create(tr.doc, end - 1));
-                    tr.scrollIntoView();
-                }
-
-                return true;
-            },
-        };
-    },
-
-    addKeyboardShortcuts() {
-        const inSource = () => this.editor.state.selection.$from.parent.type.name === this.name;
-
-        return {
-            Enter: () => {
-                if (!inSource()) {
-                    return false;
-                }
-
-                const { pos, node } = currentQuote(this.editor.state);
-                const after = pos + node.nodeSize;
-
-                return this.editor.chain()
-                    .insertContentAt(after, { type: 'paragraph' })
-                    .setTextSelection(after + 1)
-                    .scrollIntoView()
-                    .run();
-            },
-            Backspace: () => {
-                const { $from, empty } = this.editor.state.selection;
-
-                if (!inSource() || !empty || $from.parentOffset > 0) {
-                    return false;
-                }
-
-                // At the start of a source with text, it stays a source rather than joining the quote.
-                if ($from.parent.content.size > 0) {
-                    return true;
-                }
-
-                const from = $from.before();
-
-                return this.editor.chain()
-                    .deleteRange({ from, to: from + $from.parent.nodeSize })
-                    .setTextSelection(from - 1)
-                    .run();
-            },
-        };
-    },
-});
-
-/** The quote around the cursor, with where it starts, or null outside of one. */
-const currentQuote = (state) => {
-    const { $from } = state.selection;
-
-    for (let depth = $from.depth; depth > 0; depth -= 1) {
-        if ($from.node(depth).type.name === 'blockquote') {
-            return { node: $from.node(depth), pos: $from.before(depth) };
-        }
-    }
-
-    return null;
-};
-
-/** Top-level blocks of a document, with where each starts and ends. */
-const topLevelBlocks = (doc) => {
-    const blocks = [];
-
-    doc.forEach((node, offset) => blocks.push({ node, from: offset, to: offset + node.nodeSize }));
-
-    return blocks;
-};
-
-const isHeading = (node) => node.type.name === 'heading';
-
-/** Whether the cursor is on a heading, so moving it moves its section. */
-const onHeading = (state) => {
-    const { $from } = state.selection;
-
-    return $from.depth > 0 && isHeading($from.node(1));
-};
-
-/**
- * What moves together from the block at the index: a heading takes its whole
- * section, down to the next heading of its level or above; any other block,
- * only itself. Returns the range of block indexes, end excluded.
- */
-const unitAt = (blocks, index) => {
-    const { node } = blocks[index];
-
-    if (!isHeading(node)) {
-        return [index, index + 1];
-    }
-
-    let end = index + 1;
-
-    while (end < blocks.length && !(isHeading(blocks[end].node) && blocks[end].node.attrs.level <= node.attrs.level)) {
-        end += 1;
-    }
-
-    return [index, end];
-};
-
-/**
- * The two neighbouring units to swap for a move, or null when there is
- * nowhere to go. A section only swaps with a sibling section, so it never
- * leaves its parent nor lands among the blocks of another one.
- */
-const movePlan = (doc, index, direction) => {
-    const blocks = topLevelBlocks(doc);
-    const [start, end] = unitAt(blocks, index);
-    const { node } = blocks[start];
-
-    if (direction < 0) {
-        if (start === 0) {
-            return null;
-        }
-
-        let previous = start - 1;
-
-        if (isHeading(node)) {
-            while (previous >= 0 && !(isHeading(blocks[previous].node) && blocks[previous].node.attrs.level <= node.attrs.level)) {
-                previous -= 1;
-            }
-
-            if (previous < 0 || blocks[previous].node.attrs.level !== node.attrs.level) {
-                return null;
-            }
-        }
-
-        return { blocks, first: [previous, start], second: [start, end], moving: 'second' };
-    }
-
-    if (end >= blocks.length) {
-        return null;
-    }
-
-    if (isHeading(node) && !(isHeading(blocks[end].node) && blocks[end].node.attrs.level === node.attrs.level)) {
-        return null;
-    }
-
-    const next = isHeading(node) ? unitAt(blocks, end)[1] : end + 1;
-
-    return { blocks, first: [start, end], second: [end, next], moving: 'first' };
-};
-
-/** Moves the current block, or its section, past its neighbour. */
-const BlockMover = Extension.create({
-    name: 'blockMover',
-
-    addOptions() {
-        return { onMove: () => {}, onControlsRequest: () => {} };
-    },
-
-    addCommands() {
-        return {
-            moveBlock: (direction) => ({ tr, dispatch }) => {
-                const { $from, from } = tr.selection;
-                const plan = $from.depth > 0 ? movePlan(tr.doc, $from.index(0), direction) : null;
-
-                if (plan === null) {
-                    return false;
-                }
-
-                if (dispatch) {
-                    const { blocks, first, second, moving } = plan;
-                    const firstFrom = blocks[first[0]].from;
-                    const middle = blocks[second[0]].from;
-                    const secondTo = blocks[second[1] - 1].to;
-                    const swapped = tr.doc.slice(middle, secondTo).content.append(tr.doc.slice(firstFrom, middle).content);
-                    // The cursor travels with what moves.
-                    const cursor = moving === 'first' ? from + (secondTo - middle) : from - (middle - firstFrom);
-
-                    tr.replaceWith(firstFrom, secondTo, swapped);
-                    tr.setSelection(TextSelection.near(tr.doc.resolve(cursor)));
-                    tr.scrollIntoView();
-                }
-
-                return true;
-            },
-        };
-    },
-
-    addKeyboardShortcuts() {
-        const move = (direction) => {
-            const section = onHeading(this.editor.state);
-
-            return this.editor.commands.moveBlock(direction) && (this.options.onMove(direction, section), true);
-        };
-
-        return {
-            'Mod-Shift-ArrowUp': () => move(-1),
-            'Mod-Shift-ArrowDown': () => move(1),
-            // The usual shortcut of accessible editors to reach their controls.
-            'Alt-F10': () => (this.options.onControlsRequest(), true),
-        };
-    },
-});
-
-/** Lists the kinds of block when "/" starts an empty line. */
-const SlashMenu = Extension.create({
-    name: 'slashMenu',
-
-    addOptions() {
-        return { items: () => [], render: () => ({}) };
-    },
-
-    addProseMirrorPlugins() {
-        return [Suggestion({
-            editor: this.editor,
-            char: '/',
-            startOfLine: true,
-            // Table cells and the source of a quote only hold text, so there is nothing to choose there.
-            allow: ({ editor }) => !editor.isActive('table') && !editor.isActive('quoteSource'),
-            items: ({ query }) => this.options.items(query),
-            command: ({ editor, range, props }) => {
-                editor.chain().focus().deleteRange(range).run();
-                props.apply();
-            },
-            render: this.options.render,
-        })];
-    },
-});
-
-/**
- * Draws an embedded image as the CMS knows it now: its thumbnail, its texts
- * and where it stands for the site. Undefined while it is being looked up,
- * null when there is no such image any longer.
- */
-const drawImage = (figure, image, labels) => {
-    figure.replaceChildren();
-
-    if (image === undefined || image === null) {
-        const note = document.createElement('p');
-        note.className = 'rich-text-image-note';
-        note.textContent = image === undefined ? labels.loading : labels.missing;
-        figure.append(note);
-
-        return;
-    }
-
-    const thumbnail = document.createElement('img');
-    thumbnail.src = image.thumbnail;
-    // The texts below name it.
-    thumbnail.alt = '';
-    thumbnail.width = 240;
-    thumbnail.height = 135;
-
-    const details = document.createElement('div');
-    details.className = 'rich-text-image-details';
-
-    const status = document.createElement('span');
-    status.className = 'rich-text-image-status';
-    status.textContent = image.status;
-
-    const alt = document.createElement('p');
-    alt.className = 'rich-text-image-alt';
-    alt.textContent = `${labels.embedded} ${image.alt}`;
-
-    details.append(status, alt);
-
-    if (image.caption !== '') {
-        const caption = document.createElement('p');
-        caption.textContent = image.caption;
-        details.append(caption);
-    }
-
-    if (!image.published) {
-        const offSite = document.createElement('p');
-        offSite.className = 'rich-text-image-note';
-        offSite.textContent = labels.offSite;
-        details.append(offSite);
-    }
-
-    figure.append(thumbnail, details);
-};
-
-/**
- * An image of the library, embedded by its id alone: the editor shows what
- * the CMS knows of it now, so its texts and status are always the latest.
- */
-const EmbeddedImage = Node.create({
-    name: 'image',
-    group: 'block',
-    atom: true,
-    selectable: true,
-    draggable: false,
-
-    addOptions() {
-        return { describe: () => undefined, views: new Set(), labels: {} };
-    },
-
-    addAttributes() {
-        return {
-            id: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('data-image-id'),
-                renderHTML: (attributes) => ({ 'data-image-id': attributes.id }),
-            },
-        };
-    },
-
-    parseHTML() {
-        return [{ tag: 'figure[data-image-id]' }];
-    },
-
-    renderHTML({ HTMLAttributes }) {
-        return ['figure', mergeAttributes(HTMLAttributes)];
-    },
-
-    addNodeView() {
-        return ({ node }) => {
-            const figure = document.createElement('figure');
-            figure.className = 'rich-text-image';
-            figure.setAttribute('data-image-id', node.attrs.id);
-            const draw = () => drawImage(figure, this.options.describe(node.attrs.id), this.options.labels);
-
-            draw();
-            this.options.views.add(draw);
-
-            return { dom: figure, destroy: () => this.options.views.delete(draw) };
-        };
-    },
-});
-
-/**
- * Draws a widget as the CMS knows its page now: its title and where it
- * stands for the site, after what kind of widget it is, all in words.
- */
-const drawWidget = (element, { state, page }, labels) => {
-    element.replaceChildren();
-
-    const label = document.createElement('p');
-    label.className = 'rich-text-widget-label';
-    label.textContent = labels.label ?? '';
-    element.append(label);
-
-    if (page === undefined) {
-        const note = document.createElement('p');
-        note.className = 'rich-text-page-note';
-        note.textContent = labels[state] ?? '';
-        element.append(note);
-
-        return;
-    }
-
-    const title = document.createElement('p');
-    title.className = 'rich-text-widget-title';
-    title.textContent = page.title;
-
-    const status = document.createElement('span');
-    status.className = 'rich-text-page-status';
-    status.textContent = page.status;
-
-    element.append(title, status);
-
-    if (state === 'offSite') {
-        const offSite = document.createElement('p');
-        offSite.className = 'rich-text-page-note';
-        offSite.textContent = labels.offSite ?? '';
-        element.append(offSite);
-    }
-};
-
-/**
- * A widget: for now, a page of the blog shown as a card of related content.
- * Its page is kept by its id alone, as a link's is, so the editor shows its
- * latest title and status, and the site its current address.
- */
-const Widget = Node.create({
-    name: 'widget',
-    group: 'block',
-    atom: true,
-    selectable: true,
-    draggable: false,
-
-    addOptions() {
-        return { describe: () => ({ state: 'loading', page: undefined }), views: new Set(), labels: {} };
-    },
-
-    addAttributes() {
-        return {
-            kind: {
-                default: 'related_page',
-                parseHTML: (element) => element.getAttribute('data-widget-kind'),
-                renderHTML: (attributes) => ({ 'data-widget-kind': attributes.kind }),
-            },
-            id: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('data-page-id'),
-                renderHTML: (attributes) => ({ 'data-page-id': attributes.id }),
-            },
-        };
-    },
-
-    parseHTML() {
-        return [{ tag: 'div[data-widget-kind]' }];
-    },
-
-    renderHTML({ HTMLAttributes }) {
-        return ['div', mergeAttributes(HTMLAttributes)];
-    },
-
-    addNodeView() {
-        return ({ node }) => {
-            const element = document.createElement('div');
-            element.className = 'rich-text-widget';
-            element.setAttribute('data-widget-kind', node.attrs.kind);
-            const draw = () => drawWidget(element, this.options.describe(node.attrs.id), this.options.labels);
-
-            draw();
-            this.options.views.add(draw);
-
-            return { dom: element, destroy: () => this.options.views.delete(draw) };
-        };
-    },
-});
-
-/**
- * An internal link to a page, kept by its id alone. It has no href in the CMS:
- * the editor must not navigate away, and the site resolves the current address.
- *
- * Links whose page isn't on the site, or isn't known yet, are told apart by a
- * class on decorations, which ProseMirror draws itself: the DOM of the text is
- * never touched by hand. The controller says how each page stands through
- * stateOf(), and redraws them once it learns more.
- */
-const pageLinksKey = new PluginKey('pageLinks');
-
-const PageLink = Mark.create({
-    name: 'link',
-    inclusive: false,
-
-    addOptions() {
-        return {
-            // 'published', 'offSite', 'missing', 'unknown' or 'loading'.
-            stateOf: () => 'loading',
-        };
-    },
-
-    addProseMirrorPlugins() {
-        const { stateOf } = this.options;
-
-        return [new Plugin({
-            key: pageLinksKey,
-            props: {
-                decorations: (state) => {
-                    const decorations = [];
-
-                    state.doc.descendants((node, position) => {
-                        const link = node.isText ? node.marks.find((mark) => mark.type.name === 'link') : undefined;
-                        const linkState = link ? stateOf(link.attrs.id) : 'published';
-
-                        if (linkState !== 'published') {
-                            decorations.push(Decoration.inline(position, position + node.nodeSize, { class: `rich-text-link-${linkState}` }));
-                        }
-                    });
-
-                    return DecorationSet.create(state.doc, decorations);
-                },
-            },
-        })];
-    },
-
-    addAttributes() {
-        return {
-            id: {
-                default: null,
-                parseHTML: (element) => element.getAttribute('data-page-id'),
-                renderHTML: (attributes) => ({ 'data-page-id': attributes.id }),
-            },
-        };
-    },
-
-    parseHTML() {
-        return [{ tag: 'a[data-page-id]' }];
-    },
-
-    renderHTML({ HTMLAttributes }) {
-        return ['a', mergeAttributes(HTMLAttributes), 0];
-    },
-});
 
 /** What every control runs, given a command chain. */
 const COMMANDS = {
@@ -661,11 +111,14 @@ export default class extends Controller {
     };
 
     connect() {
+        this.abortController = new AbortController();
         this.menu = null;
         this.dismiss = null;
         // What the CMS knows of each image embedded or picked, by id.
         this.images = new Map();
         this.imagesLookedUp = false;
+        // The ids of the images whose lookup failed.
+        this.unknownImages = new Set();
         this.imageViews = new Set();
         // What the CMS knows of each page linked or picked, by id; the ids
         // looked up and found to be of no page; those being looked up; and
@@ -700,7 +153,7 @@ export default class extends Controller {
             onUpdate: ({ editor }) => {
                 this.inputTarget.value = JSON.stringify(editor.getJSON());
                 // Setting the value fires no event, so tell whoever watches the form.
-                this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
+                notifyForm(this.inputTarget);
                 this.refreshOutline();
                 this.refreshCount();
                 // Text pasted or brought back by undo may link pages not looked up yet.
@@ -736,12 +189,25 @@ export default class extends Controller {
         });
 
         if (ids.length > 0) {
+            const { signal } = this.abortController;
             const url = new URL(this.imageLookupUrlValue, window.location.href);
             url.searchParams.set('ids', ids.join(','));
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            let images = null;
 
-            if (response.ok) {
-                for (const image of (await response.json()).images) {
+            try {
+                images = (await fetchJson(url, signal)).images;
+            } catch {
+                // Told as unknown below: the images may well exist.
+            }
+
+            if (signal.aborted) {
+                return;
+            }
+
+            if (images === null) {
+                ids.forEach((id) => this.unknownImages.add(id));
+            } else {
+                for (const image of images) {
                     this.images.set(image.id, image);
                 }
             }
@@ -754,6 +220,10 @@ export default class extends Controller {
     describeImage(id) {
         if (this.images.has(id)) {
             return this.images.get(id);
+        }
+
+        if (this.unknownImages.has(id)) {
+            return false;
         }
 
         return this.imagesLookedUp ? null : undefined;
@@ -774,13 +244,33 @@ export default class extends Controller {
     async searchImages(event) {
         event?.preventDefault();
 
+        const request = (this.imageSearchRequest ?? 0) + 1;
+        this.imageSearchRequest = request;
+        const { signal } = this.abortController;
         const url = new URL(this.imageSearchUrlValue, window.location.href);
         url.searchParams.set('alt', this.imageSearchTarget.value);
-        const response = await fetch(url, { headers: { Accept: 'application/json' } });
-        const images = response.ok ? (await response.json()).images : [];
+        let images = null;
+
+        try {
+            images = (await fetchJson(url, signal)).images;
+        } catch {
+            // Told below, like an answer that isn't ok.
+        }
+
+        // A newer search went out, or the editor was disconnected meanwhile.
+        if (signal.aborted || request !== this.imageSearchRequest) {
+            return;
+        }
+
+        const { none, result, results, error } = this.imageLabelsValue;
+
+        if (images === null) {
+            this.imageStatusTarget.textContent = error;
+
+            return;
+        }
 
         this.imageResultsTarget.replaceChildren(...images.map((image) => this.imageResult(image)));
-        const { none, result, results } = this.imageLabelsValue;
         this.imageStatusTarget.textContent = [none, result][images.length] ?? results.replace('%count%', String(images.length));
     }
 
@@ -851,15 +341,19 @@ export default class extends Controller {
         }
 
         ids.forEach((id) => this.pagesLookingUp.add(id));
+        const { signal } = this.abortController;
         const url = new URL(this.pageLookupUrlValue, window.location.href);
         url.searchParams.set('ids', [...ids].join(','));
         let found = null;
 
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            found = response.ok ? (await response.json()).pages : null;
+            found = (await fetchJson(url, signal)).pages;
         } catch {
             // Told as unknown below: the page may well exist.
+        }
+
+        if (signal.aborted) {
+            return;
         }
 
         for (const id of ids) {
@@ -966,6 +460,7 @@ export default class extends Controller {
 
     async loadPages() {
         const request = ++this.pageSearch.request;
+        const { signal } = this.abortController;
         const url = new URL(this.pageSearchUrlValue, window.location.href);
         url.searchParams.set('title', this.pageSearchTarget.value);
         url.searchParams.set('page', String(this.pageSearch.page));
@@ -973,14 +468,13 @@ export default class extends Controller {
         let result = null;
 
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            result = response.ok ? await response.json() : null;
+            result = await fetchJson(url, signal);
         } catch {
             // Told below, like an answer that isn't ok.
         }
 
-        // A newer search went out meanwhile: this answer is stale.
-        if (request !== this.pageSearch.request) {
+        // A newer search went out, or the editor was disconnected meanwhile.
+        if (signal.aborted || request !== this.pageSearch.request) {
             return;
         }
 
@@ -1092,6 +586,7 @@ export default class extends Controller {
     }
 
     disconnect() {
+        this.abortController.abort();
         this.closeMenu();
         this.editor?.destroy();
     }

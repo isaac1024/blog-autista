@@ -1,4 +1,6 @@
 import { Controller } from '@hotwired/stimulus';
+import { notifyForm } from '../shared/forms.js';
+import { fetchJson } from '../shared/http.js';
 
 /*
  * Edits one page: shows the one chosen, as the CMS knows it now, and picks
@@ -15,6 +17,7 @@ export default class extends Controller {
     };
 
     connect() {
+        this.abortController = new AbortController();
         this.chooseTarget.hidden = false;
         this.page = null;
         this.draw();
@@ -24,23 +27,30 @@ export default class extends Controller {
         }
     }
 
+    disconnect() {
+        this.abortController.abort();
+    }
+
     async lookUp(id) {
+        const { signal } = this.abortController;
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', id);
 
+        // Told as unknown while it can't be checked: the page may well exist.
+        let page;
+
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-
-            if (!response.ok) {
-                throw new Error(String(response.status));
-            }
-
-            this.page = (await response.json()).pages.find((page) => page.id === id) ?? false;
+            page = (await fetchJson(url, signal)).pages.find((found) => found.id === id) ?? false;
         } catch {
-            // Told as unknown: the page may well exist.
-            this.page = undefined;
+            page = undefined;
         }
 
+        // The field was disconnected meanwhile: this answer is for no one.
+        if (signal.aborted) {
+            return;
+        }
+
+        this.page = page;
         this.draw();
     }
 
@@ -72,7 +82,7 @@ export default class extends Controller {
         this.draw();
         this.statusTarget.textContent = this.labelsValue.chosen.replace('%title%', page.title);
         this.chooseTarget.focus();
-        this.notifyForm();
+        notifyForm(this.inputTarget);
     }
 
     openDialog() {
@@ -86,19 +96,19 @@ export default class extends Controller {
 
         const request = (this.request ?? 0) + 1;
         this.request = request;
+        const { signal } = this.abortController;
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('title', this.searchTarget.value);
         let pages = null;
 
         try {
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            pages = response.ok ? (await response.json()).pages : null;
+            pages = (await fetchJson(url, signal)).pages;
         } catch {
             // Told below, like an answer that isn't ok.
         }
 
-        // A newer search went out meanwhile: this answer is stale.
-        if (request !== this.request) {
+        // A newer search went out, or the field was disconnected meanwhile.
+        if (signal.aborted || request !== this.request) {
             return;
         }
 
@@ -138,8 +148,4 @@ export default class extends Controller {
         return item;
     }
 
-    /** Changing the field from a script fires no event, so tell whoever watches the form. */
-    notifyForm() {
-        this.inputTarget.dispatchEvent(new Event('input', { bubbles: true }));
-    }
 }

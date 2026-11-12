@@ -99,6 +99,8 @@ takes 60 visits a minute per reader.
 | Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
 | Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both |
 | Tests | PHPUnit + ParaTest | in parallel, one database per process; random order, strict output, fail on risky/deprecation/notice/warning |
+| JavaScript static analysis | ESLint + TypeScript `checkJs` | recommended correctness rules and strict JSDoc checking on the pure/shared modules selected in `jsconfig.json`; no emitted build |
+| JavaScript tests | node:test + Playwright | pure logic units and real-browser controller interactions; isolated fixtures need neither Symfony nor a database |
 | Mutation | Infection | in parallel, one database per thread, the whole suite against each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
 
 ```bash
@@ -110,6 +112,9 @@ composer complexity   # PHPMD only
 composer stan         # PHPStan (types + dead code + architecture)
 composer test         # PHPUnit in parallel (ParaTest)
 composer test:serial  # PHPUnit in a single process, handy to debug a failure
+npm run check:js      # ESLint + JSDoc types + JavaScript and browser tests
+npm run test:js       # JavaScript units + Playwright browser interactions
+npm run test:browser:install  # first time only: Chromium inside node_modules
 composer infection    # mutation testing of the whole src/
 composer infection:diff  # mutation testing of the lines changed against master
 ```

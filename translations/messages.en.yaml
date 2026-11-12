@@ -619,6 +619,8 @@ ui:
             none: 'No image matches the search.'
             loading: 'Loading the image…'
             missing: 'This image no longer exists in the library.'
+            unknown: 'The image couldn’t be checked.'
+            error: 'The search didn’t work. Try again.'
             off_site: 'It won’t show on the site until you publish it.'
             embedded: 'Image:'
         widget:
