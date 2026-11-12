@@ -120,21 +120,20 @@ export const movePlan = (doc, index, direction) => {
     const [start, end] = unitAt(blocks, index);
     const { node } = blocks[start];
 
-    if (direction < 0) {
+    if (direction === -1) {
         if (start === 0) {
             return null;
         }
 
-        let previous = start - 1;
+        if (!isHeading(node)) {
+            return { blocks, first: [start - 1, start], second: [start, end], moving: 'second' };
+        }
 
-        if (isHeading(node)) {
-            while (previous >= 0 && !(isHeading(blocks[previous].node) && levelOf(blocks[previous].node) <= levelOf(node))) {
-                previous -= 1;
-            }
+        // The heading before it of its level or above: a sibling to swap with, or else its parent.
+        const previous = blocks.slice(0, start).findLastIndex((block) => isHeading(block.node) && levelOf(block.node) <= levelOf(node));
 
-            if (previous < 0 || levelOf(blocks[previous].node) !== levelOf(node)) {
-                return null;
-            }
+        if (previous < 0 || levelOf(blocks[previous].node) !== levelOf(node)) {
+            return null;
         }
 
         return { blocks, first: [previous, start], second: [start, end], moving: 'second' };

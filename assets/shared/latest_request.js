@@ -12,7 +12,7 @@ export class LatestRequest {
     constructor(owner) {
         this.owner = owner;
         this.#current = null;
-        owner.addEventListener('abort', () => this.#current?.abort(), { once: true });
+        owner.addEventListener('abort', () => this.#current?.abort());
     }
 
     /** The signal of a new request, aborting the one before. */

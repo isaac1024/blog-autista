@@ -52,3 +52,11 @@ test('the menu never runs past the sides of the screen', () => {
     assert.deepEqual(menuPosition({ top: 0, bottom: 20, left: 350 }, menu, viewport).left, 184);
     assert.deepEqual(menuPosition({ top: 0, bottom: 20, left: 2 }, menu, viewport).left, 16);
 });
+
+test('the menu stays below when it fits exactly, and keeps its gap to what opened it', () => {
+    const menu = { width: 200, height: 300 };
+
+    // 500 + 8 + 300 = 808: just fits a screen of 808, not one of 805.
+    assert.equal(menuPosition({ top: 480, bottom: 500, left: 40 }, menu, { width: 1000, height: 808 }).top, 508);
+    assert.equal(menuPosition({ top: 480, bottom: 500, left: 40 }, menu, { width: 1000, height: 805 }).top, 172);
+});

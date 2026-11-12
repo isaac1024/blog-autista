@@ -99,6 +99,13 @@ controllers and AssetMapper vendor modules without Symfony or a database. Run
 suite. Install its local Chromium first with `npm run test:browser:install`.
 Browser failures are written under `var/browser-tests/`.
 
+`npm run mutation:js` runs Stryker over the modules the unit tests cover, as
+Infection does for PHP: it ignores nothing and fails below 80 %; the report
+goes to `var/mutation/js.html`. Logic that can live outside a Stimulus
+controller goes to a module of its own with a `node:test` suite, and joins
+`mutate` in `stryker.config.mjs`; the whole run stays under five minutes.
+`npm run check:js:full` is `check:js` plus the mutation run.
+
 Run `npm run check:js` for the frontend gate: ESLint, strict TypeScript
 `checkJs` over every module under `assets/` (JSDoc, no build step) and both test
 suites. The browser loads packages through the import map; npm installs the same

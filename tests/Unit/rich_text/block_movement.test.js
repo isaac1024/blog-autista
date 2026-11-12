@@ -57,3 +57,31 @@ test('a section never moves across a paragraph or out of the document', () => {
     assert.equal(movePlan(documentOf(block()), 0, -1), null);
     assert.equal(movePlan(documentOf(block()), 0, 1), null);
 });
+
+test('onHeading is false outside of any block', () => {
+    const state = { selection: { $from: { depth: 0, node: () => block('heading', 2) } } };
+
+    assert.equal(onHeading(state), false);
+});
+
+test('a paragraph swaps with the block next to it, alone', () => {
+    const down = movePlan(documentOf(block(), block(), block(), block()), 1, 1);
+    const up = movePlan(documentOf(block(), block(), block()), 1, -1);
+
+    assert.deepEqual([down.first, down.second, down.moving], [[1, 2], [2, 3], 'first']);
+    assert.deepEqual([up.first, up.second, up.moving], [[0, 1], [1, 2], 'second']);
+});
+
+test('moving up, a section passes over the subsections of the one before', () => {
+    const plan = movePlan(documentOf(block('heading', 2), block('heading', 3), block(), block('heading', 2), block()), 3, -1);
+
+    assert.deepEqual([plan.first, plan.second], [[0, 3], [3, 5]]);
+});
+
+test('a section never leaves its parent nor rises above the first heading of its level', () => {
+    // Nothing of its level before it.
+    assert.equal(movePlan(documentOf(block(), block('heading', 2)), 1, -1), null);
+    // An h3 just under its h2, either way.
+    assert.equal(movePlan(documentOf(block('heading', 2), block(), block('heading', 3), block()), 2, -1), null);
+    assert.equal(movePlan(documentOf(block('heading', 2), block('heading', 3), block(), block('heading', 2)), 1, 1), null);
+});
