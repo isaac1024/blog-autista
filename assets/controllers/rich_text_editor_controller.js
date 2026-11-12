@@ -11,7 +11,9 @@ import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { BlockMover } from '../rich_text/block_mover.js';
-import { isHeading, onHeading, topLevelBlocks } from '../rich_text/block_movement.js';
+import { onHeading } from '../rich_text/block_movement.js';
+import { matches, menuAction, menuPosition } from '../rich_text/block_menu.js';
+import { currentSection, sectionsOf } from '../rich_text/outline.js';
 import { EmbeddedImage } from '../rich_text/embedded_image.js';
 import { Widget } from '../rich_text/widget.js';
 import { PageLink, pageLinksKey } from '../rich_text/page_link.js';
@@ -89,7 +91,7 @@ import 'prosemirror-tables/style/tables.min.css';
 
 /** @typedef {{value: string, label: string}} BlockOption */
 
-/** @typedef {{from: number, level: number, title: string}} Section */
+/** @typedef {import('../rich_text/outline.js').Section} Section */
 
 /**
  * The menu of kinds of block: opened from its button, which keeps the focus,
@@ -228,13 +230,6 @@ const BLOCKS = {
     orderedList: (chain) => chain.toggleOrderedList(),
     callout: (chain, variant) => chain.wrapIn('callout', { variant }),
 };
-
-/**
- * Lower case and without accents, so "parrafo" finds "Párrafo".
- *
- * @param {string} text
- */
-const normalise = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -1105,7 +1100,7 @@ export default class extends BaseController {
             apply: () => this.applyBlock(this.editor.chain().focus(), option.value),
         }));
 
-        return items.filter((item) => normalise(item.label).includes(normalise(query)));
+        return items.filter((item) => matches(item.label, query));
     }
 
     /** @param {Event} event */
@@ -1214,7 +1209,7 @@ export default class extends BaseController {
         for (const { block, command, allowed } of inserted) {
             const label = this.buttonTargets.find((button) => button.dataset.command === command)?.dataset.label;
 
-            if (allowed && label !== undefined && normalise(label).includes(normalise(query))) {
+            if (allowed && label !== undefined && matches(label, query)) {
                 items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), block) });
             }
         }
@@ -1263,19 +1258,21 @@ export default class extends BaseController {
         this.menuTarget.hidden = false;
 
         if (anchor) {
-            const height = this.menuTarget.offsetHeight;
-            const below = anchor.bottom + 8 + height <= window.innerHeight;
-            const left = Math.min(anchor.left, window.innerWidth - this.menuTarget.offsetWidth - 16);
+            const { top, left } = menuPosition(
+                anchor,
+                { width: this.menuTarget.offsetWidth, height: this.menuTarget.offsetHeight },
+                { width: window.innerWidth, height: window.innerHeight },
+            );
 
-            this.menuTarget.style.top = `${below ? anchor.bottom + 8 : Math.max(anchor.top - height - 8, 8)}px`;
-            this.menuTarget.style.left = `${Math.max(left, 16)}px`;
+            this.menuTarget.style.top = `${top}px`;
+            this.menuTarget.style.left = `${left}px`;
         }
 
         this.highlight(this.menu.index);
     }
 
     /**
-     * Arrow keys move through the kinds; Enter picks one; Escape closes.
+     * Does what the key does in the menu, and says whether it took it.
      *
      * @param {KeyboardEvent} event
      */
@@ -1284,41 +1281,24 @@ export default class extends BaseController {
             return false;
         }
 
-        const count = this.menu.items.length;
-        /** @type {Record<string, number>} */
-        const moves = { ArrowDown: 1, ArrowUp: -1 };
+        const { mode, index, items, button } = this.menu;
+        const action = menuAction(event.key, { mode, index, count: items.length });
 
-        if (event.key in moves) {
-            this.highlight((this.menu.index + moves[event.key] + count) % count);
-
-            return true;
+        if (action === null) {
+            return false;
         }
 
-        if (event.key === 'Home' || event.key === 'End') {
-            this.highlight(event.key === 'Home' ? 0 : count - 1);
-
-            return true;
-        }
-
-        // In the "/" menu Tab picks, as editors do; leaving the button's menu
-        // with Tab must not change the block, so there it just closes it.
-        if (event.key === 'Enter' || (event.key === 'Tab' && this.menu.mode === 'slash')) {
-            this.choose(this.menu.index);
-
-            return true;
-        }
-
-        if (event.key === 'Escape' || event.key === 'Tab') {
-            const { button } = this.menu;
-
+        if ('highlight' in action) {
+            this.highlight(action.highlight);
+        } else if ('choose' in action) {
+            this.choose(action.choose);
+        } else {
             // Focus first: hiding the menu while it holds the focus would drop it to the page.
             button?.focus();
             this.closeMenu();
-
-            return true;
         }
 
-        return false;
+        return true;
     }
 
     /** @param {number} index */
@@ -1392,26 +1372,21 @@ export default class extends BaseController {
             return;
         }
 
-        const sections = topLevelBlocks(this.editor.state.doc)
-            .filter(({ node }) => isHeading(node) && node.textContent.trim() !== '')
-            .map(({ node, from }) => ({ from, level: Number(node.attrs.level), title: node.textContent }));
+        const sections = sectionsOf(this.editor.state.doc);
 
         this.sections = sections;
+        this.outlineDialogListTarget.replaceChildren(...sections.map((section) => {
+            const item = document.createElement('li');
+            const link = document.createElement('button');
 
-        for (const list of [this.outlineDialogListTarget]) {
-            list.replaceChildren(...sections.map((section) => {
-                const item = document.createElement('li');
-                const link = document.createElement('button');
+            link.type = 'button';
+            link.className = `rich-text-outline-item ${section.level > 2 ? 'pl-6' : 'pl-2'}`;
+            link.textContent = section.title;
+            link.addEventListener('click', () => this.jumpTo(section.from));
+            item.append(link);
 
-                link.type = 'button';
-                link.className = `rich-text-outline-item ${section.level > 2 ? 'pl-6' : 'pl-2'}`;
-                link.textContent = section.title;
-                link.addEventListener('click', () => this.jumpTo(section.from));
-                item.append(link);
-
-                return item;
-            }));
-        }
+            return item;
+        }));
 
         this.outlineButtonTarget.hidden = sections.length === 0;
         this.markCurrentSection();
@@ -1422,16 +1397,13 @@ export default class extends BaseController {
             return;
         }
 
-        const { from } = this.editor.state.selection;
-        const current = this.sections.findLastIndex((section) => section.from <= from);
+        const current = currentSection(this.sections, this.editor.state.selection.from);
 
-        for (const list of [this.outlineDialogListTarget]) {
-            for (const [index, item] of [...list.children].entries()) {
-                if (index === current) {
-                    item.firstElementChild?.setAttribute('aria-current', 'location');
-                } else {
-                    item.firstElementChild?.removeAttribute('aria-current');
-                }
+        for (const [index, item] of [...this.outlineDialogListTarget.children].entries()) {
+            if (index === current) {
+                item.firstElementChild?.setAttribute('aria-current', 'location');
+            } else {
+                item.firstElementChild?.removeAttribute('aria-current');
             }
         }
     }
