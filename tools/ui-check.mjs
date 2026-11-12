@@ -151,14 +151,6 @@ const safeName = (name) =>
         .replace(/[^a-z0-9_-]+/gi, '-')
         .replace(/^-+|-+$/g, '') || 'page';
 
-const asArray = (value) => {
-    if (!value) {
-        return [];
-    }
-
-    return Array.isArray(value) ? value : [value];
-};
-
 async function loadConfig() {
     const module = await import(pathToFileURL(CONFIG_FILE).href);
     const config = module.default;
@@ -540,10 +532,6 @@ function findBracedBlock(source, startIndex) {
     }
 
     return null;
-}
-
-function extractBracedBlock(source, startIndex) {
-    return findBracedBlock(source, startIndex)?.inner ?? null;
 }
 
 function parseDeclarations(block) {

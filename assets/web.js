@@ -8,13 +8,14 @@
  * A page prerendered, or opened in a tab never looked at, isn't seen, so it
  * waits; one shown again from the back-forward cache was already told.
  */
-const script = document.querySelector('script[data-page]');
+const script = document.querySelector('script[data-page][data-visit]');
 
 if (script instanceof HTMLScriptElement) {
+    const { page = '', visit = '' } = script.dataset;
     let sent = false;
 
     const send = () => {
-        if (sent || ('prerendering' in document && document.prerendering) || 'visible' !== document.visibilityState) {
+        if (sent || ('prerendering' in document && document.prerendering) || document.visibilityState !== 'visible') {
             return;
         }
 
@@ -29,15 +30,15 @@ if (script instanceof HTMLScriptElement) {
         }
 
         const body = new URLSearchParams({
-            page: script.dataset.page ?? '',
+            page,
             referrer: document.referrer,
             source: campaign.get('utm_source') || '',
             medium: campaign.get('utm_medium') || '',
             zone,
         });
 
-        if (!navigator.sendBeacon || !navigator.sendBeacon('/v', body)) {
-            fetch('/v', { method: 'POST', body, keepalive: true, credentials: 'omit' }).catch(() => {});
+        if (!navigator.sendBeacon || !navigator.sendBeacon(visit, body)) {
+            fetch(visit, { method: 'POST', body, keepalive: true, credentials: 'omit' }).catch(() => {});
         }
     };
 

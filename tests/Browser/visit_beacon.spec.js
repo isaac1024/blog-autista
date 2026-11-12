@@ -1,7 +1,7 @@
 import { expect, loadPage, test } from './support/test.js';
 
 const PAGE_ID = '6d1f3f2c-84a8-4b40-9ea3-91d62f55f001';
-const SCRIPT = `<script type="module" src="/assets/web.js" data-page="${PAGE_ID}"></script>`;
+const SCRIPT = `<script type="module" src="/assets/web.js" data-page="${PAGE_ID}" data-visit="/v"></script>`;
 
 /** Records every visit the script tells, as the site's endpoint would receive it. */
 async function recordVisits(page) {

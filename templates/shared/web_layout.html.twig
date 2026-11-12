@@ -12,6 +12,6 @@
 #}
 {% block javascripts %}
 {% if page.countedPageId %}
-        <script type="module" src="{{ asset('web.js') }}" data-page="{{ page.countedPageId }}"></script>
+        <script type="module" src="{{ asset('web.js') }}" data-page="{{ page.countedPageId }}" data-visit="{{ path('web_visit') }}"></script>
 {% endif %}
 {% endblock %}
