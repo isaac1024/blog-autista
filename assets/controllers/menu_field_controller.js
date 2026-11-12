@@ -3,6 +3,7 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
+import { lookupAmong, lookupText } from '../shared/lookup.js';
 
 /** @typedef {import('./page_field_controller.js').Page} Page */
 
@@ -29,7 +30,7 @@ import { LatestRequest } from '../shared/latest_request.js';
  * @property {AbortController} abortController
  * @property {Map<string, Page>} pages
  * @property {Set<string>} missing
- * @property {boolean} unknown
+ * @property {Set<string>} unknown
  * @property {{page: number, count: number}} query
  * @property {LatestRequest} searches
  * @property {HTMLOListElement} listTarget
@@ -98,7 +99,7 @@ export default class extends BaseController {
         this.abortController = new AbortController();
         this.pages = new Map();
         this.missing = new Set();
-        this.unknown = false;
+        this.unknown = new Set();
         this.query = { page: 1, count: 0 };
         this.searches = new LatestRequest(this.abortController.signal);
         this.addTarget.hidden = false;
@@ -230,20 +231,15 @@ export default class extends BaseController {
 
     /** @param {HTMLLIElement} row */
     drawPage(row) {
-        const id = row.dataset.pageId ?? '';
-        const page = this.pages.get(id);
-        const title = field(row, '[data-menu-field-target="pageTitle"]', HTMLElement);
-        const status = field(row, '[data-menu-field-target="pageStatus"]', HTMLElement);
-        const label = field(row, '[data-field="label"]', HTMLInputElement);
-        const { loading, missing, unknown, offSite } = this.labelsValue;
+        const lookup = lookupAmong(row.dataset.pageId ?? '', { found: this.pages, missing: this.missing, unknown: this.unknown });
+        const { name, standing } = lookupText(lookup, (page) => page.title, this.labelsValue);
 
-        if (page) {
-            title.textContent = page.title;
-            status.textContent = page.published ? page.status : `${page.status}. ${offSite}`;
-            label.placeholder = page.title;
-        } else {
-            title.textContent = this.missing.has(id) ? missing : (this.unknown ? unknown : loading);
-            status.textContent = '';
+        field(row, '[data-menu-field-target="pageTitle"]', HTMLElement).textContent = name;
+        field(row, '[data-menu-field-target="pageStatus"]', HTMLElement).textContent = standing;
+
+        // The label left empty takes the title of the page.
+        if (lookup.state === 'found') {
+            field(row, '[data-field="label"]', HTMLInputElement).placeholder = lookup.value.title;
         }
     }
 
@@ -280,7 +276,7 @@ export default class extends BaseController {
         }
 
         if (found === null) {
-            this.unknown = true;
+            ids.forEach((id) => this.unknown.add(id));
         } else {
             found.forEach((page) => this.pages.set(page.id, page));
             ids.filter((id) => !this.pages.has(id)).forEach((id) => this.missing.add(id));

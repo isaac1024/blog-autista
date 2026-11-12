@@ -24,6 +24,7 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
+import { LOADING, MISSING, UNKNOWN, found } from '../shared/lookup.js';
 
 /*
  * Mounts the Tiptap editor of the Shared:RichTextEditor component.
@@ -379,22 +380,24 @@ export default class extends BaseController {
     }
 
     /**
-     * What the CMS knows of an image: undefined while it is being looked up,
-     * null when there is no such image, false when it can't be checked.
+     * What the CMS knows of an image the text embeds.
      *
      * @param {string} id
-     * @returns {Image|null|false|undefined}
+     * @returns {import('../shared/lookup.js').Lookup<Image>}
      */
     describeImage(id) {
-        if (this.images.has(id)) {
-            return this.images.get(id);
+        const image = this.images.get(id);
+
+        if (image !== undefined) {
+            return found(image);
         }
 
         if (this.unknownImages.has(id)) {
-            return false;
+            return UNKNOWN;
         }
 
-        return this.imagesLookedUp ? null : undefined;
+        // Once the images embedded are looked up, one not found is no image at all.
+        return this.imagesLookedUp ? MISSING : LOADING;
     }
 
     drawImages() {

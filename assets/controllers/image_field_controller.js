@@ -3,6 +3,7 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
+import { LOADING, found, lookupIn, lookupText } from '../shared/lookup.js';
 
 /**
  * @typedef {object} Image
@@ -31,7 +32,7 @@ import { LatestRequest } from '../shared/latest_request.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {Image|null|false|undefined} image
+ * @property {import('../shared/lookup.js').Lookup<Image>} image
  * @property {LatestRequest} searches
  * @property {HTMLInputElement} inputTarget
  * @property {HTMLElement} thumbnailTarget
@@ -70,7 +71,7 @@ export default class extends BaseController {
         this.abortController = new AbortController();
         this.searches = new LatestRequest(this.abortController.signal);
         this.chooseTarget.hidden = false;
-        this.image = null;
+        this.image = LOADING;
         this.draw();
 
         if (this.inputTarget.value !== '') {
@@ -88,14 +89,13 @@ export default class extends BaseController {
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', id);
 
-        // Told as unknown while it can't be checked: the image may well exist.
-        /** @type {Image|false|undefined} */
-        let image;
+        /** @type {Image[]|null} */
+        let images = null;
 
         try {
-            image = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images.find((found) => found.id === id) ?? false;
+            images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
         } catch {
-            image = undefined;
+            // Told as unknown: the image may well exist.
         }
 
         // The field was disconnected meanwhile: this answer is for no one.
@@ -103,47 +103,40 @@ export default class extends BaseController {
             return;
         }
 
-        this.image = image;
+        this.image = lookupIn(images, id);
         this.draw();
     }
 
     /** What the field holds: no image, one being looked up, missing, unknown, or the image itself. */
     draw() {
-        const { empty, loading, missing, unknown, offSite } = this.labelsValue;
-        const id = this.inputTarget.value;
-        const image = this.image;
-        this.removeTarget.hidden = id === '';
-        this.thumbnailTarget.hidden = true;
-        this.thumbnailTarget.replaceChildren();
-        this.stateTarget.textContent = '';
+        const empty = this.inputTarget.value === '';
+        const { name, standing } = empty
+            ? { name: this.labelsValue.empty, standing: '' }
+            : lookupText(this.image, (image) => image.alt, this.labelsValue);
 
-        if (id === '') {
-            this.descriptionTarget.textContent = empty;
-        } else if (image === null) {
-            this.descriptionTarget.textContent = loading;
-        } else if (image === false) {
-            this.descriptionTarget.textContent = missing;
-        } else if (image === undefined) {
-            this.descriptionTarget.textContent = unknown;
-        } else {
+        this.removeTarget.hidden = empty;
+        this.descriptionTarget.textContent = name;
+        this.stateTarget.textContent = standing;
+        this.thumbnailTarget.replaceChildren();
+        this.thumbnailTarget.hidden = true;
+
+        if (!empty && this.image.state === 'found') {
             // Decorative: the text next to it says which image it is.
             const thumbnail = document.createElement('img');
             thumbnail.className = 'block aspect-video h-auto w-28 object-cover';
-            thumbnail.src = image.thumbnail;
+            thumbnail.src = this.image.value.thumbnail;
             thumbnail.alt = '';
             thumbnail.width = 112;
             thumbnail.height = 63;
             this.thumbnailTarget.replaceChildren(thumbnail);
             this.thumbnailTarget.hidden = false;
-            this.descriptionTarget.textContent = image.alt;
-            this.stateTarget.textContent = image.published ? image.status : `${image.status}. ${offSite}`;
         }
     }
 
     /** @param {Image} image */
     choose(image) {
         this.inputTarget.value = image.id;
-        this.image = image;
+        this.image = found(image);
         this.dialogTarget.close();
         this.draw();
         this.statusTarget.textContent = this.labelsValue.chosen.replace('%alt%', image.alt);
@@ -153,7 +146,7 @@ export default class extends BaseController {
 
     remove() {
         this.inputTarget.value = '';
-        this.image = null;
+        this.image = LOADING;
         this.draw();
         this.statusTarget.textContent = this.labelsValue.removed;
         this.chooseTarget.focus();

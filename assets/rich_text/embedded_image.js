@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core';
+import { LOADING } from '../shared/lookup.js';
 
 /**
  * @typedef {object} ImageSummary
@@ -18,26 +19,30 @@ import { Node, mergeAttributes } from '@tiptap/core';
  * @property {string} offSite
  */
 
+/** @typedef {import('../shared/lookup.js').Lookup<ImageSummary>} ImageLookup */
+
 /**
  * Draws an embedded image as the CMS knows it now: its thumbnail, its texts
- * and where it stands for the site. Undefined while it is being looked up,
- * null when there is no such image any longer, false when it can't be checked.
+ * and where it stands for the site, or what is known of it while there is
+ * no image to draw.
  *
  * @param {HTMLElement} figure
- * @param {ImageSummary|null|false|undefined} image
+ * @param {ImageLookup} lookup
  * @param {ImageLabels} labels
  */
-const drawImage = (figure, image, labels) => {
+const drawImage = (figure, lookup, labels) => {
     figure.replaceChildren();
 
-    if (image === undefined || image === null || image === false) {
+    if (lookup.state !== 'found') {
         const note = document.createElement('p');
         note.className = 'rich-text-image-note';
-        note.textContent = image === undefined ? labels.loading : (image === false ? labels.unknown : labels.missing);
+        note.textContent = labels[lookup.state];
         figure.append(note);
 
         return;
     }
+
+    const image = lookup.value;
 
     const thumbnail = document.createElement('img');
     thumbnail.src = image.thumbnail;
@@ -88,7 +93,7 @@ export const EmbeddedImage = Node.create({
 
     addOptions() {
         return {
-            describe: /** @type {(id: string) => ImageSummary|null|false|undefined} */ (() => undefined),
+            describe: /** @type {(id: string) => ImageLookup} */ (() => LOADING),
             views: /** @type {Set<() => void>} */ (new Set()),
             labels: /** @type {ImageLabels} */ ({}),
         };

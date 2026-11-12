@@ -3,6 +3,7 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
+import { LOADING, found, lookupIn, lookupText } from '../shared/lookup.js';
 
 /**
  * @typedef {object} Page
@@ -29,7 +30,7 @@ import { LatestRequest } from '../shared/latest_request.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {Page|null|false|undefined} page
+ * @property {import('../shared/lookup.js').Lookup<Page>} page
  * @property {LatestRequest} searches
  * @property {HTMLInputElement} inputTarget
  * @property {HTMLElement} titleTarget
@@ -65,7 +66,7 @@ export default class extends BaseController {
         this.abortController = new AbortController();
         this.searches = new LatestRequest(this.abortController.signal);
         this.chooseTarget.hidden = false;
-        this.page = null;
+        this.page = LOADING;
         this.draw();
 
         if (this.inputTarget.value !== '') {
@@ -83,14 +84,13 @@ export default class extends BaseController {
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', id);
 
-        // Told as unknown while it can't be checked: the page may well exist.
-        /** @type {Page|false|undefined} */
-        let page;
+        /** @type {Page[]|null} */
+        let pages = null;
 
         try {
-            page = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages.find((found) => found.id === id) ?? false;
+            pages = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages;
         } catch {
-            page = undefined;
+            // Told as unknown: the page may well exist.
         }
 
         // The field was disconnected meanwhile: this answer is for no one.
@@ -98,35 +98,24 @@ export default class extends BaseController {
             return;
         }
 
-        this.page = page;
+        this.page = lookupIn(pages, id);
         this.draw();
     }
 
     /** What the field holds: no page, one being looked up, missing, unknown, or the page itself. */
     draw() {
-        const { empty, loading, missing, unknown, offSite } = this.labelsValue;
-        const id = this.inputTarget.value;
-        const page = this.page;
-        this.stateTarget.textContent = '';
+        const { name, standing } = this.inputTarget.value === ''
+            ? { name: this.labelsValue.empty, standing: '' }
+            : lookupText(this.page, (page) => page.title, this.labelsValue);
 
-        if (id === '') {
-            this.titleTarget.textContent = empty;
-        } else if (page === null) {
-            this.titleTarget.textContent = loading;
-        } else if (page === false) {
-            this.titleTarget.textContent = missing;
-        } else if (page === undefined) {
-            this.titleTarget.textContent = unknown;
-        } else {
-            this.titleTarget.textContent = page.title;
-            this.stateTarget.textContent = page.published ? page.status : `${page.status}. ${offSite}`;
-        }
+        this.titleTarget.textContent = name;
+        this.stateTarget.textContent = standing;
     }
 
     /** @param {Page} page */
     choose(page) {
         this.inputTarget.value = page.id;
-        this.page = page;
+        this.page = found(page);
         this.dialogTarget.close();
         this.draw();
         this.statusTarget.textContent = this.labelsValue.chosen.replace('%title%', page.title);
