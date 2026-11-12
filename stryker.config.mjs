@@ -14,6 +14,7 @@ export default {
     },
     mutate: [
         'assets/shared/**/*.js',
+        'assets/image/**/*.js',
         'assets/rich_text/block_movement.js',
         'assets/rich_text/block_menu.js',
         'assets/rich_text/outline.js',

@@ -1,16 +1,12 @@
 import { Controller } from '@hotwired/stimulus';
+import {
+    areaOf, clamp, coversOutput, dragged, frameOf, largestCrop, nudged, sizeOf, steps,
+} from '../image/crop.js';
 
 const PREVIEW_WIDTH = 480;
 
-/**
- * Where the crop sits, in pixels of the oriented image; its height follows
- * from the ratio of the output.
- *
- * @typedef {object} Crop
- * @property {number} x
- * @property {number} y
- * @property {number} width
- */
+/** @typedef {import('../image/crop.js').Crop} Crop */
+/** @typedef {import('../image/crop.js').Frame} Frame */
 
 /**
  * @typedef {object} Drag
@@ -22,13 +18,12 @@ const PREVIEW_WIDTH = 480;
 
 /**
  * @typedef {object} Properties
- * @property {number} ratio
  * @property {HTMLFormElement|null} form
  * @property {number} [loadRequest]
  * @property {ImageBitmap|null} bitmap
  * @property {string|null} url
  * @property {HTMLImageElement|null} image
- * @property {number} maxWidth
+ * @property {Frame|null} frame
  * @property {Crop|null} crop
  * @property {Drag|null} dragging
  * @property {number|null} [previewFrame]
@@ -53,13 +48,6 @@ const PREVIEW_WIDTH = 480;
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
 
-/** @type {Record<string, [number, number]>} */
-const MOVES = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-
-// Shift turns = into + on most layouts.
-/** @type {Record<string, number>} */
-const RESIZES = { '+': 1, '=': 1, '-': -1, _: -1 };
-
 /**
  * The 2D context of a canvas, which a canvas only lacks once it holds another kind.
  *
@@ -77,12 +65,9 @@ const context2d = (canvas) => {
 
 /*
  * Picks the part of an image to keep, at the aspect ratio of the output, and
- * puts it in the form at the output size, encoded as WebP.
- *
- * The crop is held in pixels of the image as it is oriented, and drawn over
- * it in percentages, so the area follows the image when the layout changes.
- * It never covers fewer pixels than the output, since images are never
- * enlarged, nor leaves the image.
+ * puts it in the form at the output size, encoded as WebP. The geometry of
+ * the crop is image/crop.js; this controller reads the pointer and the keys,
+ * and draws.
  */
 export default class extends BaseController {
     static targets = ['source', 'output', 'error', 'editor', 'stage', 'area', 'status', 'preview'];
@@ -98,9 +83,8 @@ export default class extends BaseController {
     };
 
     connect() {
-        this.ratio = this.widthValue / this.heightValue;
         this.previewTarget.width = PREVIEW_WIDTH;
-        this.previewTarget.height = Math.round(PREVIEW_WIDTH / this.ratio);
+        this.previewTarget.height = Math.round(PREVIEW_WIDTH * this.heightValue / this.widthValue);
 
         this.form = this.element.closest('form');
         this.submit = this.submit.bind(this);
@@ -142,7 +126,7 @@ export default class extends BaseController {
             return;
         }
 
-        if (bitmap.width < this.widthValue || bitmap.height < this.heightValue) {
+        if (!coversOutput(bitmap, this.output())) {
             bitmap.close();
             this.fail(this.tooSmallValue);
 
@@ -159,13 +143,8 @@ export default class extends BaseController {
         this.stageTarget.prepend(image);
         this.image = image;
 
-        // The largest crop that fits, centred.
-        this.maxWidth = Math.min(bitmap.width, Math.floor(bitmap.height * this.ratio));
-        this.crop = {
-            x: (bitmap.width - this.maxWidth) / 2,
-            y: (bitmap.height - this.maxWidth / this.ratio) / 2,
-            width: this.maxWidth,
-        };
+        this.frame = frameOf({ width: bitmap.width, height: bitmap.height }, this.output());
+        this.crop = largestCrop(this.frame);
         this.editorTarget.hidden = false;
         this.update();
     }
@@ -205,22 +184,12 @@ export default class extends BaseController {
             return;
         }
 
-        const { bitmap } = this.loaded();
+        const { frame } = this.loaded();
         // Pointer pixels into image pixels.
-        const scale = bitmap.width / this.stageTarget.clientWidth;
-        const dx = (event.clientX - this.dragging.x) * scale;
-        const dy = (event.clientY - this.dragging.y) * scale;
-        const start = this.dragging.crop;
+        const scale = frame.image.width / this.stageTarget.clientWidth;
+        const { mode, x, y, crop } = this.dragging;
 
-        if (this.dragging.mode === 'move') {
-            this.crop = { ...start, x: start.x + dx, y: start.y + dy };
-        } else {
-            // The top left corner stays put; the handle follows the pointer along the ratio.
-            const widest = Math.min(this.maxWidth, bitmap.width - start.x, (bitmap.height - start.y) * this.ratio);
-            const width = Math.min(widest, start.width + Math.max(dx, dy * this.ratio));
-            this.crop = { ...start, width };
-        }
-
+        this.crop = dragged(crop, mode, { dx: (event.clientX - x) * scale, dy: (event.clientY - y) * scale }, frame);
         this.update();
     }
 
@@ -234,78 +203,55 @@ export default class extends BaseController {
     }
 
     /**
-     * The arrows move the area and + and - resize it, by a hundredth of the
-     * image per key, a tenth with Shift.
+     * The arrows move the area and + and - resize it; a resize is told.
      *
      * @param {KeyboardEvent} event
      */
     nudge(event) {
-        const move = MOVES[event.key];
-        const resize = RESIZES[event.key];
+        if (!this.crop || !this.frame) {
+            return;
+        }
 
-        if (!this.crop || (!move && !resize)) {
+        const nudge = nudged(this.crop, event, this.frame);
+
+        if (nudge === null) {
             return;
         }
 
         event.preventDefault();
-        const { bitmap, crop } = this.loaded();
-        const step = bitmap.width / (event.shiftKey ? 10 : 100);
-
-        if (move) {
-            this.crop = { ...crop, x: crop.x + move[0] * step, y: crop.y + move[1] * step };
-        } else {
-            this.resizeAroundCentre(crop.width + resize * step);
-        }
-
+        this.crop = nudge.crop;
         this.update();
 
-        if (resize) {
+        if (nudge.resized) {
             this.announceSize();
         }
     }
 
-    /** @param {number} width */
-    resizeAroundCentre(width) {
-        const { crop } = this.loaded();
-        const centreX = crop.x + crop.width / 2;
-        const centreY = crop.y + crop.width / this.ratio / 2;
-        this.crop = { x: centreX - width / 2, y: centreY - width / this.ratio / 2, width };
-    }
-
     announceSize() {
-        const width = Math.round(this.loaded().crop.width);
+        const { crop, frame } = this.loaded();
+        const { width, height } = sizeOf(crop, frame.ratio);
+
         this.statusTarget.textContent = this.sizeTextValue
             .replace('%width%', String(width))
-            .replace('%height%', String(Math.round(width / this.ratio)));
+            .replace('%height%', String(height));
     }
 
     /* Drawing. */
 
     update() {
-        this.clamp();
-        const { bitmap, crop: { x, y, width } } = this.loaded();
-        const height = width / this.ratio;
+        const { crop, frame } = this.loaded();
+        this.crop = clamp(crop, frame);
+        const area = areaOf(this.crop, frame);
         const style = this.areaTarget.style;
-        style.left = `${(x / bitmap.width) * 100}%`;
-        style.top = `${(y / bitmap.height) * 100}%`;
-        style.width = `${(width / bitmap.width) * 100}%`;
-        style.height = `${(height / bitmap.height) * 100}%`;
+        style.left = `${area.left}%`;
+        style.top = `${area.top}%`;
+        style.width = `${area.width}%`;
+        style.height = `${area.height}%`;
 
         // Any change makes the crop already put in the form stale.
         this.outputTarget.value = '';
         this.exported = false;
         this.schedulePreview();
-    }
-
-    clamp() {
-        const { bitmap, crop } = this.loaded();
-        const width = Math.min(this.maxWidth, Math.max(this.widthValue, crop.width));
-        const height = width / this.ratio;
-        this.crop = {
-            width,
-            x: Math.min(bitmap.width - width, Math.max(0, crop.x)),
-            y: Math.min(bitmap.height - height, Math.max(0, crop.y)),
-        };
     }
 
     schedulePreview() {
@@ -316,7 +262,7 @@ export default class extends BaseController {
         this.previewFrame = requestAnimationFrame(() => {
             this.previewFrame = null;
 
-            if (!this.bitmap || !this.crop) {
+            if (!this.bitmap || !this.crop || !this.frame) {
                 return;
             }
 
@@ -324,7 +270,7 @@ export default class extends BaseController {
             const context = context2d(canvas);
             const { x, y, width } = this.crop;
             context.imageSmoothingQuality = 'high';
-            context.drawImage(this.bitmap, x, y, width, width / this.ratio, 0, 0, canvas.width, canvas.height);
+            context.drawImage(this.bitmap, x, y, width, width / this.frame.ratio, 0, 0, canvas.width, canvas.height);
         });
     }
 
@@ -379,19 +325,18 @@ export default class extends BaseController {
     }
 
     /**
-     * Halves the crop until it is less than twice the output, then draws it
-     * at the output size: one big step down would alias, and not every
-     * browser honours imageSmoothingQuality.
+     * Draws the crop at each of its steps down, then at the output size.
      *
      * @returns {Promise<Blob|null>}
      */
     encode() {
-        const { bitmap, crop: { x, y, width } } = this.loaded();
-        let canvas = this.canvas(Math.round(width), Math.round(width / this.ratio));
-        context2d(canvas).drawImage(bitmap, x, y, width, width / this.ratio, 0, 0, canvas.width, canvas.height);
+        const { bitmap, crop, frame } = this.loaded();
+        const [first, ...halved] = steps(crop, frame.ratio, this.widthValue);
+        let canvas = this.canvas(first.width, first.height);
+        context2d(canvas).drawImage(bitmap, crop.x, crop.y, crop.width, crop.width / frame.ratio, 0, 0, canvas.width, canvas.height);
 
-        while (canvas.width / 2 >= this.widthValue) {
-            canvas = this.scaled(canvas, Math.round(canvas.width / 2), Math.round(canvas.height / 2));
+        for (const size of halved) {
+            canvas = this.scaled(canvas, size.width, size.height);
         }
 
         const output = this.scaled(canvas, this.widthValue, this.heightValue);
@@ -429,13 +374,18 @@ export default class extends BaseController {
 
     /* State. */
 
-    /** The image being cropped and its crop, for the steps that only run while there is one. */
+    /** The size the crop is put in the form at. */
+    output() {
+        return { width: this.widthValue, height: this.heightValue };
+    }
+
+    /** The image being cropped, its frame and its crop, for the steps that only run while there is one. */
     loaded() {
-        if (!this.bitmap || !this.crop) {
+        if (!this.bitmap || !this.crop || !this.frame) {
             throw new Error('No image is being cropped');
         }
 
-        return { bitmap: this.bitmap, crop: this.crop };
+        return { bitmap: this.bitmap, crop: this.crop, frame: this.frame };
     }
 
     /** @param {string} message */
@@ -457,6 +407,7 @@ export default class extends BaseController {
 
         this.bitmap?.close();
         this.bitmap = null;
+        this.frame = null;
         this.crop = null;
         this.dragging = null;
         this.exported = false;
