@@ -55,13 +55,15 @@ async function moduleBody(pathname) {
     return null;
 }
 
-/** Loads one real Stimulus controller around the markup supplied by the test. */
-export async function loadController(page, name, markup) {
+/**
+ * Serves a page of the given body, with the assets and the import map of the
+ * app, and opens it. API mocks are registered by each test, outside this loader.
+ */
+export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = {}) {
     await page.route('**/*', async (route) => {
         const url = new URL(route.request().url());
 
-        // API mocks are registered by each test, outside this module loader.
-        if (url.pathname.startsWith('/api/')) {
+        if (mocked.some((prefix) => url.pathname.startsWith(prefix))) {
             await route.fallback();
 
             return;
@@ -77,15 +79,7 @@ export async function loadController(page, name, markup) {
                             <script type="importmap">${JSON.stringify({ imports: IMPORTS })}</script>
                         </head>
                         <body>
-                            ${markup}
-                            <script type="module">
-                                import { Application } from '@hotwired/stimulus';
-                                import Controller from '/assets/controllers/${name.replaceAll('-', '_')}_controller.js';
-
-                                window.stimulus = Application.start();
-                                window.stimulus.register('${name}', Controller);
-                                requestAnimationFrame(() => { window.controllerLoaded = true; });
-                            </script>
+                            ${body}
                         </body>
                     </html>`,
             });
@@ -100,10 +94,10 @@ export async function loadController(page, name, markup) {
         }
 
         if (url.pathname.startsWith('/assets/')) {
-            const body = await moduleBody(url.pathname);
+            const module = await moduleBody(url.pathname);
 
-            if (body !== null) {
-                await route.fulfill({ contentType: 'text/javascript', body });
+            if (module !== null) {
+                await route.fulfill({ contentType: 'text/javascript', body: module });
 
                 return;
             }
@@ -112,6 +106,21 @@ export async function loadController(page, name, markup) {
         await route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not found' });
     });
 
-    await page.goto(`${ORIGIN}/fixture`);
+    await page.goto(`${ORIGIN}/fixture${query}`);
+}
+
+/** Loads one real Stimulus controller around the markup supplied by the test. */
+export async function loadController(page, name, markup) {
+    await loadPage(page, `
+        ${markup}
+        <script type="module">
+            import { Application } from '@hotwired/stimulus';
+            import Controller from '/assets/controllers/${name.replaceAll('-', '_')}_controller.js';
+
+            window.stimulus = Application.start();
+            window.stimulus.register('${name}', Controller);
+            requestAnimationFrame(() => { window.controllerLoaded = true; });
+        </script>
+    `);
     await page.waitForFunction(() => window.controllerLoaded === true);
 }

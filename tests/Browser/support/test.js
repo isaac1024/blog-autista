@@ -13,4 +13,4 @@ export const test = base.extend({
 });
 
 export { expect };
-export { loadController } from './load_controller.js';
+export { loadController, loadPage } from './load_controller.js';
