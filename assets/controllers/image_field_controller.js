@@ -1,6 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
+import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
+import { LatestRequest } from '../shared/latest_request.js';
 
 /**
  * @typedef {object} Image
@@ -30,7 +32,7 @@ import { fetchJson } from '../shared/http.js';
  * @typedef {object} Properties
  * @property {AbortController} abortController
  * @property {Image|null|false|undefined} image
- * @property {number} [request]
+ * @property {LatestRequest} searches
  * @property {HTMLInputElement} inputTarget
  * @property {HTMLElement} thumbnailTarget
  * @property {HTMLElement} descriptionTarget
@@ -66,6 +68,7 @@ export default class extends BaseController {
 
     connect() {
         this.abortController = new AbortController();
+        this.searches = new LatestRequest(this.abortController.signal);
         this.chooseTarget.hidden = false;
         this.image = null;
         this.draw();
@@ -167,9 +170,7 @@ export default class extends BaseController {
     async search(event) {
         event?.preventDefault();
 
-        const request = (this.request ?? 0) + 1;
-        this.request = request;
-        const { signal } = this.abortController;
+        const signal = this.searches.next();
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('alt', this.searchTarget.value);
         /** @type {Image[]|null} */
@@ -182,20 +183,18 @@ export default class extends BaseController {
         }
 
         // A newer search went out, or the field was disconnected meanwhile.
-        if (signal.aborted || request !== this.request) {
+        if (signal.aborted) {
             return;
         }
 
-        const { none, result, results, error } = this.labelsValue;
-
         if (images === null) {
-            this.searchStatusTarget.textContent = error;
+            this.searchStatusTarget.textContent = this.labelsValue.error;
 
             return;
         }
 
         this.resultsTarget.replaceChildren(...images.map((image) => this.result(image)));
-        this.searchStatusTarget.textContent = [none, result][images.length] ?? results.replace('%count%', String(images.length));
+        this.searchStatusTarget.textContent = countText(images.length, this.labelsValue);
     }
 
     /**

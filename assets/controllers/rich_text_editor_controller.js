@@ -19,7 +19,9 @@ import { Callout } from '../rich_text/callout.js';
 import { QuoteSource } from '../rich_text/quote_source.js';
 import { SlashMenu } from '../rich_text/slash_menu.js';
 import { notifyForm } from '../shared/forms.js';
+import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
+import { LatestRequest } from '../shared/latest_request.js';
 import 'prosemirror-view/style/prosemirror.min.css';
 import 'prosemirror-tables/style/tables.min.css';
 
@@ -57,9 +59,25 @@ import 'prosemirror-tables/style/tables.min.css';
  */
 
 /**
- * The words of the page dialog, of links and of widgets; each says only those it needs.
+ * The words of the page dialog that change with what it picks a page for.
  *
- * @typedef {Partial<Record<string, string>>} PageLabels
+ * @typedef {object} PickLabels
+ * @property {string} title
+ * @property {string} offSite
+ * @property {string} result
+ * @property {string} results
+ */
+
+/**
+ * The words of links, and of the page dialog when it picks a page to link.
+ *
+ * @typedef {PickLabels & {loading: string, missing: string, unknown: string, target: string, none: string, error: string, removed: string}} PageLabels
+ */
+
+/**
+ * The words of widgets, and of the page dialog when it picks a page to show in one.
+ *
+ * @typedef {PickLabels & {label: string, loading: string, missing: string, unknown: string}} WidgetLabels
  */
 
 /**
@@ -91,7 +109,7 @@ import 'prosemirror-tables/style/tables.min.css';
  * @property {boolean} imagesLookedUp
  * @property {Set<string>} unknownImages
  * @property {Set<() => void>} imageViews
- * @property {number} [imageSearchRequest]
+ * @property {LatestRequest} imageSearches
  * @property {Map<string, Page>} pages
  * @property {Set<string>} missingPages
  * @property {Set<string>} pagesLookingUp
@@ -99,7 +117,8 @@ import 'prosemirror-tables/style/tables.min.css';
  * @property {{from: number, to: number}|null} linkRange
  * @property {'link'|'widget'} pagePurpose
  * @property {Set<() => void>} widgetViews
- * @property {{request: number, page: number, count: number}} pageSearch
+ * @property {{page: number, count: number}} pageSearch
+ * @property {LatestRequest} pageSearches
  * @property {Section[]} [sections]
  * @property {HTMLElement} frameTarget
  * @property {HTMLElement} canvasTarget
@@ -159,7 +178,7 @@ import 'prosemirror-tables/style/tables.min.css';
  * @property {string} pageLookupUrlValue
  * @property {boolean} hasPageLookupUrlValue
  * @property {PageLabels} pageLabelsValue
- * @property {PageLabels} widgetLabelsValue
+ * @property {WidgetLabels} widgetLabelsValue
  * @property {boolean} hasWidgetLabelsValue
  */
 
@@ -274,7 +293,9 @@ export default class extends BaseController {
         this.pagePurpose = 'link';
         this.widgetViews = new Set();
         // Each search outdates the ones before: only the latest is shown.
-        this.pageSearch = { request: 0, page: 1, count: 0 };
+        this.pageSearch = { page: 1, count: 0 };
+        this.pageSearches = new LatestRequest(this.abortController.signal);
+        this.imageSearches = new LatestRequest(this.abortController.signal);
         this.editor = new Editor({
             element: this.editorTarget,
             extensions: this.extensions(),
@@ -397,9 +418,7 @@ export default class extends BaseController {
     async searchImages(event) {
         event?.preventDefault();
 
-        const request = (this.imageSearchRequest ?? 0) + 1;
-        this.imageSearchRequest = request;
-        const { signal } = this.abortController;
+        const signal = this.imageSearches.next();
         const url = new URL(this.imageSearchUrlValue, window.location.href);
         url.searchParams.set('alt', this.imageSearchTarget.value);
         /** @type {Image[]|null} */
@@ -412,20 +431,18 @@ export default class extends BaseController {
         }
 
         // A newer search went out, or the editor was disconnected meanwhile.
-        if (signal.aborted || request !== this.imageSearchRequest) {
+        if (signal.aborted) {
             return;
         }
 
-        const { none, result, results, error } = this.imageLabelsValue;
-
         if (images === null) {
-            this.imageStatusTarget.textContent = error;
+            this.imageStatusTarget.textContent = this.imageLabelsValue.error;
 
             return;
         }
 
         this.imageResultsTarget.replaceChildren(...images.map((image) => this.imageResult(image)));
-        this.imageStatusTarget.textContent = [none, result][images.length] ?? results.replace('%count%', String(images.length));
+        this.imageStatusTarget.textContent = countText(images.length, this.imageLabelsValue);
     }
 
     /**
@@ -549,6 +566,17 @@ export default class extends BaseController {
             return page.published ? 'published' : 'offSite';
         }
 
+        return this.absentPageState(id);
+    }
+
+    /**
+     * How a page the editor holds nothing of stands: still being looked up,
+     * found to be no page, or not checkable.
+     *
+     * @param {string} id
+     * @returns {'missing'|'unknown'|'loading'}
+     */
+    absentPageState(id) {
         if (this.missingPages.has(id)) {
             return 'missing';
         }
@@ -563,17 +591,15 @@ export default class extends BaseController {
      */
     describePage(id) {
         const labels = this.pageLabelsValue;
-        const state = this.pageState(id);
         const page = this.pages.get(id);
 
-        // Loading, missing or unknown: there is no page to name yet.
         if (page === undefined) {
-            return labels[state] ?? '';
+            return labels[this.absentPageState(id)];
         }
 
-        const target = (labels.target ?? '%title% %status%').replace('%title%', page.title).replace('%status%', page.status);
+        const target = labels.target.replace('%title%', page.title).replace('%status%', page.status);
 
-        return state === 'offSite' ? `${target} ${labels.offSite ?? ''}` : target;
+        return page.published ? target : `${target} ${labels.offSite}`;
     }
 
     /**
@@ -617,7 +643,7 @@ export default class extends BaseController {
         }
 
         this.pagePurpose = purpose;
-        this.pageDialogTitleTarget.textContent = this.pagePurposeLabels().title ?? '';
+        this.pageDialogTitleTarget.textContent = this.pagePurposeLabels().title;
         this.pageDialogTarget.showModal();
         this.pageSearchTarget.focus();
         this.searchPages();
@@ -643,8 +669,7 @@ export default class extends BaseController {
     }
 
     async loadPages() {
-        const request = ++this.pageSearch.request;
-        const { signal } = this.abortController;
+        const signal = this.pageSearches.next();
         const url = new URL(this.pageSearchUrlValue, window.location.href);
         url.searchParams.set('title', this.pageSearchTarget.value);
         url.searchParams.set('page', String(this.pageSearch.page));
@@ -659,15 +684,12 @@ export default class extends BaseController {
         }
 
         // A newer search went out, or the editor was disconnected meanwhile.
-        if (signal.aborted || request !== this.pageSearch.request) {
+        if (signal.aborted) {
             return;
         }
 
-        const { none, error } = this.pageLabelsValue;
-        const { result: one, results } = this.pagePurposeLabels();
-
         if (result === null) {
-            this.pageStatusTarget.textContent = error ?? '';
+            this.pageStatusTarget.textContent = this.pageLabelsValue.error;
 
             return;
         }
@@ -677,8 +699,9 @@ export default class extends BaseController {
         this.pageSearch.count += result.pages.length;
         this.pageMoreTarget.hidden = !result.more;
 
-        const { count } = this.pageSearch;
-        this.pageStatusTarget.textContent = [none, one][count] ?? (results ?? '').replace('%count%', String(count));
+        // Widgets have no words of their own for no pages found.
+        const { result: one, results } = this.pagePurposeLabels();
+        this.pageStatusTarget.textContent = countText(this.pageSearch.count, { none: this.pageLabelsValue.none, result: one, results });
 
         // Past the first pages, the focus goes to the first page added, not back to the top.
         if (this.pageSearch.page > 1) {
@@ -711,7 +734,7 @@ export default class extends BaseController {
         if (!page.published) {
             const offSite = document.createElement('span');
             offSite.className = 'rich-text-page-note';
-            offSite.textContent = this.pagePurposeLabels().offSite ?? '';
+            offSite.textContent = this.pagePurposeLabels().offSite;
             text.append(offSite);
         }
 
@@ -758,7 +781,7 @@ export default class extends BaseController {
     /** Takes the link under the cursor out, keeping its text, and says so. */
     unlink() {
         COMMANDS.unlink(this.editor.chain().focus()).run();
-        this.announce(this.pageLabelsValue.removed ?? '');
+        this.announce(this.pageLabelsValue.removed);
     }
 
     /**

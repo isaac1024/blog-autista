@@ -17,7 +17,7 @@ test('shows the selected page as the CMS knows it now', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Choose page' })).toBeVisible();
 });
 
-test('only shows the result of the latest search', async ({ page }) => {
+test('a newer search cancels the older one, whose results never show', async ({ page }) => {
     let releaseOld;
     const oldCanFinish = new Promise((resolve) => { releaseOld = resolve; });
     let markOldStarted;
@@ -34,7 +34,8 @@ test('only shows the result of the latest search', async ({ page }) => {
         const pages = title === 'new'
             ? [{ ...PAGE, title: 'Newest result' }]
             : (title === 'old' ? [{ ...PAGE, title: 'Stale result' }] : []);
-        await route.fulfill({ json: { pages } });
+        // The stale search was cancelled meanwhile: its answer has nowhere to go.
+        await route.fulfill({ json: { pages } }).catch(() => {});
     });
     await loadController(page, 'page-field', pageField());
 
@@ -43,13 +44,14 @@ test('only shows the result of the latest search', async ({ page }) => {
     await page.getByRole('searchbox').fill('old');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     await oldStarted;
+    const oldCancelled = page.waitForEvent('requestfailed', (request) => request.url().includes('title=old'));
     await page.getByRole('searchbox').fill('new');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     await expect(page.locator('[data-page-field-target="results"]')).toContainText('Newest result');
 
-    const oldResponse = page.waitForResponse((response) => response.url().includes('title=old'));
+    // The newer search cancels the older one on the network, not only on screen.
+    await oldCancelled;
     releaseOld();
-    await oldResponse;
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     await expect(page.locator('[data-page-field-target="results"]')).toContainText('Newest result');

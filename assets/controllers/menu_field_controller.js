@@ -1,6 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
+import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
+import { LatestRequest } from '../shared/latest_request.js';
 
 /** @typedef {import('./page_field_controller.js').Page} Page */
 
@@ -28,7 +30,8 @@ import { fetchJson } from '../shared/http.js';
  * @property {Map<string, Page>} pages
  * @property {Set<string>} missing
  * @property {boolean} unknown
- * @property {{page: number, count: number, request: number}} query
+ * @property {{page: number, count: number}} query
+ * @property {LatestRequest} searches
  * @property {HTMLOListElement} listTarget
  * @property {HTMLLIElement[]} rowTargets
  * @property {HTMLTemplateElement} templateTarget
@@ -96,7 +99,8 @@ export default class extends BaseController {
         this.pages = new Map();
         this.missing = new Set();
         this.unknown = false;
-        this.query = { page: 1, count: 0, request: 0 };
+        this.query = { page: 1, count: 0 };
+        this.searches = new LatestRequest(this.abortController.signal);
         this.addTarget.hidden = false;
         this.refresh();
         this.lookUp(this.rowTargets.map((row) => row.dataset.pageId ?? ''));
@@ -312,8 +316,7 @@ export default class extends BaseController {
     }
 
     async load() {
-        const request = ++this.query.request;
-        const { signal } = this.abortController;
+        const signal = this.searches.next();
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('title', this.searchTarget.value);
         url.searchParams.set('page', String(this.query.page));
@@ -328,14 +331,12 @@ export default class extends BaseController {
         }
 
         // A newer search went out, or the menu was disconnected meanwhile.
-        if (signal.aborted || request !== this.query.request) {
+        if (signal.aborted) {
             return;
         }
 
-        const { none, result: one, results, error } = this.labelsValue;
-
         if (result === null) {
-            this.searchStatusTarget.textContent = error;
+            this.searchStatusTarget.textContent = this.labelsValue.error;
 
             return;
         }
@@ -345,8 +346,7 @@ export default class extends BaseController {
         this.query.count += result.pages.length;
         this.moreTarget.hidden = !result.more;
 
-        const { count } = this.query;
-        this.searchStatusTarget.textContent = [none, one][count] ?? results.replace('%count%', String(count));
+        this.searchStatusTarget.textContent = countText(this.query.count, this.labelsValue);
 
         if (this.query.page > 1) {
             this.resultsTarget.children[first]?.querySelector('button')?.focus();
