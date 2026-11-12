@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { searchResult } from '../form/search_preview.js';
 
 /** @typedef {{title: string, description: string, slug?: string}} Sources */
 
@@ -16,14 +17,6 @@ import { Controller } from '@hotwired/stimulus';
  */
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
-
-/**
- * Cuts the text where search engines would, marking the cut with an ellipsis.
- *
- * @param {string} text
- * @param {number} limit
- */
-const cut = (text, limit) => ([...text].length > limit ? `${[...text].slice(0, limit - 1).join('').trimEnd()}…` : text);
 
 /*
  * Keeps the search result preview in step with the fields that feed it,
@@ -55,14 +48,17 @@ export default class extends BaseController {
         const value = (id) => {
             const field = document.getElementById(id);
 
-            return field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? field.value.trim() : '';
+            return field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? field.value : '';
         };
 
-        const text = value(description).replace(/\s+/g, ' ');
+        const result = searchResult(
+            { title: value(title), description: value(description), slug: slug ? value(slug) : null },
+            { base: this.baseValue, titleLimit: this.titleLimitValue, descriptionLimit: this.descriptionLimitValue, empty: this.emptyValue },
+        );
 
-        this.titleTarget.textContent = cut(value(title), this.titleLimitValue);
-        this.descriptionTarget.textContent = text === '' ? this.emptyValue : cut(text, this.descriptionLimitValue);
-        this.urlTarget.textContent = slug ? `${this.baseValue}/${value(slug)}.html` : `${this.baseValue}/`;
+        this.urlTarget.textContent = result.url;
+        this.titleTarget.textContent = result.title;
+        this.descriptionTarget.textContent = result.description;
     }
 
     fields() {

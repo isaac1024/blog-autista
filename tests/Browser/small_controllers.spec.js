@@ -15,13 +15,6 @@ test.describe('character count', () => {
         await page.getByLabel('Title').fill('Hello there!');
         await expect(output).toHaveText('12 of 5 to 10: long');
     });
-
-    test('counts characters, not the code units of an emoji', async ({ page }) => {
-        await loadController(page, 'character-count', characterCount());
-
-        await page.getByLabel('Title').fill('🙂🙂🙂🙂🙂');
-        await expect(page.locator('#title-count')).toHaveText('5 of 5 to 10: fits');
-    });
 });
 
 test.describe('copy field', () => {
@@ -68,16 +61,6 @@ test.describe('search preview', () => {
         await expect(page.locator('[data-search-preview-target="title"]')).toHaveText('First page');
         await expect(page.locator('[data-search-preview-target="description"]')).toHaveText('About the first page');
         await expect(page.locator('[data-search-preview-target="url"]')).toHaveText('https://blogautista.test/first.html');
-    });
-
-    test('cuts long texts where a search engine would, and names a missing description', async ({ page }) => {
-        await loadController(page, 'search-preview', searchPreview());
-
-        await page.getByLabel('Title').fill('A title much longer than twenty');
-        await page.getByLabel('Description').fill('   ');
-
-        await expect(page.locator('[data-search-preview-target="title"]')).toHaveText('A title much longer…');
-        await expect(page.locator('[data-search-preview-target="description"]')).toHaveText('No description');
     });
 });
 

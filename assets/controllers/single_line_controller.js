@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { flatten } from '../form/single_line.js';
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<object, HTMLTextAreaElement>} */ (Controller);
 
@@ -21,7 +22,7 @@ export default class extends BaseController {
 
     flatten() {
         const { value, selectionStart } = this.element;
-        const flat = value.replace(/[\r\n]+/g, ' ');
+        const flat = flatten(value);
 
         if (flat !== value) {
             this.element.value = flat;
