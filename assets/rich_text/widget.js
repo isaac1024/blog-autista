@@ -1,8 +1,17 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 
+/** @typedef {import('./page_link.js').PageState} PageState */
+/** @typedef {{title: string, status: string}} WidgetPage */
+/** @typedef {{state: PageState, page: WidgetPage|undefined}} WidgetDescription */
+/** @typedef {Partial<Record<PageState|'label'|'offSite', string>>} WidgetLabels */
+
 /**
  * Draws a widget as the CMS knows its page now: its title and where it
  * stands for the site, after what kind of widget it is, all in words.
+ *
+ * @param {HTMLElement} element
+ * @param {WidgetDescription} description
+ * @param {WidgetLabels} labels
  */
 const drawWidget = (element, { state, page }, labels) => {
     element.replaceChildren();
@@ -52,7 +61,11 @@ export const Widget = Node.create({
     draggable: false,
 
     addOptions() {
-        return { describe: () => ({ state: 'loading', page: undefined }), views: new Set(), labels: {} };
+        return {
+            describe: /** @type {(id: string) => WidgetDescription} */ (() => ({ state: 'loading', page: undefined })),
+            views: /** @type {Set<() => void>} */ (new Set()),
+            labels: /** @type {WidgetLabels} */ ({}),
+        };
     },
 
     addAttributes() {

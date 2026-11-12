@@ -39,7 +39,137 @@ import 'prosemirror-tables/style/tables.min.css';
  * long content manageable.
  */
 
-/** What every control runs, given a command chain. */
+/** @typedef {import('@tiptap/core').ChainedCommands} Chain */
+/** @typedef {import('@tiptap/extension-heading').Level} Level */
+/** @typedef {import('../rich_text/slash_menu.js').SlashItem} SlashItem */
+/** @typedef {import('@tiptap/suggestion').SuggestionProps<SlashItem, SlashItem>} SlashProps */
+/** @typedef {import('../rich_text/page_link.js').PageState} PageState */
+/** @typedef {import('./page_field_controller.js').Page} Page */
+
+/**
+ * An image as the editor's endpoints describe it.
+ *
+ * @typedef {import('../rich_text/embedded_image.js').ImageSummary & {id: string}} Image
+ */
+
+/**
+ * @typedef {import('../rich_text/embedded_image.js').ImageLabels & {none: string, result: string, results: string, error: string}} ImageLabels
+ */
+
+/**
+ * The words of the page dialog, of links and of widgets; each says only those it needs.
+ *
+ * @typedef {Partial<Record<string, string>>} PageLabels
+ */
+
+/**
+ * @typedef {object} Features
+ * @property {string[]} blocks
+ * @property {Level[]} headingLevels
+ * @property {string[]} marks
+ */
+
+/** @typedef {{value: string, label: string}} BlockOption */
+
+/** @typedef {{from: number, level: number, title: string}} Section */
+
+/**
+ * The menu of kinds of block: opened from its button, which keeps the focus,
+ * or by "/" in the text, which the suggestion drives.
+ *
+ * @typedef {{mode: 'button', button: HTMLElement, items: SlashItem[], index: number}
+ *     | {mode: 'slash', button?: undefined, props: SlashProps, items: SlashItem[], index: number}} Menu
+ */
+
+/**
+ * @typedef {object} Properties
+ * @property {AbortController} abortController
+ * @property {Editor} editor
+ * @property {Menu|null} menu
+ * @property {((event: Event) => void)|null} dismiss
+ * @property {Map<string, Image>} images
+ * @property {boolean} imagesLookedUp
+ * @property {Set<string>} unknownImages
+ * @property {Set<() => void>} imageViews
+ * @property {number} [imageSearchRequest]
+ * @property {Map<string, Page>} pages
+ * @property {Set<string>} missingPages
+ * @property {Set<string>} pagesLookingUp
+ * @property {Set<string>} pagesUnknown
+ * @property {{from: number, to: number}|null} linkRange
+ * @property {'link'|'widget'} pagePurpose
+ * @property {Set<() => void>} widgetViews
+ * @property {{request: number, page: number, count: number}} pageSearch
+ * @property {Section[]} [sections]
+ * @property {HTMLElement} frameTarget
+ * @property {HTMLElement} canvasTarget
+ * @property {HTMLElement} editorTarget
+ * @property {HTMLElement} dockTarget
+ * @property {HTMLInputElement} inputTarget
+ * @property {HTMLElement[]} buttonTargets
+ * @property {HTMLElement} blockTypeTarget
+ * @property {boolean} hasBlockTypeTarget
+ * @property {HTMLElement} tableToolsTarget
+ * @property {boolean} hasTableToolsTarget
+ * @property {HTMLElement} quoteToolsTarget
+ * @property {boolean} hasQuoteToolsTarget
+ * @property {HTMLElement} menuTarget
+ * @property {HTMLElement} statusTarget
+ * @property {HTMLElement} hintTarget
+ * @property {HTMLElement} outlineButtonTarget
+ * @property {HTMLDialogElement} outlineDialogTarget
+ * @property {HTMLElement} outlineDialogListTarget
+ * @property {boolean} hasOutlineDialogListTarget
+ * @property {HTMLElement} countTarget
+ * @property {boolean} hasCountTarget
+ * @property {HTMLDialogElement} imageDialogTarget
+ * @property {HTMLInputElement} imageSearchTarget
+ * @property {HTMLElement} imageStatusTarget
+ * @property {HTMLElement} imageResultsTarget
+ * @property {HTMLDialogElement} pageDialogTarget
+ * @property {HTMLElement} pageDialogTitleTarget
+ * @property {HTMLInputElement} pageSearchTarget
+ * @property {HTMLElement} pageStatusTarget
+ * @property {HTMLElement} pageResultsTarget
+ * @property {HTMLElement} pageMoreTarget
+ * @property {HTMLElement} linkToolsTarget
+ * @property {boolean} hasLinkToolsTarget
+ * @property {HTMLElement} linkTargetTarget
+ * @property {string} idValue
+ * @property {string} placeholderValue
+ * @property {string} slashHintValue
+ * @property {string} quoteSourceHintValue
+ * @property {BlockOption[]} blockOptionsValue
+ * @property {string} movedUpValue
+ * @property {string} movedDownValue
+ * @property {string} sectionMovedUpValue
+ * @property {string} sectionMovedDownValue
+ * @property {Features} featuresValue
+ * @property {Record<string, string>} calloutLabelsValue
+ * @property {boolean} singleParagraphValue
+ * @property {number} maxLengthValue
+ * @property {string} countValue
+ * @property {string} countOverValue
+ * @property {string} imageSearchUrlValue
+ * @property {boolean} hasImageSearchUrlValue
+ * @property {string} imageLookupUrlValue
+ * @property {boolean} hasImageLookupUrlValue
+ * @property {ImageLabels} imageLabelsValue
+ * @property {string} pageSearchUrlValue
+ * @property {string} pageLookupUrlValue
+ * @property {boolean} hasPageLookupUrlValue
+ * @property {PageLabels} pageLabelsValue
+ * @property {PageLabels} widgetLabelsValue
+ * @property {boolean} hasWidgetLabelsValue
+ */
+
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
+
+/**
+ * What every control runs, given a command chain.
+ *
+ * @type {Record<string, (chain: Chain) => Chain>}
+ */
 const COMMANDS = {
     bold: (chain) => chain.toggleBold(),
     moveUp: (chain) => chain.moveBlock(-1),
@@ -57,27 +187,39 @@ const COMMANDS = {
     redo: (chain) => chain.redo(),
 };
 
-/** Whether a toggle is on for the current selection. */
+/**
+ * Whether a toggle is on for the current selection.
+ *
+ * @type {Record<string, (editor: Editor) => boolean>}
+ */
 const ACTIVE = {
     bold: (editor) => editor.isActive('bold'),
 };
 
-/** Turns a plain paragraph into each kind of block. */
+/**
+ * Turns a plain paragraph into each kind of block.
+ *
+ * @type {Record<string, (chain: Chain, variant: string|undefined) => Chain>}
+ */
 const BLOCKS = {
     paragraph: (chain) => chain,
-    heading: (chain, variant) => chain.setHeading({ level: Number(variant) }),
+    heading: (chain, variant) => chain.setHeading({ level: /** @type {Level} */ (Number(variant)) }),
     quote: (chain) => chain.wrapIn('blockquote'),
     bulletList: (chain) => chain.toggleBulletList(),
     orderedList: (chain) => chain.toggleOrderedList(),
     callout: (chain, variant) => chain.wrapIn('callout', { variant }),
 };
 
-/** Lower case and without accents, so "parrafo" finds "Párrafo". */
+/**
+ * Lower case and without accents, so "parrafo" finds "Párrafo".
+ *
+ * @param {string} text
+ */
 const normalise = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export default class extends Controller {
+export default class extends BaseController {
     static targets = [
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
@@ -146,9 +288,10 @@ export default class extends Controller {
                     'aria-labelledby': `${this.idValue}-label`,
                     'aria-describedby': this.hasCountTarget ? `${this.idValue}-hint ${this.idValue}-count` : `${this.idValue}-hint`,
                 },
-                // Keep the cursor clear of the dock when scrolling it into view.
-                scrollMargin: { top: 80, bottom: 220 },
-                scrollThreshold: { top: 80, bottom: 220 },
+                // Keep the cursor clear of the dock when scrolling it into view;
+                // sideways, as in a wide table, ProseMirror's own defaults.
+                scrollMargin: { top: 80, right: 5, bottom: 220, left: 5 },
+                scrollThreshold: { top: 80, right: 0, bottom: 220, left: 0 },
             },
             onUpdate: ({ editor }) => {
                 this.inputTarget.value = JSON.stringify(editor.getJSON());
@@ -180,6 +323,7 @@ export default class extends Controller {
             return;
         }
 
+        /** @type {string[]} */
         const ids = [];
 
         this.editor.state.doc.descendants((node) => {
@@ -192,10 +336,11 @@ export default class extends Controller {
             const { signal } = this.abortController;
             const url = new URL(this.imageLookupUrlValue, window.location.href);
             url.searchParams.set('ids', ids.join(','));
+            /** @type {Image[]|null} */
             let images = null;
 
             try {
-                images = (await fetchJson(url, signal)).images;
+                images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
             } catch {
                 // Told as unknown below: the images may well exist.
             }
@@ -217,6 +362,13 @@ export default class extends Controller {
         this.drawImages();
     }
 
+    /**
+     * What the CMS knows of an image: undefined while it is being looked up,
+     * null when there is no such image, false when it can't be checked.
+     *
+     * @param {string} id
+     * @returns {Image|null|false|undefined}
+     */
     describeImage(id) {
         if (this.images.has(id)) {
             return this.images.get(id);
@@ -241,6 +393,7 @@ export default class extends Controller {
         this.searchImages();
     }
 
+    /** @param {Event} [event] */
     async searchImages(event) {
         event?.preventDefault();
 
@@ -249,10 +402,11 @@ export default class extends Controller {
         const { signal } = this.abortController;
         const url = new URL(this.imageSearchUrlValue, window.location.href);
         url.searchParams.set('alt', this.imageSearchTarget.value);
+        /** @type {Image[]|null} */
         let images = null;
 
         try {
-            images = (await fetchJson(url, signal)).images;
+            images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
         } catch {
             // Told below, like an answer that isn't ok.
         }
@@ -274,7 +428,11 @@ export default class extends Controller {
         this.imageStatusTarget.textContent = [none, result][images.length] ?? results.replace('%count%', String(images.length));
     }
 
-    /** One image to pick: the whole row is its button, named by its text and status. */
+    /**
+     * One image to pick: the whole row is its button, named by its text and status.
+     *
+     * @param {Image} image
+     */
     imageResult(image) {
         const item = document.createElement('li');
         const button = document.createElement('button');
@@ -305,6 +463,7 @@ export default class extends Controller {
         return item;
     }
 
+    /** @param {Image} image */
     embedImage(image) {
         this.images.set(image.id, image);
         this.imageDialogTarget.close();
@@ -320,9 +479,11 @@ export default class extends Controller {
             return;
         }
 
+        /** @type {Set<string>} */
         const ids = new Set();
 
-        const unknown = (id) => id && this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id);
+        /** @param {string|null|undefined} id */
+        const unknown = (id) => Boolean(id) && this.pageState(id ?? '') === 'loading' && !this.pagesLookingUp.has(id ?? '');
 
         this.editor.state.doc.descendants((node) => {
             if (node.type.name === 'widget' && unknown(node.attrs.id)) {
@@ -344,10 +505,11 @@ export default class extends Controller {
         const { signal } = this.abortController;
         const url = new URL(this.pageLookupUrlValue, window.location.href);
         url.searchParams.set('ids', [...ids].join(','));
+        /** @type {Page[]|null} */
         let found = null;
 
         try {
-            found = (await fetchJson(url, signal)).pages;
+            found = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages;
         } catch {
             // Told as unknown below: the page may well exist.
         }
@@ -374,7 +536,12 @@ export default class extends Controller {
         this.redrawPageLinks();
     }
 
-    /** How the page of a link stands, as far as the editor knows. */
+    /**
+     * How the page of a link stands, as far as the editor knows.
+     *
+     * @param {string} id
+     * @returns {PageState}
+     */
     pageState(id) {
         const page = this.pages.get(id);
 
@@ -389,22 +556,31 @@ export default class extends Controller {
         return this.pagesUnknown.has(id) ? 'unknown' : 'loading';
     }
 
-    /** The page a link goes to, in words: never by its look alone. */
+    /**
+     * The page a link goes to, in words: never by its look alone.
+     *
+     * @param {string} id
+     */
     describePage(id) {
         const labels = this.pageLabelsValue;
         const state = this.pageState(id);
+        const page = this.pages.get(id);
 
-        if (state === 'loading' || state === 'missing' || state === 'unknown') {
+        // Loading, missing or unknown: there is no page to name yet.
+        if (page === undefined) {
             return labels[state] ?? '';
         }
 
-        const page = this.pages.get(id);
         const target = (labels.target ?? '%title% %status%').replace('%title%', page.title).replace('%status%', page.status);
 
         return state === 'offSite' ? `${target} ${labels.offSite ?? ''}` : target;
     }
 
-    /** How the page of a widget stands, and the page itself once known. */
+    /**
+     * How the page of a widget stands, and the page itself once known.
+     *
+     * @param {string} id
+     */
     describeWidget(id) {
         return { state: this.pageState(id), page: this.pages.get(id) };
     }
@@ -423,7 +599,11 @@ export default class extends Controller {
         this.editor.view.dispatch(this.editor.state.tr.setMeta(pageLinksKey, true).setMeta('addToHistory', false));
     }
 
-    /** Picks a page to link the selected text to, or, for 'widget', to show in a new widget. */
+    /**
+     * Picks a page to link the selected text to, or, for 'widget', to show in a new widget.
+     *
+     * @param {'link'|'widget'} [purpose]
+     */
     openPageDialog(purpose = 'link') {
         if (purpose === 'link') {
             const { selection } = this.editor.state;
@@ -443,7 +623,11 @@ export default class extends Controller {
         this.searchPages();
     }
 
-    /** Lists the first pages of results for the title written. */
+    /**
+     * Lists the first pages of results for the title written.
+     *
+     * @param {Event} [event]
+     */
     searchPages(event) {
         event?.preventDefault();
         this.pageSearch.page = 1;
@@ -465,10 +649,11 @@ export default class extends Controller {
         url.searchParams.set('title', this.pageSearchTarget.value);
         url.searchParams.set('page', String(this.pageSearch.page));
         this.pageMoreTarget.hidden = true;
+        /** @type {{pages: Page[], more: boolean}|null} */
         let result = null;
 
         try {
-            result = await fetchJson(url, signal);
+            result = /** @type {{pages: Page[], more: boolean}} */ (await fetchJson(url, signal));
         } catch {
             // Told below, like an answer that isn't ok.
         }
@@ -493,7 +678,7 @@ export default class extends Controller {
         this.pageMoreTarget.hidden = !result.more;
 
         const { count } = this.pageSearch;
-        this.pageStatusTarget.textContent = [none, one][count] ?? results.replace('%count%', String(count));
+        this.pageStatusTarget.textContent = [none, one][count] ?? (results ?? '').replace('%count%', String(count));
 
         // Past the first pages, the focus goes to the first page added, not back to the top.
         if (this.pageSearch.page > 1) {
@@ -501,7 +686,11 @@ export default class extends Controller {
         }
     }
 
-    /** One page to pick: the whole row is its button, named by its title and status. */
+    /**
+     * One page to pick: the whole row is its button, named by its title and status.
+     *
+     * @param {Page} page
+     */
     pageResult(page) {
         const item = document.createElement('li');
         const button = document.createElement('button');
@@ -532,6 +721,7 @@ export default class extends Controller {
         return item;
     }
 
+    /** @param {Page} page */
     linkPage(page) {
         if (this.linkRange === null) {
             return;
@@ -551,7 +741,11 @@ export default class extends Controller {
         return this.pagePurpose === 'widget' ? this.widgetLabelsValue : this.pageLabelsValue;
     }
 
-    /** Shows the page picked in a new widget, where the cursor was. */
+    /**
+     * Shows the page picked in a new widget, where the cursor was.
+     *
+     * @param {Page} page
+     */
     embedWidget(page) {
         this.pages.set(page.id, page);
         this.missingPages.delete(page.id);
@@ -594,14 +788,17 @@ export default class extends Controller {
     /**
      * Clicking a control keeps the focus, and the selection, in the editor,
      * so typing right after a click lands in the text.
+     *
+     * @param {Event} event
      */
     keepFocus(event) {
         event.preventDefault();
     }
 
+    /** @param {Event} event */
     run(event) {
-        const button = event.currentTarget;
-        const { command } = button.dataset;
+        const button = /** @type {HTMLElement} */ (event.currentTarget);
+        const command = button.dataset.command ?? '';
 
         if (button.getAttribute('aria-disabled') === 'true') {
             return;
@@ -665,7 +862,7 @@ export default class extends Controller {
         const section = onHeading(this.editor.state);
 
         for (const button of this.buttonTargets) {
-            const { command } = button.dataset;
+            const command = button.dataset.command ?? '';
             const pressed = command in ACTIVE && ACTIVE[command](this.editor);
 
             if (button.hasAttribute('aria-pressed')) {
@@ -676,7 +873,7 @@ export default class extends Controller {
             button.setAttribute('aria-disabled', String(!pressed && !this.can(command)));
 
             if (button.dataset.sectionLabel) {
-                this.rename(button, section ? button.dataset.sectionLabel : button.dataset.label);
+                this.rename(button, (section ? button.dataset.sectionLabel : button.dataset.label) ?? '');
             }
         }
 
@@ -709,9 +906,13 @@ export default class extends Controller {
         this.markCurrentSection();
     }
 
-    /** Hides the controls once the focus leaves the text and the controls alike. */
+    /**
+     * Hides the controls once the focus leaves the text and the controls alike.
+     *
+     * @param {FocusEvent} event
+     */
     leave(event) {
-        if (this.canvasTarget.contains(event.relatedTarget)) {
+        if (event.relatedTarget instanceof Node && this.canvasTarget.contains(event.relatedTarget)) {
             return;
         }
 
@@ -719,9 +920,13 @@ export default class extends Controller {
         this.dockTarget.hidden = true;
     }
 
-    /** Escape, from any control, goes back to the text where the cursor was. */
+    /**
+     * Escape, from any control, goes back to the text where the cursor was.
+     *
+     * @param {KeyboardEvent} event
+     */
     controlsKey(event) {
-        if (event.key === 'Escape' && this.dockTarget.contains(event.target)) {
+        if (event.key === 'Escape' && event.target instanceof Node && this.dockTarget.contains(event.target)) {
             event.preventDefault();
             this.editor.commands.focus();
         }
@@ -733,6 +938,10 @@ export default class extends Controller {
         (this.hasBlockTypeTarget ? this.blockTypeTarget : this.buttonTargets[0])?.focus();
     }
 
+    /**
+     * @param {HTMLElement} button
+     * @param {string} name
+     */
     rename(button, name) {
         const label = button.querySelector('[data-role="name"]');
         const tooltip = button.querySelector('[data-role="tooltip"]');
@@ -746,6 +955,7 @@ export default class extends Controller {
         }
     }
 
+    /** @param {string} command */
     can(command) {
         if (command === 'changeLink' || command === 'unlink') {
             return this.editor.isActive('link');
@@ -782,13 +992,19 @@ export default class extends Controller {
             return `heading:${this.editor.getAttributes('heading').level}`;
         }
 
+        /** @type {Record<string, string>} */
         const wrapper = { blockquote: 'quote', bulletList: 'bulletList', orderedList: 'orderedList' };
         const active = Object.keys(wrapper).find((name) => this.editor.isActive(name));
 
         return active ? wrapper[active] : 'paragraph';
     }
 
-    /** Says where the block or the section went, since nothing changes under the cursor. */
+    /**
+     * Says where the block or the section went, since nothing changes under the cursor.
+     *
+     * @param {import('../rich_text/block_movement.js').Direction} direction
+     * @param {boolean} section
+     */
     announceMove(direction, section) {
         const message = section
             ? (direction < 0 ? this.sectionMovedUpValue : this.sectionMovedDownValue)
@@ -797,7 +1013,11 @@ export default class extends Controller {
         this.announce(message);
     }
 
-    /** Says something through the live region, even the same thing twice in a row. */
+    /**
+     * Says something through the live region, even the same thing twice in a row.
+     *
+     * @param {string} message
+     */
     announce(message) {
         this.statusTarget.textContent = '';
         window.requestAnimationFrame(() => {
@@ -807,6 +1027,10 @@ export default class extends Controller {
 
     /* Kinds of block: one menu, opened by "/" or by the block kind button. */
 
+    /**
+     * @param {Chain} chain
+     * @param {string} value
+     */
     applyBlock(chain, value) {
         const [block, variant] = value.split(':');
 
@@ -846,6 +1070,10 @@ export default class extends Controller {
         BLOCKS[block](chain.setParagraph(), variant).run();
     }
 
+    /**
+     * @param {string} query
+     * @returns {SlashItem[]}
+     */
     blockItems(query) {
         const current = this.currentBlock();
         const items = this.blockOptionsValue.map((option) => ({
@@ -857,8 +1085,9 @@ export default class extends Controller {
         return items.filter((item) => normalise(item.label).includes(normalise(query)));
     }
 
+    /** @param {Event} event */
     openBlockMenu(event) {
-        const button = event.currentTarget;
+        const button = /** @type {HTMLElement} */ (event.currentTarget);
 
         if (button.getAttribute('aria-disabled') === 'true') {
             return;
@@ -871,8 +1100,10 @@ export default class extends Controller {
         }
 
         const items = this.blockItems('');
+        /** @type {Menu} */
+        const menu = { mode: 'button', button, items, index: Math.max(items.findIndex((item) => item.current), 0) };
 
-        this.menu = { mode: 'button', button, items, index: Math.max(items.findIndex((item) => item.current), 0) };
+        this.menu = menu;
         button.setAttribute('aria-expanded', 'true');
         this.renderMenu(button.getBoundingClientRect());
         this.menuTarget.focus();
@@ -885,10 +1116,11 @@ export default class extends Controller {
      * leave it floating away from its button.
      */
     watchOutside() {
+        /** @param {Event} event */
         this.dismiss = (event) => {
-            const { button } = this.menu ?? {};
+            const target = event.target instanceof Node ? event.target : null;
 
-            if (this.menuTarget.contains(event.target) || button?.contains(event.target)) {
+            if (this.menuTarget.contains(target) || this.menu?.button?.contains(target)) {
                 return;
             }
 
@@ -900,16 +1132,26 @@ export default class extends Controller {
         window.addEventListener('resize', this.dismiss);
     }
 
-    /** The focus left the menu for something else, as Tab does. */
+    /**
+     * The focus left the menu for something else, as Tab does.
+     *
+     * @param {FocusEvent} event
+     */
     menuFocusOut(event) {
-        if (this.menu?.mode !== 'button' || this.menuTarget.contains(event.relatedTarget) || event.relatedTarget === this.menu.button) {
+        const next = event.relatedTarget instanceof Node ? event.relatedTarget : null;
+
+        if (this.menu?.mode !== 'button' || this.menuTarget.contains(next) || next === this.menu.button) {
             return;
         }
 
         this.closeMenu();
     }
 
-    /** Keys of the menu opened from the button, which holds the focus meanwhile. */
+    /**
+     * Keys of the menu opened from the button, which holds the focus meanwhile.
+     *
+     * @param {KeyboardEvent} event
+     */
     menuButtonKey(event) {
         if (this.menu?.mode === 'button' && this.menuKey(event)) {
             event.preventDefault();
@@ -921,44 +1163,43 @@ export default class extends Controller {
      * which points at the highlighted option through aria-activedescendant.
      */
     slashRender() {
-        return {
+        /** @type {ReturnType<import('../rich_text/slash_menu.js').SlashRender>} */
+        const renderer = {
             onStart: (props) => this.openSlashMenu(props),
             onUpdate: (props) => this.openSlashMenu(props),
             onKeyDown: ({ event }) => this.menuKey(event),
             onExit: () => this.closeMenu(),
         };
+
+        return renderer;
     }
 
+    /**
+     * The kinds of block, then the blocks inserted whole, named as their buttons are.
+     *
+     * @param {string} query
+     */
     slashItems(query) {
         const items = this.blockItems(query);
+        const { blocks } = this.featuresValue;
+        const inserted = [
+            { block: 'table', command: 'insertTable', allowed: blocks.includes('table') },
+            { block: 'image', command: 'insertImage', allowed: this.hasImageSearchUrlValue && blocks.includes('image') },
+            { block: 'widget', command: 'insertWidget', allowed: this.hasWidgetLabelsValue && blocks.includes('widget') },
+        ];
 
-        if (this.featuresValue.blocks.includes('table')) {
-            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertTable').dataset.label;
+        for (const { block, command, allowed } of inserted) {
+            const label = this.buttonTargets.find((button) => button.dataset.command === command)?.dataset.label;
 
-            if (normalise(label).includes(normalise(query))) {
-                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'table') });
-            }
-        }
-
-        if (this.hasImageSearchUrlValue && this.featuresValue.blocks.includes('image')) {
-            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertImage').dataset.label;
-
-            if (normalise(label).includes(normalise(query))) {
-                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'image') });
-            }
-        }
-
-        if (this.hasWidgetLabelsValue && this.featuresValue.blocks.includes('widget')) {
-            const label = this.buttonTargets.find((button) => button.dataset.command === 'insertWidget').dataset.label;
-
-            if (normalise(label).includes(normalise(query))) {
-                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), 'widget') });
+            if (allowed && label !== undefined && normalise(label).includes(normalise(query))) {
+                items.push({ label, apply: () => this.applyBlock(this.editor.chain().focus(), block) });
             }
         }
 
         return items;
     }
 
+    /** @param {SlashProps} props */
     openSlashMenu(props) {
         if (props.items.length === 0) {
             this.closeMenu();
@@ -968,13 +1209,21 @@ export default class extends Controller {
 
         const index = this.menu?.mode === 'slash' ? Math.min(this.menu.index, props.items.length - 1) : 0;
 
-        this.menu = { mode: 'slash', props, items: props.items, index };
+        /** @type {Menu} */
+        const menu = { mode: 'slash', props, items: props.items, index };
+
+        this.menu = menu;
         this.editor.view.dom.setAttribute('aria-controls', this.menuTarget.id);
         this.editor.view.dom.setAttribute('aria-expanded', 'true');
         this.renderMenu(props.clientRect?.());
     }
 
+    /** @param {DOMRect|null|undefined} anchor */
     renderMenu(anchor) {
+        if (this.menu === null) {
+            return;
+        }
+
         this.menuTarget.replaceChildren(...this.menu.items.map((item, index) => {
             const option = document.createElement('li');
 
@@ -1002,13 +1251,18 @@ export default class extends Controller {
         this.highlight(this.menu.index);
     }
 
-    /** Arrow keys move through the kinds; Enter picks one; Escape closes. */
+    /**
+     * Arrow keys move through the kinds; Enter picks one; Escape closes.
+     *
+     * @param {KeyboardEvent} event
+     */
     menuKey(event) {
         if (this.menu === null) {
             return false;
         }
 
         const count = this.menu.items.length;
+        /** @type {Record<string, number>} */
         const moves = { ArrowDown: 1, ArrowUp: -1 };
 
         if (event.key in moves) {
@@ -1044,7 +1298,12 @@ export default class extends Controller {
         return false;
     }
 
+    /** @param {number} index */
     highlight(index) {
+        if (this.menu === null) {
+            return;
+        }
+
         this.menu.index = index;
 
         for (const [position, option] of [...this.menuTarget.children].entries()) {
@@ -1058,11 +1317,16 @@ export default class extends Controller {
         owner.setAttribute('aria-activedescendant', `${this.idValue}-menu-${index}`);
     }
 
+    /** @param {number} index */
     choose(index) {
-        const { mode, props, items } = this.menu;
+        const { menu } = this;
 
-        if (mode === 'slash') {
-            props.command(items[index]);
+        if (menu === null) {
+            return;
+        }
+
+        if (menu.mode === 'slash') {
+            menu.props.command(menu.items[index]);
 
             return;
         }
@@ -1071,7 +1335,7 @@ export default class extends Controller {
         // the page, which would read as leaving the editor and hide the dock.
         this.editor.view.focus();
         this.closeMenu();
-        items[index].apply();
+        menu.items[index].apply();
     }
 
     closeMenu() {
@@ -1105,12 +1369,14 @@ export default class extends Controller {
             return;
         }
 
-        this.sections = topLevelBlocks(this.editor.state.doc)
+        const sections = topLevelBlocks(this.editor.state.doc)
             .filter(({ node }) => isHeading(node) && node.textContent.trim() !== '')
-            .map(({ node, from }) => ({ from, level: node.attrs.level, title: node.textContent }));
+            .map(({ node, from }) => ({ from, level: Number(node.attrs.level), title: node.textContent }));
+
+        this.sections = sections;
 
         for (const list of [this.outlineDialogListTarget]) {
-            list.replaceChildren(...this.sections.map((section) => {
+            list.replaceChildren(...sections.map((section) => {
                 const item = document.createElement('li');
                 const link = document.createElement('button');
 
@@ -1124,7 +1390,7 @@ export default class extends Controller {
             }));
         }
 
-        this.outlineButtonTarget.hidden = this.sections.length === 0;
+        this.outlineButtonTarget.hidden = sections.length === 0;
         this.markCurrentSection();
     }
 
@@ -1139,26 +1405,38 @@ export default class extends Controller {
         for (const list of [this.outlineDialogListTarget]) {
             for (const [index, item] of [...list.children].entries()) {
                 if (index === current) {
-                    item.firstElementChild.setAttribute('aria-current', 'location');
+                    item.firstElementChild?.setAttribute('aria-current', 'location');
                 } else {
-                    item.firstElementChild.removeAttribute('aria-current');
+                    item.firstElementChild?.removeAttribute('aria-current');
                 }
             }
         }
     }
 
-    /** Opens the section at the top of the screen, with the cursor at its heading. */
+    /**
+     * Opens the section at the top of the screen, with the cursor at its heading.
+     *
+     * @param {number} from
+     */
     jumpTo(from) {
         this.outlineDialogTarget.close();
         this.editor.chain().setTextSelection(from + 1).focus(null, { scrollIntoView: false }).run();
-        this.editor.view.nodeDOM(from)?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+        const heading = this.editor.view.nodeDOM(from);
+
+        if (!(heading instanceof Element)) {
+            return;
+        }
+
+        heading.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
     }
 
+    /** @returns {import('@tiptap/core').AnyExtension[]} */
     extensions() {
         const { blocks, headingLevels, marks } = this.featuresValue;
 
         if (this.singleParagraphValue) {
             // The document is one paragraph, so Enter has nowhere to split it.
+            /** @type {import('@tiptap/core').AnyExtension[]} */
             const extensions = [
                 Document.extend({ content: 'paragraph' }),
                 Paragraph,
@@ -1178,6 +1456,7 @@ export default class extends Controller {
             return extensions;
         }
 
+        /** @type {import('@tiptap/core').AnyExtension[]} */
         const extensions = [
             Document,
             Paragraph,

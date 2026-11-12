@@ -1,10 +1,23 @@
 import { Controller } from '@hotwired/stimulus';
 
+/**
+ * @typedef {object} Properties
+ * @property {HTMLInputElement} fieldTarget
+ * @property {HTMLElement} outputTarget
+ * @property {number} minValue
+ * @property {number} maxValue
+ * @property {string} shortValue
+ * @property {string} fitsValue
+ * @property {string} longValue
+ */
+
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
+
 /*
  * Counts the characters of a field against a recommended length and says,
  * in words, whether the text falls short, fits or runs long.
  */
-export default class extends Controller {
+export default class extends BaseController {
     static targets = ['field', 'output'];
 
     static values = {

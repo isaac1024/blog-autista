@@ -8,13 +8,18 @@
  */
 
 /**
+ * A document whose top-level blocks are nodes of a kind: the calculation
+ * reads only an EditorNode of each, and hands back what it was given.
+ *
+ * @template {EditorNode} [Node=EditorNode]
  * @typedef {object} DocumentLike
- * @property {(callback: (node: EditorNode, offset: number) => void) => void} forEach
+ * @property {(callback: (node: Node, offset: number) => void) => void} forEach
  */
 
 /**
+ * @template {EditorNode} [Node=EditorNode]
  * @typedef {object} BlockPosition
- * @property {EditorNode} node
+ * @property {Node} node
  * @property {number} from
  * @property {number} to
  */
@@ -22,6 +27,12 @@
 /**
  * @typedef {object} SelectionState
  * @property {{$from: {depth: number, node: (depth: number) => EditorNode}}} selection
+ */
+
+/**
+ * Up, towards the start of the document, or down, towards its end.
+ *
+ * @typedef {-1|1} Direction
  */
 
 /**
@@ -35,11 +46,12 @@
 /**
  * Top-level blocks of a document, with where each starts and ends.
  *
- * @param {DocumentLike} doc
- * @returns {BlockPosition[]}
+ * @template {EditorNode} Node
+ * @param {DocumentLike<Node>} doc
+ * @returns {BlockPosition<Node>[]}
  */
 export const topLevelBlocks = (doc) => {
-    /** @type {BlockPosition[]} */
+    /** @type {BlockPosition<Node>[]} */
     const blocks = [];
 
     doc.forEach((node, offset) => blocks.push({ node, from: offset, to: offset + node.nodeSize }));
@@ -49,6 +61,13 @@ export const topLevelBlocks = (doc) => {
 
 /** @param {EditorNode} node */
 export const isHeading = (node) => node.type.name === 'heading';
+
+/**
+ * The level of a heading; only headings carry one.
+ *
+ * @param {EditorNode} node
+ */
+const levelOf = (node) => node.attrs.level ?? 0;
 
 /**
  * Whether the cursor is on a heading, so moving it moves its section.
@@ -79,7 +98,7 @@ const unitAt = (blocks, index) => {
 
     let end = index + 1;
 
-    while (end < blocks.length && !(isHeading(blocks[end].node) && /** @type {number} */ (blocks[end].node.attrs.level) <= /** @type {number} */ (node.attrs.level))) {
+    while (end < blocks.length && !(isHeading(blocks[end].node) && levelOf(blocks[end].node) <= levelOf(node))) {
         end += 1;
     }
 
@@ -93,7 +112,7 @@ const unitAt = (blocks, index) => {
  *
  * @param {DocumentLike} doc
  * @param {number} index
- * @param {number} direction
+ * @param {Direction} direction
  * @returns {MovePlan|null}
  */
 export const movePlan = (doc, index, direction) => {
@@ -109,11 +128,11 @@ export const movePlan = (doc, index, direction) => {
         let previous = start - 1;
 
         if (isHeading(node)) {
-            while (previous >= 0 && !(isHeading(blocks[previous].node) && /** @type {number} */ (blocks[previous].node.attrs.level) <= /** @type {number} */ (node.attrs.level))) {
+            while (previous >= 0 && !(isHeading(blocks[previous].node) && levelOf(blocks[previous].node) <= levelOf(node))) {
                 previous -= 1;
             }
 
-            if (previous < 0 || blocks[previous].node.attrs.level !== node.attrs.level) {
+            if (previous < 0 || levelOf(blocks[previous].node) !== levelOf(node)) {
                 return null;
             }
         }
@@ -125,7 +144,7 @@ export const movePlan = (doc, index, direction) => {
         return null;
     }
 
-    if (isHeading(node) && !(isHeading(blocks[end].node) && blocks[end].node.attrs.level === node.attrs.level)) {
+    if (isHeading(node) && !(isHeading(blocks[end].node) && levelOf(blocks[end].node) === levelOf(node))) {
         return null;
     }
 

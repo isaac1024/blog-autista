@@ -8,7 +8,7 @@ export const Callout = Node.create({
     defining: true,
 
     addOptions() {
-        return { labels: {} };
+        return { labels: /** @type {Record<string, string>} */ ({}) };
     },
 
     addAttributes() {

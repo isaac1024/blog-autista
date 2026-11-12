@@ -10,11 +10,11 @@
  */
 const script = document.querySelector('script[data-page]');
 
-if (script) {
+if (script instanceof HTMLScriptElement) {
     let sent = false;
 
     const send = () => {
-        if (sent || document.prerendering || 'visible' !== document.visibilityState) {
+        if (sent || ('prerendering' in document && document.prerendering) || 'visible' !== document.visibilityState) {
             return;
         }
 
@@ -29,7 +29,7 @@ if (script) {
         }
 
         const body = new URLSearchParams({
-            page: script.dataset.page,
+            page: script.dataset.page ?? '',
             referrer: document.referrer,
             source: campaign.get('utm_source') || '',
             medium: campaign.get('utm_medium') || '',

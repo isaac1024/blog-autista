@@ -1,11 +1,21 @@
 import { Controller } from '@hotwired/stimulus';
 
+/**
+ * @typedef {object} Properties
+ * @property {HTMLInputElement} valueTarget
+ * @property {HTMLElement} statusTarget
+ * @property {string} copiedValue
+ * @property {string} failedValue
+ */
+
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
+
 /*
  * Copies the value of a read-only field and says so in a status the screen
  * reader announces. When the browser won't let it copy, the value is left
  * selected for the editor to copy it by hand.
  */
-export default class extends Controller {
+export default class extends BaseController {
     static targets = ['value', 'status'];
 
     static values = {

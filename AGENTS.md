@@ -99,10 +99,14 @@ controllers and AssetMapper vendor modules without Symfony or a database. Run
 suite. Install its local Chromium first with `npm run test:browser:install`.
 Browser failures are written under `var/browser-tests/`.
 
-Run `npm run check:js` for the frontend gate: ESLint, the strict TypeScript
-`checkJs` pilot and both test suites. The pilot is deliberately limited by
-`jsconfig.json` to the pure rich-text calculation and shared helpers; expand it
-module by module rather than enabling it wholesale over untyped Tiptap code.
+Run `npm run check:js` for the frontend gate: ESLint, strict TypeScript
+`checkJs` over every module under `assets/` (JSDoc, no build step) and both test
+suites. The browser loads packages through the import map; npm installs the same
+versions only for their types, and `tests/Unit/type_packages.test.js` fails when
+the two drift, so bump both together. A Stimulus controller declares its targets
+and values in a `Properties` typedef and extends
+`ControllerWith<Properties>` from `assets/controllers/controller_types.d.ts`.
+Endpoint responses are `unknown` until cast to the shape the endpoint documents.
 
 ## Code style
 

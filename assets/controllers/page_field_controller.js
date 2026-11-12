@@ -2,12 +2,55 @@ import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
 import { fetchJson } from '../shared/http.js';
 
+/**
+ * @typedef {object} Page
+ * @property {string} id
+ * @property {string} title
+ * @property {string} status
+ * @property {boolean} published
+ */
+
+/**
+ * @typedef {object} Labels
+ * @property {string} empty
+ * @property {string} loading
+ * @property {string} missing
+ * @property {string} unknown
+ * @property {string} offSite
+ * @property {string} chosen
+ * @property {string} none
+ * @property {string} result
+ * @property {string} results
+ * @property {string} error
+ */
+
+/**
+ * @typedef {object} Properties
+ * @property {AbortController} abortController
+ * @property {Page|null|false|undefined} page
+ * @property {number} [request]
+ * @property {HTMLInputElement} inputTarget
+ * @property {HTMLElement} titleTarget
+ * @property {HTMLElement} stateTarget
+ * @property {HTMLButtonElement} chooseTarget
+ * @property {HTMLDialogElement} dialogTarget
+ * @property {HTMLInputElement} searchTarget
+ * @property {HTMLElement} searchStatusTarget
+ * @property {HTMLUListElement} resultsTarget
+ * @property {HTMLElement} statusTarget
+ * @property {string} searchUrlValue
+ * @property {string} lookupUrlValue
+ * @property {Labels} labelsValue
+ */
+
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
+
 /*
  * Edits one page: shows the one chosen, as the CMS knows it now, and picks
  * another searched by title. Where the page stands for the site is said in
  * words.
  */
-export default class extends Controller {
+export default class extends BaseController {
     static targets = ['input', 'title', 'state', 'choose', 'dialog', 'search', 'searchStatus', 'results', 'status'];
 
     static values = {
@@ -31,16 +74,18 @@ export default class extends Controller {
         this.abortController.abort();
     }
 
+    /** @param {string} id */
     async lookUp(id) {
         const { signal } = this.abortController;
         const url = new URL(this.lookupUrlValue, window.location.href);
         url.searchParams.set('ids', id);
 
         // Told as unknown while it can't be checked: the page may well exist.
+        /** @type {Page|false|undefined} */
         let page;
 
         try {
-            page = (await fetchJson(url, signal)).pages.find((found) => found.id === id) ?? false;
+            page = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages.find((found) => found.id === id) ?? false;
         } catch {
             page = undefined;
         }
@@ -75,6 +120,7 @@ export default class extends Controller {
         }
     }
 
+    /** @param {Page} page */
     choose(page) {
         this.inputTarget.value = page.id;
         this.page = page;
@@ -91,6 +137,7 @@ export default class extends Controller {
         this.search();
     }
 
+    /** @param {Event} [event] */
     async search(event) {
         event?.preventDefault();
 
@@ -99,10 +146,11 @@ export default class extends Controller {
         const { signal } = this.abortController;
         const url = new URL(this.searchUrlValue, window.location.href);
         url.searchParams.set('title', this.searchTarget.value);
+        /** @type {Page[]|null} */
         let pages = null;
 
         try {
-            pages = (await fetchJson(url, signal)).pages;
+            pages = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages;
         } catch {
             // Told below, like an answer that isn't ok.
         }
@@ -124,7 +172,11 @@ export default class extends Controller {
         this.searchStatusTarget.textContent = [none, result][pages.length] ?? results.replace('%count%', String(pages.length));
     }
 
-    /** One page to pick: the whole row is its button, named by its title and status. */
+    /**
+     * One page to pick: the whole row is its button, named by its title and status.
+     *
+     * @param {Page} page
+     */
     result(page) {
         const item = document.createElement('li');
         const button = document.createElement('button');

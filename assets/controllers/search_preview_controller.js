@@ -1,13 +1,35 @@
 import { Controller } from '@hotwired/stimulus';
 
-/** Cuts the text where search engines would, marking the cut with an ellipsis. */
+/** @typedef {{title: string, description: string, slug?: string}} Sources */
+
+/**
+ * @typedef {object} Properties
+ * @property {() => void} refresh
+ * @property {HTMLElement} urlTarget
+ * @property {HTMLElement} titleTarget
+ * @property {HTMLElement} descriptionTarget
+ * @property {Sources} sourcesValue
+ * @property {string} baseValue
+ * @property {string} emptyValue
+ * @property {number} titleLimitValue
+ * @property {number} descriptionLimitValue
+ */
+
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
+
+/**
+ * Cuts the text where search engines would, marking the cut with an ellipsis.
+ *
+ * @param {string} text
+ * @param {number} limit
+ */
 const cut = (text, limit) => ([...text].length > limit ? `${[...text].slice(0, limit - 1).join('').trimEnd()}…` : text);
 
 /*
  * Keeps the search result preview in step with the fields that feed it,
  * which may live anywhere on the page, such as a document title.
  */
-export default class extends Controller {
+export default class extends BaseController {
     static targets = ['url', 'title', 'description'];
 
     static values = {
@@ -29,7 +51,12 @@ export default class extends Controller {
 
     update() {
         const { title, description, slug } = this.sourcesValue;
-        const value = (id) => document.getElementById(id)?.value.trim() ?? '';
+        /** @param {string} id */
+        const value = (id) => {
+            const field = document.getElementById(id);
+
+            return field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? field.value.trim() : '';
+        };
 
         const text = value(description).replace(/\s+/g, ' ');
 
@@ -39,6 +66,9 @@ export default class extends Controller {
     }
 
     fields() {
-        return Object.values(this.sourcesValue).map((id) => document.getElementById(id)).filter(Boolean);
+        return Object.values(this.sourcesValue)
+            .filter((id) => id !== undefined)
+            .map((id) => document.getElementById(id))
+            .filter((field) => field !== null);
     }
 }

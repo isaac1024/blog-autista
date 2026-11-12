@@ -1,12 +1,24 @@
 import { Extension } from '@tiptap/core';
 import { Suggestion } from '@tiptap/suggestion';
 
+/**
+ * @typedef {object} SlashItem
+ * @property {string} label
+ * @property {boolean} [current]
+ * @property {() => void} apply
+ */
+
+/** @typedef {NonNullable<import('@tiptap/suggestion').SuggestionOptions<SlashItem, SlashItem>['render']>} SlashRender */
+
 /** Lists the kinds of block when "/" starts an empty line. */
 export const SlashMenu = Extension.create({
     name: 'slashMenu',
 
     addOptions() {
-        return { items: () => [], render: () => ({}) };
+        return {
+            items: /** @type {(query: string) => SlashItem[]} */ (() => []),
+            render: /** @type {SlashRender} */ (() => ({})),
+        };
     },
 
     addProseMirrorPlugins() {

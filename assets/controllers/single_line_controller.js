@@ -1,15 +1,18 @@
 import { Controller } from '@hotwired/stimulus';
 
+const BaseController = /** @type {import('./controller_types.js').ControllerWith<object, HTMLTextAreaElement>} */ (Controller);
+
 /*
  * A text area that wraps a long single line, such as a title, so all of it
  * shows: Enter adds no line break, pasted breaks become spaces, and the field
  * grows with its text where the browser can't size it to its content itself.
  */
-export default class extends Controller {
+export default class extends BaseController {
     connect() {
         this.resize();
     }
 
+    /** @param {KeyboardEvent} event */
     preventBreak(event) {
         if (event.key === 'Enter') {
             event.preventDefault();

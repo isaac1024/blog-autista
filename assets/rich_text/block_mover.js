@@ -2,12 +2,17 @@ import { Extension } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { movePlan, onHeading } from './block_movement.js';
 
+/** @typedef {import('./block_movement.js').Direction} Direction */
+
 /** Moves the current block, or its section, past its neighbour. */
 export const BlockMover = Extension.create({
     name: 'blockMover',
 
     addOptions() {
-        return { onMove: () => {}, onControlsRequest: () => {} };
+        return {
+            onMove: /** @type {(direction: Direction, section: boolean) => void} */ (() => {}),
+            onControlsRequest: () => {},
+        };
     },
 
     addCommands() {
@@ -40,6 +45,7 @@ export const BlockMover = Extension.create({
     },
 
     addKeyboardShortcuts() {
+        /** @param {Direction} direction */
         const move = (direction) => {
             const section = onHeading(this.editor.state);
 

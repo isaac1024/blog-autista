@@ -1,7 +1,11 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 
-/** The quote around the cursor, with where it starts, or null outside of one. */
+/**
+ * The quote around the cursor, with where it starts, or null outside of one.
+ *
+ * @param {import('@tiptap/pm/state').EditorState} state
+ */
 const currentQuote = (state) => {
     const { $from } = state.selection;
 
@@ -51,7 +55,7 @@ export const QuoteSource = Node.create({
                     const { node, pos } = quote;
                     let end = pos + node.nodeSize - 1;
 
-                    if (node.lastChild.type.name !== this.name) {
+                    if (node.lastChild?.type.name !== this.name) {
                         tr.insert(end, this.type.create());
                         end += 2;
                     }
@@ -74,7 +78,13 @@ export const QuoteSource = Node.create({
                     return false;
                 }
 
-                const { pos, node } = currentQuote(this.editor.state);
+                const quote = currentQuote(this.editor.state);
+
+                if (quote === null) {
+                    return false;
+                }
+
+                const { pos, node } = quote;
                 const after = pos + node.nodeSize;
 
                 return this.editor.chain()

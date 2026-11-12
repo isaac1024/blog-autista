@@ -3,16 +3,27 @@
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2023", "DOM"],
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
     "strict": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@symfony/stimulus-bundle": [
+        "./vendor/symfony/stimulus-bundle/assets/dist/loader"
+      ]
+    }
   },
   "include": [
-    "assets/rich_text/block_movement.js",
-    "assets/shared/forms.js",
-    "assets/shared/http.js"
+    "assets/**/*.js",
+    "assets/**/*.d.ts"
+  ],
+  "exclude": [
+    "assets/vendor"
   ]
 }

@@ -1,9 +1,31 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 
 /**
+ * @typedef {object} ImageSummary
+ * @property {string} thumbnail
+ * @property {string} status
+ * @property {string} alt
+ * @property {string} caption
+ * @property {boolean} published
+ */
+
+/**
+ * @typedef {object} ImageLabels
+ * @property {string} loading
+ * @property {string} unknown
+ * @property {string} missing
+ * @property {string} embedded
+ * @property {string} offSite
+ */
+
+/**
  * Draws an embedded image as the CMS knows it now: its thumbnail, its texts
  * and where it stands for the site. Undefined while it is being looked up,
  * null when there is no such image any longer, false when it can't be checked.
+ *
+ * @param {HTMLElement} figure
+ * @param {ImageSummary|null|false|undefined} image
+ * @param {ImageLabels} labels
  */
 const drawImage = (figure, image, labels) => {
     figure.replaceChildren();
@@ -65,7 +87,11 @@ export const EmbeddedImage = Node.create({
     draggable: false,
 
     addOptions() {
-        return { describe: () => undefined, views: new Set(), labels: {} };
+        return {
+            describe: /** @type {(id: string) => ImageSummary|null|false|undefined} */ (() => undefined),
+            views: /** @type {Set<() => void>} */ (new Set()),
+            labels: /** @type {ImageLabels} */ ({}),
+        };
     },
 
     addAttributes() {

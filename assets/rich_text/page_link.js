@@ -3,6 +3,12 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
 /**
+ * Where a linked page stands for the site, as the CMS knows it now.
+ *
+ * @typedef {'published'|'offSite'|'missing'|'unknown'|'loading'} PageState
+ */
+
+/**
  * An internal link to a page, kept by its id alone. It has no href in the CMS:
  * the editor must not navigate away, and the site resolves the current address.
  *
@@ -19,8 +25,7 @@ export const PageLink = Mark.create({
 
     addOptions() {
         return {
-            // 'published', 'offSite', 'missing', 'unknown' or 'loading'.
-            stateOf: () => 'loading',
+            stateOf: /** @type {(id: string) => PageState} */ (() => 'loading'),
         };
     },
 
@@ -31,6 +36,7 @@ export const PageLink = Mark.create({
             key: pageLinksKey,
             props: {
                 decorations: (state) => {
+                    /** @type {Decoration[]} */
                     const decorations = [];
 
                     state.doc.descendants((node, position) => {
