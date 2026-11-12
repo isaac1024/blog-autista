@@ -43,4 +43,14 @@ final class DataTable
         $this->columns = $columns;
         $this->rows = $rows;
     }
+
+    /**
+     * How wide the bar of a share is, in whole percent of its row: the
+     * stylesheet has a class for each, since the content security policy
+     * refuses a style attribute.
+     */
+    public function width(float $share): int
+    {
+        return (int) round(100 * max(0.0, min(1.0, $share)));
+    }
 }

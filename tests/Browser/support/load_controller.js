@@ -27,8 +27,6 @@ const IMPORTS = {
     'prosemirror-tables': '/assets/vendor/prosemirror-tables',
     'prosemirror-transform': '/assets/vendor/prosemirror-transform',
     'prosemirror-view': '/assets/vendor/prosemirror-view',
-    'prosemirror-view/style/prosemirror.min.css': '/empty-style.js',
-    'prosemirror-tables/style/tables.min.css': '/empty-style.js',
     'rope-sequence': '/assets/vendor/rope-sequence',
     'w3c-keyname': '/assets/vendor/w3c-keyname',
 };
@@ -83,12 +81,6 @@ export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = 
                         </body>
                     </html>`,
             });
-
-            return;
-        }
-
-        if (url.pathname === '/empty-style.js') {
-            await route.fulfill({ contentType: 'text/javascript', body: '' });
 
             return;
         }

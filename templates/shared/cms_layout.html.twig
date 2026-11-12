@@ -120,5 +120,15 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
-{# The Stimulus controllers of the editors of the CMS. #}
-{% block importmap %}{{ importmap('cms') }}{% endblock %}
+{#
+    The base styles of the rich-text editor, linked here rather than imported
+    from its controller: AssetMapper turns a CSS import into a data: module,
+    which the content security policy refuses.
+#}
+{% block stylesheets %}
+        <link rel="stylesheet" href="{{ asset('vendor/prosemirror-view/style/prosemirror.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('vendor/prosemirror-tables/style/tables.min.css') }}">
+{% endblock %}
+
+{# The Stimulus controllers of the editors of the CMS; the import map carries the nonce of the request. #}
+{% block importmap %}{{ importmap('cms', {nonce: csp_nonce('script')}) }}{% endblock %}

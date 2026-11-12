@@ -13,7 +13,7 @@
             <tr>
                 <th class="border-b border-divider py-2 text-left font-normal" scope="row">
                     <span class="break-words">{{ row.name }}</span>
-                    <span class="mt-1 block h-1 bg-chart forced-colors:bg-[CanvasText]" style="width: {{ (row.share * 100)|round(2) }}%" aria-hidden="true"></span>
+                    <span class="mt-1 block h-1 bg-chart forced-colors:bg-[CanvasText] w-[{{ this.width(row.share) }}%]" aria-hidden="true"></span>
                 </th>
 {% for figure in row.figures %}
                 <td class="border-b border-divider py-2 pl-4 text-right align-top tabular-nums whitespace-nowrap">{{ figure }}</td>

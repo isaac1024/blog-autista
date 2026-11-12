@@ -20,7 +20,7 @@ final class ColumnChartTest extends TestCase
 
         self::assertSame(9, $chart->peak());
         self::assertSame('9 visitas', $chart->peakShown());
-        self::assertSame([33.33, 100.0, 11.11, 0.0], [$chart->height(3), $chart->height(9), $chart->height(1), $chart->height(0)]);
+        self::assertSame([33, 100, 11, 0], [$chart->height(3), $chart->height(9), $chart->height(1), $chart->height(0)]);
     }
 
     /**
@@ -34,7 +34,7 @@ final class ColumnChartTest extends TestCase
 
             self::assertSame(1, $chart->peak());
             self::assertSame('1', $chart->peakShown());
-            self::assertSame(0.0, $chart->height(0));
+            self::assertSame(0, $chart->height(0));
         }
     }
 
@@ -46,7 +46,7 @@ final class ColumnChartTest extends TestCase
         $chart = self::chart([1, 0]);
 
         self::assertSame('1 visitas', $chart->peakShown());
-        self::assertSame(100.0, $chart->height(1));
+        self::assertSame(100, $chart->height(1));
     }
 
     /**

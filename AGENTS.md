@@ -108,6 +108,14 @@ and values in a `Properties` typedef and extends
 `ControllerWith<Properties>` from `assets/controllers/controller_types.d.ts`.
 Endpoint responses are `unknown` until cast to the shape the endpoint documents.
 
+A Content-Security-Policy (`config/packages/nelmio_security.yaml`) lets only the
+site's own files run and style the pages. No inline `<script>`, `<style>` or
+`style="…"`: a dynamic size is a class (see the `@source inline()` ranges in
+`app.css`), and a stylesheet is linked from a layout, never imported from
+JavaScript, which AssetMapper would turn into a `data:` module. The CMS import
+map is the one inline script, with `csp_nonce('script')`; the public site uses
+no nonce, so Varnish can cache its pages.
+
 ## Code style
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived

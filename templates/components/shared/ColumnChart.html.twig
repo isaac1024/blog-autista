@@ -15,7 +15,7 @@
             <div class="flex h-40 items-end border-b border-t border-divider">
 {% for point in points %}
                 <div class="flex h-full min-w-0 flex-1 items-end justify-center px-px hover:bg-accent-soft" title="{{ point.label }}: {{ point.shown }} {{ valueLabel }}">
-                    <div class="w-full max-w-6 bg-chart forced-colors:bg-[CanvasText]" style="height: {{ this.height(point.value) }}%"></div>
+                    <div class="w-full max-w-6 bg-chart forced-colors:bg-[CanvasText] h-[{{ this.height(point.value) }}%]"></div>
                 </div>
 {% endfor %}
             </div>

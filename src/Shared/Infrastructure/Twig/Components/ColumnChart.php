@@ -63,11 +63,13 @@ final class ColumnChart
     }
 
     /**
-     * How tall a column is, in percent of the plot.
+     * How tall a column is, in whole percent of the plot: the stylesheet has
+     * a class for each, since the content security policy refuses a style
+     * attribute.
      */
-    public function height(int $value): float
+    public function height(int $value): int
     {
-        return round(100 * $value / $this->peak(), 2);
+        return (int) round(100 * $value / $this->peak());
     }
 
     public function headingId(): string

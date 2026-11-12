@@ -24,8 +24,6 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
-import 'prosemirror-view/style/prosemirror.min.css';
-import 'prosemirror-tables/style/tables.min.css';
 
 /*
  * Mounts the Tiptap editor of the Shared:RichTextEditor component.
@@ -293,6 +291,8 @@ export default class extends BaseController {
         this.imageSearches = new LatestRequest(this.abortController.signal);
         this.editor = new Editor({
             element: this.editorTarget,
+            // The base styles come from the stylesheets the CMS links and app.css: an injected <style> breaks the content security policy.
+            injectCSS: false,
             extensions: this.extensions(),
             content: JSON.parse(this.inputTarget.value),
             editorProps: {

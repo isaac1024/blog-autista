@@ -3,6 +3,9 @@
 @source "../../templates";
 @source "../../src";
 @source "../controllers";
+/* The heights and widths of the charts, in whole percent: a style attribute would break the content security policy. */
+@source inline("h-[{0..100}%]");
+@source inline("w-[{0..100}%]");
 
 @font-face {
     font-family: "Atkinson Hyperlegible";
@@ -346,6 +349,19 @@
         & h2,
         & h3 {
             scroll-margin-top: 1.5rem;
+        }
+
+        /*
+         * What Tiptap would inject in a <style> of its own, which the content
+         * security policy refuses, beyond the prosemirror.css loaded: blocks
+         * drawn by a node view wrap as plain markup does.
+         */
+        & [contenteditable="false"] {
+            white-space: normal;
+
+            & [contenteditable="true"] {
+                white-space: pre-wrap;
+            }
         }
 
         /* The text keeps its measure. */
