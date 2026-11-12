@@ -11,8 +11,10 @@ import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { BlockMover } from '../rich_text/block_mover.js';
-import { onHeading } from '../rich_text/block_movement.js';
-import { matches, menuAction, menuPosition } from '../rich_text/block_menu.js';
+import { movedMessage, onHeading } from '../rich_text/block_movement.js';
+import { currentKind, matches, menuAction, menuPosition } from '../rich_text/block_menu.js';
+import { linkTarget, pageIdsIn, pageStateOf } from '../rich_text/pages.js';
+import { maxLengthMessage } from '../form/character_count.js';
 import { currentSection, sectionsOf } from '../rich_text/outline.js';
 import { EmbeddedImage } from '../rich_text/embedded_image.js';
 import { Widget } from '../rich_text/widget.js';
@@ -24,7 +26,7 @@ import { notifyForm } from '../shared/forms.js';
 import { countText } from '../shared/count_text.js';
 import { fetchJson } from '../shared/http.js';
 import { LatestRequest } from '../shared/latest_request.js';
-import { LOADING, MISSING, UNKNOWN, found } from '../shared/lookup.js';
+import { LOADING, MISSING, UNKNOWN, found, lookupAmong } from '../shared/lookup.js';
 
 /*
  * Mounts the Tiptap editor of the Shared:RichTextEditor component.
@@ -494,23 +496,8 @@ export default class extends BaseController {
             return;
         }
 
-        /** @type {Set<string>} */
-        const ids = new Set();
-
-        /** @param {string|null|undefined} id */
-        const unknown = (id) => Boolean(id) && this.pageState(id ?? '') === 'loading' && !this.pagesLookingUp.has(id ?? '');
-
-        this.editor.state.doc.descendants((node) => {
-            if (node.type.name === 'widget' && unknown(node.attrs.id)) {
-                ids.add(node.attrs.id);
-            }
-
-            for (const mark of node.marks) {
-                if (mark.type.name === 'link' && unknown(mark.attrs.id)) {
-                    ids.add(mark.attrs.id);
-                }
-            }
-        });
+        // The pages cited that no lookup has answered for, nor is asking about.
+        const ids = new Set(pageIdsIn(this.editor.state.doc).filter((id) => this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id)));
 
         if (ids.size === 0) {
             return;
@@ -558,28 +545,16 @@ export default class extends BaseController {
      * @returns {PageState}
      */
     pageState(id) {
-        const page = this.pages.get(id);
-
-        if (page) {
-            return page.published ? 'published' : 'offSite';
-        }
-
-        return this.absentPageState(id);
+        return pageStateOf(this.pageLookup(id));
     }
 
     /**
-     * How a page the editor holds nothing of stands: still being looked up,
-     * found to be no page, or not checkable.
+     * What the lookups so far know of a page.
      *
      * @param {string} id
-     * @returns {'missing'|'unknown'|'loading'}
      */
-    absentPageState(id) {
-        if (this.missingPages.has(id)) {
-            return 'missing';
-        }
-
-        return this.pagesUnknown.has(id) ? 'unknown' : 'loading';
+    pageLookup(id) {
+        return lookupAmong(id, { found: this.pages, missing: this.missingPages, unknown: this.pagesUnknown });
     }
 
     /**
@@ -588,16 +563,7 @@ export default class extends BaseController {
      * @param {string} id
      */
     describePage(id) {
-        const labels = this.pageLabelsValue;
-        const page = this.pages.get(id);
-
-        if (page === undefined) {
-            return labels[this.absentPageState(id)];
-        }
-
-        const target = labels.target.replace('%title%', page.title).replace('%status%', page.status);
-
-        return page.published ? target : `${target} ${labels.offSite}`;
+        return linkTarget(this.pageLookup(id), this.pageLabelsValue);
     }
 
     /**
@@ -791,13 +757,11 @@ export default class extends BaseController {
             return;
         }
 
-        const count = [...this.editor.state.doc.textContent].length;
-        const message = count > this.maxLengthValue ? this.countOverValue : this.countValue;
-
-        this.countTarget.textContent = message
-            .replace('%count%', String(count))
-            .replace('%max%', String(this.maxLengthValue))
-            .replace('%over%', String(count - this.maxLengthValue));
+        this.countTarget.textContent = maxLengthMessage(this.editor.state.doc.textContent, {
+            max: this.maxLengthValue,
+            count: this.countValue,
+            over: this.countOverValue,
+        });
     }
 
     disconnect() {
@@ -1005,19 +969,10 @@ export default class extends BaseController {
     }
 
     currentBlock() {
-        if (this.editor.isActive('callout')) {
-            return `callout:${this.editor.getAttributes('callout').variant}`;
-        }
-
-        if (this.editor.isActive('heading')) {
-            return `heading:${this.editor.getAttributes('heading').level}`;
-        }
-
-        /** @type {Record<string, string>} */
-        const wrapper = { blockquote: 'quote', bulletList: 'bulletList', orderedList: 'orderedList' };
-        const active = Object.keys(wrapper).find((name) => this.editor.isActive(name));
-
-        return active ? wrapper[active] : 'paragraph';
+        return currentKind({
+            isActive: (name) => this.editor.isActive(name),
+            getAttributes: (name) => this.editor.getAttributes(name),
+        });
     }
 
     /**
@@ -1027,11 +982,12 @@ export default class extends BaseController {
      * @param {boolean} section
      */
     announceMove(direction, section) {
-        const message = section
-            ? (direction < 0 ? this.sectionMovedUpValue : this.sectionMovedDownValue)
-            : (direction < 0 ? this.movedUpValue : this.movedDownValue);
-
-        this.announce(message);
+        this.announce(movedMessage(direction, section, {
+            movedUp: this.movedUpValue,
+            movedDown: this.movedDownValue,
+            sectionMovedUp: this.sectionMovedUpValue,
+            sectionMovedDown: this.sectionMovedDownValue,
+        }));
     }
 
     /**

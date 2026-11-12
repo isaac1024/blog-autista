@@ -30,3 +30,26 @@ export const countMessage = (text, { min, max, short, fits, long }) => {
         .replace('%min%', String(min))
         .replace('%max%', String(max));
 };
+
+/**
+ * @typedef {object} MaxLengthRule
+ * @property {number} max
+ * @property {string} count With %count% and %max% where the numbers go.
+ * @property {string} over With %count%, %max% and %over%, how many past it.
+ */
+
+/**
+ * How long a text runs against the most it takes, in words, every
+ * character counted as people see it.
+ *
+ * @param {string} text
+ * @param {MaxLengthRule} rule
+ */
+export const maxLengthMessage = (text, { max, count: within, over }) => {
+    const count = [...text].length;
+
+    return (count > max ? over : within)
+        .replace('%count%', String(count))
+        .replace('%max%', String(max))
+        .replace('%over%', String(count - max));
+};

@@ -151,3 +151,27 @@ export const movePlan = (doc, index, direction) => {
 
     return { blocks, first: [start, end], second: [end, next], moving: 'first' };
 };
+
+/**
+ * @typedef {object} MoveLabels
+ * @property {string} movedUp
+ * @property {string} movedDown
+ * @property {string} sectionMovedUp
+ * @property {string} sectionMovedDown
+ */
+
+/**
+ * What is said once a block, or a section, moved: nothing changes under the
+ * cursor, so only words tell where it went.
+ *
+ * @param {Direction} direction
+ * @param {boolean} section
+ * @param {MoveLabels} labels
+ */
+export const movedMessage = (direction, section, labels) => {
+    if (section) {
+        return direction === -1 ? labels.sectionMovedUp : labels.sectionMovedDown;
+    }
+
+    return direction === -1 ? labels.movedUp : labels.movedDown;
+};

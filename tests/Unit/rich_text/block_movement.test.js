@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { movePlan, onHeading, topLevelBlocks } from '../../../assets/rich_text/block_movement.js';
+import { movePlan, movedMessage, onHeading, topLevelBlocks } from '../../../assets/rich_text/block_movement.js';
 
 const block = (type = 'paragraph', level = null) => ({
     type: { name: type },
@@ -84,4 +84,13 @@ test('a section never leaves its parent nor rises above the first heading of its
     // An h3 just under its h2, either way.
     assert.equal(movePlan(documentOf(block('heading', 2), block(), block('heading', 3), block()), 2, -1), null);
     assert.equal(movePlan(documentOf(block('heading', 2), block('heading', 3), block(), block('heading', 2)), 1, 1), null);
+});
+
+test('what is said once something moved names a block or a section, and where it went', () => {
+    const labels = { movedUp: 'Block up', movedDown: 'Block down', sectionMovedUp: 'Section up', sectionMovedDown: 'Section down' };
+
+    assert.equal(movedMessage(-1, false, labels), 'Block up');
+    assert.equal(movedMessage(1, false, labels), 'Block down');
+    assert.equal(movedMessage(-1, true, labels), 'Section up');
+    assert.equal(movedMessage(1, true, labels), 'Section down');
 });

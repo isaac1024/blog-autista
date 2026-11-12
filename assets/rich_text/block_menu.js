@@ -73,3 +73,26 @@ export const menuPosition = (anchor, menu, viewport) => {
         left: Math.max(Math.min(anchor.left, viewport.width - menu.width - EDGE), EDGE),
     };
 };
+
+/** The kinds that wrap the paragraph, by the name of their node. @type {Record<string, string>} */
+const WRAPPERS = { blockquote: 'quote', bulletList: 'bulletList', orderedList: 'orderedList' };
+
+/**
+ * The kind of block under the cursor, as the menu names it: a callout or a
+ * heading with its variant, a quote or a list, or else a paragraph.
+ *
+ * @param {{isActive: (name: string) => boolean, getAttributes: (name: string) => Record<string, unknown>}} editor
+ */
+export const currentKind = ({ isActive, getAttributes }) => {
+    if (isActive('callout')) {
+        return `callout:${String(getAttributes('callout').variant)}`;
+    }
+
+    if (isActive('heading')) {
+        return `heading:${String(getAttributes('heading').level)}`;
+    }
+
+    const wrapper = Object.keys(WRAPPERS).find((name) => isActive(name));
+
+    return wrapper === undefined ? 'paragraph' : WRAPPERS[wrapper];
+};

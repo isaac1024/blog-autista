@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { matches, menuAction, menuPosition } from '../../../assets/rich_text/block_menu.js';
+import { currentKind, matches, menuAction, menuPosition } from '../../../assets/rich_text/block_menu.js';
 
 const slash = (index, count = 4) => ({ mode: 'slash', index, count });
 const button = (index, count = 4) => ({ mode: 'button', index, count });
@@ -59,4 +59,24 @@ test('the menu stays below when it fits exactly, and keeps its gap to what opene
     // 500 + 8 + 300 = 808: just fits a screen of 808, not one of 805.
     assert.equal(menuPosition({ top: 480, bottom: 500, left: 40 }, menu, { width: 1000, height: 808 }).top, 508);
     assert.equal(menuPosition({ top: 480, bottom: 500, left: 40 }, menu, { width: 1000, height: 805 }).top, 172);
+});
+
+const editorOn = (active, attributes = {}) => ({
+    isActive: (name) => active.includes(name),
+    getAttributes: (name) => attributes[name] ?? {},
+});
+
+test('the kind under the cursor is a callout or a heading with its variant', () => {
+    assert.equal(currentKind(editorOn(['callout', 'paragraph'], { callout: { variant: 'warning' } })), 'callout:warning');
+    assert.equal(currentKind(editorOn(['heading'], { heading: { level: 3 } })), 'heading:3');
+    // A callout wins over the heading inside it.
+    assert.equal(currentKind(editorOn(['callout', 'heading'], { callout: { variant: 'note' }, heading: { level: 2 } })), 'callout:note');
+});
+
+test('the kind under the cursor is the quote or list that wraps it, or else a paragraph', () => {
+    assert.equal(currentKind(editorOn(['blockquote'])), 'quote');
+    assert.equal(currentKind(editorOn(['bulletList'])), 'bulletList');
+    assert.equal(currentKind(editorOn(['orderedList'])), 'orderedList');
+    assert.equal(currentKind(editorOn(['paragraph'])), 'paragraph');
+    assert.equal(currentKind(editorOn([])), 'paragraph');
 });

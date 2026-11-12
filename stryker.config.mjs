@@ -19,6 +19,7 @@ export default {
         'assets/rich_text/block_movement.js',
         'assets/rich_text/block_menu.js',
         'assets/rich_text/outline.js',
+        'assets/rich_text/pages.js',
     ],
     coverageAnalysis: 'perTest',
     thresholds: { high: 90, low: 80, break: 80 },
