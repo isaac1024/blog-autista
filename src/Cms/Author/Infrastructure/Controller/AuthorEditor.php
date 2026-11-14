@@ -110,8 +110,8 @@ final readonly class AuthorEditor
     /**
      * What is done to the author apart from editing it, offered only when the
      * author allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, seeing what its bio
-     * uses, taking it off the site, and, each confirmed first, discarding its
+     * and can be sent to anyone, seeing it on the site, seeing what it signs,
+     * taking it off the site, and, each confirmed first, discarding its
      * unpublished changes or deleting it.
      *
      * @return list<PageComponent>
@@ -128,6 +128,12 @@ final readonly class AuthorEditor
                 'label' => $this->translator->trans('cms.authors.edit.view_on_site'),
             ]);
         }
+
+        // What the author signs, on a page of its own.
+        $actions[] = new PageComponent('Shared:ButtonLink', [
+            'url' => $this->urlGenerator->generate('cms_relations', ['type' => 'authors', 'id' => $author->id]),
+            'label' => $this->translator->trans('cms.authors.edit.relations'),
+        ]);
 
         if ($author->changed) {
             $actions[] = $this->confirmModal($author, 'discard', 'cms_authors_discard', 'secondary');

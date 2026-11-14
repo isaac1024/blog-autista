@@ -10,7 +10,7 @@ use Shared\Domain\Criteria\InvalidCriteria;
 
 /**
  * Finds one page of the resources of the CMS that use the one given: pages
- * first, then images, then the settings.
+ * first, then images, then the settings, then the authors, then the posts.
  */
 final readonly class UsersFinder
 {

@@ -135,9 +135,9 @@ final readonly class PostEditor
     /**
      * What is done to the post apart from editing it, offered only when the
      * post allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, taking it off the
-     * site, and, each confirmed first, discarding its unpublished changes or
-     * deleting it.
+     * and can be sent to anyone, seeing it on the site, seeing what leads to
+     * it, taking it off the site, and, each confirmed first, discarding its
+     * unpublished changes or deleting it.
      *
      * @return list<PageComponent>
      */
@@ -154,6 +154,12 @@ final readonly class PostEditor
                 'label' => $this->translator->trans('cms.posts.edit.view_on_site'),
             ]);
         }
+
+        // What leads to the post, on a page of its own.
+        $actions[] = new PageComponent('Shared:ButtonLink', [
+            'url' => $this->urlGenerator->generate('cms_relations', ['type' => 'posts', 'id' => $post->id]),
+            'label' => $this->translator->trans('cms.posts.edit.relations'),
+        ]);
 
         if ($post->changed) {
             $actions[] = $this->confirmModal($post, 'discard', 'cms_posts_discard', 'secondary');

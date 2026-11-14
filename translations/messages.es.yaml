@@ -354,6 +354,34 @@ cms:
             empty:
                 title: 'Nada usa esta imagen'
                 message: 'Ninguna página ni biografía de autor la muestra, ni los ajustes la usan.'
+        post:
+            subtitle: 'Lo que lleva al post «%name%».'
+            back: 'Editar el post'
+            list: 'Lo que usa el post «%name%»'
+            empty:
+                title: 'Nada usa este post'
+                message: 'Ningún contenido del blog lo usa.'
+        section:
+            subtitle: 'Los posts archivados en la sección «%name%».'
+            back: 'Editar la sección'
+            list: 'Lo que usa la sección «%name%»'
+            empty:
+                title: 'Nada usa esta sección'
+                message: 'Ningún post está archivado en ella.'
+        tag:
+            subtitle: 'Los posts etiquetados con «%name%».'
+            back: 'Editar la etiqueta'
+            list: 'Lo que usa la etiqueta «%name%»'
+            empty:
+                title: 'Nada usa esta etiqueta'
+                message: 'Ningún post lleva esta etiqueta.'
+        author:
+            subtitle: 'Los posts que firma «%name%».'
+            back: 'Editar el autor'
+            list: 'Lo que usa el autor «%name%»'
+            empty:
+                title: 'Nada usa este autor'
+                message: 'Ningún post lo firma.'
     settings:
         title: 'Ajustes'
         dates: 'Creados el %created% · Modificados el %updated%'
@@ -598,6 +626,7 @@ cms:
             publish: 'Publicar'
             republish: 'Republicar'
             publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+            relations: 'Dónde se usa'
         preview:
             trigger: 'Vista previa'
             title: 'Vista previa'
@@ -681,6 +710,7 @@ cms:
             publish: 'Publicar'
             republish: 'Republicar'
             publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+            relations: 'Dónde se usa'
         preview:
             trigger: 'Vista previa'
             title: 'Vista previa'
@@ -777,6 +807,7 @@ cms:
             publish: 'Publicar'
             republish: 'Republicar'
             publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+            relations: 'Dónde se usa'
         classification:
             title: 'Sección, autor y etiquetas'
             description: 'Dónde se clasifica el post y quién lo firma. Para publicarlo hacen falta una sección y un autor, los dos publicados.'

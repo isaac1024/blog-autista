@@ -87,9 +87,9 @@ final readonly class TermEditor
     /**
      * What is done to the term apart from editing it, offered only when the
      * term allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, taking it off the
-     * site, and, each confirmed first, discarding its unpublished changes or
-     * deleting it.
+     * and can be sent to anyone, seeing it on the site, seeing what is filed
+     * under it, taking it off the site, and, each confirmed first, discarding
+     * its unpublished changes or deleting it.
      *
      * @return list<PageComponent>
      */
@@ -105,6 +105,12 @@ final readonly class TermEditor
                 'label' => $this->translator->trans('cms.terms.edit.view_on_site'),
             ]);
         }
+
+        // What is filed under the term, on a page of its own.
+        $actions[] = new PageComponent('Shared:ButtonLink', [
+            'url' => $this->urlGenerator->generate('cms_relations', ['type' => $taxonomy->value, 'id' => $term->id]),
+            'label' => $this->translator->trans('cms.terms.edit.relations'),
+        ]);
 
         if ($term->changed) {
             $actions[] = $this->confirmModal($taxonomy, $term, 'discard', 'cms_terms_discard', 'secondary');

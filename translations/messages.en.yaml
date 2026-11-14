@@ -354,6 +354,34 @@ cms:
             empty:
                 title: 'Nothing uses this image'
                 message: 'No page or author bio shows it, and the settings don’t use it.'
+        post:
+            subtitle: 'What leads to the post “%name%”.'
+            back: 'Edit the post'
+            list: 'What uses the post “%name%”'
+            empty:
+                title: 'Nothing uses this post'
+                message: 'No content of the blog uses it.'
+        section:
+            subtitle: 'The posts filed under the section “%name%”.'
+            back: 'Edit the section'
+            list: 'What uses the section “%name%”'
+            empty:
+                title: 'Nothing uses this section'
+                message: 'No post is filed under it.'
+        tag:
+            subtitle: 'The posts tagged “%name%”.'
+            back: 'Edit the tag'
+            list: 'What uses the tag “%name%”'
+            empty:
+                title: 'Nothing uses this tag'
+                message: 'No post has this tag.'
+        author:
+            subtitle: 'The posts “%name%” signs.'
+            back: 'Edit the author'
+            list: 'What uses the author “%name%”'
+            empty:
+                title: 'Nothing uses this author'
+                message: 'No post is signed by them.'
     settings:
         title: 'Settings'
         dates: 'Created on %created% · Changed on %updated%'
@@ -598,6 +626,7 @@ cms:
             publish: 'Publish'
             republish: 'Republish'
             publish_unsaved: 'Save the changes to be able to publish them.'
+            relations: 'Where it is used'
         preview:
             trigger: 'Preview'
             title: 'Preview'
@@ -681,6 +710,7 @@ cms:
             publish: 'Publish'
             republish: 'Republish'
             publish_unsaved: 'Save the changes to be able to publish them.'
+            relations: 'Where it is used'
         preview:
             trigger: 'Preview'
             title: 'Preview'
@@ -777,6 +807,7 @@ cms:
             publish: 'Publish'
             republish: 'Republish'
             publish_unsaved: 'Save the changes to be able to publish them.'
+            relations: 'Where it is used'
         classification:
             title: 'Section, author and tags'
             description: 'Where the post is filed and who signs it. Publishing it needs a section and an author, both published.'

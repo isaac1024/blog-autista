@@ -19,12 +19,12 @@ use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\RedirectRows;
 use Cms\Relation\Application\UserResponse;
 use Cms\Relation\Application\UsersResponse;
-use Cms\Relation\Domain\ResourceType;
 use Cms\Relation\Infrastructure\Controller\AuthorUserRows;
 use Cms\Relation\Infrastructure\Controller\ImageUserRows;
 use Cms\Relation\Infrastructure\Controller\PageUserRows;
 use Cms\Relation\Infrastructure\Controller\PostUserRows;
 use Cms\Relation\Infrastructure\Controller\RelationList;
+use Cms\Relation\Infrastructure\Controller\RelationSegment;
 use Cms\Relation\Infrastructure\Controller\SettingsUserRows;
 use Cms\Relation\Infrastructure\Controller\UserRows;
 use Cms\Settings\Domain\SettingsRepository;
@@ -55,7 +55,7 @@ final class RelationListTest extends TestCase
      * The page tells of the resource it is of, and leads back to its editor.
      */
     #[DataProvider('resources')]
-    public function testItLeadsBackToTheEditorOfTheResource(ResourceType $type, string $texts, string $editor): void
+    public function testItLeadsBackToTheEditorOfTheResource(RelationSegment $type, string $texts, string $editor): void
     {
         $list = $this->list($type, [], 1, false);
 
@@ -64,30 +64,30 @@ final class RelationListTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{ResourceType, string, string}>
+     * @return iterable<string, array{RelationSegment, string, string}>
      */
     public static function resources(): iterable
     {
-        yield 'a page' => [ResourceType::Page, 'cms.relations.page', 'cms_pages_edit'];
-        yield 'an image' => [ResourceType::Image, 'cms.relations.image', 'cms_images_edit'];
+        yield 'a page' => [RelationSegment::Pages, 'cms.relations.page', 'cms_pages_edit'];
+        yield 'an image' => [RelationSegment::Images, 'cms.relations.image', 'cms_images_edit'];
     }
 
     /**
-     * @return iterable<string, array{ResourceType, string}>
+     * @return iterable<string, array{RelationSegment, string}>
      */
     public static function texts(): iterable
     {
-        yield 'a page' => [ResourceType::Page, 'cms.relations.page'];
-        yield 'an image' => [ResourceType::Image, 'cms.relations.image'];
+        yield 'a page' => [RelationSegment::Pages, 'cms.relations.page'];
+        yield 'an image' => [RelationSegment::Images, 'cms.relations.image'];
     }
 
     /**
-     * @return iterable<string, array{ResourceType}>
+     * @return iterable<string, array{RelationSegment}>
      */
     public static function types(): iterable
     {
-        yield 'a page' => [ResourceType::Page];
-        yield 'an image' => [ResourceType::Image];
+        yield 'a page' => [RelationSegment::Pages];
+        yield 'an image' => [RelationSegment::Images];
     }
 
     /**
@@ -95,7 +95,7 @@ final class RelationListTest extends TestCase
      * what does, and goes on through the pages of it.
      */
     #[DataProvider('texts')]
-    public function testItTellsWhenNothingUsesTheResource(ResourceType $type, string $texts): void
+    public function testItTellsWhenNothingUsesTheResource(RelationSegment $type, string $texts): void
     {
         $list = $this->list($type, [], 1, false);
 
@@ -105,30 +105,30 @@ final class RelationListTest extends TestCase
     }
 
     #[DataProvider('pagination')]
-    public function testItListsWhatUsesTheResourceThroughItsPages(ResourceType $type, int $number, bool $hasMore, ?string $previous, ?string $next): void
+    public function testItListsWhatUsesTheResourceThroughItsPages(RelationSegment $type, int $number, bool $hasMore, ?string $previous, ?string $next): void
     {
         $list = $this->list($type, [new UserResponse('page', self::USER)], $number, $hasMore);
 
-        $rows = PageComponents::one($list, 'Shared:ResourceList', ['label' => \sprintf('cms.relations.%s.list(%%name%%=Sobre mí)', $type->value)]);
+        $rows = PageComponents::one($list, 'Shared:ResourceList', ['label' => $type->key('list').'(%name%=Sobre mí)']);
         PageComponents::one($rows, 'Shared:ResourceRow', ['url' => '/cms_pages_edit?id='.self::USER]);
         PageComponents::one($list, 'Shared:Pagination', ['previousUrl' => $previous, 'nextUrl' => $next]);
         self::assertSame([], PageComponents::find($list, 'Shared:EmptyState', []));
     }
 
     /**
-     * @return iterable<string, array{ResourceType, int, bool, ?string, ?string}>
+     * @return iterable<string, array{RelationSegment, int, bool, ?string, ?string}>
      */
     public static function pagination(): iterable
     {
-        yield 'the only page of uses of a page' => [ResourceType::Page, 1, false, null, null];
+        yield 'the only page of uses of a page' => [RelationSegment::Pages, 1, false, null, null];
         yield 'one of many of an image' => [
-            ResourceType::Image,
+            RelationSegment::Images,
             2,
             true,
             '/cms_relations?type=images&id='.self::ID,
             '/cms_relations?type=images&id='.self::ID.'&page=3',
         ];
-        yield 'the first of many of a page' => [ResourceType::Page, 1, true, null, '/cms_relations?type=pages&id='.self::ID.'&page=2'];
+        yield 'the first of many of a page' => [RelationSegment::Pages, 1, true, null, '/cms_relations?type=pages&id='.self::ID.'&page=2'];
     }
 
     /**
@@ -136,19 +136,19 @@ final class RelationListTest extends TestCase
      * on the site.
      */
     #[DataProvider('types')]
-    public function testItTellsOfTheRedirectsLeadingToTheResourceLast(ResourceType $type): void
+    public function testItTellsOfTheRedirectsLeadingToTheResourceLast(RelationSegment $type): void
     {
         $list = $this->list($type, [], 1, false);
 
         $last = $list->main[\count($list->main) - 1];
         self::assertSame(['Shared:Panel', 'cms.redirects.incoming.title'], [$last->name, $last->props['title']]);
-        self::assertSame(\sprintf('cms.redirects.incoming.%s.empty(%%name%%=Sobre mí)', $type->value), $last->props['description']);
+        self::assertSame(\sprintf('cms.redirects.incoming.%s.empty(%%name%%=Sobre mí)', $type->redirectType()->value), $last->props['description']);
     }
 
     /**
      * @param list<UserResponse> $users
      */
-    private function list(ResourceType $type, array $users, int $number, bool $hasMore): Page
+    private function list(RelationSegment $type, array $users, int $number, bool $hasMore): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
