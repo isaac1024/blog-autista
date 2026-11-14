@@ -34,17 +34,18 @@ final class SearchPreview
     public string $url = '';
 
     /**
-     * Address of the site, which the path of the page follows.
+     * Where the page is served, with %slug% where its slug goes; without it,
+     * the address doesn't follow the slug, as the home page's doesn't.
      */
-    public string $baseUrl = '';
+    public string $address = '';
 
     public string $description = '';
 
     public string $emptyDescription = '';
 
     /**
-     * Ids of the fields that feed the preview; a missing slug means the page
-     * lives at the root.
+     * Ids of the fields that feed the preview; a page whose address doesn't
+     * follow a slug has none.
      *
      * @var array{title: string, description: string, slug?: string}
      */
@@ -57,7 +58,7 @@ final class SearchPreview
         string $label,
         string $title,
         string $url,
-        string $baseUrl,
+        string $address,
         string $description,
         string $emptyDescription,
         array $sources,
@@ -65,7 +66,7 @@ final class SearchPreview
         $this->label = $label;
         $this->title = $title;
         $this->url = $url;
-        $this->baseUrl = $baseUrl;
+        $this->address = $address;
         $this->description = $description;
         $this->emptyDescription = $emptyDescription;
         $this->sources = $sources;

@@ -29,6 +29,8 @@ cms:
         menu: 'Menu'
         pages: 'Pages'
         images: 'Images'
+        sections: 'Sections'
+        tags: 'Tags'
         redirects: 'Redirects'
         settings: 'Settings'
         logout: 'Sign out'
@@ -439,6 +441,143 @@ cms:
             description: 'Write the title. The page web address will be created from it.'
             title_label: 'Title'
             submit: 'Create page'
+    sections:
+        title: 'Sections'
+        subtitle: 'Sections group the posts of the blog by subject. Each post will go in one.'
+        add: 'Add section'
+        empty:
+            title: 'No sections yet'
+            message: 'Sections you create will show here.'
+            action: 'Create the first section'
+        search_empty: 'No section has “%name%” in its name.'
+        search_all: 'See every section'
+        modal:
+            title: 'New section'
+            description: 'Write its name. The web address of the section is made from it.'
+            submit: 'Create section'
+        edit:
+            title: 'Edit section'
+            slug_hint: 'Only lowercase letters without accents, digits and hyphens. For example: daily-life. It can’t be “autor”, “tag” or “media”. You can leave it empty until you publish the section.'
+        notices:
+            created: 'Section created.'
+            saved: 'Changes saved.'
+            published: 'Section published on the site.'
+            unpublished: 'Section taken off the site.'
+            discarded: 'Changes discarded: the section is the published one again.'
+            deleted: 'Section deleted.'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The section “%name%” will be the one published on the site again. Changes saved since will be lost. This can’t be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish this section?'
+            description: 'The section “%name%” will leave the site, and its address will answer “not found”. You can publish it again.'
+            submit: 'Yes, unpublish the section'
+        delete:
+            trigger: 'Delete section'
+            title: 'Delete this section?'
+            description: 'The section “%name%” will no longer exist. This can’t be undone.'
+            submit: 'Yes, delete the section'
+    tags:
+        title: 'Tags'
+        subtitle: 'Tags tell what each post is about. A post will be able to have several.'
+        add: 'Add tag'
+        empty:
+            title: 'No tags yet'
+            message: 'Tags you create will show here.'
+            action: 'Create the first tag'
+        search_empty: 'No tag has “%name%” in its name.'
+        search_all: 'See every tag'
+        modal:
+            title: 'New tag'
+            description: 'Write its name. The web address of the tag is made from it.'
+            submit: 'Create tag'
+        edit:
+            title: 'Edit tag'
+            slug_hint: 'Only lowercase letters without accents, digits and hyphens. For example: sensory. You can leave it empty until you publish the tag.'
+        notices:
+            created: 'Tag created.'
+            saved: 'Changes saved.'
+            published: 'Tag published on the site.'
+            unpublished: 'Tag taken off the site.'
+            discarded: 'Changes discarded: the tag is the published one again.'
+            deleted: 'Tag deleted.'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The tag “%name%” will be the one published on the site again. Changes saved since will be lost. This can’t be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish this tag?'
+            description: 'The tag “%name%” will leave the site, and its address will answer “not found”. You can publish it again.'
+            submit: 'Yes, unpublish the tag'
+        delete:
+            trigger: 'Delete tag'
+            title: 'Delete this tag?'
+            description: 'The tag “%name%” will no longer exist. This can’t be undone.'
+            submit: 'Yes, delete the tag'
+    terms:
+        name_label: 'Name'
+        search:
+            label: 'Search by name'
+            submit: 'Search'
+            empty:
+                title: 'No results'
+        list:
+            no_slug: 'No address'
+            updated_at: 'Changed on %date%'
+        edit:
+            dates: 'Created on %created% · Changed on %updated%'
+            view_on_site: 'See on the site'
+            slug_label: 'Web address (slug)'
+            submit: 'Save'
+            publish: 'Publish'
+            republish: 'Republish'
+            publish_unsaved: 'Save the changes to be able to publish them.'
+        preview:
+            trigger: 'Preview'
+            title: 'Preview'
+            description: 'Anyone with this link can see the last version saved, as the site will show it, without signing in. If you save more changes, the link shows them.'
+            url_label: 'Link'
+            url_hint: 'Valid until %expires%. Copy it and send it to anyone.'
+            copy: 'Copy link'
+            copied: 'Link copied.'
+            copy_failed: 'It couldn’t be copied. The link is selected: copy it with Ctrl+C (or Cmd+C).'
+            open: 'Open preview'
+        seo:
+            title: 'Search engines'
+            description: 'How it shows in Google and other search engines. The title of the result is the name.'
+            preview: 'Preview of the result'
+            preview_empty: 'No meta description: the search engine will show the snippet it chooses.'
+            meta_description_label: 'Meta description'
+            meta_description_hint: 'The summary under the title in the results: a sentence or two on which posts are found here.'
+            robots_legend: 'Visibility in search engines'
+            robots:
+                'index,follow':
+                    label: 'Show in search engines'
+                    hint: 'It may show in the results, and its links are followed. This is the usual.'
+                'noindex,follow':
+                    label: 'Don’t show, but follow its links'
+                    hint: 'It doesn’t show in the results, but search engines discover the pages it links to.'
+                'noindex,nofollow':
+                    label: 'Hide entirely'
+                    hint: 'It neither shows in the results nor are its links followed.'
+        status:
+            draft:
+                label: 'Draft'
+                description: 'Draft: not on the site yet.'
+            published:
+                label: 'Published'
+                description: 'Published: the site shows this version.'
+            changed:
+                label: 'Published with changes'
+                description: 'Published with changes: the site shows the previous version until you republish.'
+            unpublished:
+                label: 'Unpublished'
+                description: 'Unpublished: no longer on the site.'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'
@@ -711,6 +850,24 @@ errors:
             published_page: 'A published page can’t be deleted: unpublish it first.'
             linked_page: 'Other pages, image captions or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
             incomplete_dates: 'The publication dates of the page are incomplete.'
+    term:
+        not_found: 'Nothing is published at “%slug%”.'
+        taxonomy:
+            unknown: '“%taxonomy%” is not a taxonomy.'
+        name:
+            too_short: 'The name must have at least %min% characters.'
+            too_long: 'The name can’t be longer than %max% characters.'
+        slug:
+            reserved: 'The site already serves other things under “/%slug%/”, so no section can have that address.'
+            taken: 'Another one already has the address “%slug%”.'
+        publication:
+            without_slug: 'It can’t be published without an address.'
+            without_meta_description: 'It can’t be published without a meta description.'
+            nothing_to_publish: 'It is published as it is: there is nothing to publish.'
+            not_published: 'Only what is published can be unpublished.'
+            no_changes_to_discard: 'There are no unpublished changes to discard.'
+            published_term: 'What is published can’t be deleted: unpublish it first.'
+            incomplete_dates: 'What was ever published has a first and a last publication date.'
     settings:
         already_exist: 'The site already has its settings.'
         name:

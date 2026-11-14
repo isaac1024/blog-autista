@@ -120,7 +120,8 @@ final class PageControllerTest extends WebTestCase
         yield 'capital letters' => ['/Sobre-mi.html'];
         yield 'double hyphen' => ['/sobre--mi.html'];
         yield 'empty slug' => ['/.html'];
-        yield 'without the extension' => ['/sobre-mi'];
+        // Without the extension it is the address of a section, once it ends in a slash.
+        yield 'without the extension, under it' => ['/sobre-mi/otra'];
     }
 
     public function testItOnlyServesTheSiteOnItsHost(): void

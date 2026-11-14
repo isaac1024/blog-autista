@@ -17,12 +17,15 @@ doctrine:
             cms_settings_image_id: Cms\Settings\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_settings_menu: Cms\Settings\Infrastructure\Persistence\Doctrine\MenuType
             cms_settings_version: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsVersionType
+            cms_term_id: Cms\Taxonomy\Infrastructure\Persistence\Doctrine\TermIdType
+            cms_term_version: Cms\Taxonomy\Infrastructure\Persistence\Doctrine\TermVersionType
             cms_slug: Cms\Shared\Infrastructure\Persistence\Doctrine\SlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_visit_id: Web\Analytics\Infrastructure\Persistence\Doctrine\VisitIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            web_term_id: Web\Taxonomy\Infrastructure\Persistence\Doctrine\TermIdType
             web_settings_id: Web\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
         # have to map to a Doctrine type when the schema is introspected. Any
@@ -58,6 +61,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Page/Domain'
                 prefix: 'Cms\Page\Domain'
+            CmsTaxonomy:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Taxonomy/Domain'
+                prefix: 'Cms\Taxonomy\Domain'
             CmsShared:
                 type: attribute
                 is_bundle: false
@@ -88,6 +96,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Settings/Domain'
                 prefix: 'Web\Settings\Domain'
+            WebTaxonomy:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Taxonomy/Domain'
+                prefix: 'Web\Taxonomy\Domain'
             WebProjection:
                 type: attribute
                 is_bundle: false

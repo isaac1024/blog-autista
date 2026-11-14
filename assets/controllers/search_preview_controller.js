@@ -10,7 +10,7 @@ import { searchResult } from '../form/search_preview.js';
  * @property {HTMLElement} titleTarget
  * @property {HTMLElement} descriptionTarget
  * @property {Sources} sourcesValue
- * @property {string} baseValue
+ * @property {string} addressValue
  * @property {string} emptyValue
  * @property {number} titleLimitValue
  * @property {number} descriptionLimitValue
@@ -27,7 +27,7 @@ export default class extends BaseController {
 
     static values = {
         sources: Object,
-        base: String,
+        address: String,
         empty: String,
         titleLimit: Number,
         descriptionLimit: Number,
@@ -52,8 +52,8 @@ export default class extends BaseController {
         };
 
         const result = searchResult(
-            { title: value(title), description: value(description), slug: slug ? value(slug) : null },
-            { base: this.baseValue, titleLimit: this.titleLimitValue, descriptionLimit: this.descriptionLimitValue, empty: this.emptyValue },
+            { title: value(title), description: value(description), slug: slug ? value(slug) : '' },
+            { address: this.addressValue, titleLimit: this.titleLimitValue, descriptionLimit: this.descriptionLimitValue, empty: this.emptyValue },
         );
 
         this.urlTarget.textContent = result.url;

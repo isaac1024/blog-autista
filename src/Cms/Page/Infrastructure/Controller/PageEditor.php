@@ -354,7 +354,7 @@ final readonly class PageEditor
                 'label' => $this->translator->trans('cms.pages.edit.seo.preview'),
                 'title' => $page->title,
                 'url' => $page->home ? $baseUrl.'/' : \sprintf('%s/%s.html', $baseUrl, $page->slug ?? ''),
-                'baseUrl' => $baseUrl,
+                'address' => $page->home ? $baseUrl.'/' : $baseUrl.'/%slug%.html',
                 'description' => $page->metaDescription,
                 'emptyDescription' => $this->translator->trans('cms.pages.edit.seo.preview_empty'),
                 'sources' => $page->home

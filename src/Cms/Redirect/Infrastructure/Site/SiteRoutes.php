@@ -23,6 +23,14 @@ final readonly class SiteRoutes
      */
     private const string PAGE_ROUTE = 'web_page';
 
+    /**
+     * The routes of resources the redirects don't know yet, such as the
+     * sections and the tags: an address they would answer is taken as one
+     * the site doesn't answer itself, as before they existed, so a redirect
+     * may be kept there, and is only followed once the address is a 404.
+     */
+    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag'];
+
     public function __construct(
         private RouterInterface $router,
         #[Autowire(env: 'WEB_HOST')]
@@ -41,6 +49,10 @@ final readonly class SiteRoutes
 
         $route = \is_string($parameters['_route'] ?? null) ? $parameters['_route'] : '';
         $slug = $parameters['slug'] ?? null;
+
+        if (\in_array($route, self::UNKNOWN_ROUTES, true)) {
+            return null;
+        }
 
         return new SiteRoute(self::PAGE_ROUTE === $route && \is_string($slug) ? $slug : null);
     }

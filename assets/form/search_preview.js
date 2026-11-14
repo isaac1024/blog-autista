@@ -12,7 +12,7 @@ export const cut = (text, limit) => {
 
 /**
  * @typedef {object} PreviewRule
- * @property {string} base The address of the site, with no trailing slash.
+ * @property {string} address Where the page is served, with %slug% where its slug goes.
  * @property {number} titleLimit
  * @property {number} descriptionLimit
  * @property {string} empty What a search engine shows with no description.
@@ -20,17 +20,17 @@ export const cut = (text, limit) => {
 
 /**
  * The search result a page would make: its address, its title and its
- * description as a search engine shows them. Without a slug the page is the
- * home of the site.
+ * description as a search engine shows them. An address without %slug%,
+ * such as the home of the site, is the same whatever the slug.
  *
- * @param {{title: string, description: string, slug: string|null}} page
+ * @param {{title: string, description: string, slug: string}} page
  * @param {PreviewRule} rule
  */
-export const searchResult = ({ title, description, slug }, { base, titleLimit, descriptionLimit, empty }) => {
+export const searchResult = ({ title, description, slug }, { address, titleLimit, descriptionLimit, empty }) => {
     const text = description.trim().replace(/\s+/g, ' ');
 
     return {
-        url: slug === null ? `${base}/` : `${base}/${slug.trim()}.html`,
+        url: address.replace('%slug%', slug.trim()),
         title: cut(title.trim(), titleLimit),
         description: text === '' ? empty : cut(text, descriptionLimit),
     };

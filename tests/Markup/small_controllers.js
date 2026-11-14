@@ -36,7 +36,7 @@ export const searchPreview = ({ title = '', description = '', slug = 'first-page
     </form>
     <figure data-controller="search-preview"
         data-search-preview-sources-value='{"title":"page-title","description":"page-description","slug":"page-slug"}'
-        data-search-preview-base-value="https://blogautista.test"
+        data-search-preview-address-value="https://blogautista.test/%slug%.html"
         data-search-preview-title-limit-value="20"
         data-search-preview-description-limit-value="30"
         data-search-preview-empty-value="No description">

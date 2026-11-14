@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { cut, searchResult } from '../../../assets/form/search_preview.js';
 
-const RULE = { base: 'https://blogautista.test', titleLimit: 20, descriptionLimit: 30, empty: 'No description' };
+const RULE = { address: 'https://blogautista.test/%slug%.html', titleLimit: 20, descriptionLimit: 30, empty: 'No description' };
 
 test('a text within its limit is shown whole', () => {
     assert.equal(cut('Twenty characters ok', 20), 'Twenty characters ok');
@@ -24,8 +24,12 @@ test('a page shows its address, title and description as a search engine would',
     });
 });
 
-test('a page with no slug is the home of the site', () => {
-    assert.equal(searchResult({ title: '', description: '', slug: null }, RULE).url, 'https://blogautista.test/');
+test('an address that follows no slug stays as it is', () => {
+    assert.equal(searchResult({ title: '', description: '', slug: '' }, { ...RULE, address: 'https://blogautista.test/' }).url, 'https://blogautista.test/');
+});
+
+test('the slug goes wherever the address puts it', () => {
+    assert.equal(searchResult({ title: '', description: '', slug: 'guias' }, { ...RULE, address: 'https://blogautista.test/%slug%/' }).url, 'https://blogautista.test/guias/');
 });
 
 test('long texts are cut, and an empty description says so', () => {

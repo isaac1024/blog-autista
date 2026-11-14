@@ -34,8 +34,10 @@ test('the preview follows what is written in the fields it previews, wherever th
     assert.deepEqual(result()[0], 'https://blogautista.test/first.html');
 });
 
-test('without a slug source the page is the home of the site', async () => {
-    const { type, result } = await open(searchPreview().replace(SOURCES, '{"title":"page-title","description":"page-description"}'));
+test('without a slug source the address is the one given, as the home of the site has', async () => {
+    const { type, result } = await open(searchPreview()
+        .replace(SOURCES, '{"title":"page-title","description":"page-description"}')
+        .replace('https://blogautista.test/%slug%.html', 'https://blogautista.test/'));
 
     type('page-title', 'Home');
 

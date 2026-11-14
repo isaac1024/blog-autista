@@ -29,6 +29,8 @@ cms:
         menu: 'Menú'
         pages: 'Páginas'
         images: 'Imágenes'
+        sections: 'Secciones'
+        tags: 'Etiquetas'
         redirects: 'Redirecciones'
         settings: 'Ajustes'
         logout: 'Cerrar sesión'
@@ -439,6 +441,143 @@ cms:
             description: 'Escribe el título. La dirección web de la página se creará a partir de él.'
             title_label: 'Título'
             submit: 'Crear página'
+    sections:
+        title: 'Secciones'
+        subtitle: 'Las secciones agrupan los artículos del blog por tema. Cada artículo irá en una sola.'
+        add: 'Añadir sección'
+        empty:
+            title: 'Todavía no hay secciones'
+            message: 'Cuando crees una sección, aparecerá aquí.'
+            action: 'Crear la primera sección'
+        search_empty: 'Ninguna sección tiene «%name%» en el nombre.'
+        search_all: 'Ver todas las secciones'
+        modal:
+            title: 'Nueva sección'
+            description: 'Escribe el nombre. La dirección web de la sección se creará a partir de él.'
+            submit: 'Crear sección'
+        edit:
+            title: 'Editar sección'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: vida-diaria. No puede ser «autor», «tag» ni «media». Puedes dejarla vacía hasta publicar la sección.'
+        notices:
+            created: 'Sección creada.'
+            saved: 'Cambios guardados.'
+            published: 'Sección publicada en la web.'
+            unpublished: 'Sección retirada de la web.'
+            discarded: 'Cambios descartados: la sección vuelve a ser la publicada.'
+            deleted: 'Sección borrada.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'La sección «%name%» volverá a ser la que está publicada en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar esta sección?'
+            description: 'La sección «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
+            submit: 'Sí, despublicar la sección'
+        delete:
+            trigger: 'Borrar sección'
+            title: '¿Borrar esta sección?'
+            description: 'La sección «%name%» dejará de existir. No se puede deshacer.'
+            submit: 'Sí, borrar la sección'
+    tags:
+        title: 'Etiquetas'
+        subtitle: 'Las etiquetas señalan de qué trata cada artículo. Un artículo podrá llevar varias.'
+        add: 'Añadir etiqueta'
+        empty:
+            title: 'Todavía no hay etiquetas'
+            message: 'Cuando crees una etiqueta, aparecerá aquí.'
+            action: 'Crear la primera etiqueta'
+        search_empty: 'Ninguna etiqueta tiene «%name%» en el nombre.'
+        search_all: 'Ver todas las etiquetas'
+        modal:
+            title: 'Nueva etiqueta'
+            description: 'Escribe el nombre. La dirección web de la etiqueta se creará a partir de él.'
+            submit: 'Crear etiqueta'
+        edit:
+            title: 'Editar etiqueta'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: sensorialidad. Puedes dejarla vacía hasta publicar la etiqueta.'
+        notices:
+            created: 'Etiqueta creada.'
+            saved: 'Cambios guardados.'
+            published: 'Etiqueta publicada en la web.'
+            unpublished: 'Etiqueta retirada de la web.'
+            discarded: 'Cambios descartados: la etiqueta vuelve a ser la publicada.'
+            deleted: 'Etiqueta borrada.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'La etiqueta «%name%» volverá a ser la que está publicada en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar esta etiqueta?'
+            description: 'La etiqueta «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
+            submit: 'Sí, despublicar la etiqueta'
+        delete:
+            trigger: 'Borrar etiqueta'
+            title: '¿Borrar esta etiqueta?'
+            description: 'La etiqueta «%name%» dejará de existir. No se puede deshacer.'
+            submit: 'Sí, borrar la etiqueta'
+    terms:
+        name_label: 'Nombre'
+        search:
+            label: 'Buscar por nombre'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+        list:
+            no_slug: 'Sin dirección'
+            updated_at: 'Modificada el %date%'
+        edit:
+            dates: 'Creada el %created% · Modificada el %updated%'
+            view_on_site: 'Ver en la web'
+            slug_label: 'Dirección web (slug)'
+            submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+        preview:
+            trigger: 'Vista previa'
+            title: 'Vista previa'
+            description: 'Cualquiera con este enlace podrá ver la última versión guardada, como se verá en la web, sin iniciar sesión. Si guardas más cambios, el enlace los mostrará.'
+            url_label: 'Enlace'
+            url_hint: 'Válido hasta el %expires%. Cópialo y envíalo a quien quieras.'
+            copy: 'Copiar enlace'
+            copied: 'Enlace copiado.'
+            copy_failed: 'No se ha podido copiar. El enlace está seleccionado: cópialo con Ctrl+C (o Cmd+C).'
+            open: 'Abrir vista previa'
+        seo:
+            title: 'Buscadores'
+            description: 'Cómo aparece en Google y en otros buscadores. El título del resultado es el nombre.'
+            preview: 'Vista previa del resultado'
+            preview_empty: 'Sin meta descripción: el buscador mostrará el fragmento que elija.'
+            meta_description_label: 'Meta descripción'
+            meta_description_hint: 'El resumen que aparece bajo el título en los resultados: una o dos frases que cuenten qué artículos se encuentran aquí.'
+            robots_legend: 'Visibilidad en los buscadores'
+            robots:
+                'index,follow':
+                    label: 'Mostrar en los buscadores'
+                    hint: 'Puede aparecer en los resultados y se siguen sus enlaces. Es lo habitual.'
+                'noindex,follow':
+                    label: 'No mostrar, pero seguir sus enlaces'
+                    hint: 'No aparece en los resultados, pero los buscadores descubren las páginas a las que enlaza.'
+                'noindex,nofollow':
+                    label: 'Ocultar del todo'
+                    hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicada'
+                description: 'Publicada: la web muestra esta versión.'
+            changed:
+                label: 'Publicada con cambios'
+                description: 'Publicada con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicada'
+                description: 'Despublicada: ya no está en la web.'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -711,6 +850,24 @@ errors:
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
             linked_page: 'Otras páginas, pies de foto o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
             incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
+    term:
+        not_found: 'No hay nada publicado en «%slug%».'
+        taxonomy:
+            unknown: '«%taxonomy%» no es una taxonomía.'
+        name:
+            too_short: 'El nombre debe tener al menos %min% caracteres.'
+            too_long: 'El nombre no puede pasar de %max% caracteres.'
+        slug:
+            reserved: 'La web ya sirve otras cosas bajo «/%slug%/», así que ninguna sección puede tener esa dirección.'
+            taken: 'Ya hay otra con la dirección «%slug%».'
+        publication:
+            without_slug: 'No se puede publicar sin dirección.'
+            without_meta_description: 'No se puede publicar sin meta descripción.'
+            nothing_to_publish: 'Ya está publicada tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar lo que está publicado.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
+            incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
         name:

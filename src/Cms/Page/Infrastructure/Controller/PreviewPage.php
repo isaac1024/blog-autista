@@ -12,16 +12,12 @@ use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PagesOnSiteFinder;
 use Cms\Page\Domain\PageRepository;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
-use Cms\Settings\Application\SettingsOnSiteFinder;
-use Cms\Settings\Application\SettingsOnSiteResponse;
-use Cms\Settings\Domain\SettingsRepository;
+use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
-use Shared\Infrastructure\Ui\SiteChrome;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
-use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
@@ -41,7 +37,7 @@ final readonly class PreviewPage
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private SitePage $sitePage,
-        private SettingsRepository $settingsRepository,
+        private PreviewLayout $previewLayout,
         private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
@@ -60,7 +56,7 @@ final readonly class PreviewPage
             : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return ($this->sitePage)(
-            WebLayout::page($page->title, $this->chrome())->withSearchEngineMetadata(
+            $this->previewLayout->page($page->title)->withSearchEngineMetadata(
                 '' === $page->metaDescription ? null : $page->metaDescription,
                 self::ROBOTS,
                 $canonical,
@@ -73,71 +69,6 @@ final readonly class PreviewPage
                 $this->pagesOnSite(SitePage::linkedPageIds($content, $images), $page->id),
             ),
         );
-    }
-
-    /**
-     * The chrome the site paints from its published settings, without any
-     * until they are published.
-     */
-    private function chrome(): SiteChrome
-    {
-        $homeUrl = $this->urlGenerator->generate('web_home');
-        $settings = new SettingsOnSiteFinder()($this->settingsRepository);
-
-        if (null === $settings) {
-            return new SiteChrome(null, $homeUrl, [], [], null);
-        }
-
-        $pages = $this->pagesOnSite([
-            ...array_column($settings->mainMenu, 'page_id'),
-            ...array_column($settings->footerMenu, 'page_id'),
-        ], null);
-
-        return new SiteChrome(
-            $settings->name,
-            $homeUrl,
-            $this->links($settings->mainMenu, $pages),
-            $this->links($settings->footerMenu, $pages),
-            $this->shareImage($settings),
-        );
-    }
-
-    /**
-     * The entries of a menu whose pages are on the site, named by their
-     * labels or else by the titles of their pages.
-     *
-     * @param list<array{page_id: string, label: ?string}> $menu
-     * @param array<string, PageOnSiteResponse>            $pages on the site, keyed by id
-     *
-     * @return list<array{label: string, url: string}>
-     */
-    private function links(array $menu, array $pages): array
-    {
-        $links = [];
-
-        foreach ($menu as $item) {
-            $page = $pages[$item['page_id']] ?? null;
-
-            if (null !== $page) {
-                $links[] = ['label' => $item['label'] ?? $page->title, 'url' => $this->url($page)];
-            }
-        }
-
-        return $links;
-    }
-
-    /**
-     * @return ?array{src: string, width: int, height: int, alt: string}
-     */
-    private function shareImage(SettingsOnSiteResponse $settings): ?array
-    {
-        if (null === $settings->defaultImage) {
-            return null;
-        }
-
-        $image = $this->imagesOnSite([$settings->defaultImage])[$settings->defaultImage] ?? null;
-
-        return null === $image ? null : SiteMedia::shareImage($image->path, $image->alt);
     }
 
     /**
