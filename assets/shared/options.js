@@ -71,3 +71,20 @@ export const pageOption = (page, pick, offSite) => option(
     page.status,
     page.published ? [] : [span('rich-text-page-note', offSite)],
 );
+
+/**
+ * A term to pick, by its name; one that isn't published says the site
+ * doesn't show it.
+ *
+ * @param {{name: string, status: string, published: boolean}} term
+ * @param {() => void} pick
+ * @param {string} offSite
+ */
+export const termOption = (term, pick, offSite) => option(
+    'term',
+    pick,
+    [],
+    term.name,
+    term.status,
+    term.published ? [] : [span('rich-text-term-note', offSite)],
+);

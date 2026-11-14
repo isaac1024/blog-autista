@@ -11,7 +11,7 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 /**
  * The resources that use another, as rows like those of their own lists,
  * each leading to where it is edited: pages first, then images, then the
- * settings. A resource gone meanwhile is left out.
+ * settings, then the authors, then the posts. A resource gone meanwhile is left out.
  */
 final readonly class UserRows
 {
@@ -20,6 +20,7 @@ final readonly class UserRows
         private ImageUserRows $imageUserRows,
         private SettingsUserRows $settingsUserRows,
         private AuthorUserRows $authorUserRows,
+        private PostUserRows $postUserRows,
     ) {}
 
     /**
@@ -29,7 +30,7 @@ final readonly class UserRows
      */
     public function __invoke(array $users): array
     {
-        $ids = [ResourceType::Page->value => [], ResourceType::Image->value => [], ResourceType::Settings->value => [], ResourceType::Author->value => []];
+        $ids = [ResourceType::Page->value => [], ResourceType::Image->value => [], ResourceType::Settings->value => [], ResourceType::Author->value => [], ResourceType::Post->value => []];
 
         foreach ($users as $user) {
             $ids[$user->type][] = $user->id;
@@ -40,6 +41,7 @@ final readonly class UserRows
             ...($this->imageUserRows)($ids[ResourceType::Image->value]),
             ...($this->settingsUserRows)($ids[ResourceType::Settings->value]),
             ...($this->authorUserRows)($ids[ResourceType::Author->value]),
+            ...($this->postUserRows)($ids[ResourceType::Post->value]),
         ];
     }
 }

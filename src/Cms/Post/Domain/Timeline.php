@@ -62,9 +62,4 @@ final readonly class Timeline
     {
         return $this->firstPublishedAt;
     }
-
-    public function lastPublishedAt(): ?\DateTimeImmutable
-    {
-        return $this->lastPublishedAt;
-    }
 }

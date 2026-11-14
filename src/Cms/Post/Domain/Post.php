@@ -59,24 +59,25 @@ final class Post extends AggregateRoot
      * rest of the address, while the post isn't on the site.
      */
     #[ORM\Column(name: 'published_section_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
-    private ?Slug $publishedSectionSlug = null;
+    private ?Slug $publishedSectionSlug;
 
     /**
      * The day it was first published, in Madrid, while it is on the site.
      */
     #[ORM\Column(name: 'published_day', type: 'date_immutable', nullable: true)]
-    private ?\DateTimeImmutable $publishedDay = null;
+    private ?\DateTimeImmutable $publishedDay;
 
     /**
      * Its own slug where the site serves it, while it is on the site.
      */
     #[ORM\Column(name: 'published_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
-    private ?Slug $publishedSlug = null;
+    private ?Slug $publishedSlug;
 
     /**
-     * One argument per mapped field of its versions and dates: Doctrine
-     * hydrates it without calling this, and the named constructor starts
-     * each field. The address starts empty, as the post is off the site.
+     * One argument per mapped field, the address on the site standing for
+     * its three columns: Doctrine hydrates it without calling this, and the
+     * named constructor starts each field. A post off the site has no
+     * address there, whatever is given.
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
@@ -97,7 +98,13 @@ final class Post extends AggregateRoot
         private Timeline $timeline,
         #[ORM\Column]
         private int $publicationRevision,
-    ) {}
+        ?PostAddress $address,
+    ) {
+        $onSite = PostStatus::Published === $status ? $address : null;
+        $this->publishedSectionSlug = $onSite?->section();
+        $this->publishedDay = null === $onSite ? null : new \DateTimeImmutable($onSite->day());
+        $this->publishedSlug = $onSite?->slug();
+    }
 
     /**
      * Initialises a new post from its title, deriving its slug from it. It
@@ -118,6 +125,7 @@ final class Post extends AggregateRoot
             null,
             Timeline::start(Clock::now()),
             0,
+            null,
         );
     }
 
@@ -372,14 +380,6 @@ final class Post extends AggregateRoot
             new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
             $this->publishedSlug,
         );
-    }
-
-    /**
-     * The version the site serves, null while the post isn't on it.
-     */
-    public function onSite(): ?PostVersion
-    {
-        return $this->status->versionOnSite($this->published);
     }
 
     public function timeline(): Timeline

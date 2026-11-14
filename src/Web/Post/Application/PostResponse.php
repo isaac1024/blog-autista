@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Web\Post\Application;
+
+use Shared\Domain\RichText\RichText;
+use Web\Post\Domain\Post;
+
+/**
+ * Read model of a post on the site handed to the adapters.
+ *
+ * It carries what the site shows, one parameter each.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+ */
+final readonly class PostResponse
+{
+    /**
+     * @param list<string> $tagIds
+     * @param string       $day    the day it was first published, as Y-m-d
+     */
+    public function __construct(
+        public string $title,
+        public string $slug,
+        public string $sectionId,
+        public string $sectionName,
+        public string $sectionSlug,
+        public string $authorId,
+        public string $authorName,
+        public array $tagIds,
+        public RichText $content,
+        public ?string $metaDescription,
+        public string $robots,
+        public string $day,
+        public \DateTimeImmutable $firstPublishedAt,
+        public \DateTimeImmutable $lastPublishedAt,
+    ) {}
+
+    public static function fromPost(Post $post): self
+    {
+        return new self(
+            $post->title(),
+            $post->slug(),
+            $post->sectionId(),
+            $post->sectionName(),
+            $post->sectionSlug(),
+            $post->authorId(),
+            $post->authorName(),
+            $post->tagIds(),
+            $post->content(),
+            $post->metaDescription(),
+            $post->robots()->value,
+            $post->day()->format('Y-m-d'),
+            $post->firstPublishedAt(),
+            $post->lastPublishedAt(),
+        );
+    }
+}

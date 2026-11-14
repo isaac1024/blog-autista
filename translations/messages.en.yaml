@@ -14,6 +14,13 @@ cms:
             unpublished: 'Author taken off the site.'
             discarded: 'Changes discarded: the author is the published one again.'
             deleted: 'Author deleted.'
+        post:
+            created: 'Post created.'
+            saved: 'Changes saved.'
+            published: 'Post published on the site.'
+            unpublished: 'Post taken off the site.'
+            discarded: 'Changes discarded: the post is the published one again.'
+            deleted: 'Post deleted.'
         image:
             uploaded: 'Image uploaded.'
             saved: 'Changes saved.'
@@ -34,6 +41,7 @@ cms:
         administration: 'Administration'
         content: 'Content'
         menu: 'Menu'
+        posts: 'Posts'
         pages: 'Pages'
         images: 'Images'
         sections: 'Sections'
@@ -294,6 +302,7 @@ cms:
             image: 'Image'
             settings: 'Settings'
             author: 'Author'
+            post: 'Post'
         page:
             subtitle: 'What links to the page “%name%”.'
             back: 'Edit the page'
@@ -684,6 +693,111 @@ cms:
             unpublished:
                 label: 'Unpublished'
                 description: 'Unpublished: no longer on the site.'
+    posts:
+        title: 'Posts'
+        subtitle: 'The articles of the blog, each under a section and signed by an author. Newest first.'
+        add: 'Add post'
+        title_label: 'Title'
+        empty:
+            title: 'There are no posts yet'
+            message: 'When you create a post, it will show here.'
+            action: 'Create the first post'
+        search:
+            label: 'Search by title'
+            submit: 'Search'
+            empty:
+                title: 'No results'
+                message: 'No post has “%title%” in its title.'
+                action: 'See every post'
+        list:
+            label: 'Posts of the blog'
+            updated_at: 'Changed on %date%'
+            off_site: 'Not published'
+        modal:
+            title: 'New post'
+            description: 'Write its title. The web address of the post will be made from it.'
+            submit: 'Create post'
+        edit:
+            title: 'Edit post'
+            dates: 'Created on %created% · Changed on %updated%'
+            view_on_site: 'See on the site'
+            slug_label: 'Web address (slug)'
+            slug_hint: 'Only lowercase letters without accents, numbers and hyphens. It goes after the section and the date of the first publication, which never changes. You can leave it blank until you publish the post.'
+            no_section: 'section'
+            content_title: 'Content'
+            content_placeholder: 'Write the post here…'
+            meta_description_hint: 'The summary shown under the title in the results: one or two sentences that invite reading it.'
+            submit: 'Save'
+            publish: 'Publish'
+            republish: 'Republish'
+            publish_unsaved: 'Save the changes to be able to publish them.'
+        classification:
+            title: 'Section, author and tags'
+            description: 'Where the post is filed and who signs it. Publishing it needs a section and an author, both published.'
+            section_label: 'Section'
+            section_hint: 'Its address starts the address of the post, as it is when the post is published.'
+            section_none: 'No section'
+            author_label: 'Author'
+            author_hint: 'Who signs the post.'
+            author_none: 'No author'
+            tags_label: 'Tags'
+            tags_hint: 'Optional. The site only shows those that are published.'
+            tag_off_site: 'The site doesn’t show it while it isn’t published.'
+        preview:
+            trigger: 'Preview'
+            title: 'Preview'
+            description: 'Anyone with this link can see the last saved version of the post, as it will look on the site, without signing in. If you save more changes, the link will show them.'
+            url_label: 'Link'
+            url_hint: 'Valid until %expires%. Copy it and send it to whoever you want.'
+            copy: 'Copy link'
+            copied: 'Link copied.'
+            copy_failed: 'It couldn’t be copied. The link is selected: copy it with Ctrl+C (or Cmd+C).'
+            open: 'Open preview'
+        seo:
+            title: 'Search engines'
+            description: 'How the post shows in Google and other search engines. The title of the result is that of the post.'
+            preview: 'Preview of the result'
+            preview_empty: 'No meta description: the search engine will show the excerpt of the text it picks.'
+            meta_description_label: 'Meta description'
+            robots_legend: 'Visibility in search engines'
+            robots:
+                'index,follow':
+                    label: 'Show in search engines'
+                    hint: 'The post may show in the results and its links are followed. The usual choice.'
+                'noindex,follow':
+                    label: 'Don’t show, but follow its links'
+                    hint: 'It doesn’t show in the results, but search engines find the pages it links to.'
+                'noindex,nofollow':
+                    label: 'Hide it entirely'
+                    hint: 'It neither shows in the results nor are its links followed.'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The post “%title%” will be the one published on the site again. The changes saved since will be lost. It can’t be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish this post?'
+            description: '“%title%” will be taken off the site and its address will answer “not found”. You can publish it again.'
+            submit: 'Yes, unpublish the post'
+        delete:
+            trigger: 'Delete post'
+            title: 'Delete this post?'
+            description: 'The post “%title%” will no longer exist. It can’t be undone.'
+            submit: 'Yes, delete the post'
+        status:
+            draft:
+                label: 'Draft'
+                description: 'Draft: not on the site yet.'
+            published:
+                label: 'Published'
+                description: 'Published: the site shows this version.'
+            changed:
+                label: 'Published with changes'
+                description: 'Published with changes: the site shows the previous version until you republish.'
+            unpublished:
+                label: 'Unpublished'
+                description: 'Unpublished: no longer on the site.'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'
@@ -709,6 +823,12 @@ site:
     gone:
         title: 'This page no longer exists'
         message: 'It was taken off the blog and won’t be available again.'
+    post:
+        published: 'Published on'
+        updated: 'Updated on'
+        by: 'By'
+        in: 'in'
+        tags: 'Tags'
 ui:
     close: 'Close'
     cropper:
@@ -767,6 +887,23 @@ ui:
         search_results: '%count% pages. Choose one to use it.'
         search_error: 'The search failed. Try again.'
         more: 'Show more pages'
+    terms_field:
+        empty: 'No tags.'
+        add: 'Add tag'
+        remove: 'Remove'
+        noscript: 'Adding or removing tags needs JavaScript. The current tags are saved anyway.'
+        added: 'Added: %name%.'
+        removed: 'Removed: %name%.'
+        repeated: '%name% is already on the list.'
+        dialog_title: 'Add to %field%'
+        search: 'Search by name'
+        search_submit: 'Search'
+        search_list: 'Results'
+        search_none: 'Nothing matches the search.'
+        search_result: 'One result. Pick it to add it.'
+        search_results: '%count% results. Pick one to add it.'
+        search_error: 'The search failed. Try again.'
+        more: 'See more'
     image_field:
         empty: 'No image.'
         choose: 'Choose image'
@@ -996,6 +1133,29 @@ errors:
             published_author: 'A published author can’t be deleted: unpublish it first.'
             used_author: 'This author signs some post, so it can’t be deleted. Change the author of those posts first.'
             incomplete_dates: 'The publication dates of the author are incomplete.'
+    post:
+        title:
+            too_short: 'The title must have at least %min% characters.'
+            too_long: 'The title can’t be longer than %max% characters.'
+        classification:
+            unknown_section: 'The section chosen no longer exists. Choose another.'
+            unknown_author: 'The author chosen no longer exists. Choose another.'
+            unknown_tag: 'One of the tags chosen no longer exists. Remove it.'
+        address:
+            taken: 'Another post published in that section on the same day already has the address “%slug%”. Change the address of the post.'
+        publication:
+            without_slug: 'The post can’t be published without an address.'
+            without_section: 'The post can’t be published without a section.'
+            without_author: 'The post can’t be published without an author.'
+            without_content: 'The post can’t be published without content.'
+            without_meta_description: 'The post can’t be published without a meta description.'
+            section_off_site: 'The section of the post isn’t published. Publish it first, or choose another.'
+            author_off_site: 'The author of the post isn’t published. Publish it first, or choose another.'
+            nothing_to_publish: 'The post is published as it is: there is nothing to publish.'
+            not_published: 'Only a published post can be unpublished.'
+            no_changes_to_discard: 'There are no unpublished changes to discard.'
+            published_post: 'A published post can’t be deleted: unpublish it first.'
+            incomplete_dates: 'The publication dates of the post are incomplete.'
     settings:
         already_exist: 'The site already has its settings.'
         name:

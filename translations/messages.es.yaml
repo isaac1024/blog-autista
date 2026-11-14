@@ -14,6 +14,13 @@ cms:
             unpublished: 'Autor retirado de la web.'
             discarded: 'Cambios descartados: el autor vuelve a ser el publicado.'
             deleted: 'Autor borrado.'
+        post:
+            created: 'Post creado.'
+            saved: 'Cambios guardados.'
+            published: 'Post publicado en la web.'
+            unpublished: 'Post retirado de la web.'
+            discarded: 'Cambios descartados: el post vuelve a ser el publicado.'
+            deleted: 'Post borrado.'
         image:
             uploaded: 'Imagen subida.'
             saved: 'Cambios guardados.'
@@ -34,6 +41,7 @@ cms:
         administration: 'Administración'
         content: 'Contenido'
         menu: 'Menú'
+        posts: 'Posts'
         pages: 'Páginas'
         images: 'Imágenes'
         sections: 'Secciones'
@@ -294,6 +302,7 @@ cms:
             image: 'Imagen'
             settings: 'Ajustes'
             author: 'Autor'
+            post: 'Post'
         page:
             subtitle: 'Lo que enlaza a la página «%name%».'
             back: 'Editar la página'
@@ -684,6 +693,111 @@ cms:
             unpublished:
                 label: 'Despublicado'
                 description: 'Despublicado: ya no está en la web.'
+    posts:
+        title: 'Posts'
+        subtitle: 'Los artículos del blog, cada uno en una sección y firmado por un autor. Los más recientes primero.'
+        add: 'Añadir post'
+        title_label: 'Título'
+        empty:
+            title: 'Todavía no hay posts'
+            message: 'Cuando crees un post, aparecerá aquí.'
+            action: 'Crear el primer post'
+        search:
+            label: 'Buscar por título'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+                message: 'Ningún post tiene «%title%» en el título.'
+                action: 'Ver todos los posts'
+        list:
+            label: 'Posts del blog'
+            updated_at: 'Modificado el %date%'
+            off_site: 'Sin publicar'
+        modal:
+            title: 'Nuevo post'
+            description: 'Escribe el título. La dirección web del post se creará a partir de él.'
+            submit: 'Crear post'
+        edit:
+            title: 'Editar post'
+            dates: 'Creado el %created% · Modificado el %updated%'
+            view_on_site: 'Ver en la web'
+            slug_label: 'Dirección web (slug)'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Va tras la sección y la fecha de la primera publicación, que no cambia nunca. Puedes dejarla vacía hasta publicar el post.'
+            no_section: 'seccion'
+            content_title: 'Contenido'
+            content_placeholder: 'Escribe aquí el post…'
+            meta_description_hint: 'El resumen que aparece bajo el título en los resultados: una o dos frases que inviten a leerlo.'
+            submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+        classification:
+            title: 'Sección, autor y etiquetas'
+            description: 'Dónde se clasifica el post y quién lo firma. Para publicarlo hacen falta una sección y un autor, los dos publicados.'
+            section_label: 'Sección'
+            section_hint: 'Su dirección va al principio de la del post, tal como esté al publicarlo.'
+            section_none: 'Sin sección'
+            author_label: 'Autor'
+            author_hint: 'Quien firma el post.'
+            author_none: 'Sin autor'
+            tags_label: 'Etiquetas'
+            tags_hint: 'Opcionales. La web solo muestra las que estén publicadas.'
+            tag_off_site: 'La web no la muestra mientras no esté publicada.'
+        preview:
+            trigger: 'Vista previa'
+            title: 'Vista previa'
+            description: 'Cualquiera con este enlace podrá ver la última versión guardada del post, como se verá en la web, sin iniciar sesión. Si guardas más cambios, el enlace los mostrará.'
+            url_label: 'Enlace'
+            url_hint: 'Válido hasta el %expires%. Cópialo y envíalo a quien quieras.'
+            copy: 'Copiar enlace'
+            copied: 'Enlace copiado.'
+            copy_failed: 'No se ha podido copiar. El enlace está seleccionado: cópialo con Ctrl+C (o Cmd+C).'
+            open: 'Abrir vista previa'
+        seo:
+            title: 'Buscadores'
+            description: 'Cómo aparece el post en Google y en otros buscadores. El título del resultado es el del post.'
+            preview: 'Vista previa del resultado'
+            preview_empty: 'Sin meta descripción: el buscador mostrará el fragmento del texto que elija.'
+            meta_description_label: 'Meta descripción'
+            robots_legend: 'Visibilidad en los buscadores'
+            robots:
+                'index,follow':
+                    label: 'Mostrar en los buscadores'
+                    hint: 'El post puede aparecer en los resultados y se siguen sus enlaces. Es lo habitual.'
+                'noindex,follow':
+                    label: 'No mostrar, pero seguir sus enlaces'
+                    hint: 'No aparece en los resultados, pero los buscadores descubren las páginas a las que enlaza.'
+                'noindex,nofollow':
+                    label: 'Ocultar del todo'
+                    hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'El post «%title%» volverá a ser el que está publicado en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar este post?'
+            description: '«%title%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarlo.'
+            submit: 'Sí, despublicar el post'
+        delete:
+            trigger: 'Borrar post'
+            title: '¿Borrar este post?'
+            description: 'El post «%title%» dejará de existir. No se puede deshacer.'
+            submit: 'Sí, borrar el post'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicado'
+                description: 'Publicado: la web muestra esta versión.'
+            changed:
+                label: 'Publicado con cambios'
+                description: 'Publicado con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicado'
+                description: 'Despublicado: ya no está en la web.'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -709,6 +823,12 @@ site:
     gone:
         title: 'Esta página ya no existe'
         message: 'Se retiró del blog y no volverá a estar disponible.'
+    post:
+        published: 'Publicado el'
+        updated: 'Actualizado el'
+        by: 'Por'
+        in: 'en'
+        tags: 'Etiquetas'
 ui:
     close: 'Cerrar'
     cropper:
@@ -767,6 +887,23 @@ ui:
         search_results: '%count% páginas. Elige una para usarla.'
         search_error: 'No se ha podido buscar. Inténtalo de nuevo.'
         more: 'Ver más páginas'
+    terms_field:
+        empty: 'Sin etiquetas.'
+        add: 'Añadir etiqueta'
+        remove: 'Quitar'
+        noscript: 'Para añadir o quitar etiquetas hace falta JavaScript. Las etiquetas actuales se guardan igualmente.'
+        added: 'Añadida: %name%.'
+        removed: 'Quitada: %name%.'
+        repeated: '%name% ya está en la lista.'
+        dialog_title: 'Añadir a %field%'
+        search: 'Buscar por nombre'
+        search_submit: 'Buscar'
+        search_list: 'Resultados'
+        search_none: 'Ninguna coincide con la búsqueda.'
+        search_result: 'Un resultado. Elígelo para añadirlo.'
+        search_results: '%count% resultados. Elige uno para añadirlo.'
+        search_error: 'No se ha podido buscar. Inténtalo de nuevo.'
+        more: 'Ver más'
     image_field:
         empty: 'Sin imagen.'
         choose: 'Elegir imagen'
@@ -996,6 +1133,29 @@ errors:
             published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
             used_author: 'Este autor firma algún post, así que no se puede borrar. Cambia antes el autor de esos posts.'
             incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
+    post:
+        title:
+            too_short: 'El título debe tener al menos %min% caracteres.'
+            too_long: 'El título no puede pasar de %max% caracteres.'
+        classification:
+            unknown_section: 'La sección elegida ya no existe. Elige otra.'
+            unknown_author: 'El autor elegido ya no existe. Elige otro.'
+            unknown_tag: 'Alguna de las etiquetas elegidas ya no existe. Quítala.'
+        address:
+            taken: 'Ya hay otro post publicado en esa sección el mismo día con la dirección «%slug%». Cambia la dirección del post.'
+        publication:
+            without_slug: 'El post no se puede publicar sin dirección.'
+            without_section: 'El post no se puede publicar sin sección.'
+            without_author: 'El post no se puede publicar sin autor.'
+            without_content: 'El post no se puede publicar sin contenido.'
+            without_meta_description: 'El post no se puede publicar sin meta descripción.'
+            section_off_site: 'La sección del post no está publicada. Publícala antes, o elige otra.'
+            author_off_site: 'El autor del post no está publicado. Publícalo antes, o elige otro.'
+            nothing_to_publish: 'El post ya está publicado tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar un post publicado.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            published_post: 'Un post publicado no se puede borrar: despublícalo antes.'
+            incomplete_dates: 'Las fechas de publicación del post están incompletas.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
         name:

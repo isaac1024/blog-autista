@@ -93,6 +93,11 @@ final class Term
         $termRepository->save($this);
     }
 
+    public function taxonomy(): Taxonomy
+    {
+        return $this->taxonomy;
+    }
+
     public function name(): string
     {
         return $this->name;

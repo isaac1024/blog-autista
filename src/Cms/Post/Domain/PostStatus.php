@@ -13,13 +13,4 @@ enum PostStatus: string
     case Draft = 'draft';
     case Published = 'published';
     case Unpublished = 'unpublished';
-
-    /**
-     * The version the site serves among the one last published, which is
-     * none while the post is off the site.
-     */
-    public function versionOnSite(?PostVersion $published): ?PostVersion
-    {
-        return self::Published === $this ? $published : null;
-    }
 }

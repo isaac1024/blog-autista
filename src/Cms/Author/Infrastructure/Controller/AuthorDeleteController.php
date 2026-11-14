@@ -23,10 +23,12 @@ use Symfony\Component\Routing\Requirement\Requirement;
  */
 final class AuthorDeleteController extends AbstractController
 {
+    public function __construct(private readonly CsrfRequestGuard $csrf) {}
+
     #[Route('/authors/{id}/delete', name: 'cms_authors_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): Response
     {
-        $csrf->assertValid($request);
+        $this->csrf->assertValid($request);
 
         try {
             new AuthorDeleter($id)($authorRepository, $eventBus, $avatarStorage, $authorUsage);

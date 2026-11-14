@@ -11,6 +11,8 @@ use Cms\Image\Infrastructure\Controller\ImageState;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PageRole;
 use Cms\Page\Infrastructure\Controller\PageState;
+use Cms\Post\Domain\PostRepository;
+use Cms\Post\Infrastructure\Controller\PostState;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Infrastructure\Controller\IncomingRedirectsPanel;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
@@ -21,6 +23,7 @@ use Cms\Relation\Domain\ResourceType;
 use Cms\Relation\Infrastructure\Controller\AuthorUserRows;
 use Cms\Relation\Infrastructure\Controller\ImageUserRows;
 use Cms\Relation\Infrastructure\Controller\PageUserRows;
+use Cms\Relation\Infrastructure\Controller\PostUserRows;
 use Cms\Relation\Infrastructure\Controller\RelationList;
 use Cms\Relation\Infrastructure\Controller\SettingsUserRows;
 use Cms\Relation\Infrastructure\Controller\UserRows;
@@ -164,6 +167,7 @@ final class RelationListTest extends TestCase
                 new ImageUserRows($translator, $urlGenerator, $imageRepository, new ImageState($translator)),
                 new SettingsUserRows($translator, $urlGenerator, self::createStub(SettingsRepository::class), new SettingsState($translator)),
                 new AuthorUserRows($translator, $urlGenerator, self::createStub(AuthorRepository::class), new AuthorState($translator)),
+                new PostUserRows($translator, $urlGenerator, self::createStub(PostRepository::class), new PostState($translator)),
             ),
             new ListPagination($translator, $urlGenerator),
             new IncomingRedirectsPanel(

@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Shared\Infrastructure\Ui;
+
+use Shared\Domain\RichText\RichText;
+use Shared\Infrastructure\Ui\Page\Page;
+use Symfony\Contracts\Translation\TranslatorInterface;
+
+/**
+ * Composes a post as the site serves it, and as the CMS previews it: its
+ * title, when it was published and who signs it under which section, its
+ * content, and its tags.
+ *
+ * It always dates the post by when it was last published, the day of Madrid
+ * the site keeps, and says it was updated when that day isn't the one it
+ * was first published.
+ */
+final readonly class SitePostPage
+{
+    public const string TIME_ZONE = 'Europe/Madrid';
+
+    public function __construct(
+        private RichTextComponents $richTextComponents,
+        private TranslatorInterface $translator,
+    ) {}
+
+    /**
+     * The section and the author lead to their pages while they are on the
+     * site, a null url otherwise, and are named as text then. Embedded images
+     * and linked pages are painted from what the caller knows of them, keyed
+     * by id, as SitePage paints a page.
+     *
+     * @param array{name: string, url: ?string}                                                                          $section
+     * @param array{name: string, url: ?string}                                                                          $author
+     * @param list<array{name: string, url: string}>                                                                     $tags    those on the site, in order
+     * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
+     * @param array<string, array{url: string, title: string}>                                                           $pages
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
+    public function __invoke(
+        Page $layout,
+        string $title,
+        \DateTimeImmutable $firstPublishedAt,
+        \DateTimeImmutable $lastPublishedAt,
+        array $section,
+        array $author,
+        array $tags,
+        RichText $content,
+        array $images,
+        array $pages,
+    ): Page {
+        $zone = new \DateTimeZone(self::TIME_ZONE);
+        $last = $lastPublishedAt->setTimezone($zone);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, self::TIME_ZONE);
+
+        $page = $layout
+            ->withMain('Shared:PageTitle', ['title' => $title])
+            ->withMain('Shared:PostMeta', [
+                'updated' => $last->format('Y-m-d') !== $firstPublishedAt->setTimezone($zone)->format('Y-m-d'),
+                'date' => (string) $formatter->format($last),
+                'datetime' => $last->format(\DATE_ATOM),
+                'section' => $section,
+                'author' => $author,
+            ])
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages));
+
+        return [] === $tags ? $page : $page->withMain('Shared:PostTags', ['tags' => $tags]);
+    }
+}

@@ -15,6 +15,7 @@ use Cms\Author\Domain\AuthorPagesLinked;
 use Cms\Author\Domain\AuthorPublished;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AuthorUnpublished;
+use Cms\Author\Domain\AuthorUsage;
 use Cms\Author\Domain\AvatarPath;
 use Cms\Author\Domain\AvatarStorage;
 use Cms\Author\Domain\InvalidAuthorPublication;
@@ -219,7 +220,7 @@ final class AuthorPublicationTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof AuthorImagesUsed && ['image_ids' => []] === $event->toPrimitives()),
         );
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage);
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage, self::createStub(AuthorUsage::class));
 
         self::assertEqualsCanonicalizing([AuthorMother::AVATAR, AuthorMother::OTHER_AVATAR], $deleted);
     }
@@ -233,7 +234,7 @@ final class AuthorPublicationTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof AuthorPagesLinked && ['page_ids' => []] === $event->toPrimitives()),
         );
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
     }
 
     public function testItNeverDeletesAPublishedAuthor(): void
@@ -246,7 +247,7 @@ final class AuthorPublicationTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::publishedAuthor());
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage);
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage, self::createStub(AuthorUsage::class));
     }
 
     public function testItThrowsWhenTheAuthorDoesNotExist(): void

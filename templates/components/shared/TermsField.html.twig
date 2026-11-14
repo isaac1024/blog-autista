@@ -1,0 +1,59 @@
+{% set button = 'min-h-11 cursor-pointer rounded-control border-2 border-border bg-surface px-3 text-[1rem] font-bold text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]' %}
+{% set labels = {
+    offSite: offSite,
+    added: 'ui.terms_field.added'|trans,
+    removed: 'ui.terms_field.removed'|trans,
+    repeated: 'ui.terms_field.repeated'|trans,
+    none: 'ui.terms_field.search_none'|trans,
+    result: 'ui.terms_field.search_result'|trans,
+    results: 'ui.terms_field.search_results'|trans,
+    error: 'ui.terms_field.search_error'|trans,
+} %}
+{% macro row(fieldName, fieldId, item, button) %}
+<li class="flex flex-wrap items-center justify-between gap-3 rounded-control border-2 border-border bg-surface p-3" data-terms-field-target="row" data-term-id="{{ item.id }}">
+    <input type="hidden" name="{{ fieldName }}[]" value="{{ item.id }}" data-field="id">
+    <p class="m-0 grid min-w-0 gap-1" id="{{ fieldId }}-{{ item.id }}" data-field="term">
+        <span class="font-bold" data-field="name">{{ item.name }}</span>
+        <span class="text-[1rem] text-muted" data-field="status">{{ item.status }}{% if item.note %} · {{ item.note }}{% endif %}</span>
+    </p>
+    <button class="{{ button }}" type="button" aria-describedby="{{ fieldId }}-{{ item.id }}" data-action="terms-field#remove" data-field="remove">{{ 'ui.terms_field.remove'|trans }}</button>
+</li>
+{% endmacro %}
+<fieldset class="m-0 grid min-w-0 gap-3 border-0 p-0" id="{{ id }}" aria-describedby="{{ id }}-hint" data-controller="terms-field" data-terms-field-search-url-value="{{ searchUrl }}" data-terms-field-labels-value="{{ labels|json_encode }}">
+    <legend class="mb-1 p-0 text-[1rem] font-bold">{{ label }}</legend>
+    <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ hint }}</p>
+    <p class="m-0 text-[1rem]" data-terms-field-target="empty"{% if items is not empty %} hidden{% endif %}>{{ 'ui.terms_field.empty'|trans }}</p>
+    <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ label }}" data-terms-field-target="list">
+{% for item in items %}
+        {{ _self.row(name, id, item, button) }}
+{% endfor %}
+    </ul>
+    <template data-terms-field-target="template">
+        {{ _self.row(name, id, {id: '', name: '', status: '', note: ''}, button) }}
+    </template>
+    <button class="{{ button }} self-start" type="button" data-terms-field-target="add" data-action="terms-field#openDialog" hidden>{{ 'ui.terms_field.add'|trans }}</button>
+    <noscript><p class="m-0 text-[1rem] text-muted">{{ 'ui.terms_field.noscript'|trans }}</p></noscript>
+    {# The terms to add, searched by their names. Not a form: the field sits in the form that holds it. #}
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-dialog" aria-labelledby="{{ id }}-dialog-title" closedby="any" data-terms-field-target="dialog">
+        <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="m-0 text-xl font-bold" id="{{ id }}-dialog-title">{{ 'ui.terms_field.dialog_title'|trans({'%field%': label}) }}</h2>
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-dialog" command="close">
+                    <span class="sr-only">{{ 'ui.close'|trans }}</span>
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-2" role="search">
+                <label class="text-[1rem] font-bold" for="{{ id }}-search">{{ 'ui.terms_field.search'|trans }}</label>
+                <div class="flex gap-2">
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-search" data-terms-field-target="search" data-action="keydown.enter->terms-field#search">
+                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="terms-field#search">{{ 'ui.terms_field.search_submit'|trans }}</button>
+                </div>
+            </div>
+            <p class="m-0 text-[1rem] text-muted" role="status" data-terms-field-target="searchStatus"></p>
+            <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.terms_field.search_list'|trans }}" data-terms-field-target="results"></ul>
+            <button class="min-h-12 cursor-pointer self-start rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-terms-field-target="more" data-action="terms-field#more" hidden>{{ 'ui.terms_field.more'|trans }}</button>
+        </div>
+    </dialog>
+    <p class="sr-only" aria-live="polite" data-terms-field-target="status"></p>
+</fieldset>

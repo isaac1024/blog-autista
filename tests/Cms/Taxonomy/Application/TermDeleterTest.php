@@ -10,6 +10,7 @@ use Cms\Taxonomy\Domain\InvalidTermPublication;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermRepository;
+use Cms\Taxonomy\Domain\TermUsage;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,7 +25,7 @@ final class TermDeleterTest extends TestCase
         $repository->method('find')->willReturn($term);
         $repository->expects(self::once())->method('delete')->with(self::identicalTo($term));
 
-        new TermDeleter($term->taxonomy()->value, TermIdMother::DEFAULT_VALUE)($repository);
+        new TermDeleter($term->taxonomy()->value, TermIdMother::DEFAULT_VALUE)($repository, self::createStub(TermUsage::class));
     }
 
     /**
@@ -44,7 +45,7 @@ final class TermDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidTermPublication::publishedTerm());
 
-        new TermDeleter('section', TermIdMother::DEFAULT_VALUE)($repository);
+        new TermDeleter('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(TermUsage::class));
     }
 
     public function testItThrowsWhenTheTermIsOfAnotherTaxonomy(): void
@@ -55,6 +56,19 @@ final class TermDeleterTest extends TestCase
 
         $this->expectExceptionObject(TermNotFound::withId('section', TermIdMother::DEFAULT_VALUE));
 
-        new TermDeleter('section', TermIdMother::DEFAULT_VALUE)($repository);
+        new TermDeleter('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(TermUsage::class));
+    }
+
+    public function testItNeverDeletesATermPostsAreFiledUnder(): void
+    {
+        $repository = $this->createMock(TermRepository::class);
+        $repository->method('find')->willReturn(TermMother::create());
+        $repository->expects(self::never())->method('delete');
+        $usage = self::createStub(TermUsage::class);
+        $usage->method('isInUse')->willReturn(true);
+
+        $this->expectExceptionObject(InvalidTermPublication::usedTerm());
+
+        new TermDeleter('section', TermIdMother::DEFAULT_VALUE)($repository, $usage);
     }
 }

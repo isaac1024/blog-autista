@@ -25,11 +25,11 @@ final readonly class SiteRoutes
 
     /**
      * The routes of resources the redirects don't know yet: the sections,
-     * the tags and the authors. An address they would answer is taken as one
+     * the tags, the authors and the posts. An address they would answer is taken as one
      * the site doesn't answer itself, as before they existed, so a redirect
      * may be kept there, and is only followed once the address is a 404.
      */
-    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag', 'web_author'];
+    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag', 'web_author', 'web_post'];
 
     public function __construct(
         private RouterInterface $router,

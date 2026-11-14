@@ -34,6 +34,7 @@ doctrine:
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_visit_id: Web\Analytics\Infrastructure\Persistence\Doctrine\VisitIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            web_post_id: Web\Post\Infrastructure\Persistence\Doctrine\PostIdType
             web_term_id: Web\Taxonomy\Infrastructure\Persistence\Doctrine\TermIdType
             web_settings_id: Web\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
         # Native UUID columns (see Shared\Infrastructure\Persistence\Doctrine\UuidType)
@@ -115,6 +116,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Page/Domain'
                 prefix: 'Web\Page\Domain'
+            WebPost:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Post/Domain'
+                prefix: 'Web\Post\Domain'
             WebSettings:
                 type: attribute
                 is_bundle: false

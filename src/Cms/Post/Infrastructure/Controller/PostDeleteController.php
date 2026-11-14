@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Post\Infrastructure\Controller;
+
+use Cms\Post\Application\PostDeleter;
+use Cms\Post\Application\PostNotFound;
+use Cms\Post\Domain\PostRepository;
+use Shared\Domain\DomainError;
+use Shared\Domain\Event\EventBus;
+use Shared\Infrastructure\Http\CsrfRequestGuard;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
+
+/**
+ * Deletes a post off the site, then goes back to the list of posts.
+ */
+final class PostDeleteController extends AbstractController
+{
+    #[Route('/posts/{id}/delete', name: 'cms_posts_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    {
+        $csrf->assertValid($request);
+
+        try {
+            new PostDeleter($id)($postRepository, $eventBus);
+        } catch (PostNotFound $exception) {
+            throw $this->createNotFoundException($exception->getMessage(), $exception);
+        } catch (DomainError $error) {
+            // Told on the page it goes back to.
+            $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
+            return $this->redirectToRoute('cms_posts_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
+        }
+
+        $this->addFlash('success', ['key' => 'cms.notices.post.deleted', 'parameters' => []]);
+
+        return $this->redirectToRoute('cms_posts', status: Response::HTTP_SEE_OTHER);
+    }
+}

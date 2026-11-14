@@ -1,0 +1,18 @@
+{% macro named(item) %}
+{%- if item.url is not null -%}
+<a class="font-bold text-accent underline decoration-[0.1em] underline-offset-[0.15em] hover:text-accent-strong" href="{{ item.url }}">{{ item.name }}</a>
+{%- else -%}
+<span class="font-bold">{{ item.name }}</span>
+{%- endif -%}
+{% endmacro %}
+<div class="m-0 grid gap-1 text-[1rem] text-muted">
+    <p class="m-0">{{ (updated ? 'site.post.updated' : 'site.post.published')|trans }} <time datetime="{{ datetime }}">{{ date }}</time></p>
+{# A preview of a draft may have no author or no section yet: it says what it has. #}
+{% if author.name or section.name %}
+    <p class="m-0">
+{%- if author.name %}{{ 'site.post.by'|trans }} {{ _self.named(author) }}{% endif -%}
+{%- if author.name and section.name %} · {% endif -%}
+{%- if section.name %}{{ 'site.post.in'|trans }} {{ _self.named(section) }}{% endif -%}
+    </p>
+{% endif %}
+</div>

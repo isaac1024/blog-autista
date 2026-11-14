@@ -521,13 +521,15 @@
     }
 
     .rich-text-image-note,
-    .rich-text-page-note {
+    .rich-text-page-note,
+    .rich-text-term-note {
         color: var(--color-muted);
     }
 
     /* Where the resource stands for the site, in words: never by colour alone. */
     .rich-text-image-status,
-    .rich-text-page-status {
+    .rich-text-page-status,
+    .rich-text-term-status {
         justify-self: start;
         border: 1px solid var(--color-border);
         border-radius: 999px;
@@ -538,7 +540,8 @@
 
     /* A resource to pick in a dialog: the whole row is its button. */
     .rich-text-image-option,
-    .rich-text-page-option {
+    .rich-text-page-option,
+    .rich-text-term-option {
         display: flex;
         gap: 1rem;
         align-items: center;
@@ -568,7 +571,8 @@
     }
 
     .rich-text-image-option-text,
-    .rich-text-page-option-text {
+    .rich-text-page-option-text,
+    .rich-text-term-option-text {
         display: grid;
         gap: 0.375rem;
         min-width: 0;
