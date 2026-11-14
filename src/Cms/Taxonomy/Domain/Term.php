@@ -270,6 +270,14 @@ final class Term extends AggregateRoot
         return $this->publishedSlug;
     }
 
+    /**
+     * The version the site serves, null while the term isn't on it.
+     */
+    public function onSite(): ?TermVersion
+    {
+        return TermStatus::Published === $this->status ? $this->published : null;
+    }
+
     public function timeline(): Timeline
     {
         return $this->timeline;

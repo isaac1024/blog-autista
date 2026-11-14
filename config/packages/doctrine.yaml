@@ -14,6 +14,11 @@ doctrine:
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
+            cms_post_id: Cms\Post\Infrastructure\Persistence\Doctrine\PostIdType
+            cms_post_author_id: Cms\Post\Infrastructure\Persistence\Doctrine\AuthorIdType
+            cms_post_section_id: Cms\Post\Infrastructure\Persistence\Doctrine\SectionIdType
+            cms_post_tag_ids: Cms\Post\Infrastructure\Persistence\Doctrine\TagIdsType
+            cms_post_version: Cms\Post\Infrastructure\Persistence\Doctrine\PostVersionType
             cms_redirect_id: Cms\Redirect\Infrastructure\Persistence\Doctrine\RedirectIdType
             cms_relation_id: Cms\Relation\Infrastructure\Persistence\Doctrine\RelationIdType
             cms_settings_id: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
@@ -70,6 +75,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Page/Domain'
                 prefix: 'Cms\Page\Domain'
+            CmsPost:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Post/Domain'
+                prefix: 'Cms\Post\Domain'
             CmsTaxonomy:
                 type: attribute
                 is_bundle: false

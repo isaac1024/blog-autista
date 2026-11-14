@@ -1,0 +1,487 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Post\Domain;
+
+use Cms\Shared\Domain\Robots;
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
+use Cms\Shared\Domain\Slugger;
+use Doctrine\ORM\Mapping as ORM;
+use Shared\Domain\AggregateRoot;
+use Shared\Domain\Clock;
+use Shared\Domain\Event\EventBus;
+use Shared\Domain\RichText\BlockType;
+use Shared\Domain\RichText\CalloutVariant;
+use Shared\Domain\RichText\Mark;
+use Shared\Domain\RichText\RichText;
+use Shared\Domain\RichText\RichTextFeatures;
+
+/**
+ * A post of the blog, filed under a section, signed by an author and
+ * labelled with any number of tags. The site serves it under the slug of its
+ * section, on the day it was first published, by its own slug.
+ *
+ * Editors work on its version in the CMS; once published, the site serves a
+ * copy of it, which only changes when the post is published again.
+ *
+ * - Editing saves whatever valid fields an editor writes, complete or not,
+ *   as long as its section, author and tags are ones the CMS has.
+ * - A post is published only with everything the site shows: a slug, a
+ *   section and an author, both on the site, content and a meta
+ *   description. Its tags needn't be: the site only shows those on it.
+ * - Its address on the site is taken as it is published: the slug its
+ *   section has on the site then, the day it was first published, and its
+ *   own slug. Two posts on the site never share one; drafts take none, so
+ *   they are never checked against each other.
+ * - A published post is unpublished before it is deleted.
+ * - The sections, tags and author it uses, the images it embeds and the
+ *   pages it links to are told to whoever keeps track of what is in use, so
+ *   none is deleted while the post uses it.
+ *
+ * Its rules reach every value object, error and event of the post, so its
+ * coupling and its methods grow with what a post is.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.TooManyMethods")
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ */
+#[ORM\Entity]
+#[ORM\Table(name: 'cms_post')]
+#[ORM\UniqueConstraint(name: 'uniq_cms_post_published_address', columns: ['published_section_slug', 'published_day', 'published_slug'])]
+#[ORM\Index(name: 'ftx_cms_post_title', columns: ['title'], flags: ['fulltext'])]
+final class Post extends AggregateRoot
+{
+    /**
+     * The slug of its section where the site serves the post, apart from the
+     * version so the address can be indexed and kept unique. Null, as the
+     * rest of the address, while the post isn't on the site.
+     */
+    #[ORM\Column(name: 'published_section_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $publishedSectionSlug = null;
+
+    /**
+     * The day it was first published, in Madrid, while it is on the site.
+     */
+    #[ORM\Column(name: 'published_day', type: 'date_immutable', nullable: true)]
+    private ?\DateTimeImmutable $publishedDay = null;
+
+    /**
+     * Its own slug where the site serves it, while it is on the site.
+     */
+    #[ORM\Column(name: 'published_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $publishedSlug = null;
+
+    /**
+     * One argument per mapped field of its versions and dates: Doctrine
+     * hydrates it without calling this, and the named constructor starts
+     * each field. The address starts empty, as the post is off the site.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\Column(type: 'cms_post_id')]
+        private readonly PostId $id,
+        #[ORM\Embedded(class: PostVersion::class, columnPrefix: false)]
+        private PostVersion $version,
+        #[ORM\Column(length: 20, enumType: PostStatus::class)]
+        private PostStatus $status,
+        /*
+         * The version last published, kept when the post is unpublished.
+         */
+        #[ORM\Column(name: 'published_version', type: 'cms_post_version', nullable: true)]
+        private ?PostVersion $published,
+        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
+        private Timeline $timeline,
+        #[ORM\Column]
+        private int $publicationRevision,
+    ) {}
+
+    /**
+     * Initialises a new post from its title, deriving its slug from it. It
+     * starts unfiled and unsigned, without content, listed in search results.
+     */
+    public static function create(string $id, string $title): self
+    {
+        return new self(
+            new PostId($id),
+            new PostVersion(
+                new Title($title),
+                new Slug(new Slugger($title)()),
+                Classification::none(),
+                RichText::empty(),
+                Seo::initial(Robots::IndexFollow),
+            ),
+            PostStatus::Draft,
+            null,
+            Timeline::start(Clock::now()),
+            0,
+        );
+    }
+
+    /**
+     * What the content of a post can use: what the content of a page can,
+     * with two heading levels, bold and links to pages.
+     */
+    public static function contentFeatures(): RichTextFeatures
+    {
+        return new RichTextFeatures(
+            blocks: BlockType::cases(),
+            headingLevels: [2, 3],
+            calloutVariants: [CalloutVariant::Note, CalloutVariant::Important],
+            marks: [Mark::Bold, Mark::Link],
+        );
+    }
+
+    /**
+     * Replaces everything an editor writes: the title, the slug, the section,
+     * the author and the tags, the content and how the post presents itself
+     * to search engines. A blank slug, section or author leaves the post
+     * without one.
+     *
+     * On a published post, it only changes the version being edited: the
+     * site keeps its version until the post is published again.
+     *
+     * @param list<string>            $tags    ids of its tags, in order
+     * @param array<array-key, mixed> $content in the stored rich text format
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
+    public function edit(
+        string $title,
+        string $slug,
+        string $section,
+        string $author,
+        array $tags,
+        array $content,
+        string $metaDescription,
+        string $robots,
+        Classifiers $classifiers,
+    ): void {
+        // Everything is validated before anything is assigned, so an invalid
+        // field doesn't leave the post with only part of the edit.
+        $version = new PostVersion(
+            new Title($title),
+            '' === $slug ? null : new Slug($slug),
+            Classification::fromPrimitives($section, $author, $tags),
+            RichText::fromArray($content),
+            Seo::fromPrimitives($metaDescription, $robots),
+        );
+        self::contentFeatures()->assertAllows($version->content());
+        $version->classification()->assertKnownTo($classifiers);
+
+        $this->changeResourcesUsed(fn () => $this->replaceVersion($version));
+    }
+
+    /**
+     * Puts the version last saved on the site, for the first time or in place
+     * of the one there, once it has everything the site shows and its
+     * section and author are on the site. It takes its address there then;
+     * whether another post has it is checked apart, by AddressAvailability.
+     */
+    public function publish(Classifiers $classifiers): void
+    {
+        $now = Clock::now();
+        $this->version->assertPublishable();
+
+        if (!$this->hasSomethingToPublish()) {
+            throw InvalidPostPublication::nothingToPublish();
+        }
+
+        $classification = $this->version->classification();
+        $sectionId = $classification->section() ?? throw InvalidPostPublication::withoutSection();
+        $authorId = $classification->author() ?? throw InvalidPostPublication::withoutAuthor();
+        $section = $classifiers->sectionOnSite($sectionId) ?? throw InvalidPostPublication::sectionOffSite();
+        $author = $classifiers->authorOnSite($authorId) ?? throw InvalidPostPublication::authorOffSite();
+        $slug = $this->version->slug() ?? throw InvalidPostPublication::withoutSlug();
+
+        $timeline = $this->timeline->published($now);
+        $address = new PostAddress($section->slug(), $timeline->firstPublishedAt() ?? $now, $slug);
+
+        $this->status = PostStatus::Published;
+        $this->changeResourcesUsed(function (): void {
+            $this->published = $this->version;
+        });
+        $this->publishedSectionSlug = $address->section();
+        $this->publishedDay = new \DateTimeImmutable($address->day());
+        $this->publishedSlug = $address->slug();
+        $this->timeline = $timeline;
+        ++$this->publicationRevision;
+
+        $this->record(new PostPublished(
+            $this->id->value(),
+            $this->version->title()->value(),
+            $slug->value(),
+            $sectionId->value(),
+            $section->name(),
+            $section->slug()->value(),
+            $authorId->value(),
+            $author->name(),
+            $classification->tags()->values(),
+            $this->version->content()->toArray(),
+            (string) $this->version->seo()->description(),
+            $this->version->seo()->robots()->value,
+            $address->day(),
+            ($timeline->firstPublishedAt() ?? $now)->format(\DATE_ATOM),
+            $now->format(\DATE_ATOM),
+            $this->publicationRevision,
+        ));
+    }
+
+    /**
+     * Takes the post off the site, freeing its address there.
+     */
+    public function unpublish(): void
+    {
+        if (PostStatus::Published !== $this->status) {
+            throw InvalidPostPublication::notPublished();
+        }
+
+        $this->status = PostStatus::Unpublished;
+        $this->publishedSectionSlug = null;
+        $this->publishedDay = null;
+        $this->publishedSlug = null;
+        ++$this->publicationRevision;
+
+        $this->record(new PostUnpublished($this->id->value(), $this->publicationRevision));
+    }
+
+    /**
+     * Brings the version being edited back to the one on the site.
+     */
+    public function discardChanges(): void
+    {
+        if (null === $this->published || !$this->hasUnpublishedChanges()) {
+            throw InvalidPostPublication::noChangesToDiscard();
+        }
+
+        $published = $this->published;
+        $this->changeResourcesUsed(fn () => $this->replaceVersion($published));
+    }
+
+    /**
+     * Whether the post is on the site with a version other than the one
+     * being edited, so its changes can be discarded.
+     */
+    public function hasUnpublishedChanges(): bool
+    {
+        return PostStatus::Published === $this->status
+            && null !== $this->published
+            && !$this->published->equals($this->version);
+    }
+
+    /**
+     * Whether publishing has something to put on the site: the post isn't
+     * there, or it is with another version.
+     */
+    public function hasSomethingToPublish(): bool
+    {
+        return PostStatus::Published !== $this->status || $this->hasUnpublishedChanges();
+    }
+
+    public function canBeUnpublished(): bool
+    {
+        return PostStatus::Published === $this->status;
+    }
+
+    public function canBeDeleted(): bool
+    {
+        return PostStatus::Published !== $this->status;
+    }
+
+    /**
+     * Saves the post, then tells the rest of the system what happened to it
+     * since it was loaded. It takes its events before saving, so the saved
+     * post holds none, and none is told twice.
+     */
+    public function save(PostRepository $postRepository, EventBus $eventBus): void
+    {
+        $events = $this->pullDomainEvents();
+        $postRepository->save($this);
+        $eventBus->publish(...$events);
+    }
+
+    /**
+     * Deletes a post off the site.
+     */
+    public function delete(PostRepository $postRepository, EventBus $eventBus): void
+    {
+        if (PostStatus::Published === $this->status) {
+            throw InvalidPostPublication::publishedPost();
+        }
+
+        // A post deleted uses nothing any longer.
+        $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'terms' => [], 'authors' => []]);
+
+        $events = $this->pullDomainEvents();
+        $postRepository->delete($this);
+        $eventBus->publish(...$events);
+    }
+
+    public function id(): PostId
+    {
+        return $this->id;
+    }
+
+    public function title(): Title
+    {
+        return $this->version->title();
+    }
+
+    /**
+     * Null while the post is left without one.
+     */
+    public function slug(): ?Slug
+    {
+        return $this->version->slug();
+    }
+
+    public function classification(): Classification
+    {
+        return $this->version->classification();
+    }
+
+    public function content(): RichText
+    {
+        return $this->version->content();
+    }
+
+    public function seo(): Seo
+    {
+        return $this->version->seo();
+    }
+
+    public function status(): PostStatus
+    {
+        return $this->status;
+    }
+
+    /**
+     * Where the site serves the post, null while it isn't there.
+     */
+    public function publishedAddress(): ?PostAddress
+    {
+        if (null === $this->publishedSectionSlug || null === $this->publishedDay || null === $this->publishedSlug) {
+            return null;
+        }
+
+        return new PostAddress(
+            $this->publishedSectionSlug,
+            new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
+            $this->publishedSlug,
+        );
+    }
+
+    /**
+     * The version the site serves, null while the post isn't on it.
+     */
+    public function onSite(): ?PostVersion
+    {
+        return $this->status->versionOnSite($this->published);
+    }
+
+    public function timeline(): Timeline
+    {
+        return $this->timeline;
+    }
+
+    /**
+     * Makes a change and, when it changes anything the post uses, tells what
+     * it uses now.
+     *
+     * @param \Closure(): void $change
+     */
+    private function changeResourcesUsed(\Closure $change): void
+    {
+        $before = $this->resourcesUsed();
+        $change();
+        $this->recordResourcesUsed($before, $this->resourcesUsed());
+    }
+
+    /**
+     * @param array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>} $before
+     * @param array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>} $after
+     */
+    private function recordResourcesUsed(array $before, array $after): void
+    {
+        if ($before['images'] !== $after['images']) {
+            $this->record(new PostImagesUsed($this->id->value(), $after['images']));
+        }
+
+        if ($before['pages'] !== $after['pages']) {
+            $this->record(new PostPagesLinked($this->id->value(), $after['pages']));
+        }
+
+        if ($before['terms'] !== $after['terms']) {
+            $this->record(new PostTermsUsed($this->id->value(), $after['terms']));
+        }
+
+        if ($before['authors'] !== $after['authors']) {
+            $this->record(new PostAuthorsUsed($this->id->value(), $after['authors']));
+        }
+    }
+
+    /**
+     * What the version being edited and the one last published use, each
+     * once and in order: the images embedded, the pages linked, the section
+     * and the tags filed under, and the author signed by.
+     *
+     * @return array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>}
+     */
+    private function resourcesUsed(): array
+    {
+        $images = [];
+        $pages = [];
+        $terms = [];
+        $authors = [];
+
+        foreach ([$this->version, $this->published] as $version) {
+            if (null === $version) {
+                continue;
+            }
+
+            $classification = $version->classification();
+            $images = [...$images, ...$version->content()->imageIds()];
+            $pages = [...$pages, ...$version->content()->pageIds()];
+            $terms = [...$terms, ...$classification->tags()->values()];
+
+            if (null !== $classification->section()) {
+                $terms[] = $classification->section()->value();
+            }
+
+            if (null !== $classification->author()) {
+                $authors[] = $classification->author()->value();
+            }
+        }
+
+        return [
+            'images' => self::eachOnce($images),
+            'pages' => self::eachOnce($pages),
+            'terms' => self::eachOnce($terms),
+            'authors' => self::eachOnce($authors),
+        ];
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return list<string>
+     */
+    private static function eachOnce(array $ids): array
+    {
+        sort($ids);
+
+        return array_values(array_unique($ids));
+    }
+
+    private function replaceVersion(PostVersion $version): void
+    {
+        if (!$version->equals($this->version)) {
+            $this->timeline = $this->timeline->updated(Clock::now());
+        }
+
+        $this->version = $version;
+    }
+}

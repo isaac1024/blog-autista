@@ -397,6 +397,14 @@ final class Author extends AggregateRoot
         return false;
     }
 
+    /**
+     * The version the site serves, null while the author isn't on it.
+     */
+    public function onSite(): ?AuthorVersion
+    {
+        return AuthorStatus::Published === $this->status ? $this->published : null;
+    }
+
     public function timeline(): Timeline
     {
         return $this->timeline;
