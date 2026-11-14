@@ -149,10 +149,7 @@ final class AuthorEditorTest extends TestCase
         $shown = PageComponents::find($panel, 'Shared:Avatar', ['srcset' => '', 'size' => 400, 'alt' => 'cms.authors.edit.avatar_current(%name%=Isaac Abreu)']);
         self::assertSame(null === $avatar ? [] : [true], array_map(
             // Absolute, naming the author and the file, and signed until the preview expires.
-            static fn (PageComponent $image): bool => 1 === preg_match(
-                \sprintf('#^%s/cms_authors_avatar\?.*_expiration=%d.*&_hash=.+#', self::SITE, ClockMother::now()->getTimestamp()),
-                (string) $image->props['src'],
-            ) && str_contains((string) $image->props['src'], 'file='.$avatar) && str_contains((string) $image->props['src'], 'id='.self::ID),
+            static fn (PageComponent $image): bool => self::isSignedAvatarLink($image->props['src'], (string) $avatar),
             $shown,
         ));
     }
@@ -242,6 +239,15 @@ final class AuthorEditorTest extends TestCase
         yield 'a published author' => [AuthorMother::published(id: self::ID), 'published'];
         yield 'a published author with changes' => [AuthorMother::published(id: self::ID, publishedName: 'Antes'), 'changed'];
         yield 'an unpublished author' => [AuthorMother::unpublished(id: self::ID), 'unpublished'];
+    }
+
+    private static function isSignedAvatarLink(mixed $src, string $avatar): bool
+    {
+        self::assertIsString($src);
+
+        return 1 === preg_match(\sprintf('#^%s/cms_authors_avatar\?.*_expiration=%d.*&_hash=.+#', self::SITE, ClockMother::now()->getTimestamp()), $src)
+            && str_contains($src, 'file='.$avatar)
+            && str_contains($src, 'id='.self::ID);
     }
 
     private function confirms(Page $editor, string $route, string $action): bool
