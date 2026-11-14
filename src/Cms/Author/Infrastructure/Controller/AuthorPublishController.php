@@ -8,8 +8,18 @@ use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Application\AuthorPublisher;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
+use Cms\Redirect\Application\PublicationOutlookFinder;
+use Cms\Redirect\Application\ResourcePublication;
+use Cms\Redirect\Domain\InvalidRedirect;
+use Cms\Redirect\Domain\RedirectId;
+use Cms\Redirect\Domain\RedirectRepository;
+use Cms\Redirect\Domain\Resource;
+use Cms\Redirect\Domain\SiteResources;
+use Cms\Redirect\Infrastructure\Controller\PublicationRequest;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\MutualExclusion;
+use Shared\Domain\Transaction;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,28 +28,73 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
 /**
- * Publishes an author as it is saved; what it lacks is told on its editor.
+ * Publishes an author as it is saved. When that changes the redirects, it
+ * asks first, on a page of its own, and publishes once the editor confirms
+ * there, if publishing still does what was shown. A refused choice, or one
+ * made on what changed since, goes back to that page; anything else the
+ * author lacks, to its editor.
+ *
+ * It reaches the redirects as much as the author, so its coupling says nothing
+ * about its design.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 final class AuthorPublishController extends AbstractController
 {
+    public function __construct(
+        private readonly CsrfRequestGuard $csrf,
+        private readonly RedirectRepository $redirectRepository,
+        private readonly SiteResources $siteResources,
+        private readonly MutualExclusion $mutualExclusion,
+        private readonly Transaction $transaction,
+    ) {}
+
     #[Route('/authors/{id}/publish', name: 'cms_authors_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
     {
-        $csrf->assertValid($request);
+        $this->csrf->assertValid($request);
+
+        $resource = Resource::author($id);
+        $outlook = PublicationRequest::outlook($request);
 
         try {
-            new AuthorPublisher($id)($authorRepository, $eventBus, $avatarStorage);
+            if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst) {
+                return $this->redirectToRoute('cms_authors_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
+            }
+
+            // Straight from the editor, nothing was shown, so publishing must
+            // still change no redirect when it happens.
+            new ResourcePublication(
+                RedirectId::random()->value(),
+                $resource,
+                PublicationRequest::previous($request, $resource),
+                $outlook ?? '',
+                static function () use ($id, $authorRepository, $eventBus, $avatarStorage): void {
+                    new AuthorPublisher($id)($authorRepository, $eventBus, $avatarStorage);
+                },
+            )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (AuthorNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
-            // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 
+            // What concerns the redirects is told on the confirmation, with
+            // the choices made there, if any, as they were.
+            if ($error instanceof InvalidRedirect) {
+                if (null !== $outlook) {
+                    $request->getSession()->set(\sprintf(AuthorPublishFormController::SAVED, $id), $request->request->all());
+                }
+
+                return $this->redirectToRoute('cms_authors_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
+            }
+
+            // Told on the page it goes back to.
             return $this->redirectToRoute('cms_authors_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 
         $this->addFlash('success', ['key' => 'cms.notices.author.published', 'parameters' => []]);
 
-        return $this->redirectToRoute('cms_authors_edit', ['id' => $id], status: Response::HTTP_SEE_OTHER);
+        // The editor stays on the author, to go on with it.
+        return $this->redirectToRoute('cms_authors_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
     }
 }

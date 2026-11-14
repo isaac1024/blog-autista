@@ -22,6 +22,7 @@ use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
+use Cms\Tests\Redirect\Infrastructure\Controller\NamesResources;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +39,8 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PostEditorTest extends TestCase
 {
+    use NamesResources;
+
     use ClockSensitiveTrait;
 
     private const string ID = PostIdMother::DEFAULT_VALUE;
@@ -110,7 +113,8 @@ final class PostEditorTest extends TestCase
 
         self::assertSame($offered, [
             'discard' => $this->confirms($editor, 'cms_posts_discard', 'discard', 'secondary'),
-            'unpublish' => $this->confirms($editor, 'cms_posts_unpublish', 'unpublish', 'secondary'),
+            // Taking it off the site is asked on a page of its own.
+            'unpublish' => [] !== PageComponents::find($editor, 'Shared:ButtonLink', ['label' => 'cms.posts.unpublish.trigger']),
             'delete' => $this->confirms($editor, 'cms_posts_delete', 'delete', 'danger'),
         ]);
     }
@@ -332,6 +336,7 @@ final class PostEditorTest extends TestCase
             new PostUrl($urlGenerator),
             new TermState($translator),
             new AuthorState($translator),
+            $this->lastAddressPanelOnSite($translator, $urlGenerator),
         )(
             PostResponse::fromPost($post),
             [

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cms\Tests\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\TargetInput;
-use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -34,7 +33,7 @@ final class RedirectTargetFieldTest extends TestCase
     #[DataProvider('prefixes')]
     public function testItPostsItsFieldsUnderItsPrefix(string $prefix, array $names, array $ids): void
     {
-        $field = $this->field($prefix, [ResourceType::Page, ResourceType::Image], [], []);
+        $field = $this->field($prefix, [RedirectTargetField::PAGE, RedirectTargetField::IMAGE], [], []);
 
         PageComponents::one($field, 'Shared:FormChoice', ['name' => $names['action'], 'id' => $ids['action']]);
         PageComponents::one($field, 'Shared:ResourceField', ['name' => $names['page'], 'id' => $ids['page']]);
@@ -65,7 +64,7 @@ final class RedirectTargetFieldTest extends TestCase
     public function testItOffersTheChoicesOfItsFormAroundItsOwn(): void
     {
         $choice = static fn (string $value): array => ['value' => $value, 'label' => $value, 'hint' => $value, 'fields' => []];
-        $field = $this->field('', [ResourceType::Image], [$choice('keep')], [$choice('later')]);
+        $field = $this->field('', RedirectTargetField::IMAGE_KINDS, [$choice('keep')], [$choice('later')]);
 
         $options = PageComponents::one($field, 'Shared:FormChoice', [])->props['options'];
         self::assertIsArray($options);
@@ -84,10 +83,10 @@ final class RedirectTargetFieldTest extends TestCase
             'incoming' => ['x' => ['action' => 'image', 'image_id' => 'otra', 'page_id' => ['no']]],
         ]);
 
-        self::assertSame(['action' => 'page', 'page_id' => 'una', 'image_id' => ''], RedirectTargetField::fromRequest($request, ''));
+        self::assertSame(['action' => 'page', 'page_id' => 'una', 'image_id' => '', 'post_id' => '', 'section_id' => '', 'tag_id' => '', 'author_id' => ''], RedirectTargetField::fromRequest($request, ''));
         $incoming = $request->request->all('incoming')['x'] ?? null;
         self::assertIsArray($incoming);
-        self::assertSame(['action' => 'image', 'page_id' => '', 'image_id' => 'otra'], RedirectTargetField::values($incoming));
+        self::assertSame(['action' => 'image', 'page_id' => '', 'image_id' => 'otra', 'post_id' => '', 'section_id' => '', 'tag_id' => '', 'author_id' => ''], RedirectTargetField::values($incoming));
     }
 
     /**
@@ -100,7 +99,7 @@ final class RedirectTargetFieldTest extends TestCase
     #[DataProvider('choices')]
     public function testItTellsWhereTheChoiceLeads(array $values, TargetInput $target): void
     {
-        self::assertEquals($target, RedirectTargetField::target($values));
+        self::assertEquals($target, RedirectTargetField::target([...RedirectTargetField::values([]), ...$values]));
     }
 
     /**
@@ -116,7 +115,7 @@ final class RedirectTargetFieldTest extends TestCase
     }
 
     /**
-     * @param list<ResourceType>                                                                   $types
+     * @param list<string>                                                                         $types
      * @param list<array{value: string, label: string, hint: string, fields: list<PageComponent>}> $leading
      * @param list<array{value: string, label: string, hint: string, fields: list<PageComponent>}> $trailing
      */
@@ -127,7 +126,7 @@ final class RedirectTargetFieldTest extends TestCase
             $prefix,
             'Adónde lleva',
             $types,
-            ['action' => 'gone', 'page_id' => '', 'image_id' => ''],
+            RedirectTargetField::leadingTo(null, ''),
             $leading,
             $trailing,
         );

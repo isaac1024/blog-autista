@@ -36,6 +36,16 @@ interface AuthorRepository
     public function findBySlug(Slug $slug): ?Author;
 
     /**
+     * The author on the site with the slug.
+     */
+    public function findOnSiteBySlug(Slug $slug): ?Author;
+
+    /**
+     * The author off the site whose last address there had the slug.
+     */
+    public function findOffSiteByLastSiteSlug(Slug $slug): ?Author;
+
+    /**
      * @return list<Author>
      */
     public function matching(Criteria $criteria): array;

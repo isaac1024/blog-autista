@@ -53,7 +53,7 @@ final class RetirementFormTest extends TestCase
             'description' => 'cms.redirects.retire.address.description(%address%=/sobre-mi.html)',
         ]);
         $choice = PageComponents::one($panel, 'Shared:FormChoice', ['name' => 'address[action]', 'legend' => 'cms.redirects.retire.address.legend', 'value' => '']);
-        self::assertSame(['page', RedirectTargetField::GONE, 'none'], self::options($choice));
+        self::assertSame([...RedirectTargetField::OTHER_KINDS, RedirectTargetField::GONE, 'none'], self::options($choice));
     }
 
     /**
@@ -96,7 +96,7 @@ final class RetirementFormTest extends TestCase
             'name' => 'incoming['.self::FROM_ORIGIN.'][action]',
             'legend' => 'cms.redirects.retire.incoming.legend_origin(%origin%=cms.redirects.target.page(%name%=Retirada), %source%=/retirada.html)',
         ]);
-        self::assertSame(['same', 'page', RedirectTargetField::GONE, 'delete'], self::options($plain));
+        self::assertSame(['same', ...RedirectTargetField::OTHER_KINDS, RedirectTargetField::GONE, 'delete'], self::options($plain));
     }
 
     public function testItOffersTheRedirectOfAnImageOnlyAnotherImage(): void

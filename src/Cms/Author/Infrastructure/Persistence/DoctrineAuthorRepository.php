@@ -8,6 +8,7 @@ use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AuthorSlugAlreadyTaken;
+use Cms\Author\Domain\AuthorStatus;
 use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -90,6 +91,23 @@ final readonly class DoctrineAuthorRepository implements AuthorRepository
             ->getQuery();
 
         return $query->getResult()[0] ?? null;
+    }
+
+    #[\Override]
+    public function findOnSiteBySlug(Slug $slug): ?Author
+    {
+        return $this->entityManager->getRepository(Author::class)->findOneBy(['publishedSlug' => $slug]);
+    }
+
+    #[\Override]
+    public function findOffSiteByLastSiteSlug(Slug $slug): ?Author
+    {
+        // An author published at an address takes it from any other, so one
+        // author off the site at most last had it; the newest wins otherwise.
+        return $this->entityManager->getRepository(Author::class)->findOneBy(
+            ['lastSiteSlug' => $slug, 'status' => AuthorStatus::Unpublished],
+            ['id' => 'DESC'],
+        );
     }
 
     #[\Override]

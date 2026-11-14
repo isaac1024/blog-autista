@@ -38,6 +38,16 @@ final class InvalidAuthorPublication extends DomainError
         return new self('Only a published author can be unpublished.', 'errors.author.publication.not_published', []);
     }
 
+    public static function redirected(): self
+    {
+        return new self('An author that redirects lead to stays on the site until they lead elsewhere.', 'errors.author.publication.redirected', []);
+    }
+
+    public static function addressOnSite(): self
+    {
+        return new self('An author on the site keeps its address there.', 'errors.author.publication.address_on_site', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published author with unpublished changes has changes to discard.', 'errors.author.publication.no_changes_to_discard', []);

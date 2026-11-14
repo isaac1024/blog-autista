@@ -36,7 +36,8 @@ final readonly class RedirectEditor
     public function __invoke(RedirectResponse $redirect): Page
     {
         $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
-        $origin = ($this->redirectNames)([$redirect])[$redirect->id]['origin'];
+        $names = ($this->redirectNames)([$redirect])[$redirect->id];
+        $origin = $names['origin'];
 
         $page = CmsLayout::page(\sprintf('%s · %s · CMS', $redirect->source, $this->translator->trans('cms.redirects.edit.title')))
             ->withMain('Shared:PageTitle', [
@@ -60,8 +61,10 @@ final readonly class RedirectEditor
             ]);
         }
 
-        // An address of an image only leads to images; any other, to anything but images.
-        $types = $redirect->image ? [ResourceType::Image] : [ResourceType::Page];
+        // An address of an image only leads to images; any other, to anything
+        // but images. A target deleted since is picked as the kind of its
+        // type, a term as a section.
+        $kind = null === $redirect->targetType ? null : $names['kind'] ?? (ResourceType::Term->value === $redirect->targetType ? RedirectTargetField::SECTION : $redirect->targetType);
 
         return $page->withMain('Shared:Form', [
             'action' => $this->urlGenerator->generate('cms_redirects_update', ['id' => $redirect->id]),
@@ -71,12 +74,8 @@ final readonly class RedirectEditor
             ($this->redirectTargetField)(
                 '',
                 $this->translator->trans('cms.redirects.form.action.legend'),
-                $types,
-                [
-                    'action' => $redirect->targetType ?? RedirectTargetField::GONE,
-                    'page_id' => ResourceType::Page->value === $redirect->targetType ? $redirect->targetId ?? '' : '',
-                    'image_id' => ResourceType::Image->value === $redirect->targetType ? $redirect->targetId ?? '' : '',
-                ],
+                RedirectTargetField::kindsFor($redirect->image),
+                RedirectTargetField::leadingTo($kind, $redirect->targetId ?? ''),
                 [],
                 [],
             ),

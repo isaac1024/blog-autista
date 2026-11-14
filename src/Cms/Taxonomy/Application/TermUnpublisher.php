@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Application;
 
+use Cms\Taxonomy\Domain\TermRedirects;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Event\EventBus;
 
@@ -17,11 +18,11 @@ final readonly class TermUnpublisher
         private string $id,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, TermRedirects $termRedirects): void
     {
         $term = new TermOfTaxonomy($this->taxonomy, $this->id)($termRepository);
 
-        $term->unpublish();
+        $term->unpublish($termRedirects);
 
         $term->save($termRepository, $eventBus);
     }

@@ -7,13 +7,12 @@ namespace Cms\Redirect\Infrastructure\Controller;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
-use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Domain\SiteResources;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * The form that takes a page or an image off the site, saying what becomes
+ * The form that takes a resource off the site, saying what becomes
  * of its addresses: where its own leads once it is off, if anywhere, and
  * what each redirect that leads to it does instead, since none may lead to a
  * resource off the site. Nothing is chosen for the editor: each choice is
@@ -88,7 +87,7 @@ final readonly class RetirementForm
             ($this->redirectTargetField)(
                 'address',
                 $this->translator->trans('cms.redirects.retire.address.legend'),
-                [$resource->type()->isImage() ? ResourceType::Image : ResourceType::Page],
+                RedirectTargetField::kindsFor($resource->type()->isImage()),
                 RedirectTargetField::values($posted),
                 [],
                 [$this->option(RetirementRequest::NOT_FOUND, 'cms.redirects.retire.address.not_found')],
@@ -115,7 +114,7 @@ final readonly class RetirementForm
             null === $names[$redirect->id]['origin']
                 ? $this->translator->trans('cms.redirects.retire.incoming.legend', ['%source%' => $redirect->source])
                 : $this->translator->trans('cms.redirects.retire.incoming.legend_origin', ['%source%' => $redirect->source, '%origin%' => $names[$redirect->id]['origin']]),
-            $redirect->image ? [ResourceType::Image] : [ResourceType::Page],
+            RedirectTargetField::kindsFor($redirect->image),
             RedirectTargetField::values(self::part($posted, $redirect->id)),
             [$this->option(RetirementRequest::SAME, 'cms.redirects.retire.incoming.same')],
             [$this->option(RetirementRequest::DELETE, 'cms.redirects.retire.incoming.delete')],

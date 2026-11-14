@@ -31,6 +31,11 @@ final class PostChangesControllersTest extends PostControllerTestCase
     use ClockSensitiveTrait;
     use QueuedDomainEvents;
 
+    /**
+     * What its address does once off the site: nothing, so it isn't found.
+     */
+    private const array LEAVE_NOT_FOUND = ['address' => ['action' => 'none']];
+
     #[\Override]
     protected function setUp(): void
     {
@@ -44,7 +49,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
         $client = self::createClient();
         $post = $this->savePost(PostMother::published(id: PostIdMother::random()->value(), publishedTitle: 'Antes'));
 
-        $this->post($client, $route, self::HOST.'/posts/'.$post->id()->value().$path, self::form());
+        $this->post($client, $route, self::HOST.'/posts/'.$post->id()->value().$path, self::form() + self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects(self::HOST.'/login');
         self::assertEquals($post, $this->storedPost($post));
@@ -56,7 +61,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $this->post($client, $route, self::HOST.'/posts/'.PostIdMother::random()->value().$path, self::form());
+        $this->post($client, $route, self::HOST.'/posts/'.PostIdMother::random()->value().$path, self::form() + self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -169,7 +174,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
         $id = PostIdMother::random()->value();
         $post = $this->savePost(PostMother::published(id: $id));
 
-        $this->post($client, 'cms_posts_unpublish', self::HOST.'/posts/'.$id.'/unpublish');
+        $this->post($client, 'cms_posts_unpublish', self::HOST.'/posts/'.$id.'/unpublish', self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('/posts/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.notices.post.unpublished', 'parameters' => []]], self::successNotices($client));
@@ -204,9 +209,10 @@ final class PostChangesControllersTest extends PostControllerTestCase
         $id = PostIdMother::random()->value();
         $post = $this->savePost(PostMother::create(id: $id));
 
-        $this->post($client, $route, self::HOST.'/posts/'.$id.$path);
+        $this->post($client, $route, self::HOST.'/posts/'.$id.$path, self::LEAVE_NOT_FOUND);
 
-        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        // Taking it off the site goes back to where it is asked, which tells it.
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id.('/unpublish' === $path ? '/unpublish' : ''), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => $key, 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($post, $this->storedPost($post));
         self::assertSame([], $this->queuedEvents());

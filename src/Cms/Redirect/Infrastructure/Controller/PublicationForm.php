@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Cms\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\PublicationOutlook;
-use Cms\Redirect\Domain\ResourceType;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * The form that confirms publishing a page when it changes the redirects:
+ * The form that confirms publishing a resource when it changes the redirects:
  * it tells of the redirect at the address it takes, which goes, and asks
- * what the address it leaves does, leading to the page itself unless the
+ * what the address it leaves does, leading to the resource itself unless the
  * editor says otherwise.
  *
  * It posts the fingerprint of what it showed, so publishing knows it still
@@ -72,8 +71,8 @@ final readonly class PublicationForm
             ($this->redirectTargetField)(
                 'previous',
                 $this->translator->trans('cms.redirects.publish.previous.legend', ['%previous%' => $outlook->previous]),
-                [ResourceType::Page],
-                // Leading to the page itself, unless the editor chose otherwise.
+                RedirectTargetField::OTHER_KINDS,
+                // Leading to the resource itself, unless the editor chose otherwise.
                 [...$values, 'action' => '' === $values['action'] ? PublicationRequest::ITSELF : $values['action']],
                 [[
                     'value' => PublicationRequest::ITSELF,

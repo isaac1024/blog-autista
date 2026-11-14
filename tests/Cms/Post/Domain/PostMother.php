@@ -132,12 +132,14 @@ final class PostMother
     }
 
     /**
-     * A post taken off the site, which keeps the version it last had there.
+     * A post taken off the site, which keeps the version and the address it
+     * last had there; with no last address, another post took it since.
      */
     public static function unpublished(
         string $id = PostIdMother::DEFAULT_VALUE,
         string $firstPublishedAt = ClockMother::NOW,
         int $publicationRevision = 2,
+        bool $lastAddress = true,
     ): Post {
         $version = self::version(self::TITLE, self::SLUG, self::SECTION, self::AUTHOR, [], self::CONTENT, self::META_DESCRIPTION);
 
@@ -148,7 +150,7 @@ final class PostMother
             $version,
             new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now($firstPublishedAt), ClockMother::now($firstPublishedAt)),
             $publicationRevision,
-            null,
+            $lastAddress ? new PostAddress(new Slug(TermMother::SLUG), ClockMother::now($firstPublishedAt), new Slug(self::SLUG)) : null,
         );
     }
 

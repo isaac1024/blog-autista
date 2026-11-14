@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PagePublishForm;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Application\PublicationOutlook;
 use Cms\Redirect\Infrastructure\Controller\PublicationForm;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
 use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\TestCase;
@@ -63,7 +66,7 @@ final class PagePublishFormTest extends TestCase
     {
         $translator = new CatalogueTranslator();
         $urlGenerator = new RouteNameUrlGenerator();
-        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), $translator);
+        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator);
 
         $page = new PagePublishForm($urlGenerator, $translator, new PublicationForm(
             $translator,

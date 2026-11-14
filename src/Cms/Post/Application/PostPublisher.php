@@ -18,7 +18,8 @@ use Shared\Domain\MutualExclusion;
  * Its address there is only known as it is published, so that is when it is
  * checked that no other post on the site has it, holding the address while
  * it is checked and saved, so two posts published at once can't both take
- * it.
+ * it. A post off the site that last had that address there loses it: it
+ * is this one's now.
  */
 final readonly class PostPublisher
 {
@@ -36,9 +37,18 @@ final readonly class PostPublisher
         $address = $post->publishedAddress();
         $keys = null === $address ? [] : ['post-address:'.$address->key()];
 
-        $mutualExclusion->run($keys, static function () use ($post, $postRepository, $eventBus): void {
+        $mutualExclusion->run($keys, static function () use ($post, $address, $postRepository, $eventBus): void {
             new AddressAvailability($post)($postRepository);
             $post->save($postRepository, $eventBus);
+
+            // Its address is its last from now on, not that of a post off
+            // the site that last had it.
+            $former = null === $address ? null : $postRepository->findOffSiteByLastAddress($address);
+
+            if (null !== $former && !$former->id()->equals($post->id())) {
+                $former->loseLastAddress();
+                $former->save($postRepository, $eventBus);
+            }
         });
     }
 }

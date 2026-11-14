@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\Page;
@@ -14,6 +15,7 @@ use Cms\Page\Infrastructure\Controller\PageEditor;
 use Cms\Page\Infrastructure\Controller\PageRole;
 use Cms\Page\Infrastructure\Controller\PageState;
 use Cms\Page\Infrastructure\Controller\SharedPreviewLink;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
@@ -22,6 +24,7 @@ use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -371,7 +374,7 @@ final class PageEditorTest extends TestCase
         $translator = new CatalogueTranslator();
         $siteResources = self::createStub(SiteResources::class);
         $siteResources->method('isOnSite')->willReturn(true);
-        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), $translator);
+        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator);
 
         $editor = new PageEditor(
             $urlGenerator,

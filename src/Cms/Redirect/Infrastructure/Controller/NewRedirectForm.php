@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
-use Cms\Redirect\Domain\ResourceType;
 use Shared\Domain\SitePath;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -90,8 +89,8 @@ final readonly class NewRedirectForm
                 ($this->redirectTargetField)(
                     '',
                     $this->translator->trans('cms.redirects.form.action.legend'),
-                    [ResourceType::Page, ResourceType::Image],
-                    ['action' => ResourceType::Page->value, 'page_id' => '', 'image_id' => ''],
+                    [...RedirectTargetField::OTHER_KINDS, ...RedirectTargetField::IMAGE_KINDS],
+                    RedirectTargetField::leadingTo(RedirectTargetField::PAGE, ''),
                     [],
                     [],
                 ),

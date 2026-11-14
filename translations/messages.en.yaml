@@ -204,6 +204,10 @@ cms:
             image: 'Image “%name%”'
             gone: 'No longer exists (410)'
             deleted: 'Deleted content'
+            post: 'Post “%name%”'
+            section: 'Section “%name%”'
+            tag: 'Tag “%name%”'
+            author: 'Author “%name%”'
         retire:
             subtitle: 'It will be taken off the site. First, decide what becomes of its addresses. You can publish it again.'
             address:
@@ -226,16 +230,16 @@ cms:
                     label: 'Delete the redirect'
                     hint: 'The site will say it can’t find the address (404).'
         publish:
-            subtitle: 'Publishing it changes the redirects of the blog. Check what will happen before publishing it.'
-            replaced: 'Publishing it deletes the redirect of %address%, which now leads to: %target%. That address will show this page.'
-            replaced_origin: 'Publishing it deletes the redirect of %address%, which now leads to: %target%. That address will show this page, and what links to or embeds this content will stop showing it: %origin%.'
+            subtitle: 'Publishing this content changes the redirects of the blog. Check what will happen before publishing it.'
+            replaced: 'Publishing deletes the redirect of %address%, which now leads to: %target%. That address will show this content.'
+            replaced_origin: 'Publishing deletes the redirect of %address%, which now leads to: %target%. That address will show this content, and what links to or embeds what was there will stop showing it: %origin%.'
             previous:
                 title: 'Its former address'
                 description: 'It was at %previous% and will be at %next%.'
                 legend: 'What %previous% does once it is published'
                 itself:
-                    label: 'Lead to this page'
-                    hint: 'Whoever comes by the former address sees the page at its new one.'
+                    label: 'Lead to this content'
+                    hint: 'Whoever comes by the former address sees it at its new one.'
                 keep:
                     label: 'Leave its redirect as it is'
                     hint: 'It already leads to: %target%.'
@@ -279,6 +283,18 @@ cms:
                 gone:
                     label: 'Say it no longer exists'
                     hint: 'The site answers that what was there was taken off for good (code 410).'
+                post:
+                    label: 'Lead to a post'
+                    hint: 'Whoever visits it goes to the post you choose.'
+                section:
+                    label: 'Lead to a section'
+                    hint: 'Whoever visits it goes to the section you choose.'
+                tag:
+                    label: 'Lead to a tag'
+                    hint: 'Whoever visits it goes to the tag you choose.'
+                author:
+                    label: 'Lead to an author'
+                    hint: 'Whoever visits it goes to the page of the author you choose.'
             page:
                 label: 'Target page'
                 hint: 'Only a published page can be chosen.'
@@ -286,6 +302,18 @@ cms:
                 label: 'Target image'
                 hint: 'Only a published image can be chosen.'
             off_site: 'Can’t be chosen: it isn’t published.'
+            post:
+                label: 'Target post'
+                hint: 'Only a published post can be chosen.'
+            section:
+                label: 'Target section'
+                hint: 'Only a published section can be chosen.'
+            tag:
+                label: 'Target tag'
+                hint: 'Only a published tag can be chosen.'
+            author:
+                label: 'Target author'
+                hint: 'Only a published author can be chosen.'
         incoming:
             title: 'Redirects that lead here'
             all: 'See them all'
@@ -295,6 +323,15 @@ cms:
             image:
                 description: 'Addresses that lead to the image “%name%”. While there is any, it can’t be taken off the site.'
                 empty: 'No address leads to the image “%name%”.'
+            post:
+                description: 'Addresses that lead to the post “%name%”. While there is any, it can’t be taken off the site.'
+                empty: 'No address leads to the post “%name%”.'
+            term:
+                description: 'Addresses that lead to “%name%”. While there is any, it can’t be taken off the site.'
+                empty: 'No address leads to “%name%”.'
+            author:
+                description: 'Addresses that lead to the author “%name%”. While there is any, it can’t be taken off the site.'
+                empty: 'No address leads to the author “%name%”.'
     relations:
         title: 'Where it is used'
         types:
@@ -490,14 +527,17 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this section?'
-            description: 'The section “%name%” will leave the site, and its address will answer “not found”. You can publish it again.'
-            submit: 'Yes, unpublish the section'
+            submit: 'Unpublish the section'
+            page_title: 'Unpublish “%name%”'
+            back: 'Back to the section'
         delete:
             trigger: 'Delete section'
             title: 'Delete this section?'
             description: 'The section “%name%” will no longer exist. This can’t be undone.'
             submit: 'Yes, delete the section'
+        publish:
+            page_title: 'Publish “%name%”'
+            submit: 'Publish the section'
     tags:
         title: 'Tags'
         subtitle: 'Tags tell what each post is about. A post will be able to have several.'
@@ -529,14 +569,17 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this tag?'
-            description: 'The tag “%name%” will leave the site, and its address will answer “not found”. You can publish it again.'
-            submit: 'Yes, unpublish the tag'
+            submit: 'Unpublish the tag'
+            page_title: 'Unpublish “%name%”'
+            back: 'Back to the tag'
         delete:
             trigger: 'Delete tag'
             title: 'Delete this tag?'
             description: 'The tag “%name%” will no longer exist. This can’t be undone.'
             submit: 'Yes, delete the tag'
+        publish:
+            page_title: 'Publish “%name%”'
+            submit: 'Publish the tag'
     terms:
         name_label: 'Name'
         search:
@@ -672,9 +715,9 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this author?'
-            description: 'The page of “%name%” will leave the site, and its address will answer “not found”. You can publish it again.'
-            submit: 'Yes, unpublish the author'
+            submit: 'Unpublish the author'
+            page_title: 'Unpublish “%name%”'
+            back: 'Back to the author'
         delete:
             trigger: 'Delete author'
             title: 'Delete this author?'
@@ -693,6 +736,9 @@ cms:
             unpublished:
                 label: 'Unpublished'
                 description: 'Unpublished: no longer on the site.'
+        publish:
+            page_title: 'Publish “%name%”'
+            submit: 'Publish the author'
     posts:
         title: 'Posts'
         subtitle: 'The articles of the blog, each under a section and signed by an author. Newest first.'
@@ -777,9 +823,9 @@ cms:
             submit: 'Yes, discard the changes'
         unpublish:
             trigger: 'Unpublish'
-            title: 'Unpublish this post?'
-            description: '“%title%” will be taken off the site and its address will answer “not found”. You can publish it again.'
-            submit: 'Yes, unpublish the post'
+            submit: 'Unpublish the post'
+            page_title: 'Unpublish “%title%”'
+            back: 'Back to the post'
         delete:
             trigger: 'Delete post'
             title: 'Delete this post?'
@@ -798,6 +844,9 @@ cms:
             unpublished:
                 label: 'Unpublished'
                 description: 'Unpublished: no longer on the site.'
+        publish:
+            page_title: 'Publish “%title%”'
+            submit: 'Publish the post'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'
@@ -1173,6 +1222,8 @@ errors:
             published_term: 'What is published can’t be deleted: unpublish it first.'
             used_term: 'Posts are filed here, so it can’t be deleted. Take it out of those posts first.'
             incomplete_dates: 'What was ever published has a first and a last publication date.'
+            redirected: 'Redirects lead to this section or tag, so it can’t be unpublished until they lead elsewhere.'
+            address_on_site: 'A published section or tag keeps its address on the site.'
     author:
         not_found: 'There is no author at “%slug%”.'
         name:
@@ -1194,6 +1245,8 @@ errors:
             published_author: 'A published author can’t be deleted: unpublish it first.'
             used_author: 'This author signs some post, so it can’t be deleted. Change the author of those posts first.'
             incomplete_dates: 'The publication dates of the author are incomplete.'
+            redirected: 'Redirects lead to this author, so it can’t be unpublished until they lead elsewhere.'
+            address_on_site: 'A published author keeps its address on the site.'
     post:
         title:
             too_short: 'The title must have at least %min% characters.'
@@ -1217,6 +1270,8 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_post: 'A published post can’t be deleted: unpublish it first.'
             incomplete_dates: 'The publication dates of the post are incomplete.'
+            redirected: 'Redirects lead to this post, so it can’t be unpublished until they lead elsewhere.'
+            address_on_site: 'A published post keeps its address on the site.'
     settings:
         already_exist: 'The site already has its settings.'
         name:

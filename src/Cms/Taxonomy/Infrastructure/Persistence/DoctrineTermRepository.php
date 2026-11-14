@@ -10,6 +10,7 @@ use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermSlugAlreadyTaken;
+use Cms\Taxonomy\Domain\TermStatus;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -76,6 +77,23 @@ final readonly class DoctrineTermRepository implements TermRepository
             ->getQuery();
 
         return $query->getResult()[0] ?? null;
+    }
+
+    #[\Override]
+    public function findOnSiteBySlug(Taxonomy $taxonomy, Slug $slug): ?Term
+    {
+        return $this->entityManager->getRepository(Term::class)->findOneBy(['taxonomy' => $taxonomy, 'publishedSlug' => $slug]);
+    }
+
+    #[\Override]
+    public function findOffSiteByLastSiteSlug(Taxonomy $taxonomy, Slug $slug): ?Term
+    {
+        // A term published at an address takes it from any other, so one
+        // term off the site at most last had it; the newest wins otherwise.
+        return $this->entityManager->getRepository(Term::class)->findOneBy(
+            ['taxonomy' => $taxonomy, 'lastSiteSlug' => $slug, 'status' => TermStatus::Unpublished],
+            ['id' => 'DESC'],
+        );
     }
 
     #[\Override]

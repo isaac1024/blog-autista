@@ -147,8 +147,8 @@ final class RedirectEditorTest extends TestCase
             ClockMother::now(),
         );
 
-        yield 'an address leading to a page' => [$redirect(false, 'page', self::PAGE), ['page', 'gone'], ['action' => 'page', 'page_id' => self::PAGE]];
-        yield 'an address gone' => [$redirect(false, null, null), ['page', 'gone'], ['action' => 'gone', 'page_id' => '']];
+        yield 'an address leading to a page' => [$redirect(false, 'page', self::PAGE), ['page', 'post', 'section', 'tag', 'author', 'gone'], ['action' => 'page', 'page_id' => self::PAGE]];
+        yield 'an address gone' => [$redirect(false, null, null), ['page', 'post', 'section', 'tag', 'author', 'gone'], ['action' => 'gone', 'page_id' => '']];
         yield 'an address of an image leading to one' => [$redirect(true, 'image', self::IMAGE), ['image', 'gone'], ['action' => 'image', 'image_id' => self::IMAGE]];
         yield 'an address of an image gone' => [$redirect(true, null, null), ['image', 'gone'], ['action' => 'gone', 'image_id' => '']];
     }

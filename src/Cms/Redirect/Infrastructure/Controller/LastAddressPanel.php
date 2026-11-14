@@ -15,10 +15,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * What the last address of a page or an image off the site answers, for its
- * editor: the redirect there, to edit it, or nothing, and a way to create
- * one. A resource on the site, or never on it, has none to show. A page also
- * tells when publishing it would delete the redirect at its address.
+ * What the last address of a resource off the site answers, for its editor:
+ * the redirect there, to edit it, or nothing, and a way to create one. A
+ * resource on the site, or never on it, has none to show. Any but an image
+ * also tells when publishing it would delete the redirect at its address.
  */
 final readonly class LastAddressPanel
 {
@@ -38,11 +38,31 @@ final readonly class LastAddressPanel
      */
     public function onPage(Page $layout, string $pageId): Page
     {
-        $resource = Resource::page($pageId);
-        $layout = $this->onto($layout, $resource);
-        $notice = ($this->replacedRedirectNotice)(new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources));
+        return $this->onPublishable($layout, Resource::page($pageId));
+    }
 
-        return null === $notice ? $layout : $layout->withMain($notice->name, $notice->props, $notice->children);
+    /**
+     * The editor of a post, as that of a page.
+     */
+    public function onPost(Page $layout, string $postId): Page
+    {
+        return $this->onPublishable($layout, Resource::post($postId));
+    }
+
+    /**
+     * The editor of a section or a tag, as that of a page.
+     */
+    public function onTerm(Page $layout, string $termId): Page
+    {
+        return $this->onPublishable($layout, Resource::term($termId));
+    }
+
+    /**
+     * The editor of an author, as that of a page.
+     */
+    public function onAuthor(Page $layout, string $authorId): Page
+    {
+        return $this->onPublishable($layout, Resource::author($authorId));
     }
 
     /**
@@ -52,6 +72,18 @@ final readonly class LastAddressPanel
     public function onImage(Page $layout, string $imageId): Page
     {
         return $this->onto($layout, Resource::image($imageId));
+    }
+
+    /**
+     * With what its last address answers, and whether publishing deletes the
+     * redirect at the address it is saved with.
+     */
+    private function onPublishable(Page $layout, Resource $resource): Page
+    {
+        $layout = $this->onto($layout, $resource);
+        $notice = ($this->replacedRedirectNotice)(new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources));
+
+        return null === $notice ? $layout : $layout->withMain($notice->name, $notice->props, $notice->children);
     }
 
     private function onto(Page $layout, Resource $resource): Page

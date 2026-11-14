@@ -12,6 +12,7 @@ use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostStatus;
 use Cms\Post\Domain\Title;
+use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -60,6 +61,7 @@ final readonly class PostEditor
         private PostUrl $postUrl,
         private TermState $termState,
         private AuthorState $authorState,
+        private LastAddressPanel $lastAddressPanel,
     ) {}
 
     /**
@@ -82,7 +84,7 @@ final readonly class PostEditor
     ): Page {
         $address = $this->addressPrefix($post, $sections);
 
-        return CmsLayout::page(\sprintf(
+        return $this->lastAddressPanel->onPost(CmsLayout::page(\sprintf(
             '%s · %s · CMS',
             $post->title,
             $this->translator->trans('cms.posts.edit.title'),
@@ -92,7 +94,7 @@ final readonly class PostEditor
                 'title' => $this->translator->trans('cms.posts.edit.title'),
                 'subtitle' => $this->dates($post),
                 'status' => $this->postState->label($post),
-            ], $this->postActions($post, $previewUrl, $previewExpiresAt))
+            ], $this->postActions($post, $previewUrl, $previewExpiresAt)), $post->id)
             ->withMain('Shared:Form', [
                 'action' => $this->urlGenerator->generate('cms_posts_update', ['id' => $post->id]),
                 'method' => 'post',
@@ -133,8 +135,8 @@ final readonly class PostEditor
     /**
      * What is done to the post apart from editing it, offered only when the
      * post allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, and, each confirmed
-     * first, discarding its unpublished changes, taking it off the site, or
+     * and can be sent to anyone, seeing it on the site, taking it off the
+     * site, and, each confirmed first, discarding its unpublished changes or
      * deleting it.
      *
      * @return list<PageComponent>
@@ -158,7 +160,12 @@ final readonly class PostEditor
         }
 
         if ($post->canBeUnpublished) {
-            $actions[] = $this->confirmModal($post, 'unpublish', 'cms_posts_unpublish', 'secondary');
+            // Taking it off the site asks what becomes of its addresses, on a
+            // page of its own.
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->urlGenerator->generate('cms_posts_unpublish_form', ['id' => $post->id]),
+                'label' => $this->translator->trans('cms.posts.unpublish.trigger'),
+            ]);
         }
 
         if ($post->canBeDeleted) {

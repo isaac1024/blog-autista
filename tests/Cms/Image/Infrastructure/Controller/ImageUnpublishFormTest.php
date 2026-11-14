@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Image\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Infrastructure\Controller\ImageUnpublishForm;
 use Cms\Page\Domain\PageRepository;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -15,6 +17,7 @@ use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
 use Cms\Redirect\Infrastructure\Controller\RetirementForm;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\TestCase;
@@ -73,7 +76,7 @@ final class ImageUnpublishFormTest extends TestCase
             new RedirectTargetField($translator, $urlGenerator),
             self::createStub(RedirectRepository::class),
             $siteResources,
-            new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), $translator),
+            new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator),
         ))(ImageResponse::fromImage(ImageMother::published(id: self::ID)), $saved);
         // Whatever a test asks, the page gives every component what it takes.
         ComponentContracts::assertHonoured($page);

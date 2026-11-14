@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Image\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Caption;
@@ -12,11 +13,13 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Infrastructure\Controller\ImageEditor;
 use Cms\Image\Infrastructure\Controller\ImageState;
 use Cms\Page\Domain\PageRepository;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -231,7 +234,7 @@ final class ImageEditorTest extends TestCase
         $translator->setLocale('es');
         $siteResources = self::createStub(SiteResources::class);
         $siteResources->method('isOnSite')->willReturn(true);
-        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), $translator);
+        $redirectNames = new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator);
 
         $editor = new ImageEditor(
             $urlGenerator,

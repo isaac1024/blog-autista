@@ -12,6 +12,7 @@ use Cms\Post\Application\PostUnpublisher;
 use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostAuthorsUsed;
 use Cms\Post\Domain\PostPublished;
+use Cms\Post\Domain\PostRedirects;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostTermsUsed;
 use Cms\Post\Domain\PostUnpublished;
@@ -197,14 +198,14 @@ final class PostPublicationTest extends TestCase
             static fn (DomainEvent $event): bool => $event instanceof PostUnpublished && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus);
+        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(PostRedirects::class));
 
         self::assertNull($post->publishedAddress());
     }
 
     public function testItNeverUnpublishesAPostOffTheSite(): void
     {
-        self::assertTells('errors.post.publication.not_published', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::create()), self::createStub(EventBus::class)));
+        self::assertTells('errors.post.publication.not_published', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::create()), self::createStub(EventBus::class), self::createStub(PostRedirects::class)));
     }
 
     public function testItDiscardsTheChangesBackToTheVersionOnTheSite(): void
@@ -261,7 +262,7 @@ final class PostPublicationTest extends TestCase
         $id = PostIdMother::DEFAULT_VALUE;
 
         yield 'publishing' => [static fn (PostRepository $repository) => new PostPublisher($id)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new RecordingMutualExclusion())];
-        yield 'unpublishing' => [static fn (PostRepository $repository) => new PostUnpublisher($id)($repository, self::createStub(EventBus::class))];
+        yield 'unpublishing' => [static fn (PostRepository $repository) => new PostUnpublisher($id)($repository, self::createStub(EventBus::class), self::createStub(PostRedirects::class))];
         yield 'discarding' => [static fn (PostRepository $repository) => new PostChangesDiscarder($id)($repository, self::createStub(EventBus::class))];
         yield 'deleting' => [static fn (PostRepository $repository) => new PostDeleter($id)($repository, self::createStub(EventBus::class))];
     }

@@ -21,6 +21,11 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
     use ClockSensitiveTrait;
     use QueuedDomainEvents;
 
+    /**
+     * What its address does once off the site: nothing, so it isn't found.
+     */
+    private const array LEAVE_NOT_FOUND = ['address' => ['action' => 'none']];
+
     #[\Override]
     protected function setUp(): void
     {
@@ -34,7 +39,7 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
         $client = self::createClient();
         $author = $this->saveAuthor(AuthorMother::published(id: AuthorIdMother::random()->value(), publishedName: 'Antes'));
 
-        $this->post($client, $route, self::HOST.'/authors/'.$author->id()->value().'/'.$action);
+        $this->post($client, $route, self::HOST.'/authors/'.$author->id()->value().'/'.$action, self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects(self::HOST.'/login');
         self::assertEquals($author, $this->storedAuthor($author));
@@ -46,7 +51,7 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
     {
         $client = self::createAuthenticatedClient();
 
-        $this->post($client, $route, self::HOST.'/authors/'.AuthorIdMother::random()->value().'/'.$action);
+        $this->post($client, $route, self::HOST.'/authors/'.AuthorIdMother::random()->value().'/'.$action, self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
@@ -97,7 +102,7 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
         $id = AuthorIdMother::random()->value();
         $author = $this->saveAuthor(AuthorMother::published(id: $id));
 
-        $this->post($client, 'cms_authors_unpublish', self::HOST.'/authors/'.$id.'/unpublish');
+        $this->post($client, 'cms_authors_unpublish', self::HOST.'/authors/'.$id.'/unpublish', self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('/authors/'.$id, Response::HTTP_SEE_OTHER);
         self::assertEquals(AuthorMother::unpublished(id: $id), $this->storedAuthor($author));
@@ -161,9 +166,10 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
         $record = $this->saveAuthor(AuthorMother::create(id: $id));
         $expected = clone $record;
 
-        $this->post($client, $route, self::HOST.'/authors/'.$id.'/'.$action);
+        $this->post($client, $route, self::HOST.'/authors/'.$id.'/'.$action, self::LEAVE_NOT_FOUND);
 
-        self::assertResponseRedirects(self::HOST.'/authors/'.$id, Response::HTTP_SEE_OTHER);
+        // Taking it off the site goes back to where it is asked, which tells it.
+        self::assertResponseRedirects(self::HOST.'/authors/'.$id.('unpublish' === $action ? '/unpublish' : ''), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.author.publication.'.$error, 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($expected, $this->storedAuthor($record));
     }

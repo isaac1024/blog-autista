@@ -17,18 +17,21 @@ use Cms\Taxonomy\Domain\Term;
 final readonly class TermResponse
 {
     /**
+     * @param string  $taxonomy              one of the Taxonomy values
      * @param ?string $slug                  null while it is left without one
      * @param string  $metaDescription       empty when there is none
      * @param string  $robots                one of the Robots values
      * @param string  $status                one of the TermStatus values
      * @param bool    $changed               whether it is published with changes not on the site yet, which can be discarded
      * @param ?string $publishedSlug         the slug it has on the site, null while it isn't there
+     * @param ?string $lastSiteSlug          the slug it has on the site, or last had there once off it; null when it never had one, or another term took it
      * @param bool    $hasSomethingToPublish whether publishing would change the site
      * @param bool    $canBeUnpublished      whether it can be taken off the site
      * @param bool    $canBeDeleted          whether it can be deleted
      */
     public function __construct(
         public string $id,
+        public string $taxonomy,
         public string $name,
         public ?string $slug,
         public string $metaDescription,
@@ -36,6 +39,7 @@ final readonly class TermResponse
         public string $status,
         public bool $changed,
         public ?string $publishedSlug,
+        public ?string $lastSiteSlug,
         public \DateTimeImmutable $createdAt,
         public \DateTimeImmutable $updatedAt,
         public bool $hasSomethingToPublish,
@@ -47,6 +51,7 @@ final readonly class TermResponse
     {
         return new self(
             $term->id()->value(),
+            $term->taxonomy()->value,
             $term->name()->value(),
             $term->slug()?->value(),
             $term->seo()->description() ?? '',
@@ -54,6 +59,7 @@ final readonly class TermResponse
             $term->status()->value,
             $term->hasUnpublishedChanges(),
             $term->publishedSlug()?->value(),
+            $term->lastSiteSlug()?->value(),
             $term->timeline()->createdAt(),
             $term->timeline()->updatedAt(),
             $term->hasSomethingToPublish(),

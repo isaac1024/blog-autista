@@ -9,6 +9,7 @@ use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostAddressTaken;
 use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostStatus;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -70,6 +71,22 @@ final readonly class DoctrinePostRepository implements PostRepository
             'publishedDay' => new \DateTimeImmutable($address->day()),
             'publishedSlug' => $address->slug(),
         ]);
+    }
+
+    #[\Override]
+    public function findOffSiteByLastAddress(PostAddress $address): ?Post
+    {
+        // A post published at an address takes it from any other, so one
+        // post off the site at most last had it; the newest wins otherwise.
+        return $this->entityManager->getRepository(Post::class)->findOneBy(
+            [
+                'lastSectionSlug' => $address->section(),
+                'lastDay' => new \DateTimeImmutable($address->day()),
+                'lastSlug' => $address->slug(),
+                'status' => PostStatus::Unpublished,
+            ],
+            ['id' => 'DESC'],
+        );
     }
 
     #[\Override]

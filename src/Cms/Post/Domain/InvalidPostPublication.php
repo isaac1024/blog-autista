@@ -53,6 +53,16 @@ final class InvalidPostPublication extends DomainError
         return new self('Only a published post can be unpublished.', 'errors.post.publication.not_published', []);
     }
 
+    public static function redirected(): self
+    {
+        return new self('A post that redirects lead to stays on the site until they lead elsewhere.', 'errors.post.publication.redirected', []);
+    }
+
+    public static function addressOnSite(): self
+    {
+        return new self('A post on the site keeps its address there.', 'errors.post.publication.address_on_site', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published post with unpublished changes has changes to discard.', 'errors.post.publication.no_changes_to_discard', []);

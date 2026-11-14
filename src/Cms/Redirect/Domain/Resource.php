@@ -27,6 +27,24 @@ final readonly class Resource
         return new self(ResourceType::Image, $id);
     }
 
+    public static function post(string $id): self
+    {
+        return new self(ResourceType::Post, $id);
+    }
+
+    /**
+     * A section or a tag.
+     */
+    public static function term(string $id): self
+    {
+        return new self(ResourceType::Term, $id);
+    }
+
+    public static function author(string $id): self
+    {
+        return new self(ResourceType::Author, $id);
+    }
+
     public function type(): ResourceType
     {
         return $this->type;

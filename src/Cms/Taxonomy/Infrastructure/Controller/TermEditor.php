@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
+use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -38,6 +39,7 @@ final readonly class TermEditor
         private TranslatorInterface $translator,
         private TermState $termState,
         private TermAddress $termAddress,
+        private LastAddressPanel $lastAddressPanel,
     ) {}
 
     /**
@@ -47,7 +49,7 @@ final readonly class TermEditor
      */
     public function __invoke(TaxonomySegment $taxonomy, TermResponse $term, string $previewUrl, \DateTimeImmutable $previewExpiresAt): Page
     {
-        return CmsLayout::page(\sprintf(
+        return $this->lastAddressPanel->onTerm(CmsLayout::page(\sprintf(
             '%s · %s · CMS',
             $term->name,
             $this->translator->trans($taxonomy->key('edit.title')),
@@ -57,7 +59,7 @@ final readonly class TermEditor
                 'title' => $this->translator->trans($taxonomy->key('edit.title')),
                 'subtitle' => $this->dates($term),
                 'status' => $this->termState->label($term),
-            ], $this->termActions($taxonomy, $term, $previewUrl, $previewExpiresAt))
+            ], $this->termActions($taxonomy, $term, $previewUrl, $previewExpiresAt)), $term->id)
             ->withMain('Shared:Form', [
                 'action' => $this->urlGenerator->generate('cms_terms_update', ['taxonomy' => $taxonomy->value, 'id' => $term->id]),
                 'method' => 'post',
@@ -85,8 +87,8 @@ final readonly class TermEditor
     /**
      * What is done to the term apart from editing it, offered only when the
      * term allows it: previewing what is saved, through a link that expires
-     * and can be sent to anyone, seeing it on the site, and, each confirmed
-     * first, discarding its unpublished changes, taking it off the site, or
+     * and can be sent to anyone, seeing it on the site, taking it off the
+     * site, and, each confirmed first, discarding its unpublished changes or
      * deleting it.
      *
      * @return list<PageComponent>
@@ -109,7 +111,12 @@ final readonly class TermEditor
         }
 
         if ($term->canBeUnpublished) {
-            $actions[] = $this->confirmModal($taxonomy, $term, 'unpublish', 'cms_terms_unpublish', 'secondary');
+            // Taking it off the site asks what becomes of its addresses, on a
+            // page of its own.
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->urlGenerator->generate('cms_terms_unpublish_form', ['taxonomy' => $taxonomy->value, 'id' => $term->id]),
+                'label' => $this->translator->trans($taxonomy->key('unpublish.trigger')),
+            ]);
         }
 
         if ($term->canBeDeleted) {

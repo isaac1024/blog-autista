@@ -28,6 +28,16 @@ final class InvalidTermPublication extends DomainError
         return new self('Only a published term can be unpublished.', 'errors.term.publication.not_published', []);
     }
 
+    public static function redirected(): self
+    {
+        return new self('A term that redirects lead to stays on the site until they lead elsewhere.', 'errors.term.publication.redirected', []);
+    }
+
+    public static function addressOnSite(): self
+    {
+        return new self('A term on the site keeps its address there.', 'errors.term.publication.address_on_site', []);
+    }
+
     public static function noChangesToDiscard(): self
     {
         return new self('Only a published term with unpublished changes has changes to discard.', 'errors.term.publication.no_changes_to_discard', []);

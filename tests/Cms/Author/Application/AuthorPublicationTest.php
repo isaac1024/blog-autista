@@ -13,6 +13,7 @@ use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorImagesUsed;
 use Cms\Author\Domain\AuthorPagesLinked;
 use Cms\Author\Domain\AuthorPublished;
+use Cms\Author\Domain\AuthorRedirects;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AuthorUnpublished;
 use Cms\Author\Domain\AuthorUsage;
@@ -148,7 +149,7 @@ final class AuthorPublicationTest extends TestCase
         $storage = $this->createMock(AvatarStorage::class);
         $storage->expects(self::never())->method('delete');
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage);
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage, self::createStub(AuthorRedirects::class));
     }
 
     #[DataProvider('authorsOffTheSite')]
@@ -160,7 +161,7 @@ final class AuthorPublicationTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::notPublished());
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
     }
 
     /**
@@ -205,7 +206,7 @@ final class AuthorPublicationTest extends TestCase
     public function testItDeletesAnAuthorOffTheSiteWithItsAvatars(): void
     {
         $author = AuthorMother::published(avatar: AuthorMother::OTHER_AVATAR, bio: RichTextMother::stored(['type' => 'image', 'id' => self::IMAGE]), publishedAvatar: AuthorMother::AVATAR);
-        $author->unpublish();
+        $author->unpublish(self::createStub(AuthorRedirects::class));
         $repository = $this->createMock(AuthorRepository::class);
         $repository->method('find')->willReturn($author);
         $repository->expects(self::once())->method('delete')->with(self::identicalTo($author));

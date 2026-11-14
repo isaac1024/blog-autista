@@ -15,6 +15,7 @@ use Cms\Taxonomy\Infrastructure\Controller\TaxonomySegment;
 use Cms\Taxonomy\Infrastructure\Controller\TermAddress;
 use Cms\Taxonomy\Infrastructure\Controller\TermEditor;
 use Cms\Taxonomy\Infrastructure\Controller\TermState;
+use Cms\Tests\Redirect\Infrastructure\Controller\NamesResources;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -35,6 +36,8 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
  */
 final class TermEditorTest extends TestCase
 {
+    use NamesResources;
+
     use ClockSensitiveTrait;
 
     private const string ID = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a01';
@@ -102,7 +105,8 @@ final class TermEditorTest extends TestCase
 
         self::assertSame($offered, [
             'discard' => $this->confirms($editor, 'cms_terms_discard', 'discard'),
-            'unpublish' => $this->confirms($editor, 'cms_terms_unpublish', 'unpublish'),
+            // Taking it off the site is asked on a page of its own.
+            'unpublish' => [] !== PageComponents::find($editor, 'Shared:ButtonLink', ['label' => 'cms.sections.unpublish.trigger']),
             'delete' => $this->confirms($editor, 'cms_terms_delete', 'delete'),
         ]);
     }
@@ -276,7 +280,7 @@ final class TermEditorTest extends TestCase
         $translator = new CatalogueTranslator();
         $translator->setLocale('es');
 
-        $editor = new TermEditor($urlGenerator, $translator, new TermState($translator), new TermAddress($urlGenerator))(
+        $editor = new TermEditor($urlGenerator, $translator, new TermState($translator), new TermAddress($urlGenerator), $this->lastAddressPanelOnSite($translator, $urlGenerator))(
             $segment,
             TermResponse::fromTerm($term),
             self::PREVIEW,

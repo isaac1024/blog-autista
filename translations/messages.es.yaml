@@ -204,6 +204,10 @@ cms:
             image: 'Imagen «%name%»'
             gone: 'Ya no existe (410)'
             deleted: 'Contenido borrado'
+            post: 'Post «%name%»'
+            section: 'Sección «%name%»'
+            tag: 'Etiqueta «%name%»'
+            author: 'Autor «%name%»'
         retire:
             subtitle: 'Dejará de estar en la web. Antes, decide qué pasa con sus direcciones. Podrás volver a publicarlo.'
             address:
@@ -226,16 +230,16 @@ cms:
                     label: 'Borrar la redirección'
                     hint: 'La web dirá que no encuentra la dirección (404).'
         publish:
-            subtitle: 'Publicarla cambia las redirecciones del blog. Revisa qué pasará antes de publicarla.'
-            replaced: 'Al publicarla, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará esta página.'
-            replaced_origin: 'Al publicarla, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará esta página, y lo que enlaza o incluye este contenido dejará de mostrarlo: %origin%.'
+            subtitle: 'Publicar este contenido cambia las redirecciones del blog. Revisa qué pasará antes de publicarlo.'
+            replaced: 'Al publicar, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará este contenido.'
+            replaced_origin: 'Al publicar, se borrará la redirección de %address%, que ahora lleva a: %target%. Esa dirección mostrará este contenido, y lo que enlaza o incluye lo que había allí dejará de mostrarlo: %origin%.'
             previous:
                 title: 'Su dirección anterior'
                 description: 'Estaba en %previous% y pasará a estar en %next%.'
-                legend: 'Qué hace %previous% al publicarla'
+                legend: 'Qué hace %previous% al publicar'
                 itself:
-                    label: 'Llevar a esta página'
-                    hint: 'Quien llegue por la dirección anterior verá la página en su dirección nueva.'
+                    label: 'Llevar a este contenido'
+                    hint: 'Quien llegue por la dirección anterior lo verá en su dirección nueva.'
                 keep:
                     label: 'Dejar su redirección como está'
                     hint: 'Ya lleva a: %target%.'
@@ -279,6 +283,18 @@ cms:
                 gone:
                     label: 'Decir que ya no existe'
                     hint: 'La web responde que lo que había se retiró para siempre (código 410).'
+                post:
+                    label: 'Llevar a un post'
+                    hint: 'Quien la visite irá al post que elijas.'
+                section:
+                    label: 'Llevar a una sección'
+                    hint: 'Quien la visite irá a la sección que elijas.'
+                tag:
+                    label: 'Llevar a una etiqueta'
+                    hint: 'Quien la visite irá a la etiqueta que elijas.'
+                author:
+                    label: 'Llevar a un autor'
+                    hint: 'Quien la visite irá a la página del autor que elijas.'
             page:
                 label: 'Página de destino'
                 hint: 'Solo se puede elegir una página publicada.'
@@ -286,6 +302,18 @@ cms:
                 label: 'Imagen de destino'
                 hint: 'Solo se puede elegir una imagen publicada.'
             off_site: 'No se puede elegir: no está publicada.'
+            post:
+                label: 'Post de destino'
+                hint: 'Solo se puede elegir un post publicado.'
+            section:
+                label: 'Sección de destino'
+                hint: 'Solo se puede elegir una sección publicada.'
+            tag:
+                label: 'Etiqueta de destino'
+                hint: 'Solo se puede elegir una etiqueta publicada.'
+            author:
+                label: 'Autor de destino'
+                hint: 'Solo se puede elegir un autor publicado.'
         incoming:
             title: 'Redirecciones que llevan aquí'
             all: 'Ver todas'
@@ -295,6 +323,15 @@ cms:
             image:
                 description: 'Direcciones que llevan a la imagen «%name%». Mientras haya alguna, no se puede retirar de la web.'
                 empty: 'Ninguna dirección lleva a la imagen «%name%».'
+            post:
+                description: 'Direcciones que llevan al post «%name%». Mientras haya alguna, no se puede retirar de la web.'
+                empty: 'Ninguna dirección lleva al post «%name%».'
+            term:
+                description: 'Direcciones que llevan a «%name%». Mientras haya alguna, no se puede retirar de la web.'
+                empty: 'Ninguna dirección lleva a «%name%».'
+            author:
+                description: 'Direcciones que llevan al autor «%name%». Mientras haya alguna, no se puede retirar de la web.'
+                empty: 'Ninguna dirección lleva al autor «%name%».'
     relations:
         title: 'Dónde se usa'
         types:
@@ -490,14 +527,17 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar esta sección?'
-            description: 'La sección «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
-            submit: 'Sí, despublicar la sección'
+            submit: 'Despublicar la sección'
+            page_title: 'Despublicar «%name%»'
+            back: 'Volver a la sección'
         delete:
             trigger: 'Borrar sección'
             title: '¿Borrar esta sección?'
             description: 'La sección «%name%» dejará de existir. No se puede deshacer.'
             submit: 'Sí, borrar la sección'
+        publish:
+            page_title: 'Publicar «%name%»'
+            submit: 'Publicar la sección'
     tags:
         title: 'Etiquetas'
         subtitle: 'Las etiquetas señalan de qué trata cada artículo. Un artículo podrá llevar varias.'
@@ -529,14 +569,17 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar esta etiqueta?'
-            description: 'La etiqueta «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
-            submit: 'Sí, despublicar la etiqueta'
+            submit: 'Despublicar la etiqueta'
+            page_title: 'Despublicar «%name%»'
+            back: 'Volver a la etiqueta'
         delete:
             trigger: 'Borrar etiqueta'
             title: '¿Borrar esta etiqueta?'
             description: 'La etiqueta «%name%» dejará de existir. No se puede deshacer.'
             submit: 'Sí, borrar la etiqueta'
+        publish:
+            page_title: 'Publicar «%name%»'
+            submit: 'Publicar la etiqueta'
     terms:
         name_label: 'Nombre'
         search:
@@ -672,9 +715,9 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar este autor?'
-            description: 'La página de «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
-            submit: 'Sí, despublicar el autor'
+            submit: 'Despublicar el autor'
+            page_title: 'Despublicar «%name%»'
+            back: 'Volver al autor'
         delete:
             trigger: 'Borrar autor'
             title: '¿Borrar este autor?'
@@ -693,6 +736,9 @@ cms:
             unpublished:
                 label: 'Despublicado'
                 description: 'Despublicado: ya no está en la web.'
+        publish:
+            page_title: 'Publicar «%name%»'
+            submit: 'Publicar el autor'
     posts:
         title: 'Posts'
         subtitle: 'Los artículos del blog, cada uno en una sección y firmado por un autor. Los más recientes primero.'
@@ -777,9 +823,9 @@ cms:
             submit: 'Sí, descartar los cambios'
         unpublish:
             trigger: 'Despublicar'
-            title: '¿Despublicar este post?'
-            description: '«%title%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarlo.'
-            submit: 'Sí, despublicar el post'
+            submit: 'Despublicar el post'
+            page_title: 'Despublicar «%title%»'
+            back: 'Volver al post'
         delete:
             trigger: 'Borrar post'
             title: '¿Borrar este post?'
@@ -798,6 +844,9 @@ cms:
             unpublished:
                 label: 'Despublicado'
                 description: 'Despublicado: ya no está en la web.'
+        publish:
+            page_title: 'Publicar «%title%»'
+            submit: 'Publicar el post'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -889,20 +938,20 @@ ui:
             search_results: '%count% páginas. Elige una para usarla.'
             more: 'Ver más páginas'
         post:
-            empty: 'Sin entrada.'
-            choose: 'Elegir entrada'
-            noscript: 'Para elegir la entrada hace falta JavaScript. La entrada actual se guarda igualmente.'
-            loading: 'Cargando la entrada…'
-            missing: 'Esta entrada ya no existe.'
-            unknown: 'No se ha podido comprobar la entrada.'
-            chosen: 'Entrada elegida: %title%.'
-            dialog_title: 'Elegir una entrada'
+            empty: 'Sin post.'
+            choose: 'Elegir post'
+            noscript: 'Para elegir el post hace falta JavaScript. El post actual se guarda igualmente.'
+            loading: 'Cargando el post…'
+            missing: 'Este post ya no existe.'
+            unknown: 'No se ha podido comprobar el post.'
+            chosen: 'Post elegido: %title%.'
+            dialog_title: 'Elegir un post'
             search: 'Buscar por título'
-            search_list: 'Entradas'
-            search_none: 'Ninguna entrada coincide con la búsqueda.'
-            search_result: 'Una entrada. Elígela para usarla.'
-            search_results: '%count% entradas. Elige una para usarla.'
-            more: 'Ver más entradas'
+            search_list: 'Posts'
+            search_none: 'Ningún post coincide con la búsqueda.'
+            search_result: 'Un post. Elígelo para usarlo.'
+            search_results: '%count% posts. Elige uno para usarlo.'
+            more: 'Ver más posts'
         section:
             empty: 'Sin sección.'
             choose: 'Elegir sección'
@@ -1100,7 +1149,7 @@ errors:
         outlook_changed: 'Las redirecciones han cambiado desde que se mostró esta confirmación. Revisa de nuevo qué pasará antes de publicar.'
         to_itself: 'Su dirección no puede llevar al mismo contenido que se despublica: elige otro.'
         undecided_address: 'Elige qué hace su dirección al despublicarlo.'
-        undecided_previous: 'Elige qué hace su dirección anterior al publicarla.'
+        undecided_previous: 'Elige qué hace su dirección anterior al publicar.'
         no_new_target: 'Una redirección solo puede llevar a donde lleve su dirección si esa dirección lleva a otro contenido.'
         image_to_other: 'La dirección de una imagen solo puede llevar a otra imagen.'
         other_to_image: 'Solo la dirección de una imagen puede llevar a una imagen.'
@@ -1173,6 +1222,8 @@ errors:
             published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
             used_term: 'Hay posts clasificados aquí, así que no se puede borrar. Quítalo antes de esos posts.'
             incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
+            redirected: 'Hay redirecciones que llevan aquí, así que no se puede despublicar hasta que lleven a otro sitio.'
+            address_on_site: 'Un término publicado conserva su dirección en la web.'
     author:
         not_found: 'No hay ningún autor en «%slug%».'
         name:
@@ -1194,6 +1245,8 @@ errors:
             published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
             used_author: 'Este autor firma algún post, así que no se puede borrar. Cambia antes el autor de esos posts.'
             incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
+            redirected: 'Hay redirecciones que llevan a este autor, así que no se puede despublicar hasta que lleven a otro sitio.'
+            address_on_site: 'Un autor publicado conserva su dirección en la web.'
     post:
         title:
             too_short: 'El título debe tener al menos %min% caracteres.'
@@ -1217,6 +1270,8 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_post: 'Un post publicado no se puede borrar: despublícalo antes.'
             incomplete_dates: 'Las fechas de publicación del post están incompletas.'
+            redirected: 'Hay redirecciones que llevan a este post, así que no se puede despublicar hasta que lleven a otro sitio.'
+            address_on_site: 'Un post publicado conserva su dirección en la web.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
         name:

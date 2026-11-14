@@ -26,6 +26,11 @@ interface PostRepository
     public function findOnSiteAt(PostAddress $address): ?Post;
 
     /**
+     * The post off the site whose last address there it is.
+     */
+    public function findOffSiteByLastAddress(PostAddress $address): ?Post;
+
+    /**
      * @return list<Post>
      */
     public function matching(Criteria $criteria): array;

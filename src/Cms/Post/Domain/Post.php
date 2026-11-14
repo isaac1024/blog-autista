@@ -35,7 +35,10 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   section has on the site then, the day it was first published, and its
  *   own slug. Two posts on the site never share one; drafts take none, so
  *   they are never checked against each other.
- * - A published post is unpublished before it is deleted.
+ * - A published post is unpublished before it is deleted, and stays on
+ *   the site while redirects lead to it.
+ * - Once off the site, it keeps the last address it had there, until
+ *   another post is published at it.
  * - The sections, tags and author it uses, the images it embeds and the
  *   pages it links to are told to whoever keeps track of what is in use, so
  *   none is deleted while the post uses it.
@@ -50,6 +53,7 @@ use Shared\Domain\RichText\RichTextFeatures;
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_post')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_post_published_address', columns: ['published_section_slug', 'published_day', 'published_slug'])]
+#[ORM\Index(name: 'idx_cms_post_last_address', columns: ['last_section_slug', 'last_day', 'last_slug'])]
 #[ORM\Index(name: 'ftx_cms_post_title', columns: ['title'], flags: ['fulltext'])]
 final class Post extends AggregateRoot
 {
@@ -74,10 +78,25 @@ final class Post extends AggregateRoot
     private ?Slug $publishedSlug;
 
     /**
-     * One argument per mapped field, the address on the site standing for
-     * its three columns: Doctrine hydrates it without calling this, and the
-     * named constructor starts each field. A post off the site has no
-     * address there, whatever is given.
+     * The address the post last had on the site, as its three columns, kept
+     * once it is off it, so it can be told and found. Null for a post never
+     * published, and once another post is published at that address.
+     */
+    #[ORM\Column(name: 'last_section_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $lastSectionSlug;
+
+    #[ORM\Column(name: 'last_day', type: 'date_immutable', nullable: true)]
+    private ?\DateTimeImmutable $lastDay;
+
+    #[ORM\Column(name: 'last_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $lastSlug;
+
+    /**
+     * One argument per mapped field, the address standing for the columns
+     * of both the address on the site and the last one: Doctrine hydrates it
+     * without calling this, and the named constructor starts each field. The
+     * address given is the one it has on the site, or last had there; a post
+     * off the site has none there, whatever is given.
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
@@ -104,6 +123,9 @@ final class Post extends AggregateRoot
         $this->publishedSectionSlug = $onSite?->section();
         $this->publishedDay = null === $onSite ? null : new \DateTimeImmutable($onSite->day());
         $this->publishedSlug = $onSite?->slug();
+        $this->lastSectionSlug = $address?->section();
+        $this->lastDay = null === $address ? null : new \DateTimeImmutable($address->day());
+        $this->lastSlug = $address?->slug();
     }
 
     /**
@@ -215,6 +237,9 @@ final class Post extends AggregateRoot
         $this->publishedSectionSlug = $address->section();
         $this->publishedDay = new \DateTimeImmutable($address->day());
         $this->publishedSlug = $address->slug();
+        $this->lastSectionSlug = $address->section();
+        $this->lastDay = new \DateTimeImmutable($address->day());
+        $this->lastSlug = $address->slug();
         $this->timeline = $timeline;
         ++$this->publicationRevision;
 
@@ -239,12 +264,17 @@ final class Post extends AggregateRoot
     }
 
     /**
-     * Takes the post off the site, freeing its address there.
+     * Takes the post off the site, freeing its address there, unless
+     * redirects lead to it: it stays on the site until they lead elsewhere.
      */
-    public function unpublish(): void
+    public function unpublish(PostRedirects $postRedirects): void
     {
         if (PostStatus::Published !== $this->status) {
             throw InvalidPostPublication::notPublished();
+        }
+
+        if ($postRedirects->isTargeted($this->id)) {
+            throw InvalidPostPublication::redirected();
         }
 
         $this->status = PostStatus::Unpublished;
@@ -254,6 +284,21 @@ final class Post extends AggregateRoot
         ++$this->publicationRevision;
 
         $this->record(new PostUnpublished($this->id->value(), $this->publicationRevision));
+    }
+
+    /**
+     * Forgets the address it last had on the site, once another post is
+     * published there: it was the last of that other post from then on.
+     */
+    public function loseLastAddress(): void
+    {
+        if (PostStatus::Published === $this->status) {
+            throw InvalidPostPublication::addressOnSite();
+        }
+
+        $this->lastSectionSlug = null;
+        $this->lastDay = null;
+        $this->lastSlug = null;
     }
 
     /**
@@ -380,6 +425,44 @@ final class Post extends AggregateRoot
             new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
             $this->publishedSlug,
         );
+    }
+
+    /**
+     * Where the site serves the post, or last served it once off it: null
+     * for a post never published, and for one whose last address another
+     * took.
+     */
+    public function lastAddress(): ?PostAddress
+    {
+        if (null === $this->lastSectionSlug || null === $this->lastDay || null === $this->lastSlug) {
+            return null;
+        }
+
+        return new PostAddress(
+            $this->lastSectionSlug,
+            new \DateTimeImmutable($this->lastDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
+            $this->lastSlug,
+        );
+    }
+
+    /**
+     * Where the site would serve the post were it published now as it is
+     * saved, as publish() takes it: under the slug its section has on the
+     * site, on the day it was first published, or today, by its own slug.
+     * Null when it has no such address, missing a slug or a section on the
+     * site, and so can't be published.
+     */
+    public function nextAddress(Classifiers $classifiers): ?PostAddress
+    {
+        $sectionId = $this->version->classification()->section();
+        $section = null === $sectionId ? null : $classifiers->sectionOnSite($sectionId);
+        $slug = $this->version->slug();
+
+        if (null === $section || null === $slug) {
+            return null;
+        }
+
+        return new PostAddress($section->slug(), $this->timeline->firstPublishedAt() ?? Clock::now(), $slug);
     }
 
     public function timeline(): Timeline

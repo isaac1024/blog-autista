@@ -23,6 +23,11 @@ final class TermPublicationControllersTest extends TermControllerTestCase
     use ClockSensitiveTrait;
     use QueuedDomainEvents;
 
+    /**
+     * What its address does once off the site: nothing, so it isn't found.
+     */
+    private const array LEAVE_NOT_FOUND = ['address' => ['action' => 'none']];
+
     #[\Override]
     protected function setUp(): void
     {
@@ -36,7 +41,7 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         $client = self::createClient();
         $term = $this->saveTerm(TermMother::published(id: TermIdMother::random()->value(), publishedName: 'Antes'));
 
-        $this->post($client, $route, self::HOST.'/sections/'.$term->id()->value().'/'.$action);
+        $this->post($client, $route, self::HOST.'/sections/'.$term->id()->value().'/'.$action, self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects(self::HOST.'/login');
         self::assertEquals($term, $this->storedTerm($term));
@@ -49,7 +54,7 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         $client = self::createAuthenticatedClient();
         $term = $this->saveTerm(TermMother::published(id: TermIdMother::random()->value(), publishedName: 'Antes'));
 
-        $this->post($client, $route, self::HOST.'/tags/'.$term->id()->value().'/'.$action);
+        $this->post($client, $route, self::HOST.'/tags/'.$term->id()->value().'/'.$action, self::LEAVE_NOT_FOUND);
 
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
         self::assertEquals($term, $this->storedTerm($term));
@@ -102,7 +107,7 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         $id = TermIdMother::random()->value();
         $term = $this->saveTerm(TermMother::published(id: $id));
 
-        $this->post($client, 'cms_terms_unpublish', self::HOST.'/sections/'.$id.'/unpublish');
+        $this->post($client, 'cms_terms_unpublish', self::HOST.'/sections/'.$id.'/unpublish', self::LEAVE_NOT_FOUND);
 
         self::assertResponseRedirects('/sections/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'cms.sections.notices.unpublished', 'parameters' => []]], self::successNotices($client));
@@ -169,9 +174,10 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         $record = $this->saveTerm(TermMother::create(id: $id));
         $expected = clone $record;
 
-        $this->post($client, $route, self::HOST.'/sections/'.$id.'/'.$action);
+        $this->post($client, $route, self::HOST.'/sections/'.$id.'/'.$action, self::LEAVE_NOT_FOUND);
 
-        self::assertResponseRedirects(self::HOST.'/sections/'.$id, Response::HTTP_SEE_OTHER);
+        // Taking it off the site goes back to where it is asked, which tells it.
+        self::assertResponseRedirects(self::HOST.'/sections/'.$id.('unpublish' === $action ? '/unpublish' : ''), Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.term.publication.'.$error, 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($expected, $this->storedTerm($record));
     }

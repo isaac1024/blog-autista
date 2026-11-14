@@ -29,6 +29,7 @@ use Cms\Relation\Infrastructure\Controller\SettingsUserRows;
 use Cms\Relation\Infrastructure\Controller\UserRows;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Settings\Infrastructure\Controller\SettingsState;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -172,7 +173,7 @@ final class RelationListTest extends TestCase
             new ListPagination($translator, $urlGenerator),
             new IncomingRedirectsPanel(
                 $redirectRepository,
-                new RedirectRows(new RedirectNames($pageRepository, $imageRepository, $translator), $urlGenerator, $translator),
+                new RedirectRows(new RedirectNames($pageRepository, $imageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator), $urlGenerator, $translator),
                 $translator,
                 $urlGenerator,
             ),

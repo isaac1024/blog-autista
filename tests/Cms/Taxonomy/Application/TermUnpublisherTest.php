@@ -7,6 +7,7 @@ namespace Cms\Tests\Taxonomy\Application;
 use Cms\Taxonomy\Application\TermUnpublisher;
 use Cms\Taxonomy\Domain\InvalidTermPublication;
 use Cms\Taxonomy\Domain\Term;
+use Cms\Taxonomy\Domain\TermRedirects;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermUnpublished;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
@@ -24,7 +25,7 @@ final class TermUnpublisherTest extends TestCase
         $repository->method('find')->willReturn(TermMother::published());
         $repository->expects(self::once())->method('save')->with(self::equalTo(TermMother::unpublished()));
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(TermRedirects::class));
     }
 
     public function testItTellsTheSiteToTakeItOff(): void
@@ -39,7 +40,7 @@ final class TermUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, $eventBus);
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(TermRedirects::class));
     }
 
     #[DataProvider('termsOffTheSite')]
@@ -51,7 +52,7 @@ final class TermUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidTermPublication::notPublished());
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(TermRedirects::class));
     }
 
     /**

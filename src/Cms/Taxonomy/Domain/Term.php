@@ -24,18 +24,26 @@ use Shared\Domain\Event\EventBus;
  * - Editing saves whatever valid fields an editor writes, complete or not.
  * - A term is published only with everything the site shows: a slug and a
  *   meta description. Publishing is what checks it.
- * - A published term is unpublished before it is deleted.
+ * - A published term is unpublished before it is deleted, and stays on the
+ *   site while redirects lead to it.
+ * - Once off the site, it keeps the last address it had there, until
+ *   another term of its taxonomy is published at it.
  *
  * The unique indexes on the slugs keep two terms of a taxonomy from sharing
  * an address, the one being edited or the one on the site; terms without
  * one share none.
  *
+ * Its rules reach every value object, error and event of the term, so its
+ * coupling grows with what a term is.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  * @SuppressWarnings("PHPMD.TooManyMethods")
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_term')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_term_slug', columns: ['taxonomy', 'slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_cms_term_published_slug', columns: ['taxonomy', 'published_slug'])]
+#[ORM\Index(name: 'idx_cms_term_last_site_slug', columns: ['taxonomy', 'last_site_slug'])]
 final class Term extends AggregateRoot
 {
     /**
@@ -44,6 +52,14 @@ final class Term extends AggregateRoot
      */
     #[ORM\Column(name: 'published_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
     private ?Slug $publishedSlug;
+
+    /**
+     * The slug the term last had on the site, kept once it is off it, so its
+     * last address can be told and found. Null for a term never published,
+     * and once another term of its taxonomy is published at that address.
+     */
+    #[ORM\Column(name: 'last_site_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $lastSiteSlug;
 
     /**
      * One argument per mapped field: Doctrine hydrates it without calling
@@ -72,6 +88,7 @@ final class Term extends AggregateRoot
         private int $publicationRevision,
     ) {
         $this->publishedSlug = TermStatus::Published === $status ? $published?->slug() : null;
+        $this->lastSiteSlug = $published?->slug();
     }
 
     /**
@@ -131,6 +148,7 @@ final class Term extends AggregateRoot
         $this->status = TermStatus::Published;
         $this->published = $this->version;
         $this->publishedSlug = $this->version->slug();
+        $this->lastSiteSlug = $this->version->slug();
         $this->timeline = $this->timeline->published($now);
         ++$this->publicationRevision;
 
@@ -148,12 +166,17 @@ final class Term extends AggregateRoot
     }
 
     /**
-     * Takes the term off the site, freeing its address there.
+     * Takes the term off the site, freeing its address there, unless
+     * redirects lead to it: it stays on the site until they lead elsewhere.
      */
-    public function unpublish(): void
+    public function unpublish(TermRedirects $termRedirects): void
     {
         if (TermStatus::Published !== $this->status) {
             throw InvalidTermPublication::notPublished();
+        }
+
+        if ($termRedirects->isTargeted($this->id)) {
+            throw InvalidTermPublication::redirected();
         }
 
         $this->status = TermStatus::Unpublished;
@@ -161,6 +184,20 @@ final class Term extends AggregateRoot
         ++$this->publicationRevision;
 
         $this->record(new TermUnpublished($this->id->value(), $this->publicationRevision));
+    }
+
+    /**
+     * Forgets the address it last had on the site, once another term of its
+     * taxonomy is published there: it was the last of that other term from
+     * then on.
+     */
+    public function loseLastAddress(): void
+    {
+        if (TermStatus::Published === $this->status) {
+            throw InvalidTermPublication::addressOnSite();
+        }
+
+        $this->lastSiteSlug = null;
     }
 
     /**
@@ -272,6 +309,15 @@ final class Term extends AggregateRoot
     public function publishedSlug(): ?Slug
     {
         return $this->publishedSlug;
+    }
+
+    /**
+     * The slug it has on the site, or last had there once off it: null for a
+     * term never published, and for one whose last address another took.
+     */
+    public function lastSiteSlug(): ?Slug
+    {
+        return $this->lastSiteSlug;
     }
 
     /**

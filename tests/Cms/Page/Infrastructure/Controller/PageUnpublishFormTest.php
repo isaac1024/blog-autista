@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PageUnpublishForm;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -15,6 +17,7 @@ use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
 use Cms\Redirect\Infrastructure\Controller\RetirementForm;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\TestCase;
@@ -73,7 +76,7 @@ final class PageUnpublishFormTest extends TestCase
             new RedirectTargetField($translator, $urlGenerator),
             self::createStub(RedirectRepository::class),
             $siteResources,
-            new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), $translator),
+            new RedirectNames(self::createStub(PageRepository::class), self::createStub(ImageRepository::class), self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $translator),
         ))(PageResponse::fromPage(PageMother::published(id: self::ID, title: 'Sobre mí', slug: 'sobre-mi')), $saved);
         // Whatever a test asks, the page gives every component what it takes.
         ComponentContracts::assertHonoured($page);

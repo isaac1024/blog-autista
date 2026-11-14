@@ -9,6 +9,7 @@ use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorName;
 use Cms\Author\Domain\AuthorStatus;
 use Cms\Author\Domain\AvatarFile;
+use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -47,6 +48,7 @@ final readonly class AuthorEditor
         private TiptapRichText $tiptapRichText,
         private AuthorState $authorState,
         private AvatarUrl $avatarUrl,
+        private LastAddressPanel $lastAddressPanel,
     ) {}
 
     /**
@@ -56,7 +58,7 @@ final readonly class AuthorEditor
      */
     public function __invoke(AuthorResponse $author, string $previewUrl, \DateTimeImmutable $previewExpiresAt): Page
     {
-        return CmsLayout::page(\sprintf(
+        return $this->lastAddressPanel->onAuthor(CmsLayout::page(\sprintf(
             '%s · %s · CMS',
             $author->name,
             $this->translator->trans('cms.authors.edit.title'),
@@ -66,7 +68,7 @@ final readonly class AuthorEditor
                 'title' => $this->translator->trans('cms.authors.edit.title'),
                 'subtitle' => $this->dates($author),
                 'status' => $this->authorState->label($author),
-            ], $this->authorActions($author, $previewUrl, $previewExpiresAt))
+            ], $this->authorActions($author, $previewUrl, $previewExpiresAt)), $author->id)
             ->withMain('Shared:Form', [
                 'action' => $this->urlGenerator->generate('cms_authors_update', ['id' => $author->id]),
                 'method' => 'post',
@@ -109,8 +111,8 @@ final readonly class AuthorEditor
      * What is done to the author apart from editing it, offered only when the
      * author allows it: previewing what is saved, through a link that expires
      * and can be sent to anyone, seeing it on the site, seeing what its bio
-     * uses, and, each confirmed first, discarding its unpublished changes,
-     * taking it off the site, or deleting it.
+     * uses, taking it off the site, and, each confirmed first, discarding its
+     * unpublished changes or deleting it.
      *
      * @return list<PageComponent>
      */
@@ -132,7 +134,12 @@ final readonly class AuthorEditor
         }
 
         if ($author->canBeUnpublished) {
-            $actions[] = $this->confirmModal($author, 'unpublish', 'cms_authors_unpublish', 'secondary');
+            // Taking it off the site asks what becomes of its addresses, on a
+            // page of its own.
+            $actions[] = new PageComponent('Shared:ButtonLink', [
+                'url' => $this->urlGenerator->generate('cms_authors_unpublish_form', ['id' => $author->id]),
+                'label' => $this->translator->trans('cms.authors.unpublish.trigger'),
+            ]);
         }
 
         if ($author->canBeDeleted) {

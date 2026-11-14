@@ -30,7 +30,10 @@ use Shared\Domain\RichText\RichTextFeatures;
  * - Editing saves whatever valid fields an editor writes, complete or not.
  * - An author is published only with everything the site shows: a slug, an
  *   avatar, a bio and a meta description.
- * - A published author is unpublished before it is deleted.
+ * - A published author is unpublished before it is deleted, and stays on
+ *   the site while redirects lead to it.
+ * - Once off the site, it keeps the last address it had there, until
+ *   another author is published at it.
  * - The bio embeds images of the library and links to pages, which are told
  *   to whoever keeps track of what is in use, so neither is deleted while
  *   the bio uses it.
@@ -49,6 +52,7 @@ use Shared\Domain\RichText\RichTextFeatures;
 #[ORM\Table(name: 'cms_author')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_author_slug', columns: ['slug'])]
 #[ORM\UniqueConstraint(name: 'uniq_cms_author_published_slug', columns: ['published_slug'])]
+#[ORM\Index(name: 'idx_cms_author_last_site_slug', columns: ['last_site_slug'])]
 final class Author extends AggregateRoot
 {
     /**
@@ -57,6 +61,14 @@ final class Author extends AggregateRoot
      */
     #[ORM\Column(name: 'published_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
     private ?Slug $publishedSlug;
+
+    /**
+     * The slug the author last had on the site, kept once it is off it, so
+     * its last address can be told and found. Null for an author never
+     * published, and once another author is published at that address.
+     */
+    #[ORM\Column(name: 'last_site_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    private ?Slug $lastSiteSlug;
 
     /**
      * Files of avatars kept since the author was loaded, removed again if
@@ -99,6 +111,7 @@ final class Author extends AggregateRoot
         private int $publicationRevision,
     ) {
         $this->publishedSlug = AuthorStatus::Published === $status ? $published?->slug() : null;
+        $this->lastSiteSlug = $published?->slug();
     }
 
     /**
@@ -195,6 +208,7 @@ final class Author extends AggregateRoot
             $this->published = $this->version;
         });
         $this->publishedSlug = $this->version->slug();
+        $this->lastSiteSlug = $this->version->slug();
         $this->timeline = $this->timeline->published($now);
         ++$this->publicationRevision;
 
@@ -213,12 +227,17 @@ final class Author extends AggregateRoot
     }
 
     /**
-     * Takes the author off the site, freeing its address there.
+     * Takes the author off the site, freeing its address there, unless
+     * redirects lead to it: it stays on the site until they lead elsewhere.
      */
-    public function unpublish(): void
+    public function unpublish(AuthorRedirects $authorRedirects): void
     {
         if (AuthorStatus::Published !== $this->status) {
             throw InvalidAuthorPublication::notPublished();
+        }
+
+        if ($authorRedirects->isTargeted($this->id)) {
+            throw InvalidAuthorPublication::redirected();
         }
 
         $this->status = AuthorStatus::Unpublished;
@@ -226,6 +245,19 @@ final class Author extends AggregateRoot
         ++$this->publicationRevision;
 
         $this->record(new AuthorUnpublished($this->id->value(), $this->publicationRevision));
+    }
+
+    /**
+     * Forgets the address it last had on the site, once another author is
+     * published there: it was the last of that other author from then on.
+     */
+    public function loseLastAddress(): void
+    {
+        if (AuthorStatus::Published === $this->status) {
+            throw InvalidAuthorPublication::addressOnSite();
+        }
+
+        $this->lastSiteSlug = null;
     }
 
     /**
@@ -384,6 +416,15 @@ final class Author extends AggregateRoot
     public function publishedSlug(): ?Slug
     {
         return $this->publishedSlug;
+    }
+
+    /**
+     * The slug it has on the site, or last had there once off it: null for an
+     * author never published, and for one whose last address another took.
+     */
+    public function lastSiteSlug(): ?Slug
+    {
+        return $this->lastSiteSlug;
     }
 
     /**

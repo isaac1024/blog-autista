@@ -14,22 +14,22 @@ use Symfony\Component\Routing\RouterInterface;
 /**
  * Which route of the site, if any, answers an address of it, as a browser
  * would ask for it on the site's host, whichever host the CMS is on, and
- * the address a page has there.
+ * the address each kind of resource has there.
  */
 final readonly class SiteRoutes
 {
     /**
-     * The route that serves the pages but the home page, by their slugs.
+     * The routes that serve a kind of resource each, by the name of their
+     * route: the pages but the home page, the sections, the tags, the
+     * authors and the posts.
      */
-    private const string PAGE_ROUTE = 'web_page';
-
-    /**
-     * The routes of resources the redirects don't know yet: the sections,
-     * the tags, the authors and the posts. An address they would answer is taken as one
-     * the site doesn't answer itself, as before they existed, so a redirect
-     * may be kept there, and is only followed once the address is a 404.
-     */
-    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag', 'web_author', 'web_post'];
+    private const array ROUTES = [
+        'web_page' => SiteRoute::PAGE,
+        'web_section' => SiteRoute::SECTION,
+        'web_tag' => SiteRoute::TAG,
+        'web_author' => SiteRoute::AUTHOR,
+        'web_post' => SiteRoute::POST,
+    ];
 
     public function __construct(
         private RouterInterface $router,
@@ -48,13 +48,16 @@ final readonly class SiteRoutes
         }
 
         $route = \is_string($parameters['_route'] ?? null) ? $parameters['_route'] : '';
-        $slug = $parameters['slug'] ?? null;
+        $address = [];
 
-        if (\in_array($route, self::UNKNOWN_ROUTES, true)) {
-            return null;
+        // Those of the address, not those the router adds, such as the route.
+        foreach ($parameters as $name => $value) {
+            if (\is_string($name) && \is_string($value) && !str_starts_with($name, '_')) {
+                $address[$name] = $value;
+            }
         }
 
-        return new SiteRoute(self::PAGE_ROUTE === $route && \is_string($slug) ? $slug : null);
+        return new SiteRoute(self::ROUTES[$route] ?? null, $address);
     }
 
     /**
@@ -62,7 +65,42 @@ final readonly class SiteRoutes
      */
     public function pagePath(string $slug): string
     {
-        return new UrlGenerator($this->router->getRouteCollection(), $this->context())->generate(self::PAGE_ROUTE, ['slug' => $slug]);
+        return $this->path('web_page', ['slug' => $slug]);
+    }
+
+    /**
+     * The path the site serves a section or a tag at, by its slug.
+     */
+    public function termPath(string $kind, string $slug): string
+    {
+        return $this->path(SiteRoute::SECTION === $kind ? 'web_section' : 'web_tag', ['slug' => $slug]);
+    }
+
+    /**
+     * The path the site serves an author at, by its slug.
+     */
+    public function authorPath(string $slug): string
+    {
+        return $this->path('web_author', ['slug' => $slug]);
+    }
+
+    /**
+     * The path the site serves a post at, by the slug of its section, the
+     * day it was first published, as Y-m-d, and its own slug.
+     */
+    public function postPath(string $section, string $day, string $slug): string
+    {
+        [$year, $month, $date] = explode('-', $day);
+
+        return $this->path('web_post', ['section' => $section, 'year' => $year, 'month' => $month, 'day' => $date, 'slug' => $slug]);
+    }
+
+    /**
+     * @param array<string, string> $parameters
+     */
+    private function path(string $route, array $parameters): string
+    {
+        return new UrlGenerator($this->router->getRouteCollection(), $this->context())->generate($route, $parameters);
     }
 
     private function context(): RequestContext

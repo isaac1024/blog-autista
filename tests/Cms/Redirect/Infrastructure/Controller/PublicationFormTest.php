@@ -67,7 +67,7 @@ final class PublicationFormTest extends TestCase
             'description' => 'cms.redirects.publish.previous.description(%next%=/quien-soy.html, %previous%=/sobre-mi.html)',
         ]);
         $choice = PageComponents::one($panel, 'Shared:FormChoice', ['name' => 'previous[action]', 'legend' => 'cms.redirects.publish.previous.legend(%previous%=/sobre-mi.html)', 'value' => 'itself']);
-        self::assertSame(['itself', 'page', RedirectTargetField::GONE, 'keep'], self::options($choice));
+        self::assertSame(['itself', ...RedirectTargetField::OTHER_KINDS, RedirectTargetField::GONE, 'keep'], self::options($choice));
         self::assertSame(
             ['label' => 'cms.redirects.publish.previous.itself.label', 'hint' => 'cms.redirects.publish.previous.itself.hint'],
             array_intersect_key(self::option($choice, 'itself'), ['label' => true, 'hint' => true]),

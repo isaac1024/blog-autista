@@ -27,6 +27,17 @@ interface TermRepository
     public function findBySlug(Taxonomy $taxonomy, Slug $slug): ?Term;
 
     /**
+     * The term of the taxonomy on the site with the slug.
+     */
+    public function findOnSiteBySlug(Taxonomy $taxonomy, Slug $slug): ?Term;
+
+    /**
+     * The term of the taxonomy off the site whose last address there had
+     * the slug.
+     */
+    public function findOffSiteByLastSiteSlug(Taxonomy $taxonomy, Slug $slug): ?Term;
+
+    /**
      * @return list<Term>
      */
     public function matching(Criteria $criteria): array;

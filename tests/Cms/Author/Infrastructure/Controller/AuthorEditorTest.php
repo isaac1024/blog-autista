@@ -14,6 +14,7 @@ use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
 use Cms\Tests\Author\Domain\AuthorMother;
+use Cms\Tests\Redirect\Infrastructure\Controller\NamesResources;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Http\SignedUrls;
@@ -35,6 +36,8 @@ use Symfony\Component\HttpFoundation\UriSigner;
  */
 final class AuthorEditorTest extends TestCase
 {
+    use NamesResources;
+
     use ClockSensitiveTrait;
 
     private const string ID = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
@@ -98,7 +101,8 @@ final class AuthorEditorTest extends TestCase
 
         self::assertSame($offered, [
             'discard' => $this->confirms($editor, 'cms_authors_discard', 'discard'),
-            'unpublish' => $this->confirms($editor, 'cms_authors_unpublish', 'unpublish'),
+            // Taking it off the site is asked on a page of its own.
+            'unpublish' => [] !== PageComponents::find($editor, 'Shared:ButtonLink', ['label' => 'cms.authors.unpublish.trigger']),
             'delete' => $this->confirms($editor, 'cms_authors_delete', 'delete'),
         ]);
     }
@@ -293,6 +297,7 @@ final class AuthorEditorTest extends TestCase
             new TiptapRichText(),
             new AuthorState($translator),
             new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secreto'))),
+            $this->lastAddressPanelOnSite($translator, $urlGenerator),
         )(AuthorResponse::fromAuthor($author), self::PREVIEW, ClockMother::now());
         ComponentContracts::assertHonoured($editor);
 
