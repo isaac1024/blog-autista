@@ -79,6 +79,10 @@ final class CmsSiteResourcesTest extends KernelTestCase
         yield 'the home page' => [Source::fromPath('/'), true];
         yield 'an address only sent to' => [Source::fromPath('/v'), false];
         yield 'an address no route answers' => [Source::fromPath('/blog/vieja'), false];
+        // The redirects don't know the sections, the tags nor the authors yet.
+        yield 'the address of a section' => [Source::fromPath('/vida-diaria/'), false];
+        yield 'the address of a tag' => [Source::fromPath('/tag/sueno.html'), false];
+        yield 'the address of an author' => [Source::fromPath('/autor/isaac.html'), false];
         yield 'an image on the site' => [self::image(self::IMAGE), true];
         yield 'an image off it' => [self::image(self::IMAGE_OFF_SITE), false];
         yield 'an image there is none of' => [self::image(self::NONE), false];
