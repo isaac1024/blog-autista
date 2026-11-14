@@ -52,7 +52,7 @@ final class NewRedirectFormTest extends TestCase
         $choice = PageComponents::one($this->form('', null), 'Shared:FormChoice', ['name' => 'action', 'value' => 'page']);
 
         self::assertSame(['page', 'image', 'gone'], array_column((array) $choice->props['options'], 'value'));
-        PageComponents::one($choice, 'Shared:PageField', ['name' => 'page_id', 'value' => '']);
+        PageComponents::one($choice, 'Shared:ResourceField', ['name' => 'page_id', 'value' => '']);
         PageComponents::one($choice, 'Shared:ImageField', ['name' => 'image_id', 'value' => '']);
     }
 

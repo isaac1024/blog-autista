@@ -4,9 +4,9 @@ import TermsField from '../../../assets/controllers/terms_field_controller.js';
 import { TERMS_FIELD_LABELS as LABELS, termsField } from '../../Markup/terms_field.js';
 import { answer, assertFocused, later, mount, serve, settle } from '../support/dom.js';
 
-const CALM = { id: 'tag-1', name: 'Calm', status: 'Published', published: true };
-const NOISE = { id: 'tag-2', name: 'Noise', status: 'Draft', published: false };
-const LIGHT = { id: 'tag-3', name: 'Light', status: 'Published', published: true };
+const CALM = { id: 'tag-1', title: 'Calm', status: 'Published', published: true };
+const NOISE = { id: 'tag-2', title: 'Noise', status: 'Draft', published: false };
+const LIGHT = { id: 'tag-3', title: 'Light', status: 'Published', published: true };
 
 /** The tags given, whose search answers as given. */
 const open = async ({ items = [], search = () => answer({ terms: [], more: false }) } = {}) => {

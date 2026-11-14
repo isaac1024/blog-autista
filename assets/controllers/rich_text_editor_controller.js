@@ -49,7 +49,7 @@ import { Search } from '../shared/search.js';
 /** @typedef {import('../rich_text/slash_menu.js').SlashItem} SlashItem */
 /** @typedef {import('@tiptap/suggestion').SuggestionProps<SlashItem, SlashItem>} SlashProps */
 /** @typedef {import('../rich_text/page_link.js').PageState} PageState */
-/** @typedef {import('./page_field_controller.js').Page} Page */
+/** @typedef {import('./resource_field_controller.js').Resource} Page */
 
 /**
  * An image as the editor's endpoints describe it.

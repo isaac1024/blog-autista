@@ -37,7 +37,7 @@ final class RedirectTargetFieldTest extends TestCase
         $field = $this->field($prefix, [ResourceType::Page, ResourceType::Image], [], []);
 
         PageComponents::one($field, 'Shared:FormChoice', ['name' => $names['action'], 'id' => $ids['action']]);
-        PageComponents::one($field, 'Shared:PageField', ['name' => $names['page'], 'id' => $ids['page']]);
+        PageComponents::one($field, 'Shared:ResourceField', ['name' => $names['page'], 'id' => $ids['page']]);
         PageComponents::one($field, 'Shared:ImageField', ['name' => $names['image'], 'id' => $ids['image']]);
     }
 

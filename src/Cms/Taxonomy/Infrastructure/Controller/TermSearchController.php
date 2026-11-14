@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
-use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermSearcher;
 use Cms\Taxonomy\Domain\TermRepository;
-use Cms\Taxonomy\Domain\TermStatus;
 use Shared\Domain\DomainError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,7 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class TermSearchController extends AbstractController
 {
-    public function __construct(private readonly TermState $termState) {}
+    public function __construct(private readonly PickedTerm $pickedTerm) {}
 
     #[Route('/{taxonomy}/search', name: 'cms_terms_search', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT], methods: ['GET'])]
     public function __invoke(
@@ -39,12 +37,7 @@ final class TermSearchController extends AbstractController
         }
 
         return new JsonResponse([
-            'terms' => array_map(fn (TermResponse $term): array => [
-                'id' => $term->id,
-                'name' => $term->name,
-                'status' => $this->termState->label($term),
-                'published' => TermStatus::Published->value === $term->status,
-            ], $terms->terms),
+            'terms' => array_map($this->pickedTerm, $terms->terms),
             'more' => $terms->hasMore,
         ]);
     }

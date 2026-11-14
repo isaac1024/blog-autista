@@ -205,7 +205,7 @@ final class PostListAndEditControllersTest extends PostControllerTestCase
         // Newest first, each with whether the site shows it; its status is told in words for the editor.
         self::assertSame(
             [[PostMother::OTHER_TAG, 'Ruido', false], [PostMother::TAG, 'Sensorialidad', true]],
-            array_map(static fn (mixed $term): array => \is_array($term) ? [$term['id'] ?? null, $term['name'] ?? null, $term['published'] ?? null] : [], $answer['terms']),
+            array_map(static fn (mixed $term): array => \is_array($term) ? [$term['id'] ?? null, $term['title'] ?? null, $term['published'] ?? null] : [], $answer['terms']),
         );
         self::assertFalse($answer['more']);
     }

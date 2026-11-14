@@ -1,8 +1,8 @@
 import { termsField } from '../Markup/terms_field.js';
 import { expect, loadController, test } from './support/test.js';
 
-const CALM = { id: 'c2e80d31-f406-4f4f-bf9e-a0ea5a5c6001', name: 'Calm', status: 'Published', published: true };
-const NOISE = { id: 'c2e80d31-f406-4f4f-bf9e-a0ea5a5c6002', name: 'Noise', status: 'Draft', published: false };
+const CALM = { id: 'c2e80d31-f406-4f4f-bf9e-a0ea5a5c6001', title: 'Calm', status: 'Published', published: true };
+const NOISE = { id: 'c2e80d31-f406-4f4f-bf9e-a0ea5a5c6002', title: 'Noise', status: 'Draft', published: false };
 
 test('a tag picked in the dialog is posted with the form, announced and focused', async ({ page }) => {
     await page.route('**/api/tags/search*', (route) => route.fulfill({ json: { terms: [CALM, NOISE], more: false } }));

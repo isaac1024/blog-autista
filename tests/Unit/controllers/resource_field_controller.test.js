@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import PageField from '../../../assets/controllers/page_field_controller.js';
-import { PAGE_FIELD_LABELS as LABELS, pageField } from '../../Markup/page_field.js';
+import ResourceField from '../../../assets/controllers/resource_field_controller.js';
+import { RESOURCE_FIELD_LABELS as LABELS, resourceField } from '../../Markup/resource_field.js';
 import { answer, assertFocused, later, mount, serve, settle } from '../support/dom.js';
 
 const PAGE = { id: 'page-1', title: 'First page', status: 'Published', published: true };
 const SECOND = { id: 'page-2', title: 'Second page', status: 'Draft', published: false };
 
 const open = async (value = '') => {
-    const page = await mount(pageField(value), { 'page-field': PageField });
+    const page = await mount(resourceField(value), { 'resource-field': ResourceField });
     const { document } = page;
-    const target = (name) => document.querySelector(`[data-page-field-target="${name}"]`);
+    const target = (name) => document.querySelector(`[data-resource-field-target="${name}"]`);
 
     return {
         ...page,

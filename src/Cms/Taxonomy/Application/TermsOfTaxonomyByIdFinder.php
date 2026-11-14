@@ -7,10 +7,11 @@ namespace Cms\Taxonomy\Application;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
+use Shared\Domain\DomainError;
 
 /**
  * Finds the terms of a taxonomy among those given, in the order given; an
- * id of no such term is left out.
+ * id of no such term, or anything that can't be an id, is left out.
  */
 final readonly class TermsOfTaxonomyByIdFinder
 {
@@ -30,7 +31,11 @@ final readonly class TermsOfTaxonomyByIdFinder
         $terms = [];
 
         foreach ($this->ids as $id) {
-            $term = $termRepository->find(new TermId($id));
+            try {
+                $term = $termRepository->find(new TermId($id));
+            } catch (DomainError) {
+                continue;
+            }
 
             if (null !== $term && $term->taxonomy() === $this->taxonomy) {
                 $terms[] = TermResponse::fromTerm($term);

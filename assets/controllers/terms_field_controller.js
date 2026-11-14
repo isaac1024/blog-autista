@@ -4,11 +4,11 @@ import { termOption } from '../shared/options.js';
 import { Search } from '../shared/search.js';
 
 /**
- * A term as its search lists it.
+ * A term as its search lists it, its name as the title of what is picked.
  *
  * @typedef {object} Term
  * @property {string} id
- * @property {string} name
+ * @property {string} title
  * @property {string} status
  * @property {boolean} published
  */
@@ -121,7 +121,7 @@ export default class extends BaseController {
     /** @param {Term} term */
     add(term) {
         if (this.rowTargets.some((row) => row.dataset.termId === term.id)) {
-            this.announce(this.labelsValue.repeated.replace('%name%', term.name));
+            this.announce(this.labelsValue.repeated.replace('%name%', term.title));
 
             return;
         }
@@ -137,14 +137,14 @@ export default class extends BaseController {
         row.dataset.termId = term.id;
         field(row, '[data-field="id"]', HTMLInputElement).value = term.id;
         field(row, '[data-field="term"]', HTMLElement).id = described;
-        field(row, '[data-field="name"]', HTMLElement).textContent = term.name;
+        field(row, '[data-field="name"]', HTMLElement).textContent = term.title;
         field(row, '[data-field="status"]', HTMLElement).textContent = term.published ? term.status : `${term.status} · ${this.labelsValue.offSite}`;
         const remove = field(row, '[data-field="remove"]', HTMLButtonElement);
         remove.setAttribute('aria-describedby', described);
         this.listTarget.append(row);
         this.emptyTarget.hidden = true;
         this.dialogTarget.close();
-        this.announce(this.labelsValue.added.replace('%name%', term.name));
+        this.announce(this.labelsValue.added.replace('%name%', term.title));
         remove.focus();
         notifyForm(this.element);
     }

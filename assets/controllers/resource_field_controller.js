@@ -5,7 +5,10 @@ import { pageOption } from '../shared/options.js';
 import { Search } from '../shared/search.js';
 
 /**
- * @typedef {object} Page
+ * A resource of the CMS to pick, such as a page or a post, as the endpoints
+ * of the field answer it.
+ *
+ * @typedef {object} Resource
  * @property {string} id
  * @property {string} title
  * @property {string} status
@@ -29,8 +32,8 @@ import { Search } from '../shared/search.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {Lookups<Page>} pages
- * @property {Search<Page>} searches
+ * @property {Lookups<Resource>} resources
+ * @property {Search<Resource>} searches
  * @property {HTMLInputElement} inputTarget
  * @property {HTMLElement} titleTarget
  * @property {HTMLElement} stateTarget
@@ -43,15 +46,19 @@ import { Search } from '../shared/search.js';
  * @property {HTMLElement} statusTarget
  * @property {string} searchUrlValue
  * @property {string} lookupUrlValue
+ * @property {string} keyValue
+ * @property {string} paramValue
  * @property {Labels} labelsValue
  */
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
 
 /*
- * Edits one page: shows the one chosen, as the CMS knows it now, and picks
- * another searched by title, a page of results at a time. Where the page stands for the site is said in
- * words.
+ * Edits one resource of a kind, such as a page or a post: shows the one
+ * chosen, as the CMS knows it now, and picks another searched by its name,
+ * a page of results at a time. Where it stands for the site is said in
+ * words. The endpoints answer the resources under the key, and the search
+ * takes the name under the parameter.
  */
 export default class extends BaseController {
     static targets = ['input', 'title', 'state', 'choose', 'dialog', 'search', 'searchStatus', 'results', 'more', 'status'];
@@ -59,27 +66,29 @@ export default class extends BaseController {
     static values = {
         searchUrl: String,
         lookupUrl: String,
+        key: String,
+        param: String,
         labels: Object,
     };
 
     connect() {
         this.abortController = new AbortController();
         const owner = this.abortController;
-        this.pages = /** @type {Lookups<Page>} */ (new Lookups(new URL(this.lookupUrlValue, window.location.href), 'pages', owner.signal, () => this.draw()));
+        this.resources = /** @type {Lookups<Resource>} */ (new Lookups(new URL(this.lookupUrlValue, window.location.href), this.keyValue, owner.signal, () => this.draw()));
         this.searches = new Search({
             url: new URL(this.searchUrlValue, window.location.href),
-            param: 'title',
-            key: 'pages',
+            param: this.paramValue,
+            key: this.keyValue,
             owner: owner.signal,
             view: () => ({ input: this.searchTarget, results: this.resultsTarget, status: this.searchStatusTarget, more: this.moreTarget }),
             labels: () => this.labelsValue,
-            row: (page) => pageOption(page, () => this.choose(page), this.labelsValue.offSite),
+            row: (resource) => pageOption(resource, () => this.choose(resource), this.labelsValue.offSite),
         });
         this.chooseTarget.hidden = false;
         this.draw();
 
         if (this.inputTarget.value !== '') {
-            this.pages.ask([this.inputTarget.value]);
+            this.resources.ask([this.inputTarget.value]);
         }
     }
 
@@ -87,23 +96,23 @@ export default class extends BaseController {
         this.abortController.abort();
     }
 
-    /** What the field holds: no page, one being looked up, missing, unknown, or the page itself. */
+    /** What the field holds: none, one being looked up, missing, unknown, or the resource itself. */
     draw() {
         const { name, standing } = this.inputTarget.value === ''
             ? { name: this.labelsValue.empty, standing: '' }
-            : lookupText(this.pages.of(this.inputTarget.value), ({ title }) => title, this.labelsValue);
+            : lookupText(this.resources.of(this.inputTarget.value), ({ title }) => title, this.labelsValue);
 
         this.titleTarget.textContent = name;
         this.stateTarget.textContent = standing;
     }
 
-    /** @param {Page} page */
-    choose(page) {
-        this.inputTarget.value = page.id;
-        this.pages.know(page);
+    /** @param {Resource} resource */
+    choose(resource) {
+        this.inputTarget.value = resource.id;
+        this.resources.know(resource);
         this.dialogTarget.close();
         this.draw();
-        this.statusTarget.textContent = this.labelsValue.chosen.replace('%title%', page.title);
+        this.statusTarget.textContent = this.labelsValue.chosen.replace('%title%', resource.title);
         this.chooseTarget.focus();
         notifyForm(this.inputTarget);
     }

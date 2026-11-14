@@ -121,7 +121,7 @@ final class RedirectEditorTest extends TestCase
         $options = $choice->props['options'];
         self::assertIsArray($options);
         self::assertSame($actions, array_column($options, 'value'));
-        foreach (['Shared:PageField' => 'page_id', 'Shared:ImageField' => 'image_id'] as $field => $name) {
+        foreach (['Shared:ResourceField' => 'page_id', 'Shared:ImageField' => 'image_id'] as $field => $name) {
             self::assertSame(
                 \in_array($name, array_keys($values), true) ? [$values[$name]] : [],
                 array_map(static fn (PageComponent $component): mixed => $component->props['value'], PageComponents::find($form, $field, ['name' => $name])),

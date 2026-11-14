@@ -115,7 +115,7 @@ final readonly class RedirectTargetField
 
     private function pageField(string $prefix, string $pageId): PageComponent
     {
-        return new PageComponent('Shared:PageField', [
+        return new PageComponent('Shared:ResourceField', [
             'name' => self::name($prefix, 'page_id'),
             'id' => self::id($prefix, 'page'),
             'label' => $this->translator->trans('cms.redirects.form.page.label'),
@@ -123,6 +123,9 @@ final readonly class RedirectTargetField
             'value' => $pageId,
             'searchUrl' => $this->urlGenerator->generate('cms_pages_search'),
             'lookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+            'key' => 'pages',
+            'param' => 'title',
+            'texts' => 'ui.resource_field.page',
             'offSite' => $this->translator->trans('cms.redirects.form.off_site'),
         ]);
     }

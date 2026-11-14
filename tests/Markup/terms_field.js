@@ -9,11 +9,11 @@ export const TERMS_FIELD_LABELS = {
     error: 'Search failed',
 };
 
-const row = ({ id = '', name = '', status = '' } = {}) => `
+const row = ({ id = '', title = '', status = '' } = {}) => `
     <li data-terms-field-target="row" data-term-id="${id}">
         <input type="hidden" name="tags[]" value="${id}" data-field="id">
         <p id="tags-${id}" data-field="term">
-            <span data-field="name">${name}</span>
+            <span data-field="name">${title}</span>
             <span data-field="status">${status}</span>
         </p>
         <button type="button" aria-describedby="tags-${id}" data-action="terms-field#remove" data-field="remove">Remove</button>
@@ -23,7 +23,7 @@ const row = ({ id = '', name = '', status = '' } = {}) => `
 /**
  * The tags of a post as the TermsField component writes them.
  *
- * @param {{items?: {id: string, name: string, status: string}[]}} [options]
+ * @param {{items?: {id: string, title: string, status: string}[]}} [options]
  */
 export const termsField = ({ items = [] } = {}) => `
     <form>

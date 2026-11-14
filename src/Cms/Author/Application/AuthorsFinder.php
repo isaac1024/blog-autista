@@ -6,9 +6,11 @@ namespace Cms\Author\Application;
 
 use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
+use Shared\Domain\DomainError;
 
 /**
- * Finds the authors among the ids given, leaving out those of no author.
+ * Finds the authors among the ids given, leaving out those of no author,
+ * and anything that can't be the id of one.
  */
 final readonly class AuthorsFinder
 {
@@ -22,9 +24,16 @@ final readonly class AuthorsFinder
      */
     public function __invoke(AuthorRepository $authorRepository): array
     {
-        return array_map(
-            AuthorResponse::fromAuthor(...),
-            $authorRepository->findByIds(array_map(static fn (string $id): AuthorId => new AuthorId($id), $this->ids)),
-        );
+        $ids = [];
+
+        foreach ($this->ids as $id) {
+            try {
+                $ids[] = new AuthorId($id);
+            } catch (DomainError) {
+                // Not the id of an author: none to find.
+            }
+        }
+
+        return array_map(AuthorResponse::fromAuthor(...), $authorRepository->findByIds($ids));
     }
 }

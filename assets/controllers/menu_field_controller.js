@@ -4,7 +4,7 @@ import { Lookups, lookupText } from '../shared/lookup.js';
 import { pageOption } from '../shared/options.js';
 import { Search } from '../shared/search.js';
 
-/** @typedef {import('./page_field_controller.js').Page} Page */
+/** @typedef {import('./resource_field_controller.js').Resource} Page */
 
 /**
  * @typedef {object} Labels
