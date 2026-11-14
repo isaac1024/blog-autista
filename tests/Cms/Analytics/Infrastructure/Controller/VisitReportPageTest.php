@@ -91,30 +91,30 @@ final class VisitReportPageTest extends TestCase
     }
 
     /**
-     * Today is broken down by its pages and channels, the period by every
+     * Today is broken down by its contents and channels, the period by every
      * breakdown, and either only by those with any row.
      */
     public function testItBreaksTheVisitsDownByWhatHasAnyRow(): void
     {
-        $page = [new ReportRow('01a1b801-ce58-723d-8234-b76d9105f001', 'Sobre mí', 1, 1)];
-        $channel = [new ReportRow('search', null, 1, 1)];
-        $source = [new ReportRow('google.es', null, 1, 1)];
-        $device = [new ReportRow('mobile', null, 1, 1)];
-        $country = [new ReportRow('AR', null, 1, 1)];
+        $page = [new ReportRow('01a1b801-ce58-723d-8234-b76d9105f001', 'Sobre mí', 'page', 1, 1)];
+        $channel = [new ReportRow('search', null, null, 1, 1)];
+        $source = [new ReportRow('google.es', null, null, 1, 1)];
+        $device = [new ReportRow('mobile', null, null, 1, 1)];
+        $country = [new ReportRow('AR', null, null, 1, 1)];
         $report = $this->report(Period::Month, new VisitReport(
-            $this->summary(views: 1, pages: $page, channels: [], sources: $source, devices: $device, countries: $country),
+            $this->summary(views: 1, contents: $page, channels: [], sources: $source, devices: $device, countries: $country),
             [],
-            $this->summary(views: 1, pages: $page, channels: $channel, sources: $source, devices: $device, countries: $country),
+            $this->summary(views: 1, contents: $page, channels: $channel, sources: $source, devices: $device, countries: $country),
             null,
         ));
 
         self::assertSame(
             [
                 // Today
-                'cms.analytics.pages.caption',
+                'cms.analytics.contents.caption',
                 'cms.analytics.channels.caption',
                 // The period, without the channels it has no row of
-                'cms.analytics.pages.caption',
+                'cms.analytics.contents.caption',
                 'cms.analytics.sources.caption',
                 'cms.analytics.devices.caption',
                 'cms.analytics.countries.caption',
@@ -133,11 +133,11 @@ final class VisitReportPageTest extends TestCase
         $report = $this->report(Period::Month, new VisitReport(
             $this->summary(
                 views: 1,
-                pages: [new ReportRow('01a1b801-ce58-723d-8234-b76d9105f001', 'Sobre mí', 1, 1), new ReportRow('01a1b801-ce58-723d-8234-b76d9105f002', null, 1, 1)],
-                channels: [new ReportRow('search', null, 1, 1)],
-                sources: [new ReportRow('google.es', null, 1, 1), new ReportRow(null, null, 1, 1)],
-                devices: [new ReportRow('mobile', null, 1, 1)],
-                countries: [new ReportRow('AR', null, 1, 1), new ReportRow(null, null, 1, 1)],
+                contents: [new ReportRow('01a1b801-ce58-723d-8234-b76d9105f001', 'Sobre mí', 'page', 1, 1), new ReportRow('01a1b801-ce58-723d-8234-b76d9105f002', null, 'page', 1, 1)],
+                channels: [new ReportRow('search', null, null, 1, 1)],
+                sources: [new ReportRow('google.es', null, null, 1, 1), new ReportRow(null, null, null, 1, 1)],
+                devices: [new ReportRow('mobile', null, null, 1, 1)],
+                countries: [new ReportRow('AR', null, null, 1, 1), new ReportRow(null, null, null, 1, 1)],
             ),
             [],
             $this->summary(views: 0),
@@ -146,7 +146,7 @@ final class VisitReportPageTest extends TestCase
 
         self::assertSame(
             [
-                ['Sobre mí', 'cms.analytics.pages.deleted'],
+                ['Sobre mí', 'cms.analytics.contents.deleted.page'],
                 ['cms.analytics.channel.search'],
                 ['google.es', 'cms.analytics.sources.others'],
                 ['cms.analytics.device.mobile'],
@@ -169,9 +169,9 @@ final class VisitReportPageTest extends TestCase
         $report = $this->report(Period::Month, new VisitReport(
             $this->summary(
                 views: 1,
-                pages: [new ReportRow('a', 'A', 8, 1), new ReportRow('b', 'B', 2, 1)],
-                channels: [new ReportRow('direct', null, 1, 1), new ReportRow('search', null, 0, 0)],
-                sources: [new ReportRow('google.es', null, 0, 0)],
+                contents: [new ReportRow('a', 'A', 'page', 8, 1), new ReportRow('b', 'B', 'page', 2, 1)],
+                channels: [new ReportRow('direct', null, null, 1, 1), new ReportRow('search', null, null, 0, 0)],
+                sources: [new ReportRow('google.es', null, null, 0, 0)],
             ),
             [],
             $this->summary(views: 0),
@@ -191,7 +191,7 @@ final class VisitReportPageTest extends TestCase
     public function testItTellsFiguresInTheLanguageOfTheEditor(string $locale, string $views, string $visitors): void
     {
         $report = $this->report(Period::Month, new VisitReport(
-            $this->summary(views: 12345, visitors: 6789, pages: [new ReportRow('a', 'A', 12345, 6789)]),
+            $this->summary(views: 12345, visitors: 6789, contents: [new ReportRow('a', 'A', 'page', 12345, 6789)]),
             [new DayViews('2026-11-09', 12345)],
             $this->summary(views: 0),
             null,
@@ -261,7 +261,7 @@ final class VisitReportPageTest extends TestCase
     }
 
     /**
-     * @param list<ReportRow> $pages
+     * @param list<ReportRow> $contents
      * @param list<ReportRow> $channels
      * @param list<ReportRow> $sources
      * @param list<ReportRow> $devices
@@ -270,13 +270,13 @@ final class VisitReportPageTest extends TestCase
     private function summary(
         int $views,
         int $visitors = 0,
-        array $pages = [],
+        array $contents = [],
         array $channels = [],
         array $sources = [],
         array $devices = [],
         array $countries = [],
     ): VisitSummary {
-        return new VisitSummary($views, $visitors, $pages, $channels, $sources, $devices, $countries);
+        return new VisitSummary($views, $visitors, $contents, $channels, $sources, $devices, $countries);
     }
 
     private function report(Period $period, VisitReport $report, string $locale = 'es'): Page

@@ -99,14 +99,14 @@ final class FormAndPanelComponentsTest extends TestCase
     public function testATableRefusesARowThatDoesntFillItsColumns(): void
     {
         $table = new DataTable();
-        $table->mount('Páginas', ['Página', 'Vistas'], [['name' => 'Sobre mí', 'figures' => ['3'], 'share' => 1.0]]);
+        $table->mount('Páginas', ['Página', 'Vistas'], [['name' => 'Sobre mí', 'meta' => null, 'figures' => ['3'], 'share' => 1.0]]);
         self::assertCount(1, $table->rows);
 
         $this->expectException(\InvalidArgumentException::class);
 
         new DataTable()->mount('Páginas', ['Página', 'Vistas'], [
-            ['name' => 'Sobre mí', 'figures' => ['3'], 'share' => 1.0],
-            ['name' => 'Contacto', 'figures' => ['3', '2'], 'share' => 1.0],
+            ['name' => 'Sobre mí', 'meta' => null, 'figures' => ['3'], 'share' => 1.0],
+            ['name' => 'Contacto', 'meta' => null, 'figures' => ['3', '2'], 'share' => 1.0],
         ]);
     }
 }

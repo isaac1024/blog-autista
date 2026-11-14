@@ -105,16 +105,22 @@ final readonly class VisitReportPage
     }
 
     /**
-     * The tables of a summary that have any row: today only its pages and
-     * channels, the period every one.
+     * The tables of a summary that have any row: today only its contents and
+     * channels, the period every one. A content tells what kind it is under
+     * its name.
      *
      * @return list<PageComponent>
      */
     private function breakdowns(VisitSummary $summary, bool $all): array
     {
         $tables = [
-            ...$this->table('pages', $summary->pages, fn (ReportRow $row): string => $row->name ?? $this->trans('cms.analytics.pages.deleted')),
-            ...$this->table('channels', $summary->channels, fn (ReportRow $row): string => $this->trans('cms.analytics.channel.'.$row->value)),
+            ...$this->table(
+                'contents',
+                $summary->contents,
+                fn (ReportRow $row): string => $row->name ?? $this->trans('cms.analytics.contents.deleted.'.$row->kind),
+                fn (ReportRow $row): string => $this->trans('cms.analytics.contents.kinds.'.$row->kind),
+            ),
+            ...$this->table('channels', $summary->channels, fn (ReportRow $row): string => $this->trans('cms.analytics.channel.'.$row->value), null),
         ];
 
         if (!$all) {
@@ -123,23 +129,24 @@ final readonly class VisitReportPage
 
         return [
             ...$tables,
-            ...$this->table('sources', $summary->sources, fn (ReportRow $row): string => $row->value ?? $this->trans('cms.analytics.sources.others')),
-            ...$this->table('devices', $summary->devices, fn (ReportRow $row): string => $this->trans('cms.analytics.device.'.$row->value)),
+            ...$this->table('sources', $summary->sources, fn (ReportRow $row): string => $row->value ?? $this->trans('cms.analytics.sources.others'), null),
+            ...$this->table('devices', $summary->devices, fn (ReportRow $row): string => $this->trans('cms.analytics.device.'.$row->value), null),
             ...$this->table('countries', $summary->countries, fn (ReportRow $row): string => null === $row->value
                 ? $this->trans('cms.analytics.countries.unknown')
-                : $this->countryNames->name($row->value, $this->translator->getLocale())),
+                : $this->countryNames->name($row->value, $this->translator->getLocale()), null),
         ];
     }
 
     /**
      * The table of a breakdown, none when it has no row.
      *
-     * @param list<ReportRow>             $rows
-     * @param \Closure(ReportRow): string $name
+     * @param list<ReportRow>              $rows
+     * @param \Closure(ReportRow): string  $name
+     * @param ?\Closure(ReportRow): string $meta what is told under the name, if anything
      *
      * @return list<PageComponent>
      */
-    private function table(string $breakdown, array $rows, \Closure $name): array
+    private function table(string $breakdown, array $rows, \Closure $name, ?\Closure $meta): array
     {
         if ([] === $rows) {
             return [];
@@ -156,6 +163,7 @@ final readonly class VisitReportPage
             ],
             'rows' => array_map(fn (ReportRow $row): array => [
                 'name' => $name($row),
+                'meta' => null === $meta ? null : $meta($row),
                 'figures' => [$this->figure($row->views), $this->figure($row->visitors)],
                 'share' => $row->views / $largest,
             ], $rows),

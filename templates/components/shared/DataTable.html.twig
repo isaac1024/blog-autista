@@ -13,6 +13,9 @@
             <tr>
                 <th class="border-b border-divider py-2 text-left font-normal" scope="row">
                     <span class="break-words">{{ row.name }}</span>
+{% if row.meta is not null %}
+                    <span class="block text-muted">{{ row.meta }}</span>
+{% endif %}
                     <span class="mt-1 block h-1 bg-chart forced-colors:bg-[CanvasText] w-[{{ this.width(row.share) }}%]" aria-hidden="true"></span>
                 </th>
 {% for figure in row.figures %}

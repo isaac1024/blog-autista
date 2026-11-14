@@ -8,10 +8,10 @@ use Cms\Analytics\Application\DayViews;
 use Cms\Analytics\Application\ReportRow;
 use Cms\Analytics\Application\VisitReport;
 use Cms\Analytics\Application\VisitReportFinder;
+use Cms\Analytics\Domain\ContentNames;
 use Cms\Analytics\Domain\Count;
 use Cms\Analytics\Domain\Days;
 use Cms\Analytics\Domain\Dimension;
-use Cms\Analytics\Domain\PageTitles;
 use Cms\Analytics\Domain\Period;
 use Cms\Analytics\Domain\VisitCounts;
 use Cms\Tests\Analytics\Domain\CountMother;
@@ -74,8 +74,8 @@ final class VisitReportFinderTest extends TestCase
         ]);
 
         self::assertSame([12, 10], [$report->period->views, $report->period->visitors]);
-        self::assertEquals([new ReportRow(self::PAGE, 'Sobre mí', 8, 7), new ReportRow(self::DELETED_PAGE, null, 4, 3)], $report->period->pages);
-        self::assertEquals([new ReportRow('mobile', null, 9, 8), new ReportRow('desktop', null, 3, 2)], $report->period->devices);
+        self::assertEquals([new ReportRow(self::PAGE, 'Sobre mí', 'page', 8, 7), new ReportRow(self::DELETED_PAGE, null, 'page', 4, 3)], $report->period->contents);
+        self::assertEquals([new ReportRow('mobile', null, null, 9, 8), new ReportRow('desktop', null, null, 3, 2)], $report->period->devices);
     }
 
     /**
@@ -90,7 +90,7 @@ final class VisitReportFinderTest extends TestCase
             CountMother::create(dimension: Dimension::Channel, value: 'direct', views: 2, visitors: 2),
         ]);
 
-        self::assertEquals([new ReportRow('search', null, 5, 4), new ReportRow('direct', null, 2, 2)], $report->period->channels);
+        self::assertEquals([new ReportRow('search', null, null, 5, 4), new ReportRow('direct', null, null, 2, 2)], $report->period->channels);
     }
 
     /**
@@ -114,15 +114,15 @@ final class VisitReportFinderTest extends TestCase
 
         yield 'some too small' => [
             [$source('google.es', 4, 3), $source('google.es', 2, 2, '2026-11-05'), $source('foro.example.org', 3, 3), $source('blog.example.org', 2, 1), $source('otro.example.org', 1, 1)],
-            [new ReportRow('google.es', null, 6, 5), new ReportRow('foro.example.org', null, 3, 3), new ReportRow(null, null, 3, 2)],
+            [new ReportRow('google.es', null, null, 6, 5), new ReportRow('foro.example.org', null, null, 3, 3), new ReportRow(null, null, null, 3, 2)],
         ];
         yield 'none too small' => [
             [$source('google.es', 5, 4), $source('foro.example.org', 3, 3)],
-            [new ReportRow('google.es', null, 5, 4), new ReportRow('foro.example.org', null, 3, 3)],
+            [new ReportRow('google.es', null, null, 5, 4), new ReportRow('foro.example.org', null, null, 3, 3)],
         ];
         yield 'all too small' => [
             [$source('blog.example.org', 2, 1), $source('otro.example.org', 1, 1)],
-            [new ReportRow(null, null, 3, 2)],
+            [new ReportRow(null, null, null, 3, 2)],
         ];
     }
 
@@ -134,7 +134,7 @@ final class VisitReportFinderTest extends TestCase
             CountMother::create(dimension: Dimension::Country, value: 'MX', views: 2, visitors: 2),
         ]);
 
-        self::assertSame(self::rows([new ReportRow('ES', null, 6, 5), new ReportRow(null, null, 4, 3), new ReportRow('MX', null, 2, 2)]), self::rows($report->period->countries));
+        self::assertSame(self::rows([new ReportRow('ES', null, null, 6, 5), new ReportRow(null, null, null, 4, 3), new ReportRow('MX', null, null, 2, 2)]), self::rows($report->period->countries));
     }
 
     /**
@@ -181,14 +181,14 @@ final class VisitReportFinderTest extends TestCase
         ]);
 
         self::assertSame([1, 1], [$report->today->views, $report->today->visitors]);
-        self::assertEquals([new ReportRow(self::OTHER_PAGE, 'Otra página', 1, 1)], $report->today->pages);
+        self::assertEquals([new ReportRow(self::OTHER_PAGE, 'Otra página', 'page', 1, 1)], $report->today->contents);
     }
 
     public function testItReportsNothingWhenNothingWasCounted(): void
     {
         $report = self::report([]);
 
-        self::assertSame([0, 0, [], [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->pages, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
+        self::assertSame([0, 0, [], [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->contents, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
         self::assertCount(7, $report->days);
         self::assertNull($report->uncountedSince);
     }
@@ -277,11 +277,11 @@ final class VisitReportFinderTest extends TestCase
     /**
      * The titles of the pages still on the CMS; the deleted one has none.
      */
-    private static function titles(): PageTitles
+    private static function titles(): ContentNames
     {
-        $titles = self::createStub(PageTitles::class);
-        $titles->method('titlesOf')->willReturnCallback(static fn (array $ids): array => array_filter(
-            [self::PAGE => 'Sobre mí', self::OTHER_PAGE => 'Otra página'],
+        $titles = self::createStub(ContentNames::class);
+        $titles->method('namesOf')->willReturnCallback(static fn (Dimension $kind, array $ids): array => Dimension::Page !== $kind ? [] : array_filter(
+            [self::PAGE => ['name' => 'Sobre mí', 'kind' => 'page'], self::OTHER_PAGE => ['name' => 'Otra página', 'kind' => 'page']],
             static fn (string $id): bool => \in_array($id, $ids, true),
             \ARRAY_FILTER_USE_KEY,
         ));

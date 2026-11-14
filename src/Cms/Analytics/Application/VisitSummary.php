@@ -17,7 +17,7 @@ namespace Cms\Analytics\Application;
 final readonly class VisitSummary
 {
     /**
-     * @param list<ReportRow> $pages     most seen first; a page deleted has no name
+     * @param list<ReportRow> $contents  pages, posts, sections and tags, and authors, most seen first; one deleted has no name
      * @param list<ReportRow> $channels  most entries first, within the site left out
      * @param list<ReportRow> $sources   most entries first, the smallest grouped last under no value
      * @param list<ReportRow> $devices   most seen first
@@ -26,7 +26,7 @@ final readonly class VisitSummary
     public function __construct(
         public int $views,
         public int $visitors,
-        public array $pages,
+        public array $contents,
         public array $channels,
         public array $sources,
         public array $devices,

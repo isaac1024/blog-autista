@@ -7,8 +7,8 @@ namespace Shared\Infrastructure\Twig\Components;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
- * A breakdown as a table: what each row counts, then its figures, aligned
- * to the right. A share draws a thin bar under the name, in one hue, so the
+ * A breakdown as a table: what each row counts, with what is told of it
+ * under its name, if anything, then its figures, aligned to the right. A share draws a thin bar under the name, in one hue, so the
  * rows compare at a glance; the figures beside it say the same in numbers.
  */
 #[AsTwigComponent]
@@ -22,13 +22,13 @@ final class DataTable
     public array $columns = [];
 
     /**
-     * @var list<array{name: string, figures: list<string>, share: float}>
+     * @var list<array{name: string, meta: ?string, figures: list<string>, share: float}>
      */
     public array $rows = [];
 
     /**
-     * @param list<string>                                                   $columns the heading of the names, then those of the figures
-     * @param list<array{name: string, figures: list<string>, share: float}> $rows    share from 0 to 1, of the largest row
+     * @param list<string>                                                                  $columns the heading of the names, then those of the figures
+     * @param list<array{name: string, meta: ?string, figures: list<string>, share: float}> $rows    meta told under the name, null for nothing; share from 0 to 1, of the largest row
      */
     public function mount(string $caption, array $columns, array $rows): void
     {

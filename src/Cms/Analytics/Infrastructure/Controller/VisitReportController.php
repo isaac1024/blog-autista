@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Cms\Analytics\Infrastructure\Controller;
 
 use Cms\Analytics\Application\VisitReportFinder;
+use Cms\Analytics\Domain\ContentNames;
 use Cms\Analytics\Domain\InvalidPeriod;
-use Cms\Analytics\Domain\PageTitles;
 use Cms\Analytics\Domain\Period;
 use Cms\Analytics\Domain\VisitCounts;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
@@ -29,12 +29,12 @@ final class VisitReportController extends AbstractController
     #[Route('/analytics', name: 'cms_analytics', methods: ['GET'])]
     public function __invoke(
         VisitCounts $visitCounts,
-        PageTitles $pageTitles,
+        ContentNames $contentNames,
         #[MapQueryParameter]
         int $days = Period::Month->value,
     ): Response {
         try {
-            $report = new VisitReportFinder($days)($visitCounts, $pageTitles);
+            $report = new VisitReportFinder($days)($visitCounts, $contentNames);
         } catch (InvalidPeriod $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

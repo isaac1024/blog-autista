@@ -74,11 +74,6 @@ cms:
         uncounted:
             title: 'La cuenta nocturna no se ha hecho.'
             message: 'Quedan visitas sin contar desde el %day%, y de ellas el sitio aún distingue a un lector de otro. Comprueba que el cron ejecute «messenger:consume scheduler_default».'
-        pages:
-            caption: 'Páginas'
-            name: 'Página'
-            views: 'Vistas'
-            deleted: 'Página eliminada'
         channels:
             caption: 'Procedencia'
             name: 'Canal'
@@ -110,6 +105,22 @@ cms:
         empty:
             title: 'Aún no hay visitas'
             message: 'Aparecen aquí en cuanto alguien lee una página publicada.'
+        contents:
+            caption: 'Contenidos'
+            name: 'Contenido'
+            views: 'Vistas'
+            deleted:
+                page: 'Página eliminada'
+                post: 'Post eliminado'
+                term: 'Sección o etiqueta eliminada'
+                author: 'Autor eliminado'
+            kinds:
+                page: 'Página'
+                post: 'Post'
+                section: 'Sección'
+                tag: 'Etiqueta'
+                term: 'Sección o etiqueta'
+                author: 'Autor'
     images:
         title: 'Imágenes'
         subtitle: 'Las imágenes que muestran las páginas del blog, recortadas en 16:9.'

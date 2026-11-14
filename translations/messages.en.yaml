@@ -74,11 +74,6 @@ cms:
         uncounted:
             title: 'The nightly count has not run.'
             message: 'Visits are left uncounted since %day%, and for them the site still tells one reader from another. Check that cron runs “messenger:consume scheduler_default”.'
-        pages:
-            caption: 'Pages'
-            name: 'Page'
-            views: 'Views'
-            deleted: 'Deleted page'
         channels:
             caption: 'Channels'
             name: 'Channel'
@@ -110,6 +105,22 @@ cms:
         empty:
             title: 'No visits yet'
             message: 'They show up here as soon as someone reads a published page.'
+        contents:
+            caption: 'Contents'
+            name: 'Content'
+            views: 'Views'
+            deleted:
+                page: 'Deleted page'
+                post: 'Deleted post'
+                term: 'Deleted section or tag'
+                author: 'Deleted author'
+            kinds:
+                page: 'Page'
+                post: 'Post'
+                section: 'Section'
+                tag: 'Tag'
+                term: 'Section or tag'
+                author: 'Author'
     images:
         title: 'Images'
         subtitle: 'The images the pages of the blog show, cropped to 16:9.'
