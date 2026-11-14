@@ -17,6 +17,7 @@ use Cms\Post\Application\PostResponse;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Cms\Taxonomy\Application\TermOnSiteFinder;
+use Cms\Taxonomy\Application\TermOnSiteResponse;
 use Cms\Taxonomy\Application\TermsOfTaxonomyByIdFinder;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
@@ -107,13 +108,14 @@ final readonly class PreviewPost
 
     /**
      * The section as the site names it, leading to its page, while it is on
-     * the site; otherwise as it is saved, as text, and none while unfiled.
+     * the site, or the one its address now leads to; otherwise as it is
+     * saved, as text, and none while unfiled.
      *
      * @return array{name: string, url: ?string}
      */
     private function section(?string $id): array
     {
-        $onSite = null === $id ? null : new TermOnSiteFinder(Taxonomy::Section, $id)($this->termRepository);
+        $onSite = null === $id ? null : $this->terms(Taxonomy::Section, [$id])[$id] ?? null;
 
         if (null !== $onSite) {
             return ['name' => $onSite->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $onSite->slug])];
@@ -126,13 +128,29 @@ final readonly class PreviewPost
 
     /**
      * The author as the site names it, leading to its page, while it is on
-     * the site; otherwise as it is saved, as text, and none while unsigned.
+     * the site, or the one its address now leads to; otherwise as it is
+     * saved, as text, and none while unsigned.
      *
      * @return array{name: string, url: ?string}
      */
     private function author(?string $id): array
     {
-        $onSite = null === $id ? null : new AuthorOnSiteFinder($id)($this->authorRepository);
+        $onSite = null === $id ? null : new ReferenceResolver('author', [$id], null)(
+            function (array $ids): array {
+                $authors = [];
+
+                foreach ($ids as $candidate) {
+                    $author = new AuthorOnSiteFinder($candidate)($this->authorRepository);
+
+                    if (null !== $author) {
+                        $authors[$candidate] = $author;
+                    }
+                }
+
+                return $authors;
+            },
+            $this->redirectsByOrigin,
+        )[$id] ?? null;
 
         if (null !== $onSite) {
             return ['name' => $onSite->name, 'url' => $this->urlGenerator->generate('web_author', ['slug' => $onSite->slug])];
@@ -144,7 +162,8 @@ final readonly class PreviewPost
     }
 
     /**
-     * The tags on the site among those given, in order, each leading to its page.
+     * The tags on the site among those given, in order, each leading to its
+     * page, once; a tag off the site, as the one its address now leads to.
      *
      * @param list<string> $ids
      *
@@ -154,14 +173,48 @@ final readonly class PreviewPost
     {
         $tags = [];
 
-        foreach ($ids as $id) {
-            $tag = new TermOnSiteFinder(Taxonomy::Tag, $id)($this->termRepository);
+        foreach ($this->terms(Taxonomy::Tag, $ids) as $tag) {
+            $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+        }
 
-            if (null !== $tag) {
-                $tags[] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+        return array_values($tags);
+    }
+
+    /**
+     * The terms of the taxonomy among those given, in order, as they are on
+     * the site, keyed by the id given; one off the site, as the term of the
+     * taxonomy its address now leads to.
+     *
+     * @param list<string> $ids
+     *
+     * @return array<string, TermOnSiteResponse>
+     */
+    private function terms(Taxonomy $taxonomy, array $ids): array
+    {
+        $resolved = new ReferenceResolver('term', $ids, null)(
+            function (array $ids) use ($taxonomy): array {
+                $terms = [];
+
+                foreach ($ids as $id) {
+                    $term = new TermOnSiteFinder($taxonomy, $id)($this->termRepository);
+
+                    if (null !== $term) {
+                        $terms[$id] = $term;
+                    }
+                }
+
+                return $terms;
+            },
+            $this->redirectsByOrigin,
+        );
+        $terms = [];
+
+        foreach ($ids as $id) {
+            if (\array_key_exists($id, $resolved)) {
+                $terms[$id] = $resolved[$id];
             }
         }
 
-        return $tags;
+        return $terms;
     }
 }

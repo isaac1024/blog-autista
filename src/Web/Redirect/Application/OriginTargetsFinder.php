@@ -13,7 +13,7 @@ use Web\Redirect\Domain\RedirectRepository;
 final readonly class OriginTargetsFinder
 {
     /**
-     * @param string       $type "page" or "image"
+     * @param string       $type "page", "image", "post", "term" or "author"
      * @param list<string> $ids
      */
     public function __construct(

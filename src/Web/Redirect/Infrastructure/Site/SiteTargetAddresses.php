@@ -7,16 +7,29 @@ namespace Web\Redirect\Infrastructure\Site;
 use Shared\Domain\ImageCopy;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Author\Application\AuthorOnSiteFinder;
+use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\PublishedImagesFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PublishedPagesFinder;
 use Web\Page\Domain\PageRepository;
+use Web\Post\Application\PostOnSiteFinder;
+use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\TargetAddresses;
+use Web\Taxonomy\Application\TermOnSiteFinder;
+use Web\Taxonomy\Domain\Taxonomy;
+use Web\Taxonomy\Domain\TermRepository;
 
 /**
- * Outbound adapter that asks the pages and the images of the site where
- * each is served: a page at its slug, or the root for the home page, and an
- * image at the copy of the width.
+ * Outbound adapter that asks the resources of the site where each is
+ * served: a page at its slug, or the root for the home page, an image at the
+ * copy of the width, a post under its section on its day, a section or a
+ * tag at the slug of its taxonomy, and an author at its own.
+ *
+ * It reaches every module a redirect can lead to, so its coupling grows with
+ * the kinds of resource and says nothing about its design.
+ *
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 #[AsAlias(TargetAddresses::class)]
 final readonly class SiteTargetAddresses implements TargetAddresses
@@ -24,6 +37,9 @@ final readonly class SiteTargetAddresses implements TargetAddresses
     public function __construct(
         private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
+        private PostRepository $postRepository,
+        private TermRepository $termRepository,
+        private AuthorRepository $authorRepository,
         private UrlGeneratorInterface $urlGenerator,
     ) {}
 
@@ -33,6 +49,9 @@ final readonly class SiteTargetAddresses implements TargetAddresses
         return match ($type) {
             'page' => $this->pageAddress($id),
             'image' => $this->imageAddress($id, $width ?? ImageCopy::LARGEST),
+            'post' => $this->postAddress($id),
+            'term' => $this->termAddress($id),
+            'author' => $this->authorAddress($id),
             default => null,
         };
     }
@@ -55,5 +74,41 @@ final readonly class SiteTargetAddresses implements TargetAddresses
         $image = new PublishedImagesFinder([$id])($this->imageRepository)[$id] ?? null;
 
         return null === $image ? null : new ImageCopy($image->path, $width)->url();
+    }
+
+    private function postAddress(string $id): ?string
+    {
+        $post = new PostOnSiteFinder($id)($this->postRepository);
+
+        if (null === $post) {
+            return null;
+        }
+
+        [$year, $month, $day] = explode('-', $post->day);
+
+        return $this->urlGenerator->generate('web_post', ['section' => $post->sectionSlug, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->slug]);
+    }
+
+    /**
+     * A term is a section or a tag, each served under its own route.
+     */
+    private function termAddress(string $id): ?string
+    {
+        $section = new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository);
+
+        if (null !== $section) {
+            return $this->urlGenerator->generate('web_section', ['slug' => $section->slug]);
+        }
+
+        $tag = new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository);
+
+        return null === $tag ? null : $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]);
+    }
+
+    private function authorAddress(string $id): ?string
+    {
+        $author = new AuthorOnSiteFinder($id)($this->authorRepository);
+
+        return null === $author ? null : $this->urlGenerator->generate('web_author', ['slug' => $author->slug]);
     }
 }

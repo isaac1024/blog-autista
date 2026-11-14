@@ -12,7 +12,7 @@ namespace Web\Redirect\Domain;
 final readonly class Redirect
 {
     /**
-     * @param ?string $targetType "page" or "image", null when the address is gone
+     * @param ?string $targetType "page", "image", "post", "term" or "author", null when the address is gone
      * @param ?string $originId   the resource whose last address it is, null for none
      */
     public function __construct(

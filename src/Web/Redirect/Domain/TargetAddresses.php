@@ -12,11 +12,11 @@ namespace Web\Redirect\Domain;
 interface TargetAddresses
 {
     /**
-     * The address of the page or the image on the site, relative to its
-     * root, or null while it isn't on it. An image is given at the width,
-     * or at its largest when none is asked for.
+     * The address of the resource on the site, relative to its root, or
+     * null while it isn't on it. An image is given at the width, or at its
+     * largest when none is asked for.
      *
-     * @param string $type "page" or "image"
+     * @param string $type "page", "image", "post", "term" (a section or a tag) or "author"
      */
     public function addressOf(string $type, string $id, ?int $width): ?string;
 }

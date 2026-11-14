@@ -11,6 +11,7 @@ use Shared\Infrastructure\Ui\SitePage;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
+use Web\Author\Application\AuthorResponse;
 use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
@@ -22,6 +23,7 @@ use Web\Post\Application\PostResponse;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Application\TermOnSiteFinder;
+use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -72,8 +74,13 @@ final readonly class PublishedPost
             ),
         );
 
-        $section = new TermOnSiteFinder(Taxonomy::Section->value, $post->sectionId)($this->termRepository);
-        $author = new AuthorOnSiteFinder($post->authorId)($this->authorRepository);
+        // A section or an author off the site is shown as the one its address
+        // now leads to, if any; otherwise by the name it had, as text.
+        $section = $this->terms(Taxonomy::Section, [$post->sectionId])[$post->sectionId] ?? null;
+        $author = new ReferenceResolver('author', [$post->authorId], null)(
+            fn (array $ids): array => $this->authorsOnSite($ids),
+            $this->redirectsByOrigin,
+        )[$post->authorId] ?? null;
 
         return ($this->sitePostPage)(
             $this->siteLayout->page($post->title)
@@ -95,7 +102,8 @@ final readonly class PublishedPost
     }
 
     /**
-     * The tags on the site among those given, in order, each leading to its page.
+     * The tags on the site among those given, in order, each leading to its
+     * page, once; a tag off the site, as the one its address now leads to.
      *
      * @param list<string> $ids
      *
@@ -105,15 +113,69 @@ final readonly class PublishedPost
     {
         $tags = [];
 
-        foreach ($ids as $id) {
-            $tag = new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository);
+        foreach ($this->terms(Taxonomy::Tag, $ids) as $tag) {
+            $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+        }
 
-            if (null !== $tag) {
-                $tags[] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+        return array_values($tags);
+    }
+
+    /**
+     * The terms of the taxonomy among those given, in order, as the site has
+     * them, keyed by the id given; one off the site, as the term of the
+     * taxonomy its address now leads to.
+     *
+     * @param list<string> $ids
+     *
+     * @return array<string, TermResponse>
+     */
+    private function terms(Taxonomy $taxonomy, array $ids): array
+    {
+        $resolved = new ReferenceResolver('term', $ids, null)(
+            function (array $ids) use ($taxonomy): array {
+                $terms = [];
+
+                foreach ($ids as $id) {
+                    $term = new TermOnSiteFinder($taxonomy->value, $id)($this->termRepository);
+
+                    if (null !== $term) {
+                        $terms[$id] = $term;
+                    }
+                }
+
+                return $terms;
+            },
+            $this->redirectsByOrigin,
+        );
+        $terms = [];
+
+        foreach ($ids as $id) {
+            if (\array_key_exists($id, $resolved)) {
+                $terms[$id] = $resolved[$id];
             }
         }
 
-        return $tags;
+        return $terms;
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return array<string, AuthorResponse>
+     */
+    private function authorsOnSite(array $ids): array
+    {
+        $authors = [];
+
+        foreach ($ids as $id) {
+            $author = new AuthorOnSiteFinder($id)($this->authorRepository);
+
+            if (null !== $author) {
+                $authors[$id] = $author;
+            }
+        }
+
+        return $authors;
     }
 
     /**

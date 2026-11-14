@@ -18,7 +18,7 @@ interface RedirectRepository
      * The redirects that know any of the resources as their origin, the one
      * last changed first, so the first of each resource is the one that counts.
      *
-     * @param string       $type "page" or "image"
+     * @param string       $type "page", "image", "post", "term" or "author"
      * @param list<string> $ids
      *
      * @return list<Redirect>
