@@ -149,4 +149,31 @@ final class AuthorPublicationControllersTest extends AuthorControllerTestCase
         self::assertEquals($author, $this->storedAuthor($author));
         self::assertFileExists(self::avatarDirectory().'/'.AuthorMother::AVATAR);
     }
+
+    /**
+     * What can't be done to it is told on its editor, which it goes back to.
+     */
+    #[DataProvider('refusedActions')]
+    public function testItGoesBackAndTellsWhatCannotBeDone(string $route, string $action, string $error): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = AuthorIdMother::random()->value();
+        $record = $this->saveAuthor(AuthorMother::create(id: $id));
+        $expected = clone $record;
+
+        $this->post($client, $route, self::HOST.'/authors/'.$id.'/'.$action);
+
+        self::assertResponseRedirects(self::HOST.'/authors/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.author.publication.'.$error, 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($expected, $this->storedAuthor($record));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function refusedActions(): iterable
+    {
+        yield 'unpublishing a draft' => ['cms_authors_unpublish', 'unpublish', 'not_published'];
+        yield 'discarding the changes of a draft' => ['cms_authors_discard', 'discard', 'no_changes_to_discard'];
+    }
 }

@@ -52,7 +52,7 @@ export default class extends BaseController {
         };
 
         const result = searchResult(
-            { title: value(title), description: value(description), slug: slug ? value(slug) : '' },
+            { title: value(title), description: value(description), slug: value(slug ?? '') },
             { address: this.addressValue, titleLimit: this.titleLimitValue, descriptionLimit: this.descriptionLimitValue, empty: this.emptyValue },
         );
 

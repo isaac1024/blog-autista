@@ -157,4 +157,31 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         self::assertSame([['key' => 'errors.term.publication.published_term', 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($term, $this->storedTerm($term));
     }
+
+    /**
+     * What can't be done to it is told on its editor, which it goes back to.
+     */
+    #[DataProvider('refusedActions')]
+    public function testItGoesBackAndTellsWhatCannotBeDone(string $route, string $action, string $error): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = TermIdMother::random()->value();
+        $record = $this->saveTerm(TermMother::create(id: $id));
+        $expected = clone $record;
+
+        $this->post($client, $route, self::HOST.'/sections/'.$id.'/'.$action);
+
+        self::assertResponseRedirects(self::HOST.'/sections/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.term.publication.'.$error, 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($expected, $this->storedTerm($record));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function refusedActions(): iterable
+    {
+        yield 'unpublishing a draft' => ['cms_terms_unpublish', 'unpublish', 'not_published'];
+        yield 'discarding the changes of a draft' => ['cms_terms_discard', 'discard', 'no_changes_to_discard'];
+    }
 }

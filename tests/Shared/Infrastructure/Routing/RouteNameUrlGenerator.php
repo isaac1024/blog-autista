@@ -34,6 +34,9 @@ final class RouteNameUrlGenerator implements UrlGeneratorInterface
         $path = match (true) {
             'web_home' === $name => '/',
             'web_page' === $name && \is_string($slug) => '/'.$slug.'.html',
+            'web_section' === $name && \is_string($slug) => '/'.$slug.'/',
+            'web_tag' === $name && \is_string($slug) => '/tag/'.$slug.'.html',
+            'web_author' === $name && \is_string($slug) => '/autor/'.$slug.'.html',
             default => '/'.$name.([] === $parameters ? '' : '?'.http_build_query($parameters)),
         };
 
