@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shared\Infrastructure\RichText;
 
 use Shared\Domain\RichText\InvalidRichText;
+use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\ListStyle;
 use Shared\Domain\RichText\RichText;
 
@@ -59,8 +60,8 @@ final readonly class TiptapDocumentReader
             'table' => self::table($node, $path),
             // An image is embedded by its id alone; the editor shows the rest.
             'image' => ['type' => 'image', 'id' => $attrs['id'] ?? null],
-            // So is the page of a widget.
-            'widget' => ['type' => 'widget', 'kind' => $attrs['kind'] ?? null, 'page_id' => $attrs['id'] ?? null],
+            // So is what a widget shows, under the key of its kind.
+            'widget' => ['type' => 'widget', 'kind' => $attrs['kind'] ?? null, self::linkKey($attrs, $path) => $attrs['id'] ?? null],
             default => throw InvalidRichText::malformed($path.'.type', 'a block the editor offers'),
         };
     }
@@ -234,7 +235,8 @@ final readonly class TiptapDocumentReader
             $child = self::node($child, 'text', $childPath);
             $marks = [];
             $linked = false;
-            $pageId = null;
+            $linkKey = LinkType::Page->key();
+            $linkId = null;
 
             foreach (self::list($child['marks'] ?? [], $childPath.'.marks') as $markIndex => $mark) {
                 $markPath = \sprintf('%s.marks[%d]', $childPath, $markIndex);
@@ -242,26 +244,46 @@ final readonly class TiptapDocumentReader
                 $marks[] = $type;
 
                 if ('link' === $type) {
-                    // A text links one page: a second link would hide which.
+                    // A text links one content: a second link would hide which.
                     if ($linked) {
                         throw InvalidRichText::malformed($markPath, 'a single link');
                     }
 
                     $linked = true;
-                    $pageId = self::attrs($mark, $markPath)['id'] ?? null;
+                    $linkAttrs = self::attrs($mark, $markPath);
+                    $linkKey = self::linkKey($linkAttrs, $markPath);
+                    $linkId = $linkAttrs['id'] ?? null;
                 }
             }
 
             $run = [] === $marks ? ['text' => $child['text'] ?? null] : ['text' => $child['text'] ?? null, 'marks' => $marks];
 
             if ($linked) {
-                $run['page_id'] = $pageId;
+                $run[$linkKey] = $linkId;
             }
 
             $runs[] = $run;
         }
 
         return $runs;
+    }
+
+    /**
+     * The key the content a link or a widget points to is kept under, by the
+     * kind it names; a page when it names none, as the editor wrote before
+     * it linked anything else.
+     *
+     * @param array<array-key, mixed> $attrs
+     */
+    private static function linkKey(array $attrs, string $path): string
+    {
+        $type = $attrs['type'] ?? LinkType::Page->value;
+
+        if (!\is_string($type)) {
+            throw InvalidRichText::malformed($path.'.attrs.type', 'a kind of content');
+        }
+
+        return (LinkType::tryFrom($type) ?? throw InvalidRichText::malformed($path.'.attrs.type', 'a kind of content'))->key();
     }
 
     /**

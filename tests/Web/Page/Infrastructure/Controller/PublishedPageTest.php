@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Author\Domain\AuthorRepository;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Domain\Page;
@@ -15,10 +16,13 @@ use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Domain\Robots;
 use Web\Page\Infrastructure\Controller\PublishedPage;
+use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 
@@ -69,7 +73,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
@@ -92,7 +96,7 @@ final class PublishedPageTest extends TestCase
         $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
         $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }
@@ -111,8 +115,20 @@ final class PublishedPageTest extends TestCase
         $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
         $page = Page::publish(CmsPagePublishedMother::create(id: self::TARGET));
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
 
         self::assertSame(['type' => 'page', 'id' => self::TARGET], $result->countedContent);
+    }
+
+    private static function linkedContents(UrlGeneratorInterface $urlGenerator, PageRepository $pageRepository): SiteLinkedContents
+    {
+        return new SiteLinkedContents(
+            $urlGenerator,
+            $pageRepository,
+            self::createStub(PostRepository::class),
+            self::createStub(TermRepository::class),
+            self::createStub(AuthorRepository::class),
+            new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)),
+        );
     }
 }

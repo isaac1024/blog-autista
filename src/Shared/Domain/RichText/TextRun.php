@@ -9,22 +9,20 @@ namespace Shared\Domain\RichText;
  */
 final readonly class TextRun
 {
-    private const string UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
-
     /**
      * @param list<Mark> $marks
-     * @param ?string    $pageId the page linked by the link mark, null without one
+     * @param ?Link      $link  what the link mark links to, null without one
      */
     public function __construct(
         private string $text,
         private array $marks,
-        private ?string $pageId,
+        private ?Link $link,
     ) {
         if ('' === $text) {
             throw InvalidRichText::empty('text');
         }
 
-        self::assertLinksAPage($marks, $pageId, 'text');
+        self::assertLinks($marks, $link, 'text');
     }
 
     public static function fromArray(mixed $data, string $path): self
@@ -38,11 +36,11 @@ final readonly class TextRun
         }
 
         $marks = array_values(array_unique($marks, \SORT_REGULAR));
-        $pageId = null === ($data['page_id'] ?? null) ? null : Parse::string($data['page_id'], $path.'.page_id');
+        $link = Link::fromArray($data, $path);
         // Checked here too, to tell where in the document it fails.
-        self::assertLinksAPage($marks, $pageId, $path);
+        self::assertLinks($marks, $link, $path);
 
-        return new self(Parse::string($data['text'] ?? null, $path.'.text'), $marks, $pageId);
+        return new self(Parse::string($data['text'] ?? null, $path.'.text'), $marks, $link);
     }
 
     public function text(): string
@@ -58,42 +56,39 @@ final readonly class TextRun
         return $this->marks;
     }
 
-    public function pageId(): ?string
+    public function link(): ?Link
     {
-        return $this->pageId;
+        return $this->link;
     }
 
     /**
-     * @return array{text: string, marks?: list<string>, page_id?: string}
+     * @return array{text: string, marks?: list<string>, page_id?: string, post_id?: string, term_id?: string, author_id?: string}
      */
     public function toArray(): array
     {
-        $data = ['text' => $this->text];
+        $data = [] === $this->marks
+            ? ['text' => $this->text]
+            : ['text' => $this->text, 'marks' => array_map(static fn (Mark $mark): string => $mark->value, $this->marks)];
+        $link = $this->link;
 
-        if ([] !== $this->marks) {
-            $data['marks'] = array_map(static fn (Mark $mark): string => $mark->value, $this->marks);
-        }
-
-        if (null !== $this->pageId) {
-            $data['page_id'] = $this->pageId;
-        }
-
-        return $data;
+        return match ($link?->type()) {
+            null => $data,
+            LinkType::Page => [...$data, 'page_id' => $link->id()],
+            LinkType::Post => [...$data, 'post_id' => $link->id()],
+            LinkType::Term => [...$data, 'term_id' => $link->id()],
+            LinkType::Author => [...$data, 'author_id' => $link->id()],
+        };
     }
 
     /**
-     * A text has the id of a page exactly when it has the link mark.
+     * A text links to a content exactly when it has the link mark.
      *
      * @param list<Mark> $marks
      */
-    private static function assertLinksAPage(array $marks, ?string $pageId, string $path): void
+    private static function assertLinks(array $marks, ?Link $link, string $path): void
     {
-        if (\in_array(Mark::Link, $marks, true) !== (null !== $pageId)) {
-            throw InvalidRichText::malformed($path.'.page_id', 'a page id exactly when the text has the link mark');
-        }
-
-        if (null !== $pageId && 1 !== preg_match(self::UUID, $pageId)) {
-            throw InvalidRichText::malformed($path.'.page_id', 'the id of a page');
+        if (\in_array(Mark::Link, $marks, true) !== (null !== $link)) {
+            throw InvalidRichText::malformed($path.'.page_id', 'a link to a content exactly when the text has the link mark');
         }
     }
 }

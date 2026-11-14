@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
@@ -12,12 +13,15 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PreviewPage;
+use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
+use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Cms\Shared\Domain\Robots;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Settings\Domain\SettingsMother;
@@ -238,9 +242,9 @@ final class PreviewPageTest extends TestCase
             $urlGenerator,
             new SitePage(new RichTextComponents()),
             new PreviewLayout($urlGenerator, $settingsRepository, $pageRepository, $imageRepository, $redirectsByOrigin),
-            $pageRepository,
             $imageRepository,
             $redirectsByOrigin,
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin),
         );
     }
 }

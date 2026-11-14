@@ -239,11 +239,11 @@ final class PageUpdaterTest extends TestCase
         yield 'table with uneven rows' => [Text::stored(Text::table(['Nombre', 'Finalidad'], [['PHPSESSID']])), InvalidRichText::unevenTable('table.rows', 2)];
         yield 'link without the page it goes to' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link']]]]),
-            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a page id exactly when the text has the link mark'),
+            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a link to a content exactly when the text has the link mark'),
         ];
         yield 'page to go to without a link' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']]]),
-            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a page id exactly when the text has the link mark'),
+            InvalidRichText::malformed('blocks[0].text[0].page_id', 'a link to a content exactly when the text has the link mark'),
         ];
         yield 'link to anything but the id of a page' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '/contacto.html']]]),

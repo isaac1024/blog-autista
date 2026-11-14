@@ -9,6 +9,9 @@ namespace Shared\Domain\RichText;
  */
 enum WidgetKind: string
 {
-    /** A page of the blog, as a card of related content. */
+    /**
+     * A content of the blog, as a card of related content. Named after the
+     * pages, the first it showed, as the content kept says it.
+     */
     case RelatedPage = 'related_page';
 }

@@ -56,7 +56,7 @@ final readonly class TiptapDocumentWriter
                 'content' => array_map(static fn (InlineText $item): array => ['type' => 'listItem', 'content' => [self::tiptapParagraph($item)]], $block->items()),
             ],
             $block instanceof EmbeddedImage => ['type' => 'image', 'attrs' => ['id' => $block->imageId()]],
-            $block instanceof Widget => ['type' => 'widget', 'attrs' => ['kind' => $block->kind()->value, 'id' => $block->pageId()]],
+            $block instanceof Widget => ['type' => 'widget', 'attrs' => ['kind' => $block->kind()->value, 'type' => $block->target()->type()->value, 'id' => $block->target()->id()]],
             $block instanceof Table => ['type' => 'table', 'content' => [
                 self::tiptapRow('tableHeader', $block->header()),
                 ...array_map(static fn (array $row): array => self::tiptapRow('tableCell', $row), $block->rows()),
@@ -97,7 +97,7 @@ final readonly class TiptapDocumentWriter
 
                 foreach ($run->marks() as $mark) {
                     $node['marks'][] = Mark::Link === $mark
-                        ? ['type' => $mark->value, 'attrs' => ['id' => $run->pageId()]]
+                        ? ['type' => $mark->value, 'attrs' => ['type' => $run->link()?->type()->value, 'id' => $run->link()?->id()]]
                         : ['type' => $mark->value];
                 }
 

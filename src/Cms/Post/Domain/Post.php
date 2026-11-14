@@ -428,6 +428,14 @@ final class Post extends AggregateRoot
     }
 
     /**
+     * The version on the site, null while the post is off it.
+     */
+    public function onSite(): ?PostVersion
+    {
+        return PostStatus::Published === $this->status ? $this->published : null;
+    }
+
+    /**
      * Where the site serves the post, or last served it once off it: null
      * for a post never published, and for one whose last address another
      * took.

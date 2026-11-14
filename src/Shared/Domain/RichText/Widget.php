@@ -6,24 +6,19 @@ namespace Shared\Domain\RichText;
 
 /**
  * A block that shows something the content points to, rather than text
- * written in it: for now, a page of the blog as a card of related content.
+ * written in it: a page, a post, a section, a tag or an author of the blog
+ * as a card of related content.
  *
- * The page is kept by its id alone, as a link is: whoever shows it reads its
- * title, and whether it is on the site, where it is kept, so they are always
- * the latest.
+ * It is kept by its kind and id alone, as a link is: whoever shows it reads
+ * its name, and whether it is on the site, where it is kept, so they are
+ * always the latest.
  */
 final readonly class Widget implements Block
 {
-    private const string UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i';
-
     public function __construct(
         private WidgetKind $kind,
-        private string $pageId,
-    ) {
-        if (1 !== preg_match(self::UUID, $pageId)) {
-            throw InvalidRichText::malformed('widget.page_id', 'the id of a page');
-        }
-    }
+        private Link $target,
+    ) {}
 
     /**
      * @param array<array-key, mixed> $data
@@ -32,14 +27,8 @@ final readonly class Widget implements Block
     {
         $kind = WidgetKind::tryFrom(Parse::string($data['kind'] ?? null, $path.'.kind'))
             ?? throw InvalidRichText::malformed($path.'.kind', 'a known kind of widget');
-        $pageId = Parse::string($data['page_id'] ?? null, $path.'.page_id');
 
-        // Checked here too, to tell where in the document it fails.
-        if (1 !== preg_match(self::UUID, $pageId)) {
-            throw InvalidRichText::malformed($path.'.page_id', 'the id of a page');
-        }
-
-        return new self($kind, $pageId);
+        return new self($kind, Link::fromArray($data, $path) ?? throw InvalidRichText::malformed($path.'.page_id', 'the id of what it shows'));
     }
 
     public function kind(): WidgetKind
@@ -47,9 +36,9 @@ final readonly class Widget implements Block
         return $this->kind;
     }
 
-    public function pageId(): string
+    public function target(): Link
     {
-        return $this->pageId;
+        return $this->target;
     }
 
     #[\Override]
@@ -67,6 +56,6 @@ final readonly class Widget implements Block
     #[\Override]
     public function toArray(): array
     {
-        return ['type' => $this->type()->value, 'kind' => $this->kind->value, 'page_id' => $this->pageId];
+        return ['type' => $this->type()->value, 'kind' => $this->kind->value, ...$this->target->toArray()];
     }
 }

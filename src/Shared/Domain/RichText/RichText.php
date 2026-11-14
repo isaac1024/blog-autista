@@ -95,17 +95,30 @@ final readonly class RichText
      */
     public function pageIds(): array
     {
+        return $this->linkedIds(LinkType::Page);
+    }
+
+    /**
+     * Ids of what of the kind it links to, from its text and its widgets, in
+     * order, as often as it links to them.
+     *
+     * @return list<string>
+     */
+    public function linkedIds(LinkType $type): array
+    {
         $ids = [];
 
         foreach ($this->blocks as $block) {
-            if ($block instanceof Widget) {
-                $ids[] = $block->pageId();
+            if ($block instanceof Widget && null !== $block->target()->idOf($type)) {
+                $ids[] = $block->target()->id();
             }
 
             foreach ($block->texts() as $text) {
                 foreach ($text->runs() as $run) {
-                    if (null !== $run->pageId()) {
-                        $ids[] = $run->pageId();
+                    $id = $run->link()?->idOf($type);
+
+                    if (null !== $id) {
+                        $ids[] = $id;
                     }
                 }
             }

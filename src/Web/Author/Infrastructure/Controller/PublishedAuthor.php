@@ -8,15 +8,12 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteAuthorPage;
 use Shared\Infrastructure\Ui\SiteMedia;
-use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Page\Application\PageResponse;
-use Web\Page\Application\PublishedPagesFinder;
-use Web\Page\Domain\PageRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 
@@ -33,8 +30,8 @@ final readonly class PublishedAuthor
         private SiteAuthorPage $siteAuthorPage,
         private SiteLayout $siteLayout,
         private ImageRepository $imageRepository,
-        private PageRepository $pageRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
+        private SiteLinkedContents $linkedContents,
     ) {}
 
     public function __invoke(AuthorResponse $author): Page
@@ -59,28 +56,7 @@ final readonly class PublishedAuthor
             SiteMedia::avatar($author->avatarName, $author->name),
             $author->bio,
             $images,
-            $this->linkedPages(SitePage::linkedPageIds($author->bio, $images)),
+            ($this->linkedContents)($author->bio, $images, $author->id),
         );
-    }
-
-    /**
-     * The published pages among those linked, with their current address,
-     * keyed by id; one off the site, as the page its address now leads to.
-     *
-     * @param list<string> $pageIds
-     *
-     * @return array<string, array{url: string, title: string}>
-     */
-    private function linkedPages(array $pageIds): array
-    {
-        return array_map(fn (PageResponse $target): array => [
-            'url' => null === $target->slug
-                ? $this->urlGenerator->generate('web_home')
-                : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]),
-            'title' => $target->title,
-        ], new ReferenceResolver('page', $pageIds, null)(
-            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
-            $this->redirectsByOrigin,
-        ));
     }
 }

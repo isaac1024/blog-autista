@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shared\Tests\Infrastructure\Ui;
 
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
@@ -43,6 +44,6 @@ final class SiteMediaAndPageTest extends TestCase
         $content = RichText::fromArray(Text::stored($link(self::PAGE), $link(self::PAGE)));
         $caption = RichText::fromArray(Text::stored($link(self::OTHER), $link(self::PAGE)));
 
-        self::assertSame([self::PAGE, self::OTHER], SitePage::linkedPageIds($content, ['faro' => ['caption' => $caption]]));
+        self::assertSame([self::PAGE, self::OTHER], SitePage::linkedIds($content, ['faro' => ['caption' => $caption]], LinkType::Page));
     }
 }

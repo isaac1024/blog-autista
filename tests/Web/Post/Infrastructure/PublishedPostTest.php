@@ -23,9 +23,11 @@ use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostResponse;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
+use Web\Post\Domain\PostRepository;
 use Web\Post\Infrastructure\Controller\PublishedPost;
 use Web\Redirect\Domain\Redirect;
 use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
@@ -191,10 +193,10 @@ final class PublishedPostTest extends TestCase
             new SitePostPage(new RichTextComponents(), $translator),
             new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
             $imageRepository,
-            $pageRepository,
             $termRepository,
             $authorRepository,
             $redirects,
+            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 

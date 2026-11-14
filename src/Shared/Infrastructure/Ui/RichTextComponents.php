@@ -28,12 +28,13 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 final readonly class RichTextComponents
 {
     /**
-     * Embedded images and the pages of widgets are painted from what the
-     * caller knows of them, keyed by id; one it doesn't give, such as one off
-     * the site, isn't painted, and text linking it stays plain.
+     * Embedded images and what widgets show are painted from what the caller
+     * knows of them, keyed by id; one it doesn't give, such as one off the
+     * site, isn't painted, and text linking it stays plain. Ids are never
+     * shared, so pages, posts, terms and authors share one map.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
-     * @param array<string, array{url: string, title: string}>                                                           $pages  published pages linked, with their current address, keyed by id
+     * @param array<string, array{url: string, title: string}>                                                           $pages  the contents linked on the site, pages or posts, sections, tags or authors, with their current address and name, keyed by id
      *
      * @return list<PageComponent>
      */
@@ -54,7 +55,7 @@ final readonly class RichTextComponents
             }
 
             if ($block instanceof Widget) {
-                $page = $pages[$block->pageId()] ?? null;
+                $page = $pages[$block->target()->id()] ?? null;
 
                 if (null !== $page) {
                     $components[] = self::widget($block->kind(), $page);
@@ -137,9 +138,9 @@ final readonly class RichTextComponents
     }
 
     /**
-     * The text in stretches, each linking one page or none: runs in a row
-     * that link the same page form one stretch, so a link partly bold is
-     * still one link. A run whose page isn't on the site links none.
+     * The text in stretches, each linking one content or none: runs in a row
+     * that link the same one form one stretch, so a link partly bold is
+     * still one link. A run whose content isn't on the site links none.
      *
      * @param array<string, string> $links
      *
@@ -151,7 +152,8 @@ final readonly class RichTextComponents
         $last = null;
 
         foreach ($text->runs() as $run) {
-            $href = null === $run->pageId() ? null : ($links[$run->pageId()] ?? null);
+            $linked = $run->link()?->id();
+            $href = null === $linked ? null : ($links[$linked] ?? null);
             $piece = ['text' => $run->text(), 'bold' => \in_array(Mark::Bold, $run->marks(), true)];
 
             if (null !== $last && $stretches[$last]['href'] === $href) {

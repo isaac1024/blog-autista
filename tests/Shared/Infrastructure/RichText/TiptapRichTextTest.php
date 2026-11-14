@@ -248,7 +248,7 @@ final class TiptapRichTextTest extends TestCase
     public static function invalidStoredLinks(): iterable
     {
         $path = 'blocks[0].text[0].page_id';
-        $inconsistent = InvalidRichText::malformed($path, 'a page id exactly when the text has the link mark');
+        $inconsistent = InvalidRichText::malformed($path, 'a link to a content exactly when the text has the link mark');
 
         yield 'link without a page' => [['text' => 'Enlace', 'marks' => ['link']], $inconsistent];
         yield 'page without a link' => [['text' => 'Texto', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'], $inconsistent];

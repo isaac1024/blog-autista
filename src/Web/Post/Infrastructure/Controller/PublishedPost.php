@@ -7,7 +7,6 @@ namespace Web\Post\Infrastructure\Controller;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteMedia;
-use Shared\Infrastructure\Ui\SitePage;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
@@ -16,10 +15,8 @@ use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\PublishedImagesFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Page\Application\PageResponse;
-use Web\Page\Application\PublishedPagesFinder;
-use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostResponse;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Application\TermOnSiteFinder;
@@ -47,10 +44,10 @@ final readonly class PublishedPost
         private SitePostPage $sitePostPage,
         private SiteLayout $siteLayout,
         private ImageRepository $imageRepository,
-        private PageRepository $pageRepository,
         private TermRepository $termRepository,
         private AuthorRepository $authorRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
+        private SiteLinkedContents $linkedContents,
     ) {}
 
     public function __invoke(PostResponse $post): Page
@@ -98,7 +95,7 @@ final readonly class PublishedPost
             $this->tags($post->tagIds),
             $post->content,
             $images,
-            $this->linkedPages(SitePage::linkedPageIds($post->content, $images)),
+            ($this->linkedContents)($post->content, $images, $post->id),
         );
     }
 
@@ -177,26 +174,5 @@ final readonly class PublishedPost
         }
 
         return $authors;
-    }
-
-    /**
-     * The published pages among those linked, with their current address,
-     * keyed by id; one off the site, as the page its address now leads to.
-     *
-     * @param list<string> $pageIds
-     *
-     * @return array<string, array{url: string, title: string}>
-     */
-    private function linkedPages(array $pageIds): array
-    {
-        return array_map(fn (PageResponse $target): array => [
-            'url' => null === $target->slug
-                ? $this->urlGenerator->generate('web_home')
-                : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]),
-            'title' => $target->title,
-        ], new ReferenceResolver('page', $pageIds, null)(
-            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
-            $this->redirectsByOrigin,
-        ));
     }
 }

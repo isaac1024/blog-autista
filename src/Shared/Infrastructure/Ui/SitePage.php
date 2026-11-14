@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Ui;
 
+use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
 
@@ -18,7 +19,7 @@ final readonly class SitePage
     public function __construct(private RichTextComponents $richTextComponents) {}
 
     /**
-     * Embedded images and linked pages are painted from what the caller
+     * Embedded images and linked contents are painted from what the caller
      * knows of them, keyed by id; one it doesn't give, such as one off the
      * site, isn't painted, and text linking it stays plain.
      *
@@ -38,21 +39,21 @@ final readonly class SitePage
     }
 
     /**
-     * The pages the content, its widgets and the captions of its images link
-     * to, each once.
+     * What of the kind the content, its widgets and the captions of its
+     * images link to, each once.
      *
      * @param array<string, array{caption: RichText}> $images
      *
      * @return list<string>
      */
-    public static function linkedPageIds(RichText $content, array $images): array
+    public static function linkedIds(RichText $content, array $images, LinkType $type): array
     {
-        $pageIds = $content->pageIds();
+        $ids = $content->linkedIds($type);
 
         foreach ($images as $image) {
-            array_push($pageIds, ...$image['caption']->pageIds());
+            array_push($ids, ...$image['caption']->linkedIds($type));
         }
 
-        return array_values(array_unique($pageIds));
+        return array_values(array_unique($ids));
     }
 }

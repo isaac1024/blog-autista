@@ -10,10 +10,8 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
-use Cms\Page\Application\PageOnSiteResponse;
-use Cms\Page\Application\PagesOnSiteFinder;
-use Cms\Page\Domain\PageRepository;
 use Cms\Post\Application\PostResponse;
+use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Cms\Taxonomy\Application\TermOnSiteFinder;
@@ -26,7 +24,6 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteMedia;
-use Shared\Infrastructure\Ui\SitePage;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -57,11 +54,11 @@ final readonly class PreviewPost
         private PreviewLayout $previewLayout,
         private SitePostPage $sitePostPage,
         private PostUrl $postUrl,
-        private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
         private TermRepository $termRepository,
         private AuthorRepository $authorRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
+        private CmsLinkedContents $linkedContents,
     ) {}
 
     public function __invoke(PostResponse $post): Page
@@ -91,18 +88,7 @@ final readonly class PreviewPost
             $this->tags($post->tagIds),
             $content,
             $images,
-            array_map(
-                fn (PageOnSiteResponse $target): array => [
-                    'url' => null === $target->slug
-                        ? $this->urlGenerator->generate('web_home')
-                        : $this->urlGenerator->generate('web_page', ['slug' => $target->slug]),
-                    'title' => $target->title,
-                ],
-                new ReferenceResolver('page', SitePage::linkedPageIds($content, $images), null)(
-                    fn (array $ids): array => new PagesOnSiteFinder($ids)($this->pageRepository),
-                    $this->redirectsByOrigin,
-                ),
-            ),
+            ($this->linkedContents)($content, $images, $post->id),
         );
     }
 

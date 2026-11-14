@@ -7,10 +7,8 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
-use Cms\Page\Application\PageOnSiteResponse;
 use Cms\Page\Application\PageResponse;
-use Cms\Page\Application\PagesOnSiteFinder;
-use Cms\Page\Domain\PageRepository;
+use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Shared\Domain\Redirect\ReferenceResolver;
@@ -38,9 +36,9 @@ final readonly class PreviewPage
         private UrlGeneratorInterface $urlGenerator,
         private SitePage $sitePage,
         private PreviewLayout $previewLayout,
-        private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
+        private CmsLinkedContents $linkedContents,
     ) {}
 
     public function __invoke(PageResponse $page): Page
@@ -64,10 +62,7 @@ final readonly class PreviewPage
             $page->title,
             $content,
             $images,
-            array_map(
-                fn (PageOnSiteResponse $target): array => ['url' => $this->url($target), 'title' => $target->title],
-                $this->pagesOnSite(SitePage::linkedPageIds($content, $images), $page->id),
-            ),
+            ($this->linkedContents)($content, $images, $page->id),
         );
     }
 
@@ -85,31 +80,5 @@ final readonly class PreviewPage
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
-    }
-
-    /**
-     * The pages on the site among those given, keyed by id; one off it, as
-     * the one its address now leads to, unless that is the page previewed.
-     *
-     * @param list<string> $ids
-     *
-     * @return array<string, PageOnSiteResponse>
-     */
-    private function pagesOnSite(array $ids, ?string $except): array
-    {
-        return new ReferenceResolver('page', $ids, $except)(
-            fn (array $ids): array => new PagesOnSiteFinder($ids)($this->pageRepository),
-            $this->redirectsByOrigin,
-        );
-    }
-
-    /**
-     * Where the site serves a page on it.
-     */
-    private function url(PageOnSiteResponse $page): string
-    {
-        return null === $page->slug
-            ? $this->urlGenerator->generate('web_home')
-            : $this->urlGenerator->generate('web_page', ['slug' => $page->slug]);
     }
 }

@@ -92,7 +92,7 @@ final readonly class Table implements Block
     /**
      * @param list<InlineText> $cells
      *
-     * @return list<list<array{text: string, marks?: list<string>, page_id?: string}>>
+     * @return list<list<array{text: string, marks?: list<string>, page_id?: string, post_id?: string, term_id?: string, author_id?: string}>>
      */
     private static function cellsToArray(array $cells): array
     {

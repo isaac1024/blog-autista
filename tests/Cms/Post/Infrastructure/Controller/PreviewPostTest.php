@@ -11,12 +11,14 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
+use Cms\Post\Domain\PostRepository;
 use Cms\Post\Infrastructure\Controller\PostUrl;
 use Cms\Post\Infrastructure\Controller\PreviewPost;
 use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\ResourceType;
+use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
@@ -184,11 +186,11 @@ final class PreviewPostTest extends TestCase
             new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
             new SitePostPage(new RichTextComponents(), $translator),
             new PostUrl($urlGenerator),
-            $pageRepository,
             $imageRepository,
             $termRepository,
             $authorRepository,
             $redirects,
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 
