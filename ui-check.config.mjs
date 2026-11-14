@@ -36,8 +36,10 @@
  * PHPSESSID from a logged-in development session. Those of one page, one
  * image or one redirect need its id: `CMS_PAGE_ID` and `CMS_IMAGE_ID` of a
  * published one, whose form that takes it off the site is checked too, and
- * `CMS_REDIRECT_ID`. Pages of the site are included with `WEB_PAGE_SLUG` and
- * `WEB_HOME`, once published.
+ * `CMS_REDIRECT_ID`, and `CMS_SECTION_ID`, `CMS_TAG_ID` and `CMS_AUTHOR_ID`
+ * those of a section, a tag and an author. Pages of the site are included
+ * with `WEB_PAGE_SLUG`, `WEB_SECTION_SLUG`, `WEB_TAG_SLUG`,
+ * `WEB_AUTHOR_SLUG` and `WEB_HOME`, once published.
  *
  * `server.command` supports `{bind}` and `{port}` placeholders, or is null to
  * use a server already running at `server.port`. The default checks are HTML,
@@ -64,6 +66,9 @@ if (cmsSession) {
     pages.push(
         cmsPage('cms-pages', '/pages'),
         cmsPage('cms-images', '/images'),
+        cmsPage('cms-sections', '/sections'),
+        cmsPage('cms-tags', '/tags'),
+        cmsPage('cms-authors', '/authors'),
         cmsPage('cms-redirects', '/redirects'),
         cmsPage('cms-redirect-new', '/redirects/new'),
         cmsPage('cms-settings', '/settings'),
@@ -91,6 +96,26 @@ if (cmsSession && imageId) {
 const redirectId = process.env.CMS_REDIRECT_ID;
 if (cmsSession && redirectId) {
     pages.push(cmsPage('cms-redirect-edit', `/redirects/${redirectId}`));
+}
+
+for (const [name, path, variable] of [
+    ['cms-section-edit', '/sections', 'CMS_SECTION_ID'],
+    ['cms-tag-edit', '/tags', 'CMS_TAG_ID'],
+    ['cms-author-edit', '/authors', 'CMS_AUTHOR_ID'],
+]) {
+    if (cmsSession && process.env[variable]) {
+        pages.push(cmsPage(name, `${path}/${process.env[variable]}`));
+    }
+}
+
+for (const [name, path, variable] of [
+    ['web-section', (slug) => `/${slug}/`, 'WEB_SECTION_SLUG'],
+    ['web-tag', (slug) => `/tag/${slug}.html`, 'WEB_TAG_SLUG'],
+    ['web-author', (slug) => `/autor/${slug}.html`, 'WEB_AUTHOR_SLUG'],
+]) {
+    if (process.env[variable]) {
+        pages.push({ name, host: webHost, path: path(process.env[variable]) });
+    }
 }
 
 // The site only serves published pages: set WEB_PAGE_SLUG to the slug of one
