@@ -197,6 +197,30 @@ final class PostChangesControllersTest extends PostControllerTestCase
         );
     }
 
+    #[DataProvider('refusedActions')]
+    public function testItGoesBackAndTellsWhatThePostDoesNotAllow(string $route, string $path, string $key): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::create(id: $id));
+
+        $this->post($client, $route, self::HOST.'/posts/'.$id.$path);
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => $key, 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($post, $this->storedPost($post));
+        self::assertSame([], $this->queuedEvents());
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function refusedActions(): iterable
+    {
+        yield 'unpublishing a draft' => ['cms_posts_unpublish', '/unpublish', 'errors.post.publication.not_published'];
+        yield 'discarding the changes of a draft' => ['cms_posts_discard', '/discard', 'errors.post.publication.no_changes_to_discard'];
+    }
+
     public function testItDiscardsTheChanges(): void
     {
         $client = self::createAuthenticatedClient();

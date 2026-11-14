@@ -37,6 +37,7 @@ final class RouteNameUrlGenerator implements UrlGeneratorInterface
             'web_section' === $name && \is_string($slug) => '/'.$slug.'/',
             'web_tag' === $name && \is_string($slug) => '/tag/'.$slug.'.html',
             'web_author' === $name && \is_string($slug) => '/autor/'.$slug.'.html',
+            'web_post' === $name && \is_string($slug) => \sprintf('/%s/%s/%s/%s/%s.html', self::text($parameters, 'section'), self::text($parameters, 'year'), self::text($parameters, 'month'), self::text($parameters, 'day'), $slug),
             default => '/'.$name.([] === $parameters ? '' : '?'.http_build_query($parameters)),
         };
 
@@ -53,5 +54,15 @@ final class RouteNameUrlGenerator implements UrlGeneratorInterface
     public function getContext(): RequestContext
     {
         return $this->context;
+    }
+
+    /**
+     * @param array<mixed> $parameters
+     */
+    private static function text(array $parameters, string $name): string
+    {
+        $value = $parameters[$name] ?? '';
+
+        return \is_string($value) ? $value : '';
     }
 }
