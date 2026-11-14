@@ -1,0 +1,286 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Tests\Post\Infrastructure\Controller;
+
+use Cms\Author\Domain\AuthorId;
+use Cms\Author\Domain\AuthorRepository;
+use Cms\Post\Domain\PostAddress;
+use Cms\Relation\Domain\RelationRepository;
+use Cms\Relation\Domain\ResourceType;
+use Cms\Shared\Domain\Slug;
+use Cms\Taxonomy\Domain\TermId;
+use Cms\Taxonomy\Domain\TermRepository;
+use Cms\Tests\Post\Domain\PostIdMother;
+use Cms\Tests\Post\Domain\PostMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Saving, publishing, unpublishing, discarding and deleting posts, as the
+ * editor does from the CMS, with what the rest of the CMS and the site are
+ * told.
+ */
+final class PostChangesControllersTest extends PostControllerTestCase
+{
+    use ClockSensitiveTrait;
+    use QueuedDomainEvents;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        parent::setUp();
+        self::mockTime(ClockMother::NOW);
+    }
+
+    #[DataProvider('actions')]
+    public function testItRedirectsAnonymousVisitorsToTheLoginForm(string $route, string $path): void
+    {
+        $client = self::createClient();
+        $post = $this->savePost(PostMother::published(id: PostIdMother::random()->value(), publishedTitle: 'Antes'));
+
+        $this->post($client, $route, self::HOST.'/posts/'.$post->id()->value().$path, self::form());
+
+        self::assertResponseRedirects(self::HOST.'/login');
+        self::assertEquals($post, $this->storedPost($post));
+        self::assertSame([], $this->queuedEvents());
+    }
+
+    #[DataProvider('actions')]
+    public function testItRespondsNotFoundWhenThePostDoesNotExist(string $route, string $path): void
+    {
+        $client = self::createAuthenticatedClient();
+
+        $this->post($client, $route, self::HOST.'/posts/'.PostIdMother::random()->value().$path, self::form());
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function actions(): iterable
+    {
+        yield 'saving' => ['cms_posts_update', ''];
+        yield 'publishing' => ['cms_posts_publish', '/publish'];
+        yield 'unpublishing' => ['cms_posts_unpublish', '/unpublish'];
+        yield 'discarding' => ['cms_posts_discard', '/discard'];
+        yield 'deleting' => ['cms_posts_delete', '/delete'];
+    }
+
+    public function testItSavesThePostAndKeepsWhatItUsesInUse(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::create(id: $id));
+
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$id, self::form(tags: [PostMother::TAG, PostMother::OTHER_TAG]));
+
+        self::assertResponseRedirects('/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.post.saved', 'parameters' => []]], self::successNotices($client));
+        self::assertEquals(PostMother::publishable(id: $id, tags: [PostMother::TAG, PostMother::OTHER_TAG]), $this->storedPost($post));
+        $relations = self::getContainer()->get(RelationRepository::class);
+        self::assertTrue($relations->isUsed(ResourceType::Term, PostMother::SECTION));
+        self::assertTrue($relations->isUsed(ResourceType::Term, PostMother::OTHER_TAG));
+        self::assertTrue($relations->isUsed(ResourceType::Author, PostMother::AUTHOR));
+    }
+
+    public function testItGoesBackAndKeepsThePostFiledUnderASectionTheCmsHasNot(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::create(id: $id));
+
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$id, self::form());
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.post.classification.unknown_section', 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($post, $this->storedPost($post));
+    }
+
+    public function testItPublishesThePostAtTheAddressOfItsSectionAndTellsTheSite(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::publishable(id: $id, tags: [PostMother::OTHER_TAG]));
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
+
+        self::assertResponseRedirects('/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.post.published', 'parameters' => []]], self::successNotices($client));
+        self::assertEquals(PostMother::published(id: $id, tags: [PostMother::OTHER_TAG]), $this->storedPost($post));
+        self::assertSame(
+            [['cms.post.published', $id, TermMother::SLUG, '2026-11-07', [PostMother::OTHER_TAG]]],
+            array_map(static fn ($event): array => [$event->name, $event->aggregateId, $event->body['section_slug'], $event->body['day'], $event->body['tag_ids']], $this->queuedEvents()),
+        );
+    }
+
+    #[DataProvider('offTheSite')]
+    public function testItGoesBackAndTellsWhatThePostLacksToBePublished(bool $sectionOnSite, bool $authorOnSite, string $key): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers($sectionOnSite, $authorOnSite);
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::publishable(id: $id));
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => $key, 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($post, $this->storedPost($post));
+        self::assertSame([], $this->queuedEvents());
+    }
+
+    /**
+     * @return iterable<string, array{bool, bool, string}>
+     */
+    public static function offTheSite(): iterable
+    {
+        yield 'its section off the site' => [false, true, 'errors.post.publication.section_off_site'];
+        yield 'its author off the site' => [true, false, 'errors.post.publication.author_off_site'];
+    }
+
+    public function testItGoesBackAndTellsAnotherPostOnTheSiteHasTheAddress(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $this->savePost(PostMother::published(id: PostIdMother::random()->value()));
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::publishable(id: $id));
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
+
+        $post = PostMother::publishable(id: $id);
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.post.address.taken', 'parameters' => ['%slug%' => PostMother::SLUG, '%day%' => '2026-11-07']]], self::errorNotices($client));
+        self::assertEquals($post, $this->storedPost($post));
+    }
+
+    public function testItUnpublishesThePostAndTellsTheSite(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::published(id: $id));
+
+        $this->post($client, 'cms_posts_unpublish', self::HOST.'/posts/'.$id.'/unpublish');
+
+        self::assertResponseRedirects('/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.post.unpublished', 'parameters' => []]], self::successNotices($client));
+        self::assertEquals(PostMother::unpublished(id: $id), $this->storedPost($post));
+        self::assertSame(['cms.post.unpublished'], array_map(static fn ($event): string => $event->name, $this->queuedEvents()));
+    }
+
+    /**
+     * Unpublishing frees the address: another post first published that day
+     * may take it.
+     */
+    public function testItLetsAnotherPostTakeTheAddressAPostUnpublishedLeft(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $this->savePost(PostMother::unpublished(id: PostIdMother::random()->value()));
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::publishable(id: $id));
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
+
+        self::assertEquals(
+            new PostAddress(new Slug(TermMother::SLUG), ClockMother::now(), new Slug(PostMother::SLUG)),
+            $this->storedPost($post)?->publishedAddress(),
+        );
+    }
+
+    public function testItDiscardsTheChanges(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::published(id: $id, title: 'Después', publishedTitle: PostMother::TITLE));
+
+        $this->post($client, 'cms_posts_discard', self::HOST.'/posts/'.$id.'/discard');
+
+        self::assertResponseRedirects('/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'cms.notices.post.discarded', 'parameters' => []]], self::successNotices($client));
+        self::assertEquals(PostMother::published(id: $id), $this->storedPost($post));
+    }
+
+    public function testItDeletesAPostOffTheSiteAndFreesWhatItUsed(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $id = PostIdMother::random()->value();
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$this->savePost(PostMother::create(id: $id))->id()->value(), self::form());
+
+        $this->post($client, 'cms_posts_delete', self::HOST.'/posts/'.$id.'/delete');
+
+        self::assertResponseRedirects('/posts', Response::HTTP_SEE_OTHER);
+        self::assertContains(['key' => 'cms.notices.post.deleted', 'parameters' => []], self::successNotices($client));
+        self::assertNull($this->storedPost(PostMother::create(id: $id)));
+        self::assertFalse(self::getContainer()->get(RelationRepository::class)->isUsed(ResourceType::Term, PostMother::SECTION));
+    }
+
+    public function testItGoesBackAndKeepsAPublishedPost(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $post = $this->savePost(PostMother::published(id: $id));
+
+        $this->post($client, 'cms_posts_delete', self::HOST.'/posts/'.$id.'/delete');
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.post.publication.published_post', 'parameters' => []]], self::errorNotices($client));
+        self::assertEquals($post, $this->storedPost($post));
+    }
+
+    /**
+     * What is posted cannot be deleted while a post, even a draft, uses it.
+     */
+    public function testItKeepsTheSectionTheTagsAndTheAuthorOfAPost(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers(false, false);
+        $id = PostIdMother::random()->value();
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$this->savePost(PostMother::create(id: $id))->id()->value(), self::form(tags: [PostMother::OTHER_TAG]));
+
+        $this->post($client, 'cms_terms_delete', self::HOST.'/sections/'.PostMother::SECTION.'/delete');
+        $this->post($client, 'cms_terms_delete', self::HOST.'/tags/'.PostMother::OTHER_TAG.'/delete');
+        $this->post($client, 'cms_authors_delete', self::HOST.'/authors/'.PostMother::AUTHOR.'/delete');
+
+        self::assertSame([
+            ['key' => 'errors.term.publication.used_term', 'parameters' => []],
+            ['key' => 'errors.term.publication.used_term', 'parameters' => []],
+            ['key' => 'errors.author.publication.used_author', 'parameters' => []],
+        ], self::errorNotices($client));
+        self::assertNotNull(self::getContainer()->get(TermRepository::class)->find(new TermId(PostMother::OTHER_TAG)));
+
+        self::assertNotNull(self::getContainer()->get(TermRepository::class)->find(new TermId(PostMother::SECTION)));
+        self::assertNotNull(self::getContainer()->get(AuthorRepository::class)->find(new AuthorId(PostMother::AUTHOR)));
+    }
+
+    /**
+     * What the editor posts: the post as PostMother::publishable() has it.
+     *
+     * @param list<string> $tags
+     *
+     * @return array<string, mixed>
+     */
+    private static function form(array $tags = []): array
+    {
+        return [
+            'title' => PostMother::TITLE,
+            'slug' => PostMother::SLUG,
+            'section' => PostMother::SECTION,
+            'author' => PostMother::AUTHOR,
+            'tags' => $tags,
+            'content' => json_encode(['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Hoy probé los tapones en el metro.']]]]], \JSON_THROW_ON_ERROR),
+            'meta_description' => PostMother::META_DESCRIPTION,
+            'robots' => 'index,follow',
+        ];
+    }
+}
