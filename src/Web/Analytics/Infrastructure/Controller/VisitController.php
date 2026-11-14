@@ -14,10 +14,10 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Web\Analytics\Application\PageNotPublished;
+use Web\Analytics\Application\ContentNotPublished;
 use Web\Analytics\Application\VisitRecorder;
 use Web\Analytics\Domain\DailySalt;
-use Web\Analytics\Domain\PublishedPages;
+use Web\Analytics\Domain\PublishedContents;
 use Web\Analytics\Domain\VisitId;
 use Web\Analytics\Domain\VisitRepository;
 
@@ -46,7 +46,7 @@ final class VisitController extends AbstractController
         VisitPayload $payload,
         Request $request,
         VisitRepository $visitRepository,
-        PublishedPages $publishedPages,
+        PublishedContents $publishedContents,
         DailySalt $dailySalt,
     ): Response {
         if (!SameOriginRequest::isFromSite($request)) {
@@ -64,7 +64,8 @@ final class VisitController extends AbstractController
         try {
             new VisitRecorder(
                 VisitId::random()->value(),
-                $payload->page,
+                $payload->type,
+                $payload->content,
                 $payload->referrer,
                 $payload->source,
                 $payload->medium,
@@ -72,8 +73,8 @@ final class VisitController extends AbstractController
                 $address,
                 $request->headers->get('User-Agent') ?? '',
                 [$this->webHost, $this->cmsHost],
-            )($visitRepository, $publishedPages, $dailySalt);
-        } catch (PageNotPublished $exception) {
+            )($visitRepository, $publishedContents, $dailySalt);
+        } catch (ContentNotPublished $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
             throw new UnprocessableEntityHttpException($error->getMessage(), $error);

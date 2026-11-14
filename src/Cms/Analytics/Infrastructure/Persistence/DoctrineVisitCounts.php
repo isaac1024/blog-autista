@@ -31,7 +31,7 @@ final readonly class DoctrineVisitCounts implements VisitCounts
             UNION ALL
             SELECT day, 'site', '', COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day
             UNION ALL
-            SELECT day, 'page', page_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, page_id
+            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, content_type, content_id
             UNION ALL
             SELECT day, 'channel', channel, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, channel
             UNION ALL

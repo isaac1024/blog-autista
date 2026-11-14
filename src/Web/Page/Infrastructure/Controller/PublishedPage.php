@@ -55,7 +55,7 @@ final readonly class PublishedPage
         return ($this->sitePage)(
             $this->siteLayout->page($page->title)
                 ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
-                ->withCountedVisits($page->id),
+                ->withCountedVisits('page', $page->id),
             $page->title,
             $page->content,
             $images,

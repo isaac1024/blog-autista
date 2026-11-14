@@ -53,7 +53,8 @@ final readonly class PublishedAuthor
 
         return ($this->siteAuthorPage)(
             $this->siteLayout->page($author->name)
-                ->withSearchEngineMetadata($author->metaDescription, $author->robots.',max-image-preview:large', $canonical),
+                ->withSearchEngineMetadata($author->metaDescription, $author->robots.',max-image-preview:large', $canonical)
+                ->withCountedVisits('author', $author->id),
             $author->name,
             SiteMedia::avatar($author->avatarName, $author->name),
             $author->bio,

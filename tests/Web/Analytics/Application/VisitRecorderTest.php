@@ -14,7 +14,7 @@ use Web\Analytics\Domain\Channel;
 use Web\Analytics\Domain\DailySalt;
 use Web\Analytics\Domain\Day;
 use Web\Analytics\Domain\Device;
-use Web\Analytics\Domain\PublishedPages;
+use Web\Analytics\Domain\PublishedContents;
 use Web\Analytics\Domain\Visit;
 use Web\Analytics\Domain\VisitRepository;
 use Web\Tests\Analytics\Domain\VisitMother;
@@ -52,7 +52,7 @@ final class VisitRecorderTest extends TestCase
 
     public function testItTellsThePageIsOffTheSite(): void
     {
-        self::assertTells('errors.visit.page_not_published', ['%id%' => self::PAGE], fn () => $this->record(published: false));
+        self::assertTells('errors.visit.content_not_published', ['%type%' => 'page', '%id%' => self::PAGE], fn () => $this->record(published: false));
     }
 
     /**
@@ -294,15 +294,15 @@ final class VisitRecorderTest extends TestCase
 
     private static function recorder(string $page, string $referrer, string $source, string $medium, string $zone, string $address, string $userAgent): VisitRecorder
     {
-        return new VisitRecorder(VisitMother::ID, $page, $referrer, $source, $medium, $zone, $address, $userAgent, ['www.blogautista.localhost', 'cms.blogautista.localhost']);
+        return new VisitRecorder(VisitMother::ID, 'page', $page, $referrer, $source, $medium, $zone, $address, $userAgent, ['www.blogautista.localhost', 'cms.blogautista.localhost']);
     }
 
-    private static function publishedPages(bool $published): PublishedPages
+    private static function publishedPages(bool $published): PublishedContents
     {
-        $publishedPages = self::createStub(PublishedPages::class);
-        $publishedPages->method('contains')->willReturn($published);
+        $publishedContents = self::createStub(PublishedContents::class);
+        $publishedContents->method('contains')->willReturn($published);
 
-        return $publishedPages;
+        return $publishedContents;
     }
 
     /**

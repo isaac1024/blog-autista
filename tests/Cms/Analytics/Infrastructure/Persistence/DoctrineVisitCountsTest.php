@@ -96,7 +96,7 @@ final class DoctrineVisitCountsTest extends KernelTestCase
     private function kept(string $id, string $page, string $channel, ?string $source, string $reader, string $device, ?string $country, string $day = '2026-11-05'): void
     {
         $this->connection()->insert('web_visit', [
-            'id' => $id, 'page_id' => $page, 'day' => $day, 'channel' => $channel, 'source' => $source,
+            'id' => $id, 'content_type' => 'page', 'content_id' => $page, 'day' => $day, 'channel' => $channel, 'source' => $source,
             'reader' => str_repeat($reader, 64), 'device' => $device, 'country' => $country,
         ]);
     }

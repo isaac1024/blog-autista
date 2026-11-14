@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Web\Analytics\Application;
 
 use Web\Analytics\Domain\Arrival;
+use Web\Analytics\Domain\Content;
 use Web\Analytics\Domain\Country;
 use Web\Analytics\Domain\DailySalt;
 use Web\Analytics\Domain\Day;
-use Web\Analytics\Domain\PageId;
-use Web\Analytics\Domain\PublishedPages;
+use Web\Analytics\Domain\PublishedContents;
 use Web\Analytics\Domain\Reader;
 use Web\Analytics\Domain\UserAgent;
 use Web\Analytics\Domain\Visit;
@@ -17,8 +17,9 @@ use Web\Analytics\Domain\VisitId;
 use Web\Analytics\Domain\VisitRepository;
 
 /**
- * Keeps a page a reader saw on the site, to be counted when its day is over.
- * A robot's is left out; one of a page off the site is refused.
+ * Keeps a page of the site a reader saw, such as a post, to be counted when
+ * its day is over. A robot's is left out; one of anything off the site is
+ * refused.
  *
  * What the browser tells of the visit comes as it sent it, an empty string
  * for what it had none of. Its constructor takes each of it, one parameter
@@ -33,7 +34,8 @@ final readonly class VisitRecorder
      */
     public function __construct(
         private string $id,
-        private string $pageId,
+        private string $contentType,
+        private string $contentId,
         private string $referrer,
         private string $campaignSource,
         private string $campaignMedium,
@@ -43,9 +45,9 @@ final readonly class VisitRecorder
         private array $siteHosts,
     ) {}
 
-    public function __invoke(VisitRepository $visitRepository, PublishedPages $publishedPages, DailySalt $dailySalt): void
+    public function __invoke(VisitRepository $visitRepository, PublishedContents $publishedContents, DailySalt $dailySalt): void
     {
-        $pageId = new PageId($this->pageId);
+        $content = Content::fromPrimitives($this->contentType, $this->contentId);
         $arrival = Arrival::from($this->referrer, $this->campaignSource, $this->campaignMedium, $this->siteHosts);
         $country = Country::ofTimeZone($this->timeZone);
         $userAgent = new UserAgent($this->userAgent);
@@ -54,13 +56,13 @@ final readonly class VisitRecorder
             return;
         }
 
-        if (!$publishedPages->contains($pageId)) {
-            throw PageNotPublished::withId($pageId);
+        if (!$publishedContents->contains($content)) {
+            throw ContentNotPublished::fromContent($content);
         }
 
         $day = Day::today();
 
-        Visit::record(new VisitId($this->id), $pageId, $day, $arrival, Reader::from($dailySalt->forDay($day), $this->address, $userAgent, $country))
+        Visit::record(new VisitId($this->id), $content, $day, $arrival, Reader::from($dailySalt->forDay($day), $this->address, $userAgent, $country))
             ->save($visitRepository);
     }
 }

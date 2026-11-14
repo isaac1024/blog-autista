@@ -25,8 +25,8 @@ final readonly class Page
      * @param list<PageComponent>                                       $header
      * @param list<PageComponent>                                       $main
      * @param list<PageComponent>                                       $footer
-     * @param ?array{src: string, width: int, height: int, alt: string} $image         the image it is shared with, null for none
-     * @param ?string                                                   $countedPageId the id its visits are counted by, null for a page whose visits aren't
+     * @param ?array{src: string, width: int, height: int, alt: string} $image          the image it is shared with, null for none
+     * @param ?array{type: string, id: string}                          $countedContent what its visits are counted by, its kind and its id, null for a page whose visits aren't
      */
     private function __construct(
         public string $title,
@@ -39,7 +39,7 @@ final readonly class Page
         public ?string $robots,
         public ?string $canonical,
         public ?array $image,
-        public ?string $countedPageId,
+        public ?array $countedContent,
     ) {}
 
     public static function create(string $title): self
@@ -102,7 +102,7 @@ final readonly class Page
             $robots,
             $canonical,
             $this->image,
-            $this->countedPageId,
+            $this->countedContent,
         );
     }
 
@@ -123,15 +123,16 @@ final readonly class Page
             $this->robots,
             $this->canonical,
             ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt],
-            $this->countedPageId,
+            $this->countedContent,
         );
     }
 
     /**
-     * Counts the visits of the page, by the id given, once its reader sees
-     * it: only a page on the site, never a preview nor an error.
+     * Counts the visits of the page, by the kind and the id of what it shows,
+     * such as "post" and the id of the post, once its reader sees it: only a
+     * page on the site, never a preview nor an error.
      */
-    public function withCountedVisits(string $pageId): self
+    public function withCountedVisits(string $type, string $id): self
     {
         return new self(
             $this->title,
@@ -144,7 +145,7 @@ final readonly class Page
             $this->robots,
             $this->canonical,
             $this->image,
-            $pageId,
+            ['type' => $type, 'id' => $id],
         );
     }
 
@@ -171,7 +172,7 @@ final readonly class Page
             $this->robots,
             $this->canonical,
             $this->image,
-            $this->countedPageId,
+            $this->countedContent,
         );
     }
 }

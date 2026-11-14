@@ -1,7 +1,7 @@
 import { expect, loadPage, test } from './support/test.js';
 
 const PAGE_ID = '6d1f3f2c-84a8-4b40-9ea3-91d62f55f001';
-const SCRIPT = `<script type="module" src="/assets/web.js" data-page="${PAGE_ID}" data-visit="/v"></script>`;
+const SCRIPT = `<script type="module" src="/assets/web.js" data-type="post" data-content="${PAGE_ID}" data-visit="/v"></script>`;
 
 /** Records every visit the script tells, as the site's endpoint would receive it. */
 async function recordVisits(page) {
@@ -42,7 +42,7 @@ test('tells the visit of a page in sight once, with the time zone and no cookie'
     expect(visits).toHaveLength(1);
     const { body, request } = visits[0];
     expect(request.method()).toBe('POST');
-    expect(body.get('page')).toBe(PAGE_ID);
+    expect([body.get('type'), body.get('content')]).toEqual(['post', PAGE_ID]);
     expect(body.get('source')).toBe('');
     expect(body.get('medium')).toBe('');
     expect(body.get('zone')).toBe(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone));
@@ -68,5 +68,5 @@ test('sends the campaign of the link that brought the reader', async ({ page }) 
 
     expect(visits[0].body.get('source')).toBe('newsletter');
     expect(visits[0].body.get('medium')).toBe('email');
-    expect([...visits[0].body.keys()]).toEqual(['page', 'referrer', 'source', 'medium', 'zone']);
+    expect([...visits[0].body.keys()]).toEqual(['type', 'content', 'referrer', 'source', 'medium', 'zone']);
 });

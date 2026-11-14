@@ -62,7 +62,7 @@ final class VisitReportControllerTest extends CmsWebTestCase
     {
         $client = self::createAuthenticatedClient();
         $longAgo = new \DateTimeImmutable('-3 days', new \DateTimeZone('Europe/Madrid'))->format('Y-m-d');
-        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f101', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105f001', 'day' => $longAgo, 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
+        self::getContainer()->get(Connection::class)->insert('web_visit', ['id' => '01a1b801-ce58-723d-8234-b76d9105f101', 'content_type' => 'page', 'content_id' => '01a1b801-ce58-723d-8234-b76d9105f001', 'day' => $longAgo, 'channel' => 'direct', 'source' => null, 'reader' => str_repeat('a', 64), 'device' => 'desktop', 'country' => null]);
 
         $client->request('GET', self::URL);
 

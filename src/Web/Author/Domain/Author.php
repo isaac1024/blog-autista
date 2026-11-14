@@ -81,6 +81,11 @@ final class Author
         return $author;
     }
 
+    public function id(): AuthorId
+    {
+        return $this->id;
+    }
+
     /**
      * Takes the version the CMS published, in place of the one on the site.
      * A new avatar, or a new address, names new copies; those of the version

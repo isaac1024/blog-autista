@@ -25,7 +25,8 @@ final readonly class PublishedTerm
     {
         return ($this->siteTermPage)(
             $this->siteLayout->page($term->name)
-                ->withSearchEngineMetadata($term->metaDescription, $term->robots, $canonical),
+                ->withSearchEngineMetadata($term->metaDescription, $term->robots, $canonical)
+                ->withCountedVisits('term', $term->id),
             $term->name,
         );
     }

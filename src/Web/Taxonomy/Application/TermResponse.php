@@ -17,6 +17,7 @@ final readonly class TermResponse
      * @param string  $robots          one of the Robots values
      */
     public function __construct(
+        public string $id,
         public string $name,
         public string $slug,
         public ?string $metaDescription,
@@ -26,6 +27,7 @@ final readonly class TermResponse
     public static function fromTerm(Term $term): self
     {
         return new self(
+            $term->id()->value(),
             $term->name(),
             $term->slug(),
             $term->metaDescription(),

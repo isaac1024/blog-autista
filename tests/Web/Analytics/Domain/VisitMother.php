@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Analytics\Domain;
 
 use Web\Analytics\Domain\Channel;
+use Web\Analytics\Domain\ContentType;
 use Web\Analytics\Domain\Country;
 use Web\Analytics\Domain\Day;
 use Web\Analytics\Domain\Device;
@@ -39,8 +40,9 @@ final class VisitMother
         string $reader = self::READER,
         Device $device = Device::Desktop,
         ?string $country = null,
+        ContentType $type = ContentType::Page,
     ): Visit {
-        return new Visit(VisitIdMother::create($id), $page, new \DateTimeImmutable($day), $channel, $source, $reader, $device, $country);
+        return new Visit(VisitIdMother::create($id), $type, $page, new \DateTimeImmutable($day), $channel, $source, $reader, $device, $country);
     }
 
     /**

@@ -11,7 +11,8 @@ namespace Web\Analytics\Infrastructure\Controller;
 final readonly class VisitPayload
 {
     public function __construct(
-        public string $page,
+        public string $type,
+        public string $content,
         public string $referrer,
         public string $source,
         public string $medium,

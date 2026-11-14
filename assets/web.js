@@ -1,18 +1,19 @@
 /*
  * The only script of the public site. Once its reader sees the page, it tells
- * the site, once: which page, the address of the page they came from, the
- * campaign of the link, if any, and the time zone of the browser, which says
- * the country without looking the reader up. It sets no cookie and keeps
+ * the site, once: what it shows, by its kind and its id, such as a post, the
+ * address of the page they came from, the campaign of the link, if any, and
+ * the time zone of the browser, which says the country without looking the
+ * reader up. It sets no cookie and keeps
  * nothing in the browser.
  *
  * A page prerendered, or opened in a tab never looked at, isn't seen, so it
  * waits; one shown again from the back-forward cache was already told.
  */
-const script = document.querySelector('script[data-page][data-visit]');
+const script = document.querySelector('script[data-type][data-content][data-visit]');
 
 if (script instanceof HTMLScriptElement) {
     // The script was found by both of them.
-    const { page, visit } = /** @type {{page: string, visit: string}} */ (script.dataset);
+    const { type, content, visit } = /** @type {{type: string, content: string, visit: string}} */ (script.dataset);
     let sent = false;
 
     const send = () => {
@@ -31,7 +32,8 @@ if (script instanceof HTMLScriptElement) {
         }
 
         const body = new URLSearchParams({
-            page,
+            type,
+            content,
             referrer: document.referrer,
             source: campaign.get('utm_source') || '',
             medium: campaign.get('utm_medium') || '',

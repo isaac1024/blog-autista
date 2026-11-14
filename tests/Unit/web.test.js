@@ -3,7 +3,7 @@ import test from 'node:test';
 import { mount, settle } from './support/dom.js';
 
 const PAGE_ID = '6d1f3f2c-84a8-4b40-9ea3-91d62f55f001';
-const SCRIPT = `<script type="module" data-page="${PAGE_ID}" data-visit="/v"></script>`;
+const SCRIPT = `<script type="module" data-type="post" data-content="${PAGE_ID}" data-visit="/v"></script>`;
 const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 let runs = 0;
 
@@ -61,7 +61,7 @@ const visit = async ({
     };
 };
 
-const told = (overrides = {}) => ({ page: PAGE_ID, referrer: 'https://search.test/', source: '', medium: '', zone: ZONE, ...overrides });
+const told = (overrides = {}) => ({ type: 'post', content: PAGE_ID, referrer: 'https://search.test/', source: '', medium: '', zone: ZONE, ...overrides });
 
 test('a page in sight tells its visit once, by beacon, with where the reader came from and their time zone', async () => {
     const { beacons, fetches, change } = await visit();
@@ -77,7 +77,7 @@ test('the campaign of the link is told, and nothing else of the address', async 
     const { beacons } = await visit({ url: 'https://blog.test/first-page.html?utm_source=newsletter&utm_medium=email&utm_term=ignored', referrer: '' });
 
     assert.deepEqual(beacons, [['/v', told({ referrer: '', source: 'newsletter', medium: 'email' })]]);
-    assert.deepEqual(Object.keys(beacons[0][1]), ['page', 'referrer', 'source', 'medium', 'zone']);
+    assert.deepEqual(Object.keys(beacons[0][1]), ['type', 'content', 'referrer', 'source', 'medium', 'zone']);
 });
 
 test('a page out of sight waits until its reader looks at it', async () => {
@@ -122,13 +122,13 @@ test('a browser that tells no time zone is told as none', async () => {
 test('a page without its visit script, or with one missing what to tell, tells nothing', async () => {
     for (const markup of [
         '',
-        `<div data-page="${PAGE_ID}" data-visit="/v"></div>`,
+        `<div data-type="post" data-content="${PAGE_ID}" data-visit="/v"></div>`,
     ]) {
         const { beacons, fetches } = await visit({ markup });
 
         assert.deepEqual([beacons, fetches], [[], []]);
     }
 
-    const { beacons } = await visit({ markup: '<script type="module" data-page data-visit></script>' });
-    assert.deepEqual(beacons, [['', told({ page: '' })]]);
+    const { beacons } = await visit({ markup: '<script type="module" data-type data-content data-visit></script>' });
+    assert.deepEqual(beacons, [['', told({ type: '', content: '' })]]);
 });

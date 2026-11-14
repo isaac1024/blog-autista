@@ -54,6 +54,11 @@ final class Term
         );
     }
 
+    public function id(): TermId
+    {
+        return $this->id;
+    }
+
     /**
      * Takes the version the CMS published, in place of the one on the site.
      * A term never changes taxonomy.

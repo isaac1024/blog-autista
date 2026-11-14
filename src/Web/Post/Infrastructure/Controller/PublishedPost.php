@@ -84,7 +84,8 @@ final readonly class PublishedPost
 
         return ($this->sitePostPage)(
             $this->siteLayout->page($post->title)
-                ->withSearchEngineMetadata($post->metaDescription, $post->robots.',max-image-preview:large', $canonical),
+                ->withSearchEngineMetadata($post->metaDescription, $post->robots.',max-image-preview:large', $canonical)
+                ->withCountedVisits('post', $post->id),
             $post->title,
             $post->firstPublishedAt,
             $post->lastPublishedAt,

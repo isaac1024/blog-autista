@@ -113,6 +113,6 @@ final class PublishedPageTest extends TestCase
 
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $pageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))(PageResponse::fromPage($page));
 
-        self::assertSame(self::TARGET, $result->countedPageId);
+        self::assertSame(['type' => 'page', 'id' => self::TARGET], $result->countedContent);
     }
 }

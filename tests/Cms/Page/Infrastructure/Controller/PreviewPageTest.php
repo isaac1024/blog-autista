@@ -173,7 +173,7 @@ final class PreviewPageTest extends TestCase
 
         $result = $this->preview()(PageResponse::fromPage($page));
 
-        self::assertNull($result->countedPageId);
+        self::assertNull($result->countedContent);
     }
 
     /**

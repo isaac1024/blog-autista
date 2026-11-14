@@ -47,7 +47,6 @@ final readonly class DoctrineVisitRepository implements VisitRepository
         $parameters = [
             'day' => $day->value(),
             'site' => Dimension::Site->value,
-            'page' => Dimension::Page->value,
             'channel' => Dimension::Channel->value,
             'source' => Dimension::Source->value,
             'device' => Dimension::Device->value,
@@ -55,12 +54,14 @@ final readonly class DoctrineVisitRepository implements VisitRepository
             'internal' => Channel::Internal->value,
         ];
 
-        // Readers are counted apart in every dimension, so each count of them is exact.
+        // Readers are counted apart in every dimension, so each count of them
+        // is exact. Each kind of content is counted by the dimension of its
+        // name, such as the posts by "post".
         $connection->executeStatement(<<<'SQL'
             INSERT INTO web_visit_total (day, dimension, value, views, visitors)
             SELECT day, :site, '', COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day
             UNION ALL
-            SELECT day, :page, page_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, page_id
+            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, content_type, content_id
             UNION ALL
             SELECT day, :channel, channel, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, channel
             UNION ALL

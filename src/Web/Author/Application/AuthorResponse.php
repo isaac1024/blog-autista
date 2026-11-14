@@ -10,6 +10,10 @@ use Web\Author\Domain\Author;
 /**
  * Read model of an author on the site handed to the adapters, so they don't
  * touch the aggregate.
+ *
+ * It carries what the site shows, one parameter each.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class AuthorResponse
 {
@@ -19,6 +23,7 @@ final readonly class AuthorResponse
      * @param string  $robots          one of the Robots values
      */
     public function __construct(
+        public string $id,
         public string $name,
         public string $slug,
         public string $avatarName,
@@ -30,6 +35,7 @@ final readonly class AuthorResponse
     public static function fromAuthor(Author $author): self
     {
         return new self(
+            $author->id()->value(),
             $author->name(),
             $author->slug(),
             $author->avatarName(),

@@ -11,7 +11,7 @@
     nothing kept in the browser. Loaded as a plain module, with no import map.
 #}
 {% block javascripts %}
-{% if page.countedPageId %}
-        <script type="module" src="{{ asset('web.js') }}" data-page="{{ page.countedPageId }}" data-visit="{{ path('web_visit') }}"></script>
+{% if page.countedContent %}
+        <script type="module" src="{{ asset('web.js') }}" data-type="{{ page.countedContent.type }}" data-content="{{ page.countedContent.id }}" data-visit="{{ path('web_visit') }}"></script>
 {% endif %}
 {% endblock %}

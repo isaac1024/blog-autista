@@ -37,7 +37,8 @@ final class VisitControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(Response::HTTP_NO_CONTENT);
         self::assertSame([[
-            'page_id' => self::PAGE,
+            'content_type' => 'page',
+            'content_id' => self::PAGE,
             'day' => '2026-11-07',
             'channel' => 'search',
             'source' => 'google.es',
@@ -119,9 +120,9 @@ final class VisitControllerTest extends WebTestCase
      */
     public static function unprocessableVisits(): iterable
     {
-        $visit = ['page' => self::PAGE, 'referrer' => '', 'source' => '', 'medium' => '', 'zone' => ''];
+        $visit = ['type' => 'page', 'content' => self::PAGE, 'referrer' => '', 'source' => '', 'medium' => '', 'zone' => ''];
 
-        yield 'no page id' => [['page' => 'sobre-mi'] + $visit];
+        yield 'no page id' => [['content' => 'sobre-mi'] + $visit];
         yield 'a field missing' => [array_diff_key($visit, ['zone' => true])];
         yield 'a page left too long' => [['referrer' => 'https://example.org/'.str_repeat('a', 2029)] + $visit];
     }
@@ -194,7 +195,7 @@ final class VisitControllerTest extends WebTestCase
         $client->request(
             'POST',
             self::HOST.'/v',
-            ['page' => $page, 'referrer' => $referrer, 'source' => $source, 'medium' => $medium, 'zone' => $zone],
+            ['type' => 'page', 'content' => $page, 'referrer' => $referrer, 'source' => $source, 'medium' => $medium, 'zone' => $zone],
             server: ['HTTP_USER_AGENT' => $userAgent, 'REMOTE_ADDR' => $address] + $headers,
         );
     }
@@ -204,6 +205,6 @@ final class VisitControllerTest extends WebTestCase
      */
     private function visits(): array
     {
-        return self::getContainer()->get(Connection::class)->fetchAllAssociative('SELECT page_id, day, channel, source, device, country FROM web_visit ORDER BY id');
+        return self::getContainer()->get(Connection::class)->fetchAllAssociative('SELECT content_type, content_id, day, channel, source, device, country FROM web_visit ORDER BY id');
     }
 }

@@ -21,6 +21,7 @@ final readonly class PostResponse
      * @param string       $day    the day it was first published, as Y-m-d
      */
     public function __construct(
+        public string $id,
         public string $title,
         public string $slug,
         public string $sectionId,
@@ -40,6 +41,7 @@ final readonly class PostResponse
     public static function fromPost(Post $post): self
     {
         return new self(
+            $post->id()->value(),
             $post->title(),
             $post->slug(),
             $post->sectionId(),

@@ -7,7 +7,8 @@ namespace Web\Analytics\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A page a reader saw on the site, kept only until its day is counted.
+ * A page of the site a reader saw, such as a post or the page of a section,
+ * kept only until its day is counted.
  *
  * Where the reader came from and who they are, as far as the blog knows,
  * are kept as the columns the database counts them by.
@@ -30,8 +31,10 @@ final class Visit
         #[ORM\Id]
         #[ORM\Column(type: 'web_visit_id')]
         private readonly VisitId $id,
-        #[ORM\Column(name: 'page_id', length: 36, options: ['fixed' => true])]
-        private readonly string $pageId,
+        #[ORM\Column(name: 'content_type', length: 10, enumType: ContentType::class)]
+        private readonly ContentType $contentType,
+        #[ORM\Column(name: 'content_id', length: 36, options: ['fixed' => true])]
+        private readonly string $contentId,
         #[ORM\Column(type: 'date_immutable')]
         private readonly \DateTimeImmutable $day,
         #[ORM\Column(length: 20, enumType: Channel::class)]
@@ -46,11 +49,12 @@ final class Visit
         private readonly ?string $country,
     ) {}
 
-    public static function record(VisitId $id, PageId $pageId, Day $day, Arrival $arrival, Reader $reader): self
+    public static function record(VisitId $id, Content $content, Day $day, Arrival $arrival, Reader $reader): self
     {
         return new self(
             $id,
-            $pageId->value(),
+            $content->type(),
+            $content->id()->value(),
             $day->date(),
             $arrival->channel(),
             $arrival->source(),

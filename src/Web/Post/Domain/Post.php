@@ -81,6 +81,11 @@ final class Post
         );
     }
 
+    public function id(): PostId
+    {
+        return $this->id;
+    }
+
     /**
      * Takes the version the CMS published.
      */
