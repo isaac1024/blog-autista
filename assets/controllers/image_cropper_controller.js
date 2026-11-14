@@ -271,7 +271,7 @@ export default class extends BaseController {
     async submit(event) {
         const form = this.element.closest('form');
 
-        // Without an image, the required field has already stopped the form.
+        // Without an image, the form goes as it is, if a required field let it.
         if (event.target !== form || !this.cropping || this.exported) {
             return;
         }

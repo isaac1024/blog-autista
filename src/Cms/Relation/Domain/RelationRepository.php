@@ -24,7 +24,7 @@ interface RelationRepository
 
     /**
      * A slice of the relations of every resource that uses the one given:
-     * pages first, then images, then the settings.
+     * pages first, then images, then the settings, then the authors.
      *
      * @return list<Relation>
      */

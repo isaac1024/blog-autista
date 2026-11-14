@@ -12,4 +12,5 @@ enum ResourceType: string
     case Page = 'page';
     case Image = 'image';
     case Settings = 'settings';
+    case Author = 'author';
 }

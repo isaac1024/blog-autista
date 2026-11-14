@@ -24,12 +24,12 @@ final readonly class SiteRoutes
     private const string PAGE_ROUTE = 'web_page';
 
     /**
-     * The routes of resources the redirects don't know yet, such as the
-     * sections and the tags: an address they would answer is taken as one
+     * The routes of resources the redirects don't know yet: the sections,
+     * the tags and the authors. An address they would answer is taken as one
      * the site doesn't answer itself, as before they existed, so a redirect
      * may be kept there, and is only followed once the address is a 404.
      */
-    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag'];
+    private const array UNKNOWN_ROUTES = ['web_section', 'web_tag', 'web_author'];
 
     public function __construct(
         private RouterInterface $router,

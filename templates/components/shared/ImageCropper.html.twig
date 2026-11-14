@@ -6,7 +6,7 @@
     <div class="grid gap-2">
         <label class="text-[1rem] font-bold" for="{{ id }}">{{ label }}</label>
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ 'ui.cropper.hint'|trans({'%width%': width, '%height%': height}) }}</p>
-        <input class="w-full min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-[0.9rem] py-2.5 text-text file:mr-4 file:cursor-pointer file:rounded-control file:border-0 file:bg-accent file:px-4 file:py-2 file:font-bold file:text-on-accent focus-visible:border-accent forced-colors:border-[ButtonText]" type="file" id="{{ id }}" accept="image/*" required aria-describedby="{{ id }}-hint {{ id }}-error" data-image-cropper-target="source" data-action="change->image-cropper#load">
+        <input class="w-full min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-[0.9rem] py-2.5 text-text file:mr-4 file:cursor-pointer file:rounded-control file:border-0 file:bg-accent file:px-4 file:py-2 file:font-bold file:text-on-accent focus-visible:border-accent forced-colors:border-[ButtonText]" type="file" id="{{ id }}" accept="image/*"{% if required %} required{% endif %} aria-describedby="{{ id }}-hint {{ id }}-error" data-image-cropper-target="source" data-action="change->image-cropper#load">
         <p class="m-0 text-[1rem] font-bold text-danger" id="{{ id }}-error" role="alert" data-image-cropper-target="error" hidden></p>
     </div>
 

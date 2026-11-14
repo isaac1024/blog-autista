@@ -8,6 +8,9 @@ doctrine:
 
         profiling_collect_backtrace: '%kernel.debug%'
         types:
+            cms_author_id: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
+            cms_author_avatar: Cms\Author\Infrastructure\Persistence\Doctrine\AvatarType
+            cms_author_version: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorVersionType
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
@@ -22,6 +25,7 @@ doctrine:
             cms_slug: Cms\Shared\Infrastructure\Persistence\Doctrine\SlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
+            web_author_id: Web\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_visit_id: Web\Analytics\Infrastructure\Persistence\Doctrine\VisitIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
@@ -41,6 +45,11 @@ doctrine:
             numeric_functions:
                 MATCH_AGAINST: Shared\Infrastructure\Persistence\Doctrine\MatchAgainstFunction
         mappings:
+            CmsAuthor:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Author/Domain'
+                prefix: 'Cms\Author\Domain'
             CmsImage:
                 type: attribute
                 is_bundle: false
@@ -81,6 +90,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Analytics/Domain'
                 prefix: 'Web\Analytics\Domain'
+            WebAuthor:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Author/Domain'
+                prefix: 'Web\Author\Domain'
             WebImage:
                 type: attribute
                 is_bundle: false

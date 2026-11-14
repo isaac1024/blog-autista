@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Relation\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Infrastructure\Controller\AuthorState;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Infrastructure\Controller\ImageState;
@@ -13,6 +15,7 @@ use Cms\Page\Domain\PageType;
 use Cms\Page\Infrastructure\Controller\PageRole;
 use Cms\Page\Infrastructure\Controller\PageState;
 use Cms\Relation\Application\UserResponse;
+use Cms\Relation\Infrastructure\Controller\AuthorUserRows;
 use Cms\Relation\Infrastructure\Controller\ImageUserRows;
 use Cms\Relation\Infrastructure\Controller\PageUserRows;
 use Cms\Relation\Infrastructure\Controller\SettingsUserRows;
@@ -165,6 +168,7 @@ final class UserRowsTest extends TestCase
             new PageUserRows($translator, $urlGenerator, $pageRepository, new PageState($translator), new PageRole($translator)),
             new ImageUserRows($translator, $urlGenerator, $imageRepository, new ImageState($translator)),
             new SettingsUserRows($translator, $urlGenerator, $settingsRepository, new SettingsState($translator)),
+            new AuthorUserRows($translator, $urlGenerator, self::createStub(AuthorRepository::class), new AuthorState($translator)),
         )($users);
     }
 

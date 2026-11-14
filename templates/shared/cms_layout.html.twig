@@ -14,6 +14,8 @@
     <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" />
 {% elseif name == 'tags' %}
     <path d="M3.5 12.6V5.5a2 2 0 0 1 2-2h7.1a2 2 0 0 1 1.4.6l6.4 6.4a2 2 0 0 1 0 2.8l-7.1 7.1a2 2 0 0 1-2.8 0L4.1 14a2 2 0 0 1-.6-1.4z" /><circle cx="8.5" cy="8.5" r="1.5" />
+{% elseif name == 'authors' %}
+    <circle cx="12" cy="8.5" r="4" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
 {% elseif name == 'redirects' %}
     <path d="M4 7.5h11.5M12 3.5l4 4-4 4M20 16.5H8.5M12 12.5l-4 4 4 4" />
 {% elseif name == 'settings' %}
@@ -42,6 +44,7 @@
             <li>{{ _self.item('cms.nav.images'|trans, path('cms_images'), 'images', currentRoute starts with 'cms_images') }}</li>
             <li>{{ _self.item('cms.nav.sections'|trans, path('cms_terms', {taxonomy: 'sections'}), 'sections', currentRoute starts with 'cms_terms' and app.request.attributes.get('taxonomy') == 'sections') }}</li>
             <li>{{ _self.item('cms.nav.tags'|trans, path('cms_terms', {taxonomy: 'tags'}), 'tags', currentRoute starts with 'cms_terms' and app.request.attributes.get('taxonomy') == 'tags') }}</li>
+            <li>{{ _self.item('cms.nav.authors'|trans, path('cms_authors'), 'authors', currentRoute starts with 'cms_authors') }}</li>
             <li>{{ _self.item('cms.nav.redirects'|trans, path('cms_redirects'), 'redirects', currentRoute starts with 'cms_redirects') }}</li>
             <li>{{ _self.item('cms.nav.settings'|trans, path('cms_settings'), 'settings', currentRoute starts with 'cms_settings') }}</li>
         </ul>

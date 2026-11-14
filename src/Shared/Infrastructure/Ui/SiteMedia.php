@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Ui;
 
+use Shared\Domain\AvatarCopy;
 use Shared\Domain\ImageCopy;
 use Shared\Domain\RichText\RichText;
 
@@ -53,6 +54,27 @@ final class SiteMedia
             'src' => $largest->url(),
             'width' => $largest->width(),
             'height' => $largest->height(),
+            'alt' => $alt,
+        ];
+    }
+
+    /**
+     * The avatar of an author, from its largest copy and every other one for
+     * the browser to choose from.
+     *
+     * @param string $name the name its copies share
+     *
+     * @return array{src: string, srcset: string, size: int, alt: string}
+     */
+    public static function avatar(string $name, string $alt): array
+    {
+        return [
+            'src' => new AvatarCopy($name, AvatarCopy::LARGEST)->url(),
+            'srcset' => implode(', ', array_map(
+                static fn (int $size): string => \sprintf('%s %dw', new AvatarCopy($name, $size)->url(), $size),
+                AvatarCopy::SIZES,
+            )),
+            'size' => AvatarCopy::LARGEST,
             'alt' => $alt,
         ];
     }

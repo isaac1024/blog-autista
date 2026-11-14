@@ -13,6 +13,11 @@ parameters:
     # files, and keeps them in its public directory, apart from them.
     web.image.originals_directory: '%cms.image.storage_directory%'
     web.image.public_directory: '%kernel.project_dir%/public/media'
+    # Where the avatars of the authors are kept, out of public/, apart from
+    # the images; the site makes their copies under its public media.
+    cms.author.avatar_directory: '%kernel.project_dir%/media/avatars'
+    web.author.originals_directory: '%cms.author.avatar_directory%'
+    web.author.public_directory: '%web.image.public_directory%/autores'
 
 services:
     # default configuration for services in *this* file
@@ -40,3 +45,4 @@ when@test:
         # parallel process, as they do with their databases.
         cms.image.storage_directory: '%kernel.project_dir%/var/test/media%env(default::TEST_TOKEN)%'
         web.image.public_directory: '%kernel.project_dir%/var/test/public-media%env(default::TEST_TOKEN)%'
+        cms.author.avatar_directory: '%kernel.project_dir%/var/test/avatars%env(default::TEST_TOKEN)%'

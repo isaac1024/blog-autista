@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Relation\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Infrastructure\Controller\AuthorState;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Infrastructure\Controller\ImageState;
 use Cms\Page\Domain\PageRepository;
@@ -16,6 +18,7 @@ use Cms\Redirect\Infrastructure\Controller\RedirectRows;
 use Cms\Relation\Application\UserResponse;
 use Cms\Relation\Application\UsersResponse;
 use Cms\Relation\Domain\ResourceType;
+use Cms\Relation\Infrastructure\Controller\AuthorUserRows;
 use Cms\Relation\Infrastructure\Controller\ImageUserRows;
 use Cms\Relation\Infrastructure\Controller\PageUserRows;
 use Cms\Relation\Infrastructure\Controller\RelationList;
@@ -160,6 +163,7 @@ final class RelationListTest extends TestCase
                 new PageUserRows($translator, $urlGenerator, $pageRepository, new PageState($translator), new PageRole($translator)),
                 new ImageUserRows($translator, $urlGenerator, $imageRepository, new ImageState($translator)),
                 new SettingsUserRows($translator, $urlGenerator, self::createStub(SettingsRepository::class), new SettingsState($translator)),
+                new AuthorUserRows($translator, $urlGenerator, self::createStub(AuthorRepository::class), new AuthorState($translator)),
             ),
             new ListPagination($translator, $urlGenerator),
             new IncomingRedirectsPanel(

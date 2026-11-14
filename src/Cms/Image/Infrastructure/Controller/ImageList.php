@@ -142,6 +142,7 @@ final readonly class ImageList
                     'width' => Image::WIDTH,
                     'height' => Image::HEIGHT,
                     'quality' => self::QUALITY,
+                    'required' => true,
                 ]),
                 new PageComponent('Shared:FormField', [], [
                     new PageComponent('Shared:FormLabel', [

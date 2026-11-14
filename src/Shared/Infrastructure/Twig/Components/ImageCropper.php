@@ -38,7 +38,19 @@ final class ImageCropper
      */
     public float $quality = 0;
 
-    public function mount(string $name, string $id, string $label, int $width, int $height, float $quality): void
+    /**
+     * Whether the form needs an image to be sent, or may go without one, as
+     * when it replaces one that is kept already.
+     */
+    public bool $required = false;
+
+    /**
+     * Its props are declared here, as for every component, so it takes as
+     * many parameters as it has props.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
+    public function mount(string $name, string $id, string $label, int $width, int $height, float $quality, bool $required): void
     {
         $this->name = $name;
         $this->id = $id;
@@ -46,5 +58,6 @@ final class ImageCropper
         $this->width = $width;
         $this->height = $height;
         $this->quality = $quality;
+        $this->required = $required;
     }
 }

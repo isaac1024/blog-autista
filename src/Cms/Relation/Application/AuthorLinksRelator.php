@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Relation\Application;
+
+use Cms\Relation\Domain\CmsAuthorPagesLinked;
+use Cms\Relation\Domain\RelationRepository;
+use Cms\Relation\Domain\ResourceType;
+
+/**
+ * Replaces the relations of an author to the pages its bio uses with those
+ * it tells.
+ */
+final readonly class AuthorLinksRelator
+{
+    public function __construct(private CmsAuthorPagesLinked $event) {}
+
+    public function __invoke(RelationRepository $relationRepository): void
+    {
+        $relationRepository->replace(ResourceType::Author, $this->event->aggregateId(), ResourceType::Page, $this->event->pageIds());
+    }
+}

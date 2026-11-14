@@ -7,6 +7,13 @@ cms:
             unpublished: 'Página retirada de la web.'
             discarded: 'Cambios descartados: la página vuelve a ser la publicada.'
             deleted: 'Página borrada.'
+        author:
+            created: 'Autor creado.'
+            saved: 'Cambios guardados.'
+            published: 'Autor publicado en la web.'
+            unpublished: 'Autor retirado de la web.'
+            discarded: 'Cambios descartados: el autor vuelve a ser el publicado.'
+            deleted: 'Autor borrado.'
         image:
             uploaded: 'Imagen subida.'
             saved: 'Cambios guardados.'
@@ -31,6 +38,7 @@ cms:
         images: 'Imágenes'
         sections: 'Secciones'
         tags: 'Etiquetas'
+        authors: 'Autores'
         redirects: 'Redirecciones'
         settings: 'Ajustes'
         logout: 'Cerrar sesión'
@@ -285,20 +293,21 @@ cms:
             page: 'Página'
             image: 'Imagen'
             settings: 'Ajustes'
+            author: 'Autor'
         page:
             subtitle: 'Lo que enlaza a la página «%name%».'
             back: 'Editar la página'
             list: 'Lo que usa la página «%name%»'
             empty:
                 title: 'Nada usa esta página'
-                message: 'Ninguna página, imagen ni menú la enlaza.'
+                message: 'Ninguna página, imagen, menú ni biografía de autor la enlaza.'
         image:
             subtitle: 'Lo que muestra la imagen «%name%».'
             back: 'Editar la imagen'
             list: 'Lo que usa la imagen «%name%»'
             empty:
                 title: 'Nada usa esta imagen'
-                message: 'Ninguna página la muestra ni los ajustes la usan.'
+                message: 'Ninguna página ni biografía de autor la muestra, ni los ajustes la usan.'
     settings:
         title: 'Ajustes'
         dates: 'Creados el %created% · Modificados el %updated%'
@@ -578,6 +587,103 @@ cms:
             unpublished:
                 label: 'Despublicada'
                 description: 'Despublicada: ya no está en la web.'
+    authors:
+        title: 'Autores'
+        subtitle: 'Quienes firman los artículos del blog, cada uno con su página: avatar, nombre y biografía. No tienen por qué coincidir con quien entra en el CMS.'
+        add: 'Añadir autor'
+        name_label: 'Nombre'
+        empty:
+            title: 'Todavía no hay autores'
+            message: 'Cuando crees un autor, aparecerá aquí.'
+            action: 'Crear el primer autor'
+        search:
+            label: 'Buscar por nombre'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+                message: 'Ningún autor tiene «%name%» en el nombre.'
+                action: 'Ver todos los autores'
+        list:
+            label: 'Autores del blog'
+            updated_at: 'Modificado el %date%'
+            no_slug: 'Sin dirección'
+        modal:
+            title: 'Nuevo autor'
+            description: 'Escribe el nombre con el que firma. La dirección web de su página se creará a partir de él.'
+            submit: 'Crear autor'
+        edit:
+            title: 'Editar autor'
+            dates: 'Creado el %created% · Modificado el %updated%'
+            view_on_site: 'Ver en la web'
+            slug_label: 'Dirección web (slug)'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: isaac. Puedes dejarla vacía hasta publicar el autor.'
+            avatar_title: 'Avatar'
+            avatar_description: 'Una foto cuadrada de quien firma, que aparecerá en su página y en sus artículos. Hace falta para publicar.'
+            avatar_current: 'Avatar actual de %name%'
+            avatar_label: 'Elegir avatar'
+            avatar_replace: 'Cambiar el avatar'
+            bio_title: 'Biografía'
+            bio_placeholder: 'Escribe aquí quién eres y de qué escribes…'
+            meta_description_hint: 'El resumen que aparece bajo el nombre en los resultados: una o dos frases sobre quién es y de qué escribe.'
+            submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+        preview:
+            trigger: 'Vista previa'
+            title: 'Vista previa'
+            description: 'Cualquiera con este enlace podrá ver la última versión guardada de la página del autor, como se verá en la web, sin iniciar sesión. Si guardas más cambios, el enlace los mostrará.'
+            url_label: 'Enlace'
+            url_hint: 'Válido hasta el %expires%. Cópialo y envíalo a quien quieras.'
+            copy: 'Copiar enlace'
+            copied: 'Enlace copiado.'
+            copy_failed: 'No se ha podido copiar. El enlace está seleccionado: cópialo con Ctrl+C (o Cmd+C).'
+            open: 'Abrir vista previa'
+        seo:
+            title: 'Buscadores'
+            description: 'Cómo aparece la página del autor en Google y en otros buscadores. El título del resultado es su nombre.'
+            preview: 'Vista previa del resultado'
+            preview_empty: 'Sin meta descripción: el buscador mostrará el fragmento del texto que elija.'
+            meta_description_label: 'Meta descripción'
+            robots_legend: 'Visibilidad en los buscadores'
+            robots:
+                'index,follow':
+                    label: 'Mostrar en los buscadores'
+                    hint: 'La página puede aparecer en los resultados y se siguen sus enlaces. Es lo habitual.'
+                'noindex,follow':
+                    label: 'No mostrar, pero seguir sus enlaces'
+                    hint: 'No aparece en los resultados, pero los buscadores descubren las páginas a las que enlaza.'
+                'noindex,nofollow':
+                    label: 'Ocultar del todo'
+                    hint: 'Ni aparece en los resultados ni se siguen sus enlaces.'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'El autor «%name%» volverá a ser el que está publicado en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar este autor?'
+            description: 'La página de «%name%» dejará de estar en la web y su dirección dará «no encontrada». Podrás volver a publicarla.'
+            submit: 'Sí, despublicar el autor'
+        delete:
+            trigger: 'Borrar autor'
+            title: '¿Borrar este autor?'
+            description: 'El autor «%name%», su avatar y su dirección web dejarán de existir. No se puede deshacer.'
+            submit: 'Sí, borrar el autor'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicado'
+                description: 'Publicado: la web muestra esta versión.'
+            changed:
+                label: 'Publicado con cambios'
+                description: 'Publicado con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicado'
+                description: 'Despublicado: ya no está en la web.'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'
@@ -848,7 +954,7 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
-            linked_page: 'Otras páginas, pies de foto o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
+            linked_page: 'Otras páginas, pies de foto, biografías de autores o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
             incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
     term:
         not_found: 'No hay nada publicado en «%slug%».'
@@ -868,6 +974,26 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
             incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
+    author:
+        not_found: 'No hay ningún autor en «%slug%».'
+        name:
+            too_short: 'El nombre debe tener al menos %min% caracteres.'
+            too_long: 'El nombre no puede pasar de %max% caracteres.'
+        slug:
+            taken: 'Ya hay otro autor con la dirección «%slug%».'
+        avatar:
+            not_webp: 'El avatar no ha llegado como imagen WebP. Vuelve a elegirlo; si se repite, usa otro navegador.'
+            wrong_size: 'El avatar debe medir %width% × %height% píxeles. Vuelve a elegirlo.'
+        publication:
+            without_slug: 'El autor no se puede publicar sin dirección.'
+            without_avatar: 'El autor no se puede publicar sin avatar.'
+            without_bio: 'El autor no se puede publicar sin biografía.'
+            without_meta_description: 'El autor no se puede publicar sin meta descripción.'
+            nothing_to_publish: 'El autor ya está publicado tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar un autor publicado.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
+            incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
         name:
@@ -899,4 +1025,4 @@ errors:
             redirected: 'Hay redirecciones que llevan a esta imagen, así que no se puede despublicar hasta que lleven a otro sitio.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'
-            in_use: 'Esta imagen se usa en alguna página o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'
+            in_use: 'Esta imagen se usa en alguna página o biografía de autor, o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'
