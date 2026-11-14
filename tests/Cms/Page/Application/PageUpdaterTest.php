@@ -7,22 +7,23 @@ namespace Cms\Tests\Page\Application;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\InvalidContent;
-use Cms\Page\Domain\InvalidSeo;
-use Cms\Page\Domain\InvalidSlug;
+use Cms\Page\Domain\InvalidPageSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\Robots;
-use Cms\Page\Domain\Seo;
-use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\Title;
+use Cms\Shared\Domain\InvalidSeo;
+use Cms\Shared\Domain\InvalidSlug;
+use Cms\Shared\Domain\Robots;
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
-use Cms\Tests\Page\Domain\SlugMother;
+use Cms\Tests\Shared\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -368,7 +369,7 @@ final class PageUpdaterTest extends TestCase
         $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(InvalidSlug::onHome('inicio'));
+        $this->expectExceptionObject(InvalidPageSlug::onHome('inicio'));
 
         self::updater($id, 'Inicio', 'inicio')($repository, self::createStub(EventBus::class));
     }
@@ -550,8 +551,8 @@ final class PageUpdaterTest extends TestCase
             'errors.page.content.links_itself',
             [],
         ];
-        yield 'meta description too long' => [Text::EMPTY, str_repeat('a', 201), 'index,follow', 'errors.page.seo.description_too_long', ['%max%' => 200]];
-        yield 'unknown robots directive' => [Text::EMPTY, '', 'noindex', 'errors.page.seo.unknown_robots', ['%robots%' => 'noindex']];
+        yield 'meta description too long' => [Text::EMPTY, str_repeat('a', 201), 'index,follow', 'errors.seo.description_too_long', ['%max%' => 200]];
+        yield 'unknown robots directive' => [Text::EMPTY, '', 'noindex', 'errors.seo.unknown_robots', ['%robots%' => 'noindex']];
     }
 
     public function testItSavesContentThatEmbedsImages(): void

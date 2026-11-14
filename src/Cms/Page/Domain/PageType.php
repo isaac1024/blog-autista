@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
+use Cms\Shared\Domain\Robots;
+use Cms\Shared\Domain\Slug;
+
 /**
  * Kind of page. The site has each unique page exactly once, created from the
  * console and never deleted, so other parts of the site can rely on it, e.g.
@@ -42,6 +45,16 @@ enum PageType: string
     }
 
     /**
+     * The robots directive a new page of this type starts with: listed in
+     * search results, except the search page, whose results search engines
+     * advise against indexing.
+     */
+    public function initialRobots(): Robots
+    {
+        return self::Search === $this ? Robots::NoindexFollow : Robots::IndexFollow;
+    }
+
+    /**
      * The slug a page of this type takes from what an editor writes, blank
      * for none: the home page never has one, and any other page may be left
      * without one until it is published.
@@ -49,7 +62,7 @@ enum PageType: string
     public function slugFrom(string $slug): ?Slug
     {
         if ($this->isHome() && '' !== $slug) {
-            throw InvalidSlug::onHome($slug);
+            throw InvalidPageSlug::onHome($slug);
         }
 
         return '' === $slug ? null : new Slug($slug);

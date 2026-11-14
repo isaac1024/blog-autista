@@ -674,6 +674,14 @@ errors:
         skipped_heading_level: 'A level %level% heading can’t follow a level %previous% one: levels go down one at a time.'
         uneven_table: 'Every row of the table must have %columns% cells, as many as its header.'
         not_allowed: 'The content uses something that isn’t allowed here.'
+    slug:
+        malformed: '“%slug%” is not a valid address: use only lowercase letters without accents, digits and hyphens.'
+        too_short: 'The address must have at least %min% characters.'
+        too_long: 'The address can’t be longer than %max% characters.'
+    seo:
+        description_too_long: 'The meta description can’t be longer than %max% characters.'
+        empty_description: 'The meta description can’t be empty.'
+        unknown_robots: '“%robots%” is not a valid directive for search engines.'
     page:
         not_found: 'There is no page at “%slug%”.'
         home_not_found: 'The home page is not published.'
@@ -681,9 +689,6 @@ errors:
             too_short: 'The title must have at least %min% characters.'
             too_long: 'The title can’t be longer than %max% characters.'
         slug:
-            malformed: '“%slug%” is not a valid address: use only lowercase letters without accents, digits and hyphens.'
-            too_short: 'The address must have at least %min% characters.'
-            too_long: 'The address can’t be longer than %max% characters.'
             on_home: 'The home page is served at the root of the site, so it takes no address.'
             taken: 'Another page already has the address “%slug%”.'
         type:
@@ -693,10 +698,6 @@ errors:
         unique_already_exists: 'The site already has its “%type%” page.'
         content:
             links_itself: 'A page can’t link to itself. Take that link out.'
-        seo:
-            description_too_long: 'The meta description can’t be longer than %max% characters.'
-            empty_description: 'The meta description can’t be empty.'
-            unknown_robots: '“%robots%” is not a valid directive for search engines.'
         publication:
             without_content: 'The page can’t be published without content.'
             without_slug: 'The page can’t be published without an address.'

@@ -8,10 +8,11 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\PageVersion;
-use Cms\Page\Domain\Robots;
-use Cms\Page\Domain\Seo;
-use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Timeline;
+use Cms\Shared\Domain\Robots;
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
+use Cms\Tests\Shared\Domain\SlugMother;
 use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother;
@@ -189,7 +190,7 @@ final class PageMother
             TitleMother::create($title),
             self::slug($type, $slug),
             RichText::fromArray($content),
-            new Seo($metaDescription, $robots ?? Seo::initialFor($type)->robots()),
+            new Seo($metaDescription, $robots ?? $type->initialRobots()),
         );
     }
 

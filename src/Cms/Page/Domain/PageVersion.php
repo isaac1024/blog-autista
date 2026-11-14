@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\RichText\RichText;
 
@@ -18,7 +20,7 @@ final readonly class PageVersion
     public function __construct(
         #[ORM\Embedded(class: Title::class, columnPrefix: false)]
         private Title $title,
-        #[ORM\Column(name: 'slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
+        #[ORM\Column(name: 'slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
         private ?Slug $slug,
         #[ORM\Column(name: 'content', type: 'rich_text')]
         private RichText $content,

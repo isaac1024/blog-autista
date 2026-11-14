@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Application;
 
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\Slug;
+use Cms\Shared\Domain\Slug;
 use Shared\Domain\DomainError;
 
 /**

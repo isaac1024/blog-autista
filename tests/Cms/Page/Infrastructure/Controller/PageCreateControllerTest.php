@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\Slug;
+use Cms\Shared\Domain\Slug;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;

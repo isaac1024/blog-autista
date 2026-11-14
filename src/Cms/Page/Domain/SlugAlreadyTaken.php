@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
+use Cms\Shared\Domain\Slug;
 use Shared\Domain\DomainError;
 
 final class SlugAlreadyTaken extends DomainError

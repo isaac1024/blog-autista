@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Cms\Tests\Page\Domain;
+namespace Cms\Tests\Shared\Domain;
 
-use Cms\Page\Domain\Slug;
+use Cms\Shared\Domain\Slug;
 
 /**
  * Builds Slug value objects for tests:

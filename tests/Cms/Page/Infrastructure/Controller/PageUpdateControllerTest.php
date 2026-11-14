@@ -6,9 +6,9 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\Robots;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
+use Cms\Shared\Domain\Robots;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;

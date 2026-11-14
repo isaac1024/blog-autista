@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageCreator;
-use Cms\Page\Domain\InvalidSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\Title;
+use Cms\Shared\Domain\InvalidSlug;
+use Cms\Shared\Domain\Slug;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
-use Cms\Tests\Page\Domain\SlugMother;
+use Cms\Tests\Shared\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -140,9 +140,9 @@ final class PageCreatorTest extends TestCase
     {
         yield 'title too short' => ['Sí', 'errors.page.title.too_short', ['%min%' => 3]];
         yield 'title too long' => [str_repeat('a', 101), 'errors.page.title.too_long', ['%max%' => 100]];
-        yield 'title without sluggable characters' => ['¡!?', 'errors.page.slug.malformed', ['%slug%' => '']];
-        yield 'slug too short' => ['C++', 'errors.page.slug.too_short', ['%min%' => 3]];
-        yield 'slug too long' => [str_repeat('a', 81), 'errors.page.slug.too_long', ['%max%' => 80]];
+        yield 'title without sluggable characters' => ['¡!?', 'errors.slug.malformed', ['%slug%' => '']];
+        yield 'slug too short' => ['C++', 'errors.slug.too_short', ['%min%' => 3]];
+        yield 'slug too long' => [str_repeat('a', 81), 'errors.slug.too_long', ['%max%' => 80]];
     }
 
     public function testItTellsWhichSlugAnotherPageHas(): void

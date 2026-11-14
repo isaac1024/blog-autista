@@ -2,17 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Cms\Page\Domain;
+namespace Cms\Shared\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * How a page presents itself to search engines. Its title in the results is
- * the title of the page; the rest lives here.
+ * How something the site serves at an address presents itself to search
+ * engines. Its title in the results is its own title or name; the rest lives
+ * here.
  *
- * - The meta description is the summary under that title. It is optional for
- *   now, though search engines show it best between 70 and 160 characters.
- * - Robots say whether search engines may list the page and follow its links.
+ * - The meta description is the summary under that title. It is optional
+ *   until it is published, though search engines show it best between 70
+ *   and 160 characters.
+ * - Robots say whether search engines may list it and follow its links.
  *
  * Its canonical URL is always its own address, so it isn't stored.
  */
@@ -53,12 +55,12 @@ final readonly class Seo
     }
 
     /**
-     * Where a new page starts: listed in search results, except the search
-     * page, whose results search engines advise against indexing.
+     * Where something new starts: without a meta description, and with the
+     * robots directive given.
      */
-    public static function initialFor(PageType $type): self
+    public static function initial(Robots $robots): self
     {
-        return new self(null, PageType::Search === $type ? Robots::NoindexFollow : Robots::IndexFollow);
+        return new self(null, $robots);
     }
 
     public function description(): ?string

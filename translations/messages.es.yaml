@@ -674,6 +674,14 @@ errors:
         skipped_heading_level: 'Un título de nivel %level% no puede ir después de uno de nivel %previous%: los niveles bajan de uno en uno.'
         uneven_table: 'Todas las filas de la tabla deben tener %columns% celdas, tantas como su cabecera.'
         not_allowed: 'El contenido usa algo que aquí no está permitido.'
+    slug:
+        malformed: '«%slug%» no es una dirección válida: usa solo minúsculas sin tildes, números y guiones.'
+        too_short: 'La dirección debe tener al menos %min% caracteres.'
+        too_long: 'La dirección no puede pasar de %max% caracteres.'
+    seo:
+        description_too_long: 'La meta descripción no puede pasar de %max% caracteres.'
+        empty_description: 'La meta descripción no puede estar vacía.'
+        unknown_robots: '«%robots%» no es una indicación válida para los buscadores.'
     page:
         not_found: 'No hay ninguna página en «%slug%».'
         home_not_found: 'La portada no está publicada.'
@@ -681,9 +689,6 @@ errors:
             too_short: 'El título debe tener al menos %min% caracteres.'
             too_long: 'El título no puede pasar de %max% caracteres.'
         slug:
-            malformed: '«%slug%» no es una dirección válida: usa solo minúsculas sin tildes, números y guiones.'
-            too_short: 'La dirección debe tener al menos %min% caracteres.'
-            too_long: 'La dirección no puede pasar de %max% caracteres.'
             on_home: 'La portada se sirve en la raíz del sitio, así que no lleva dirección.'
             taken: 'Ya hay otra página con la dirección «%slug%».'
         type:
@@ -693,10 +698,6 @@ errors:
         unique_already_exists: 'El sitio ya tiene su página de tipo «%type%».'
         content:
             links_itself: 'Una página no puede enlazarse a sí misma. Quita ese enlace.'
-        seo:
-            description_too_long: 'La meta descripción no puede pasar de %max% caracteres.'
-            empty_description: 'La meta descripción no puede estar vacía.'
-            unknown_robots: '«%robots%» no es una indicación válida para los buscadores.'
         publication:
             without_content: 'La página no se puede publicar sin contenido.'
             without_slug: 'La página no se puede publicar sin dirección.'

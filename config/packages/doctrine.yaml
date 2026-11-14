@@ -17,7 +17,7 @@ doctrine:
             cms_settings_image_id: Cms\Settings\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_settings_menu: Cms\Settings\Infrastructure\Persistence\Doctrine\MenuType
             cms_settings_version: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsVersionType
-            cms_page_slug: Cms\Page\Infrastructure\Persistence\Doctrine\PageSlugType
+            cms_slug: Cms\Shared\Infrastructure\Persistence\Doctrine\SlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
@@ -58,6 +58,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Page/Domain'
                 prefix: 'Cms\Page\Domain'
+            CmsShared:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/Shared/Domain'
+                prefix: 'Cms\Shared\Domain'
             CmsSettings:
                 type: attribute
                 is_bundle: false

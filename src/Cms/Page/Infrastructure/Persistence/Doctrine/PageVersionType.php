@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Cms\Page\Infrastructure\Persistence\Doctrine;
 
 use Cms\Page\Domain\PageVersion;
-use Cms\Page\Domain\Robots;
-use Cms\Page\Domain\Seo;
-use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\Title;
+use Cms\Shared\Domain\Robots;
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Exception\InvalidType;
 use Doctrine\DBAL\Types\Exception\ValueNotConvertible;

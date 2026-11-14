@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Cms\Page\Domain;
+namespace Cms\Shared\Domain;
 
 /**
- * URL path segment of a page: lowercase ASCII letters, digits and single hyphens.
+ * URL path segment of something the site serves, such as a page: lowercase
+ * ASCII letters, digits and single hyphens.
  */
 final readonly class Slug
 {

@@ -15,7 +15,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
-use Cms\Tests\Page\Domain\SlugMother;
+use Cms\Tests\Shared\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;

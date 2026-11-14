@@ -9,9 +9,9 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\Slug;
 use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\UniquePageAlreadyExists;
+use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -89,7 +89,7 @@ final readonly class DoctrinePageRepository implements PageRepository
             ->select('page')
             ->from(Page::class, 'page')
             ->where('page.version.slug = :slug OR page.publishedSlug = :slug')
-            ->setParameter('slug', $slug, 'cms_page_slug')
+            ->setParameter('slug', $slug, 'cms_slug')
             ->setMaxResults(1)
             ->getQuery();
 

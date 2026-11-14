@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Cms\Page\Domain;
+namespace Cms\Shared\Domain;
 
 /**
- * What search engines may do with a page: list it in their results, and
- * follow its links to discover others.
+ * What search engines may do with something the site serves: list it in
+ * their results, and follow its links to discover others.
  */
 enum Robots: string
 {

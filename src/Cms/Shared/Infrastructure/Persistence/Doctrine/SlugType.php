@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Cms\Page\Infrastructure\Persistence\Doctrine;
+namespace Cms\Shared\Infrastructure\Persistence\Doctrine;
 
-use Cms\Page\Domain\Slug;
+use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Exception\InvalidType;
 use Doctrine\DBAL\Types\Type;
@@ -13,7 +13,7 @@ use Doctrine\DBAL\Types\Type;
  * Maps the slug of a page to a string column, null for pages without one,
  * such as the home page.
  */
-final class PageSlugType extends Type
+final class SlugType extends Type
 {
     #[\Override]
     public function getSQLDeclaration(array $column, AbstractPlatform $platform): string

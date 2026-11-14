@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
+use Cms\Shared\Domain\Seo;
+use Cms\Shared\Domain\Slug;
 use Cms\Shared\Domain\Slugger;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
@@ -65,7 +67,7 @@ final class Page extends AggregateRoot
      * be indexed and kept unique. Null while the page isn't on the site, and
      * for the home page, which has no slug.
      */
-    #[ORM\Column(name: 'published_slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    #[ORM\Column(name: 'published_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
     private ?Slug $publishedSlug;
 
     /**
@@ -73,7 +75,7 @@ final class Page extends AggregateRoot
      * last address can be told and found. Null for a page never published,
      * for the home page, and once another page is published at that address.
      */
-    #[ORM\Column(name: 'last_site_slug', type: 'cms_page_slug', length: Slug::MAX_LENGTH, nullable: true)]
+    #[ORM\Column(name: 'last_site_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
     private ?Slug $lastSiteSlug;
 
     /**
@@ -127,7 +129,7 @@ final class Page extends AggregateRoot
                 new Title($title),
                 new Slug(new Slugger($title)()),
                 RichText::empty(),
-                Seo::initialFor(PageType::Standard),
+                Seo::initial(PageType::Standard->initialRobots()),
             ),
             PageStatus::Draft,
             null,
@@ -153,7 +155,7 @@ final class Page extends AggregateRoot
                 new Title($title),
                 $type->isHome() ? null : new Slug(new Slugger($title)()),
                 RichText::empty(),
-                Seo::initialFor($type),
+                Seo::initial($type->initialRobots()),
             ),
             PageStatus::Draft,
             null,
