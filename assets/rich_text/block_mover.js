@@ -11,7 +11,6 @@ export const BlockMover = Extension.create({
     addOptions() {
         return {
             onMove: /** @type {(direction: Direction, section: boolean) => void} */ (() => {}),
-            onControlsRequest: () => {},
         };
     },
 
@@ -55,8 +54,6 @@ export const BlockMover = Extension.create({
         return {
             'Mod-Shift-ArrowUp': () => move(-1),
             'Mod-Shift-ArrowDown': () => move(1),
-            // The usual shortcut of accessible editors to reach their controls.
-            'Alt-F10': () => (this.options.onControlsRequest(), true),
         };
     },
 });

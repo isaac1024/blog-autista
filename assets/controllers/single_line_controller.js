@@ -37,7 +37,8 @@ export default class extends BaseController {
             return;
         }
 
-        this.element.style.height = 'auto';
+        // Measured at the height its one row gives it, so it shrinks too.
+        this.element.style.removeProperty('height');
         this.element.style.height = `${this.element.scrollHeight}px`;
     }
 }

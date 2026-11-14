@@ -521,6 +521,7 @@ ui:
         search_result: 'Una página. Elígela para usarla.'
         search_results: '%count% páginas. Elige una para usarla.'
         search_error: 'No se ha podido buscar. Inténtalo de nuevo.'
+        more: 'Ver más páginas'
     image_field:
         empty: 'Sin imagen.'
         choose: 'Elegir imagen'

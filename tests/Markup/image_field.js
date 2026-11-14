@@ -1,4 +1,4 @@
-const LABELS = {
+export const IMAGE_FIELD_LABELS = {
     empty: 'No image selected',
     loading: 'Loading image',
     missing: 'Image not found',
@@ -17,7 +17,7 @@ export const imageField = (value = '') => `
         <fieldset id="image" data-controller="image-field"
             data-image-field-search-url-value="/api/images/search"
             data-image-field-lookup-url-value="/api/images/lookup"
-            data-image-field-labels-value='${JSON.stringify(LABELS)}'>
+            data-image-field-labels-value='${JSON.stringify(IMAGE_FIELD_LABELS)}'>
             <legend>Featured image</legend>
             <input type="hidden" name="image" value="${value}" data-image-field-target="input">
             <span data-image-field-target="thumbnail" hidden></span>

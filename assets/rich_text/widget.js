@@ -1,19 +1,19 @@
 import { Node, mergeAttributes } from '@tiptap/core';
+import { LOADING } from '../shared/lookup.js';
 
-/** @typedef {import('./page_link.js').PageState} PageState */
-/** @typedef {{title: string, status: string}} WidgetPage */
-/** @typedef {{state: PageState, page: WidgetPage|undefined}} WidgetDescription */
-/** @typedef {Partial<Record<PageState|'label'|'offSite', string>>} WidgetLabels */
+/** @typedef {{title: string, status: string, published: boolean}} WidgetPage */
+/** @typedef {import('../shared/lookup.js').Lookup<WidgetPage>} WidgetLookup */
+/** @typedef {Partial<Record<'loading'|'missing'|'unknown'|'label'|'offSite', string>>} WidgetLabels */
 
 /**
  * Draws a widget as the CMS knows its page now: its title and where it
  * stands for the site, after what kind of widget it is, all in words.
  *
  * @param {HTMLElement} element
- * @param {WidgetDescription} description
+ * @param {WidgetLookup} lookup
  * @param {WidgetLabels} labels
  */
-const drawWidget = (element, { state, page }, labels) => {
+const drawWidget = (element, lookup, labels) => {
     element.replaceChildren();
 
     const label = document.createElement('p');
@@ -21,15 +21,16 @@ const drawWidget = (element, { state, page }, labels) => {
     label.textContent = labels.label ?? '';
     element.append(label);
 
-    if (page === undefined) {
+    if (lookup.state !== 'found') {
         const note = document.createElement('p');
         note.className = 'rich-text-page-note';
-        note.textContent = labels[state] ?? '';
+        note.textContent = labels[lookup.state] ?? '';
         element.append(note);
 
         return;
     }
 
+    const page = lookup.value;
     const title = document.createElement('p');
     title.className = 'rich-text-widget-title';
     title.textContent = page.title;
@@ -40,7 +41,7 @@ const drawWidget = (element, { state, page }, labels) => {
 
     element.append(title, status);
 
-    if (state === 'offSite') {
+    if (!page.published) {
         const offSite = document.createElement('p');
         offSite.className = 'rich-text-page-note';
         offSite.textContent = labels.offSite ?? '';
@@ -62,7 +63,7 @@ export const Widget = Node.create({
 
     addOptions() {
         return {
-            describe: /** @type {(id: string) => WidgetDescription} */ (() => ({ state: 'loading', page: undefined })),
+            describe: /** @type {(id: string) => WidgetLookup} */ (() => LOADING),
             views: /** @type {Set<() => void>} */ (new Set()),
             labels: /** @type {WidgetLabels} */ ({}),
         };

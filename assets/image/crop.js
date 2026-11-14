@@ -96,14 +96,16 @@ export const clamp = (crop, { image, ratio, minWidth, maxWidth }) => {
  * @param {Frame} frame
  * @returns {Crop}
  */
-export const dragged = (start, mode, { dx, dy }, { image, ratio, maxWidth }) => {
-    if (mode === 'move') {
-        return { ...start, x: start.x + dx, y: start.y + dy };
-    }
+export const dragged = (start, mode, delta, frame) => DRAGS[mode](start, delta, frame);
 
-    const widest = Math.min(maxWidth, image.width - start.x, (image.height - start.y) * ratio);
+/** @type {Record<'move'|'resize', (start: Crop, delta: {dx: number, dy: number}, frame: Frame) => Crop>} */
+const DRAGS = {
+    move: (start, { dx, dy }) => ({ ...start, x: start.x + dx, y: start.y + dy }),
+    resize: (start, { dx, dy }, { image, ratio, maxWidth }) => {
+        const widest = Math.min(maxWidth, image.width - start.x, (image.height - start.y) * ratio);
 
-    return { ...start, width: Math.min(widest, start.width + Math.max(dx, dy * ratio)) };
+        return { ...start, width: Math.min(widest, start.width + Math.max(dx, dy * ratio)) };
+    },
 };
 
 /**

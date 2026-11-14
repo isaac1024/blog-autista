@@ -1,4 +1,4 @@
-import { menuField } from './fixtures/menu_field.js';
+import { menuField } from '../Markup/menu_field.js';
 import { expect, loadController, test } from './support/test.js';
 
 const FIRST = {

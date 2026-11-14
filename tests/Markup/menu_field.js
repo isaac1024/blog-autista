@@ -1,4 +1,4 @@
-const LABELS = {
+export const MENU_FIELD_LABELS = {
     loading: 'Loading page',
     missing: 'Page not found',
     unknown: 'Page could not be checked',
@@ -36,7 +36,7 @@ export const menuField = ({ items = [], max = 2 } = {}) => `
             data-menu-field-search-url-value="/api/pages/search"
             data-menu-field-lookup-url-value="/api/pages/lookup"
             data-menu-field-max-value="${max}"
-            data-menu-field-labels-value='${JSON.stringify(LABELS)}'>
+            data-menu-field-labels-value='${JSON.stringify(MENU_FIELD_LABELS)}'>
             <legend>Main menu</legend>
             <p id="menu-label-hint" hidden>Optional label</p>
             <p data-menu-field-target="empty">No entries</p>

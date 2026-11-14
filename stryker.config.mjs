@@ -1,26 +1,26 @@
+import path from 'node:path';
+
 /**
  * Mutation testing of the frontend (`npm run mutation:js`), the JavaScript
- * counterpart of Infection: it mutates the modules node:test covers and
- * fails below the same 80 % score, ignoring nothing.
+ * counterpart of Infection: it mutates every module under assets/ but the
+ * vendored packages, and fails below the same 80 % score, ignoring nothing.
  *
- * Only what the unit tests reach is mutated. Stimulus controllers are left
- * to the browser suite, too slow to run once per mutant; logic grows into
- * this scope as it moves out of them into modules of its own.
+ * The node:test suites reach all of it: pure modules directly, Stimulus
+ * controllers mounted on happy-dom (tests/Unit/support/dom.js). The browser
+ * suite only checks the wiring in Chromium, too slow to run once per mutant.
  */
+
+// Every test file is a Node process of its own, once per mutant: compiled
+// once, the editor and the DOM load faster in each of them.
+process.env.NODE_COMPILE_CACHE ??= path.resolve('var/node-compile-cache');
+
 export default {
     testRunner: 'tap',
     tap: {
         testFiles: ['tests/Unit/**/*.test.js'],
     },
-    mutate: [
-        'assets/shared/**/*.js',
-        'assets/image/**/*.js',
-        'assets/form/**/*.js',
-        'assets/rich_text/block_movement.js',
-        'assets/rich_text/block_menu.js',
-        'assets/rich_text/outline.js',
-        'assets/rich_text/pages.js',
-    ],
+    // The vendored packages stay out of the sandbox, so out of this too.
+    mutate: ['assets/**/*.js'],
     coverageAnalysis: 'perTest',
     thresholds: { high: 90, low: 80, break: 80 },
     reporters: ['clear-text', 'progress', 'html'],

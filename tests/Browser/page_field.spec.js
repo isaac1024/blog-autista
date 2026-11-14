@@ -1,4 +1,4 @@
-import { pageField } from './fixtures/page_field.js';
+import { pageField } from '../Markup/page_field.js';
 import { expect, loadController, test } from './support/test.js';
 
 const PAGE = {

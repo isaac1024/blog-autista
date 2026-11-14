@@ -46,12 +46,8 @@ export default class extends BaseController {
      */
     snapshot() {
         const form = document.getElementById(this.formValue);
-
-        if (!(form instanceof HTMLFormElement)) {
-            return '';
-        }
-
-        const fields = [...new FormData(form)].map(([name, value]) => [name, String(value)]);
+        // Without the form there is nothing to save.
+        const fields = form instanceof HTMLFormElement ? [...new FormData(form)].map(([name, value]) => [name, String(value)]) : [];
 
         return new URLSearchParams(fields).toString();
     }

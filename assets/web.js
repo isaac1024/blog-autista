@@ -11,7 +11,8 @@
 const script = document.querySelector('script[data-page][data-visit]');
 
 if (script instanceof HTMLScriptElement) {
-    const { page = '', visit = '' } = script.dataset;
+    // The script was found by both of them.
+    const { page, visit } = /** @type {{page: string, visit: string}} */ (script.dataset);
     let sent = false;
 
     const send = () => {

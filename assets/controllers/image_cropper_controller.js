@@ -17,14 +17,20 @@ const PREVIEW_WIDTH = 480;
  */
 
 /**
+ * The image being cropped: decoded, framed for the output, and the crop of it.
+ *
+ * @typedef {object} Cropping
+ * @property {ImageBitmap} bitmap
+ * @property {Frame} frame
+ * @property {Crop} crop
+ */
+
+/**
  * @typedef {object} Properties
- * @property {HTMLFormElement|null} form
- * @property {number} [loadRequest]
- * @property {ImageBitmap|null} bitmap
+ * @property {object} [loadRequest]
+ * @property {Cropping|null} cropping
  * @property {string|null} url
  * @property {HTMLImageElement|null} image
- * @property {Frame|null} frame
- * @property {Crop|null} crop
  * @property {Drag|null} dragging
  * @property {number|null} [previewFrame]
  * @property {boolean} exported
@@ -49,19 +55,12 @@ const PREVIEW_WIDTH = 480;
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
 
 /**
- * The 2D context of a canvas, which a canvas only lacks once it holds another kind.
+ * The 2D context of a canvas, which a canvas only lacks once it holds
+ * another kind, and these never do.
  *
  * @param {HTMLCanvasElement} canvas
  */
-const context2d = (canvas) => {
-    const context = canvas.getContext('2d');
-
-    if (context === null) {
-        throw new Error('The canvas has no 2D context');
-    }
-
-    return context;
-};
+const context2d = (canvas) => /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
 
 /*
  * Picks the part of an image to keep, at the aspect ratio of the output, and
@@ -85,21 +84,17 @@ export default class extends BaseController {
     connect() {
         this.previewTarget.width = PREVIEW_WIDTH;
         this.previewTarget.height = Math.round(PREVIEW_WIDTH * this.heightValue / this.widthValue);
-
-        this.form = this.element.closest('form');
-        this.submit = this.submit.bind(this);
-        this.form?.addEventListener('submit', this.submit);
     }
 
     disconnect() {
-        this.form?.removeEventListener('submit', this.submit);
         this.clear();
     }
 
     async load() {
         this.clear();
         const request = this.loadRequest;
-        const file = this.sourceTarget.files?.[0];
+        // A file input always has its list of files.
+        const file = /** @type {FileList} */ (this.sourceTarget.files)[0];
 
         if (!file) {
             return;
@@ -133,7 +128,6 @@ export default class extends BaseController {
             return;
         }
 
-        this.bitmap = bitmap;
         this.url = URL.createObjectURL(file);
         // Only an image with a file is valid markup, so it exists while there is one.
         const image = document.createElement('img');
@@ -143,8 +137,8 @@ export default class extends BaseController {
         this.stageTarget.prepend(image);
         this.image = image;
 
-        this.frame = frameOf({ width: bitmap.width, height: bitmap.height }, this.output());
-        this.crop = largestCrop(this.frame);
+        const frame = frameOf({ width: bitmap.width, height: bitmap.height }, this.output());
+        this.cropping = { bitmap, frame, crop: largestCrop(frame) };
         this.editorTarget.hidden = false;
         this.update();
     }
@@ -168,14 +162,14 @@ export default class extends BaseController {
      * @param {Drag['mode']} mode
      */
     startDrag(event, mode) {
-        if (!this.crop || event.button !== 0) {
+        if (!this.cropping || event.button !== 0) {
             return;
         }
 
         event.preventDefault();
         this.areaTarget.focus({ preventScroll: true });
         this.areaTarget.setPointerCapture(event.pointerId);
-        this.dragging = { mode, x: event.clientX, y: event.clientY, crop: { ...this.crop } };
+        this.dragging = { mode, x: event.clientX, y: event.clientY, crop: { ...this.cropping.crop } };
     }
 
     /** @param {PointerEvent} event */
@@ -184,21 +178,17 @@ export default class extends BaseController {
             return;
         }
 
-        const { frame } = this.loaded();
+        const cropping = this.loaded();
         // Pointer pixels into image pixels.
-        const scale = frame.image.width / this.stageTarget.clientWidth;
+        const scale = cropping.frame.image.width / this.stageTarget.clientWidth;
         const { mode, x, y, crop } = this.dragging;
 
-        this.crop = dragged(crop, mode, { dx: (event.clientX - x) * scale, dy: (event.clientY - y) * scale }, frame);
+        cropping.crop = dragged(crop, mode, { dx: (event.clientX - x) * scale, dy: (event.clientY - y) * scale }, cropping.frame);
         this.update();
     }
 
-    /** @param {PointerEvent} event */
-    endDrag(event) {
-        if (this.dragging && this.areaTarget.hasPointerCapture(event.pointerId)) {
-            this.areaTarget.releasePointerCapture(event.pointerId);
-        }
-
+    /* The browser lets go of the pointer itself once it is up or cancelled. */
+    endDrag() {
         this.dragging = null;
     }
 
@@ -208,18 +198,18 @@ export default class extends BaseController {
      * @param {KeyboardEvent} event
      */
     nudge(event) {
-        if (!this.crop || !this.frame) {
+        if (!this.cropping) {
             return;
         }
 
-        const nudge = nudged(this.crop, event, this.frame);
+        const nudge = nudged(this.cropping.crop, event, this.cropping.frame);
 
         if (nudge === null) {
             return;
         }
 
         event.preventDefault();
-        this.crop = nudge.crop;
+        this.cropping.crop = nudge.crop;
         this.update();
 
         if (nudge.resized) {
@@ -239,9 +229,9 @@ export default class extends BaseController {
     /* Drawing. */
 
     update() {
-        const { crop, frame } = this.loaded();
-        this.crop = clamp(crop, frame);
-        const area = areaOf(this.crop, frame);
+        const cropping = this.loaded();
+        cropping.crop = clamp(cropping.crop, cropping.frame);
+        const area = areaOf(cropping.crop, cropping.frame);
         const style = this.areaTarget.style;
         style.left = `${area.left}%`;
         style.top = `${area.top}%`;
@@ -262,15 +252,16 @@ export default class extends BaseController {
         this.previewFrame = requestAnimationFrame(() => {
             this.previewFrame = null;
 
-            if (!this.bitmap || !this.crop || !this.frame) {
+            // The image was cleared meanwhile.
+            if (!this.cropping) {
                 return;
             }
 
+            const { bitmap, crop: { x, y, width }, frame } = this.cropping;
             const canvas = this.previewTarget;
             const context = context2d(canvas);
-            const { x, y, width } = this.crop;
             context.imageSmoothingQuality = 'high';
-            context.drawImage(this.bitmap, x, y, width, width / this.frame.ratio, 0, 0, canvas.width, canvas.height);
+            context.drawImage(bitmap, x, y, width, width / frame.ratio, 0, 0, canvas.width, canvas.height);
         });
     }
 
@@ -278,8 +269,10 @@ export default class extends BaseController {
 
     /** @param {SubmitEvent} event */
     async submit(event) {
+        const form = this.element.closest('form');
+
         // Without an image, the required field has already stopped the form.
-        if (!this.form || !this.crop || this.exported) {
+        if (event.target !== form || !this.cropping || this.exported) {
             return;
         }
 
@@ -312,7 +305,8 @@ export default class extends BaseController {
             files.items.add(new File([blob], 'image.webp', { type: 'image/webp' }));
             this.outputTarget.files = files.files;
             this.exported = true;
-            this.form.requestSubmit(submitter);
+            // The submission came from this very form.
+            /** @type {HTMLFormElement} */ (event.target).requestSubmit(submitter);
         } catch {
             if (request === this.loadRequest) {
                 this.fail(this.unsupportedValue);
@@ -379,13 +373,9 @@ export default class extends BaseController {
         return { width: this.widthValue, height: this.heightValue };
     }
 
-    /** The image being cropped, its frame and its crop, for the steps that only run while there is one. */
+    /** The image being cropped, for the steps that only run while there is one. */
     loaded() {
-        if (!this.bitmap || !this.crop || !this.frame) {
-            throw new Error('No image is being cropped');
-        }
-
-        return { bitmap: this.bitmap, crop: this.crop, frame: this.frame };
+        return /** @type {Cropping} */ (this.cropping);
     }
 
     /** @param {string} message */
@@ -398,19 +388,16 @@ export default class extends BaseController {
 
     clear() {
         // Invalidates any decoding or encoding that belongs to the old image.
-        this.loadRequest = (this.loadRequest ?? 0) + 1;
+        this.loadRequest = {};
 
         if (this.url) {
             URL.revokeObjectURL(this.url);
             this.url = null;
         }
 
-        this.bitmap?.close();
-        this.bitmap = null;
-        this.frame = null;
-        this.crop = null;
+        this.cropping?.bitmap.close();
+        this.cropping = null;
         this.dragging = null;
-        this.exported = false;
         this.exporting = false;
         this.outputTarget.value = '';
         this.image?.remove();

@@ -7,7 +7,7 @@ export default [
     },
     {
         ...js.configs.recommended,
-        files: ['assets/**/*.js', 'tests/Browser/**/*.js', 'tests/Unit/**/*.js', 'tools/**/*.mjs', 'stryker.config.mjs', 'playwright.config.js', 'eslint.config.js'],
+        files: ['assets/**/*.js', 'tests/Browser/**/*.js', 'tests/Markup/**/*.js', 'tests/Unit/**/*.js', 'tools/**/*.mjs', 'stryker.config.mjs', 'playwright.config.js', 'eslint.config.js'],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',

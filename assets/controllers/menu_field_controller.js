@@ -1,9 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
-import { countText } from '../shared/count_text.js';
-import { fetchJson } from '../shared/http.js';
-import { LatestRequest } from '../shared/latest_request.js';
-import { lookupAmong, lookupText } from '../shared/lookup.js';
+import { Lookups, lookupText } from '../shared/lookup.js';
+import { pageOption } from '../shared/options.js';
+import { Search } from '../shared/search.js';
 
 /** @typedef {import('./page_field_controller.js').Page} Page */
 
@@ -28,11 +27,8 @@ import { lookupAmong, lookupText } from '../shared/lookup.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {Map<string, Page>} pages
- * @property {Set<string>} missing
- * @property {Set<string>} unknown
- * @property {{page: number, count: number}} query
- * @property {LatestRequest} searches
+ * @property {Lookups<Page>} pages
+ * @property {Search<Page>} searches
  * @property {HTMLOListElement} listTarget
  * @property {HTMLLIElement[]} rowTargets
  * @property {HTMLTemplateElement} templateTarget
@@ -72,6 +68,14 @@ const field = (root, selector, type) => {
 };
 
 /**
+ * The id of the page an entry leads to: every entry carries one, empty in
+ * the template.
+ *
+ * @param {HTMLLIElement} row
+ */
+const pageIdOf = (row) => /** @type {string} */ (row.dataset.pageId);
+
+/**
  * @param {Event} event
  * @returns {HTMLLIElement|null}
  */
@@ -85,7 +89,7 @@ const eventRow = (event) => event.target instanceof Element ? event.target.close
  * posts them in order.
  */
 export default class extends BaseController {
-    static targets = ['list', 'row', 'template', 'empty', 'add', 'full', 'dialog', 'search', 'searchStatus', 'results', 'more', 'status', 'pageTitle', 'pageStatus'];
+    static targets = ['list', 'row', 'template', 'empty', 'add', 'full', 'dialog', 'search', 'searchStatus', 'results', 'more', 'status'];
 
     static values = {
         name: String,
@@ -97,14 +101,20 @@ export default class extends BaseController {
 
     connect() {
         this.abortController = new AbortController();
-        this.pages = new Map();
-        this.missing = new Set();
-        this.unknown = new Set();
-        this.query = { page: 1, count: 0 };
-        this.searches = new LatestRequest(this.abortController.signal);
+        const owner = this.abortController.signal;
+        this.pages = /** @type {Lookups<Page>} */ (new Lookups(new URL(this.lookupUrlValue, window.location.href), 'pages', owner, () => this.refresh()));
+        this.searches = new Search({
+            url: new URL(this.searchUrlValue, window.location.href),
+            param: 'title',
+            key: 'pages',
+            owner,
+            view: () => ({ input: this.searchTarget, results: this.resultsTarget, status: this.searchStatusTarget, more: this.moreTarget }),
+            labels: () => this.labelsValue,
+            row: (page) => pageOption(page, () => this.add(page), this.labelsValue.offSite),
+        });
         this.addTarget.hidden = false;
         this.refresh();
-        this.lookUp(this.rowTargets.map((row) => row.dataset.pageId ?? ''));
+        this.pages.ask(this.rowTargets.map(pageIdOf));
     }
 
     disconnect() {
@@ -142,7 +152,7 @@ export default class extends BaseController {
         }
 
         const next = row.nextElementSibling ?? row.previousElementSibling;
-        const title = this.titleOf(row.dataset.pageId ?? '');
+        const title = this.titleOf(pageIdOf(row));
         row.remove();
         this.refresh();
         this.announce(this.labelsValue.removed.replace('%title%', title));
@@ -163,7 +173,7 @@ export default class extends BaseController {
             return;
         }
 
-        this.pages.set(page.id, page);
+        this.pages.know(page);
         const template = this.templateTarget.content.firstElementChild;
 
         if (!(template instanceof HTMLLIElement)) {
@@ -190,7 +200,7 @@ export default class extends BaseController {
      */
     changed(row, direction, message) {
         this.refresh();
-        this.announce(message.replace('%title%', this.titleOf(row.dataset.pageId ?? '')));
+        this.announce(message.replace('%title%', this.titleOf(pageIdOf(row))));
         const button = field(row, `[data-field="${direction}"]`, HTMLButtonElement);
         const other = field(row, `[data-field="${direction === 'up' ? 'down' : 'up'}"]`, HTMLButtonElement);
         (button.getAttribute('aria-disabled') === 'true' ? other : button).focus();
@@ -231,7 +241,7 @@ export default class extends BaseController {
 
     /** @param {HTMLLIElement} row */
     drawPage(row) {
-        const lookup = lookupAmong(row.dataset.pageId ?? '', { found: this.pages, missing: this.missing, unknown: this.unknown });
+        const lookup = this.pages.of(pageIdOf(row));
         const { name, standing } = lookupText(lookup, (page) => page.title, this.labelsValue);
 
         field(row, '[data-menu-field-target="pageTitle"]', HTMLElement).textContent = name;
@@ -245,44 +255,9 @@ export default class extends BaseController {
 
     /** @param {string} id */
     titleOf(id) {
-        return this.pages.get(id)?.title ?? '';
-    }
+        const lookup = this.pages.of(id);
 
-    /* Pages: looked up by id, to name the entries. */
-
-    /** @param {string[]} ids */
-    async lookUp(ids) {
-        if (ids.length === 0) {
-            return;
-        }
-
-        const { signal } = this.abortController;
-
-        const url = new URL(this.lookupUrlValue, window.location.href);
-        url.searchParams.set('ids', ids.join(','));
-
-        /** @type {Page[]|null} */
-        let found = null;
-
-        try {
-            found = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages;
-        } catch {
-            // Told on each entry below: the pages may well exist.
-        }
-
-        // The menu was disconnected meanwhile: this answer is for no one.
-        if (signal.aborted) {
-            return;
-        }
-
-        if (found === null) {
-            ids.forEach((id) => this.unknown.add(id));
-        } else {
-            found.forEach((page) => this.pages.set(page.id, page));
-            ids.filter((id) => !this.pages.has(id)).forEach((id) => this.missing.add(id));
-        }
-
-        this.refresh();
+        return lookup.state === 'found' ? lookup.value.title : '';
     }
 
     /* Search */
@@ -300,81 +275,11 @@ export default class extends BaseController {
     /** @param {Event} [event] */
     search(event) {
         event?.preventDefault();
-        this.query.page = 1;
-        this.query.count = 0;
-        this.resultsTarget.replaceChildren();
-        this.load();
+        this.searches.first();
     }
 
     more() {
-        this.query.page += 1;
-        this.load();
-    }
-
-    async load() {
-        const signal = this.searches.next();
-        const url = new URL(this.searchUrlValue, window.location.href);
-        url.searchParams.set('title', this.searchTarget.value);
-        url.searchParams.set('page', String(this.query.page));
-        this.moreTarget.hidden = true;
-        /** @type {{pages: Page[], more: boolean}|null} */
-        let result = null;
-
-        try {
-            result = /** @type {{pages: Page[], more: boolean}} */ (await fetchJson(url, signal));
-        } catch {
-            // Told below, like an answer that isn't ok.
-        }
-
-        // A newer search went out, or the menu was disconnected meanwhile.
-        if (signal.aborted) {
-            return;
-        }
-
-        if (result === null) {
-            this.searchStatusTarget.textContent = this.labelsValue.error;
-
-            return;
-        }
-
-        const first = this.resultsTarget.children.length;
-        this.resultsTarget.append(...result.pages.map((page) => this.result(page)));
-        this.query.count += result.pages.length;
-        this.moreTarget.hidden = !result.more;
-
-        this.searchStatusTarget.textContent = countText(this.query.count, this.labelsValue);
-
-        if (this.query.page > 1) {
-            this.resultsTarget.children[first]?.querySelector('button')?.focus();
-        }
-    }
-
-    /**
-     * One page to add: the whole row is its button, named by its title and status.
-     *
-     * @param {Page} page
-     */
-    result(page) {
-        const item = document.createElement('li');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'rich-text-page-option';
-        button.addEventListener('click', () => this.add(page));
-
-        const text = document.createElement('span');
-        text.className = 'rich-text-page-option-text';
-        const title = document.createElement('span');
-        title.className = 'font-bold';
-        title.textContent = page.title;
-        const status = document.createElement('span');
-        status.className = 'rich-text-page-status';
-        status.textContent = page.status;
-        text.append(title, status);
-
-        button.append(text);
-        item.append(button);
-
-        return item;
+        this.searches.next();
     }
 
     /* Announcements */

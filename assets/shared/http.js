@@ -15,3 +15,19 @@ export async function fetchJson(url, signal) {
 
     return response.json();
 }
+
+/**
+ * The decoded answer of a JSON endpoint, or null when there is none: a
+ * network failure, an HTTP error and an aborted request alike.
+ *
+ * @param {URL} url
+ * @param {AbortSignal} signal
+ * @returns {Promise<unknown>}
+ */
+export async function answerOf(url, signal) {
+    try {
+        return await fetchJson(url, signal);
+    } catch {
+        return null;
+    }
+}

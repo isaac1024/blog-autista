@@ -2,7 +2,7 @@
     The file chosen has no name, so the form never sends it: on submit, the
     controller puts the crop in the hidden field, which does.
 #}
-<div class="grid gap-4" data-controller="image-cropper" data-image-cropper-width-value="{{ width }}" data-image-cropper-height-value="{{ height }}" data-image-cropper-quality-value="{{ quality }}" data-image-cropper-too-small-value="{{ 'ui.cropper.too_small'|trans({'%width%': width, '%height%': height}) }}" data-image-cropper-unreadable-value="{{ 'ui.cropper.unreadable'|trans }}" data-image-cropper-unsupported-value="{{ 'ui.cropper.unsupported'|trans }}" data-image-cropper-size-text-value="{{ 'ui.cropper.size_text'|trans }}">
+<div class="grid gap-4" data-controller="image-cropper" data-action="submit@document->image-cropper#submit" data-image-cropper-width-value="{{ width }}" data-image-cropper-height-value="{{ height }}" data-image-cropper-quality-value="{{ quality }}" data-image-cropper-too-small-value="{{ 'ui.cropper.too_small'|trans({'%width%': width, '%height%': height}) }}" data-image-cropper-unreadable-value="{{ 'ui.cropper.unreadable'|trans }}" data-image-cropper-unsupported-value="{{ 'ui.cropper.unsupported'|trans }}" data-image-cropper-size-text-value="{{ 'ui.cropper.size_text'|trans }}">
     <div class="grid gap-2">
         <label class="text-[1rem] font-bold" for="{{ id }}">{{ label }}</label>
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ 'ui.cropper.hint'|trans({'%width%': width, '%height%': height}) }}</p>

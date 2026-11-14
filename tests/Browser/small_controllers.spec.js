@@ -1,4 +1,4 @@
-import { characterCount, copyField, searchPreview, singleLine, unsavedChanges } from './fixtures/small_controllers.js';
+import { characterCount, copyField, searchPreview, singleLine, unsavedChanges } from '../Markup/small_controllers.js';
 import { expect, loadController, test } from './support/test.js';
 
 test.describe('character count', () => {

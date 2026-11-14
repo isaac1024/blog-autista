@@ -11,6 +11,7 @@ import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { BlockMover } from '../rich_text/block_mover.js';
+import { ControlsShortcut } from '../rich_text/controls_shortcut.js';
 import { movedMessage, onHeading } from '../rich_text/block_movement.js';
 import { currentKind, matches, menuAction, menuPosition } from '../rich_text/block_menu.js';
 import { linkTarget, pageIdsIn, pageStateOf } from '../rich_text/pages.js';
@@ -18,15 +19,14 @@ import { maxLengthMessage } from '../form/character_count.js';
 import { currentSection, sectionsOf } from '../rich_text/outline.js';
 import { EmbeddedImage } from '../rich_text/embedded_image.js';
 import { Widget } from '../rich_text/widget.js';
-import { PageLink, pageLinksKey } from '../rich_text/page_link.js';
+import { PageLink } from '../rich_text/page_link.js';
 import { Callout } from '../rich_text/callout.js';
 import { QuoteSource } from '../rich_text/quote_source.js';
 import { SlashMenu } from '../rich_text/slash_menu.js';
 import { notifyForm } from '../shared/forms.js';
-import { countText } from '../shared/count_text.js';
-import { fetchJson } from '../shared/http.js';
-import { LatestRequest } from '../shared/latest_request.js';
-import { LOADING, MISSING, UNKNOWN, found, lookupAmong } from '../shared/lookup.js';
+import { Lookups, MISSING } from '../shared/lookup.js';
+import { imageOption, pageOption } from '../shared/options.js';
+import { Search } from '../shared/search.js';
 
 /*
  * Mounts the Tiptap editor of the Shared:RichTextEditor component.
@@ -92,7 +92,6 @@ import { LOADING, MISSING, UNKNOWN, found, lookupAmong } from '../shared/lookup.
 
 /** @typedef {{value: string, label: string}} BlockOption */
 
-/** @typedef {import('../rich_text/outline.js').Section} Section */
 
 /**
  * The menu of kinds of block: opened from its button, which keeps the focus,
@@ -107,22 +106,15 @@ import { LOADING, MISSING, UNKNOWN, found, lookupAmong } from '../shared/lookup.
  * @property {AbortController} abortController
  * @property {Editor} editor
  * @property {Menu|null} menu
- * @property {((event: Event) => void)|null} dismiss
- * @property {Map<string, Image>} images
- * @property {boolean} imagesLookedUp
- * @property {Set<string>} unknownImages
+ * @property {AbortController|null} menuWatch
+ * @property {Lookups<Image>} images
  * @property {Set<() => void>} imageViews
- * @property {LatestRequest} imageSearches
- * @property {Map<string, Page>} pages
- * @property {Set<string>} missingPages
- * @property {Set<string>} pagesLookingUp
- * @property {Set<string>} pagesUnknown
- * @property {{from: number, to: number}|null} linkRange
+ * @property {Search<Image>} imageSearch
+ * @property {Lookups<Page>} pages
+ * @property {{from: number, to: number}} [linkRange]
  * @property {'link'|'widget'} pagePurpose
  * @property {Set<() => void>} widgetViews
- * @property {{page: number, count: number}} pageSearch
- * @property {LatestRequest} pageSearches
- * @property {Section[]} [sections]
+ * @property {Search<Page>} pageSearch
  * @property {HTMLElement} frameTarget
  * @property {HTMLElement} canvasTarget
  * @property {HTMLElement} editorTarget
@@ -269,29 +261,35 @@ export default class extends BaseController {
 
     connect() {
         this.abortController = new AbortController();
+        const owner = this.abortController.signal;
+        /** @param {string} url */
+        const endpoint = (url) => new URL(url, window.location.href);
         this.menu = null;
-        this.dismiss = null;
-        // What the CMS knows of each image embedded or picked, by id.
-        this.images = new Map();
-        this.imagesLookedUp = false;
-        // The ids of the images whose lookup failed.
-        this.unknownImages = new Set();
+        this.menuWatch = null;
+        // What the CMS knows of each image and page the text cites or the editor picked.
+        this.images = /** @type {Lookups<Image>} */ (new Lookups(endpoint(this.imageLookupUrlValue), 'images', owner, () => this.drawImages()));
+        this.pages = /** @type {Lookups<Page>} */ (new Lookups(endpoint(this.pageLookupUrlValue), 'pages', owner, () => this.redrawPageLinks()));
         this.imageViews = new Set();
-        // What the CMS knows of each page linked or picked, by id; the ids
-        // looked up and found to be of no page; those being looked up; and
-        // those whose lookup failed.
-        this.pages = new Map();
-        this.missingPages = new Set();
-        this.pagesLookingUp = new Set();
-        this.pagesUnknown = new Set();
-        this.linkRange = null;
-        // What the page dialog picks a page for: 'link' or 'widget'.
-        this.pagePurpose = 'link';
         this.widgetViews = new Set();
-        // Each search outdates the ones before: only the latest is shown.
-        this.pageSearch = { page: 1, count: 0 };
-        this.pageSearches = new LatestRequest(this.abortController.signal);
-        this.imageSearches = new LatestRequest(this.abortController.signal);
+        this.imageSearch = new Search({
+            url: endpoint(this.imageSearchUrlValue),
+            param: 'alt',
+            key: 'images',
+            owner,
+            view: () => ({ input: this.imageSearchTarget, results: this.imageResultsTarget, status: this.imageStatusTarget, more: null }),
+            labels: () => this.imageLabelsValue,
+            row: (image) => imageOption(image, () => this.embedImage(image)),
+        });
+        this.pageSearch = new Search({
+            url: endpoint(this.pageSearchUrlValue),
+            param: 'title',
+            key: 'pages',
+            owner,
+            view: () => ({ input: this.pageSearchTarget, results: this.pageResultsTarget, status: this.pageStatusTarget, more: this.pageMoreTarget }),
+            // Widgets have no words of their own for no pages found, nor for a failed search.
+            labels: () => ({ ...this.pagePurposeLabels(), none: this.pageLabelsValue.none, error: this.pageLabelsValue.error }),
+            row: (page) => pageOption(page, () => this.pickPage(page), this.pagePurposeLabels().offSite),
+        });
         this.editor = new Editor({
             element: this.editorTarget,
             // The base styles come from the stylesheets the CMS links and app.css: an injected <style> breaks the content security policy.
@@ -318,11 +316,11 @@ export default class extends BaseController {
                 notifyForm(this.inputTarget);
                 this.refreshOutline();
                 this.refreshCount();
-                // Text pasted or brought back by undo may link pages not looked up yet.
-                this.lookUpPages();
+                // Text pasted or brought back by undo may cite images or pages not looked up yet.
+                this.lookUp();
             },
+            // Focusing the text is a transaction too.
             onTransaction: () => this.refreshControls(),
-            onFocus: () => this.refreshControls(),
         });
 
         this.frameTarget.hidden = false;
@@ -330,56 +328,26 @@ export default class extends BaseController {
         this.refreshOutline();
         this.refreshControls();
         this.refreshCount();
-        this.lookUpImages();
-        this.lookUpPages();
+        this.lookUp();
     }
 
-    /* Images: embedded by id, shown as the CMS knows them now. */
-
-    /** Looks up every image the document embeds, then draws them. */
-    async lookUpImages() {
-        if (!this.hasImageLookupUrlValue) {
-            return;
-        }
-
+    /** Looks up the images and the pages the text cites that the editor doesn't know yet. */
+    lookUp() {
+        // Without the lookups, the editor takes no images, links nor widgets, so there are none to look up.
         /** @type {string[]} */
-        const ids = [];
+        const images = [];
 
         this.editor.state.doc.descendants((node) => {
             if (node.type.name === 'image' && node.attrs.id) {
-                ids.push(node.attrs.id);
+                images.push(node.attrs.id);
             }
         });
 
-        if (ids.length > 0) {
-            const { signal } = this.abortController;
-            const url = new URL(this.imageLookupUrlValue, window.location.href);
-            url.searchParams.set('ids', ids.join(','));
-            /** @type {Image[]|null} */
-            let images = null;
-
-            try {
-                images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
-            } catch {
-                // Told as unknown below: the images may well exist.
-            }
-
-            if (signal.aborted) {
-                return;
-            }
-
-            if (images === null) {
-                ids.forEach((id) => this.unknownImages.add(id));
-            } else {
-                for (const image of images) {
-                    this.images.set(image.id, image);
-                }
-            }
-        }
-
-        this.imagesLookedUp = true;
-        this.drawImages();
+        this.images.ask(images);
+        this.pages.ask(pageIdsIn(this.editor.state.doc));
     }
+
+    /* Images: embedded by id, shown as the CMS knows them now. */
 
     /**
      * What the CMS knows of an image the text embeds.
@@ -388,18 +356,8 @@ export default class extends BaseController {
      * @returns {import('../shared/lookup.js').Lookup<Image>}
      */
     describeImage(id) {
-        const image = this.images.get(id);
-
-        if (image !== undefined) {
-            return found(image);
-        }
-
-        if (this.unknownImages.has(id)) {
-            return UNKNOWN;
-        }
-
-        // Once the images embedded are looked up, one not found is no image at all.
-        return this.imagesLookedUp ? MISSING : LOADING;
+        // An image without an id is of no image at all.
+        return id ? this.images.of(id) : MISSING;
     }
 
     drawImages() {
@@ -415,128 +373,20 @@ export default class extends BaseController {
     }
 
     /** @param {Event} [event] */
-    async searchImages(event) {
+    searchImages(event) {
         event?.preventDefault();
-
-        const signal = this.imageSearches.next();
-        const url = new URL(this.imageSearchUrlValue, window.location.href);
-        url.searchParams.set('alt', this.imageSearchTarget.value);
-        /** @type {Image[]|null} */
-        let images = null;
-
-        try {
-            images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
-        } catch {
-            // Told below, like an answer that isn't ok.
-        }
-
-        // A newer search went out, or the editor was disconnected meanwhile.
-        if (signal.aborted) {
-            return;
-        }
-
-        if (images === null) {
-            this.imageStatusTarget.textContent = this.imageLabelsValue.error;
-
-            return;
-        }
-
-        this.imageResultsTarget.replaceChildren(...images.map((image) => this.imageResult(image)));
-        this.imageStatusTarget.textContent = countText(images.length, this.imageLabelsValue);
-    }
-
-    /**
-     * One image to pick: the whole row is its button, named by its text and status.
-     *
-     * @param {Image} image
-     */
-    imageResult(image) {
-        const item = document.createElement('li');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'rich-text-image-option';
-        button.addEventListener('click', () => this.embedImage(image));
-
-        const thumbnail = document.createElement('img');
-        thumbnail.src = image.thumbnail;
-        thumbnail.alt = '';
-        thumbnail.width = 112;
-        thumbnail.height = 63;
-        thumbnail.loading = 'lazy';
-
-        const text = document.createElement('span');
-        text.className = 'rich-text-image-option-text';
-        const alt = document.createElement('span');
-        alt.className = 'font-bold';
-        alt.textContent = image.alt;
-        const status = document.createElement('span');
-        status.className = 'rich-text-image-status';
-        status.textContent = image.status;
-        text.append(alt, status);
-
-        button.append(thumbnail, text);
-        item.append(button);
-
-        return item;
+        this.imageSearch.first();
     }
 
     /** @param {Image} image */
     embedImage(image) {
-        this.images.set(image.id, image);
+        this.images.know(image);
         this.imageDialogTarget.close();
+        // Known now, the image is drawn as it is inserted.
         this.editor.chain().focus().insertContent({ type: 'image', attrs: { id: image.id } }).run();
-        this.drawImages();
     }
 
     /* Page links: applied to the selected text, with their targets looked up by id. */
-
-    /** Looks up the pages the document links to, or shows in widgets, that the editor doesn't know yet. */
-    async lookUpPages() {
-        if (!this.hasPageLookupUrlValue) {
-            return;
-        }
-
-        // The pages cited that no lookup has answered for, nor is asking about.
-        const ids = new Set(pageIdsIn(this.editor.state.doc).filter((id) => this.pageState(id) === 'loading' && !this.pagesLookingUp.has(id)));
-
-        if (ids.size === 0) {
-            return;
-        }
-
-        ids.forEach((id) => this.pagesLookingUp.add(id));
-        const { signal } = this.abortController;
-        const url = new URL(this.pageLookupUrlValue, window.location.href);
-        url.searchParams.set('ids', [...ids].join(','));
-        /** @type {Page[]|null} */
-        let found = null;
-
-        try {
-            found = (/** @type {{pages: Page[]}} */ (await fetchJson(url, signal))).pages;
-        } catch {
-            // Told as unknown below: the page may well exist.
-        }
-
-        if (signal.aborted) {
-            return;
-        }
-
-        for (const id of ids) {
-            this.pagesLookingUp.delete(id);
-        }
-
-        if (found === null) {
-            ids.forEach((id) => this.pagesUnknown.add(id));
-        } else {
-            for (const page of found) {
-                this.pages.set(page.id, page);
-                ids.delete(page.id);
-            }
-
-            ids.forEach((id) => this.missingPages.add(id));
-        }
-
-        this.redrawPageLinks();
-    }
 
     /**
      * How the page of a link stands, as far as the editor knows.
@@ -545,16 +395,7 @@ export default class extends BaseController {
      * @returns {PageState}
      */
     pageState(id) {
-        return pageStateOf(this.pageLookup(id));
-    }
-
-    /**
-     * What the lookups so far know of a page.
-     *
-     * @param {string} id
-     */
-    pageLookup(id) {
-        return lookupAmong(id, { found: this.pages, missing: this.missingPages, unknown: this.pagesUnknown });
+        return pageStateOf(this.pages.of(id));
     }
 
     /**
@@ -563,48 +404,30 @@ export default class extends BaseController {
      * @param {string} id
      */
     describePage(id) {
-        return linkTarget(this.pageLookup(id), this.pageLabelsValue);
-    }
-
-    /**
-     * How the page of a widget stands, and the page itself once known.
-     *
-     * @param {string} id
-     */
-    describeWidget(id) {
-        return { state: this.pageState(id), page: this.pages.get(id) };
+        return linkTarget(this.pages.of(id), this.pageLabelsValue);
     }
 
     /** Redraws the widgets, the decorations of the links, and the tools of the one under the cursor. */
     redrawPageLinks() {
-        if (this.editor.isDestroyed) {
-            return;
-        }
-
         for (const draw of this.widgetViews) {
             draw();
         }
 
         // A transaction that changes nothing but redraws, which also refreshes the controls.
-        this.editor.view.dispatch(this.editor.state.tr.setMeta(pageLinksKey, true).setMeta('addToHistory', false));
+        // With no steps, the history leaves it out.
+        this.editor.view.dispatch(this.editor.state.tr);
     }
 
     /**
      * Picks a page to link the selected text to, or, for 'widget', to show in a new widget.
      *
-     * @param {'link'|'widget'} [purpose]
+     * @param {'link'|'widget'} purpose
      */
-    openPageDialog(purpose = 'link') {
-        if (purpose === 'link') {
-            const { selection } = this.editor.state;
-
-            if (!(selection instanceof TextSelection) || selection.empty) {
-                return;
-            }
-
-            // The dialog takes the focus; the range keeps the selected text intact.
-            this.linkRange = { from: selection.from, to: selection.to };
-        }
+    openPageDialog(purpose) {
+        // The dialog takes the focus; the range keeps the selected text intact.
+        // A link is only offered with text selected.
+        const { from, to } = this.editor.state.selection;
+        this.linkRange = { from, to };
 
         this.pagePurpose = purpose;
         this.pageDialogTitleTarget.textContent = this.pagePurposeLabels().title;
@@ -620,112 +443,37 @@ export default class extends BaseController {
      */
     searchPages(event) {
         event?.preventDefault();
-        this.pageSearch.page = 1;
-        this.pageSearch.count = 0;
-        this.pageResultsTarget.replaceChildren();
-        this.loadPages();
+        this.pageSearch.first();
     }
 
     /** Adds the next pages of results to those listed. */
     morePages() {
-        this.pageSearch.page += 1;
-        this.loadPages();
-    }
-
-    async loadPages() {
-        const signal = this.pageSearches.next();
-        const url = new URL(this.pageSearchUrlValue, window.location.href);
-        url.searchParams.set('title', this.pageSearchTarget.value);
-        url.searchParams.set('page', String(this.pageSearch.page));
-        this.pageMoreTarget.hidden = true;
-        /** @type {{pages: Page[], more: boolean}|null} */
-        let result = null;
-
-        try {
-            result = /** @type {{pages: Page[], more: boolean}} */ (await fetchJson(url, signal));
-        } catch {
-            // Told below, like an answer that isn't ok.
-        }
-
-        // A newer search went out, or the editor was disconnected meanwhile.
-        if (signal.aborted) {
-            return;
-        }
-
-        if (result === null) {
-            this.pageStatusTarget.textContent = this.pageLabelsValue.error;
-
-            return;
-        }
-
-        const first = this.pageResultsTarget.children.length;
-        this.pageResultsTarget.append(...result.pages.map((page) => this.pageResult(page)));
-        this.pageSearch.count += result.pages.length;
-        this.pageMoreTarget.hidden = !result.more;
-
-        // Widgets have no words of their own for no pages found.
-        const { result: one, results } = this.pagePurposeLabels();
-        this.pageStatusTarget.textContent = countText(this.pageSearch.count, { none: this.pageLabelsValue.none, result: one, results });
-
-        // Past the first pages, the focus goes to the first page added, not back to the top.
-        if (this.pageSearch.page > 1) {
-            this.pageResultsTarget.children[first]?.querySelector('button')?.focus();
-        }
-    }
-
-    /**
-     * One page to pick: the whole row is its button, named by its title and status.
-     *
-     * @param {Page} page
-     */
-    pageResult(page) {
-        const item = document.createElement('li');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'rich-text-page-option';
-        button.addEventListener('click', () => (this.pagePurpose === 'widget' ? this.embedWidget(page) : this.linkPage(page)));
-
-        const text = document.createElement('span');
-        text.className = 'rich-text-page-option-text';
-        const title = document.createElement('span');
-        title.className = 'font-bold';
-        title.textContent = page.title;
-        const status = document.createElement('span');
-        status.className = 'rich-text-page-status';
-        status.textContent = page.status;
-        text.append(title, status);
-
-        if (!page.published) {
-            const offSite = document.createElement('span');
-            offSite.className = 'rich-text-page-note';
-            offSite.textContent = this.pagePurposeLabels().offSite;
-            text.append(offSite);
-        }
-
-        button.append(text);
-        item.append(button);
-
-        return item;
+        this.pageSearch.next();
     }
 
     /** @param {Page} page */
     linkPage(page) {
-        if (this.linkRange === null) {
-            return;
-        }
-
-        this.pages.set(page.id, page);
-        this.missingPages.delete(page.id);
-        this.pagesUnknown.delete(page.id);
+        // Known now, the page stands as found wherever else it is cited.
+        this.pages.know(page);
         this.pageDialogTarget.close();
-        this.editor.chain().focus().setTextSelection(this.linkRange).setMark('link', { id: page.id }).run();
-        this.linkRange = null;
+        // The dialog was opened for the selected text, which it kept.
+        const range = /** @type {{from: number, to: number}} */ (this.linkRange);
+        this.editor.chain().focus().setTextSelection(range).setMark('link', { id: page.id }).run();
         this.redrawPageLinks();
     }
 
     /** The labels of the dialog that depend on what it picks a page for. */
     pagePurposeLabels() {
-        return this.pagePurpose === 'widget' ? this.widgetLabelsValue : this.pageLabelsValue;
+        return { link: this.pageLabelsValue, widget: this.widgetLabelsValue }[this.pagePurpose];
+    }
+
+    /**
+     * Does with the page picked what the dialog was opened for.
+     *
+     * @param {Page} page
+     */
+    pickPage(page) {
+        ({ link: () => this.linkPage(page), widget: () => this.embedWidget(page) })[this.pagePurpose]();
     }
 
     /**
@@ -734,9 +482,7 @@ export default class extends BaseController {
      * @param {Page} page
      */
     embedWidget(page) {
-        this.pages.set(page.id, page);
-        this.missingPages.delete(page.id);
-        this.pagesUnknown.delete(page.id);
+        this.pages.know(page);
         this.pageDialogTarget.close();
         this.editor.chain().focus().insertContent({ type: 'widget', attrs: { kind: 'related_page', id: page.id } }).run();
         this.redrawPageLinks();
@@ -767,7 +513,7 @@ export default class extends BaseController {
     disconnect() {
         this.abortController.abort();
         this.closeMenu();
-        this.editor?.destroy();
+        this.editor.destroy();
     }
 
     /**
@@ -783,7 +529,8 @@ export default class extends BaseController {
     /** @param {Event} event */
     run(event) {
         const button = /** @type {HTMLElement} */ (event.currentTarget);
-        const command = button.dataset.command ?? '';
+        // Every control names its command.
+        const command = /** @type {string} */ (button.dataset.command);
 
         if (button.getAttribute('aria-disabled') === 'true') {
             return;
@@ -807,7 +554,7 @@ export default class extends BaseController {
 
         // A link starts by picking its page, and only wraps selected text.
         if (command === 'insertLink') {
-            this.openPageDialog();
+            this.openPageDialog('link');
 
             return;
         }
@@ -815,7 +562,7 @@ export default class extends BaseController {
         // Another page for the whole link under the cursor, whatever is selected.
         if (command === 'changeLink') {
             this.editor.chain().focus().extendMarkRange('link').run();
-            this.openPageDialog();
+            this.openPageDialog('link');
 
             return;
         }
@@ -847,7 +594,7 @@ export default class extends BaseController {
         const section = onHeading(this.editor.state);
 
         for (const button of this.buttonTargets) {
-            const command = button.dataset.command ?? '';
+            const command = /** @type {string} */ (button.dataset.command);
             const pressed = command in ACTIVE && ACTIVE[command](this.editor);
 
             if (button.hasAttribute('aria-pressed')) {
@@ -857,8 +604,11 @@ export default class extends BaseController {
             // A toggle that is on stays available, so it reads as on, not as unavailable.
             button.setAttribute('aria-disabled', String(!pressed && !this.can(command)));
 
-            if (button.dataset.sectionLabel) {
-                this.rename(button, (section ? button.dataset.sectionLabel : button.dataset.label) ?? '');
+            // The controls that move a block move its section from a heading, and say so.
+            const { label, sectionLabel } = button.dataset;
+
+            if (sectionLabel !== undefined) {
+                this.rename(button, section ? sectionLabel : /** @type {string} */ (label));
             }
         }
 
@@ -882,10 +632,7 @@ export default class extends BaseController {
         if (this.hasLinkToolsTarget) {
             const inLink = this.editor.isActive('link');
             this.linkToolsTarget.hidden = !inLink;
-
-            if (inLink) {
-                this.linkTargetTarget.textContent = this.describePage(this.editor.getAttributes('link').id);
-            }
+            this.linkTargetTarget.textContent = inLink ? this.describePage(this.editor.getAttributes('link').id) : '';
         }
 
         this.markCurrentSection();
@@ -917,10 +664,10 @@ export default class extends BaseController {
         }
     }
 
-    /** Alt+F10: the first control of the dock, the kind of the current block when there is one. */
+    /** Alt+F10: the first control of the dock, the kind of the current block when there is one. Undo is always there. */
     focusControls() {
         this.dockTarget.hidden = false;
-        (this.hasBlockTypeTarget ? this.blockTypeTarget : this.buttonTargets[0])?.focus();
+        (this.hasBlockTypeTarget ? this.blockTypeTarget : this.buttonTargets[0]).focus();
     }
 
     /**
@@ -952,7 +699,7 @@ export default class extends BaseController {
 
             return selection instanceof TextSelection
                 && !selection.empty
-                && this.editor.can().setMark('link', { id: 'page' });
+                && this.editor.can().setMark('link');
         }
 
         // Images and widgets go between blocks, never inside a table.
@@ -1017,33 +764,20 @@ export default class extends BaseController {
             return;
         }
 
+        // These are picked first, in their dialogs.
         if (block === 'image') {
-            chain.run();
             this.openImageDialog();
 
             return;
         }
 
         if (block === 'widget') {
-            chain.run();
             this.openPageDialog('widget');
 
             return;
         }
 
-        // Every kind starts from a plain paragraph, out of whatever wraps it.
-        if (this.editor.isActive('bulletList')) {
-            chain = chain.toggleBulletList();
-        } else if (this.editor.isActive('orderedList')) {
-            chain = chain.toggleOrderedList();
-        }
-
-        for (const wrapper of ['blockquote', 'callout']) {
-            if (this.editor.isActive(wrapper)) {
-                chain = chain.lift(wrapper);
-            }
-        }
-
+        // Every kind starts from a plain paragraph: what is wrapped is one, which this lifts out of its wrappers.
         BLOCKS[block](chain.setParagraph(), variant).run();
     }
 
@@ -1084,29 +818,34 @@ export default class extends BaseController {
         button.setAttribute('aria-expanded', 'true');
         this.renderMenu(button.getBoundingClientRect());
         this.menuTarget.focus();
-        this.watchOutside();
+        this.watchOutside(button);
     }
 
     /**
      * Like any popup, the menu closes when the pointer goes down anywhere else,
      * the text included, and when the page scrolls or resizes, which would
      * leave it floating away from its button.
+     *
+     * @param {HTMLElement} button
      */
-    watchOutside() {
+    watchOutside(button) {
+        const watch = new AbortController();
+        const { signal } = watch;
         /** @param {Event} event */
-        this.dismiss = (event) => {
-            const target = event.target instanceof Node ? event.target : null;
+        const dismiss = (event) => {
+            // Pointers and scrolls start on the nodes of the page.
+            const target = /** @type {Node} */ (event.target);
 
-            if (this.menuTarget.contains(target) || this.menu?.button?.contains(target)) {
-                return;
+            if (!this.menuTarget.contains(target) && !button.contains(target)) {
+                this.closeMenu();
             }
-
-            this.closeMenu();
         };
 
-        document.addEventListener('pointerdown', this.dismiss, true);
-        window.addEventListener('scroll', this.dismiss, { capture: true, passive: true });
-        window.addEventListener('resize', this.dismiss);
+        // Captured: heard before whatever keeps them to itself, and from any scrolling part of the page.
+        document.addEventListener('pointerdown', dismiss, { capture: true, signal });
+        window.addEventListener('scroll', dismiss, { capture: true, signal });
+        window.addEventListener('resize', () => this.closeMenu(), { signal });
+        this.menuWatch = watch;
     }
 
     /**
@@ -1115,7 +854,8 @@ export default class extends BaseController {
      * @param {FocusEvent} event
      */
     menuFocusOut(event) {
-        const next = event.relatedTarget instanceof Node ? event.relatedTarget : null;
+        // Where the focus went, if anywhere.
+        const next = /** @type {Node|null} */ (event.relatedTarget);
 
         if (this.menu?.mode !== 'button' || this.menuTarget.contains(next) || next === this.menu.button) {
             return;
@@ -1130,7 +870,8 @@ export default class extends BaseController {
      * @param {KeyboardEvent} event
      */
     menuButtonKey(event) {
-        if (this.menu?.mode === 'button' && this.menuKey(event)) {
+        // Only the menu opened from the button ever holds the focus.
+        if (this.menuKey(event)) {
             event.preventDefault();
         }
     }
@@ -1142,7 +883,7 @@ export default class extends BaseController {
     slashRender() {
         /** @type {ReturnType<import('../rich_text/slash_menu.js').SlashRender>} */
         const renderer = {
-            onStart: (props) => this.openSlashMenu(props),
+            // The start comes without the items, which the update that follows brings.
             onUpdate: (props) => this.openSlashMenu(props),
             onKeyDown: ({ event }) => this.menuKey(event),
             onExit: () => this.closeMenu(),
@@ -1178,6 +919,12 @@ export default class extends BaseController {
 
     /** @param {SlashProps} props */
     openSlashMenu(props) {
+        // Every change of what follows "/" comes first without its items, while they are found:
+        // closing the menu then would make it flicker, and lose the option highlighted.
+        if (props.loading) {
+            return;
+        }
+
         if (props.items.length === 0) {
             this.closeMenu();
 
@@ -1192,16 +939,16 @@ export default class extends BaseController {
         this.menu = menu;
         this.editor.view.dom.setAttribute('aria-controls', this.menuTarget.id);
         this.editor.view.dom.setAttribute('aria-expanded', 'true');
-        this.renderMenu(props.clientRect?.());
+        // The suggestion always tells where it stands, though not always where it is drawn.
+        this.renderMenu(/** @type {() => DOMRect|null} */ (props.clientRect)());
     }
 
     /** @param {DOMRect|null|undefined} anchor */
     renderMenu(anchor) {
-        if (this.menu === null) {
-            return;
-        }
+        // Drawn once open.
+        const menu = /** @type {Menu} */ (this.menu);
 
-        this.menuTarget.replaceChildren(...this.menu.items.map((item, index) => {
+        this.menuTarget.replaceChildren(...menu.items.map((item, index) => {
             const option = document.createElement('li');
 
             option.id = `${this.idValue}-menu-${index}`;
@@ -1227,7 +974,7 @@ export default class extends BaseController {
             this.menuTarget.style.left = `${left}px`;
         }
 
-        this.highlight(this.menu.index);
+        this.highlight(menu.index);
     }
 
     /**
@@ -1262,30 +1009,25 @@ export default class extends BaseController {
 
     /** @param {number} index */
     highlight(index) {
-        if (this.menu === null) {
-            return;
-        }
-
-        this.menu.index = index;
+        // Only an open menu highlights one of its options.
+        const menu = /** @type {Menu} */ (this.menu);
+        menu.index = index;
 
         for (const [position, option] of [...this.menuTarget.children].entries()) {
             option.setAttribute('aria-selected', String(position === index));
         }
 
-        this.menuTarget.children[index]?.scrollIntoView({ block: 'nearest' });
+        this.menuTarget.children[index].scrollIntoView({ block: 'nearest' });
 
-        const owner = this.menu.mode === 'slash' ? this.editor.view.dom : this.menuTarget;
+        const owner = menu.mode === 'slash' ? this.editor.view.dom : this.menuTarget;
 
         owner.setAttribute('aria-activedescendant', `${this.idValue}-menu-${index}`);
     }
 
     /** @param {number} index */
     choose(index) {
-        const { menu } = this;
-
-        if (menu === null) {
-            return;
-        }
+        // Only an open menu has options to choose.
+        const menu = /** @type {Menu} */ (this.menu);
 
         if (menu.mode === 'slash') {
             menu.props.command(menu.items[index]);
@@ -1309,12 +1051,9 @@ export default class extends BaseController {
         this.menu = null;
         this.menuTarget.hidden = true;
 
-        if (this.dismiss) {
-            document.removeEventListener('pointerdown', this.dismiss, true);
-            window.removeEventListener('scroll', this.dismiss, { capture: true });
-            window.removeEventListener('resize', this.dismiss);
-            this.dismiss = null;
-        }
+        // The "/" menu is the suggestion's to watch.
+        this.menuWatch?.abort();
+        this.menuWatch = null;
 
         this.menuTarget.removeAttribute('aria-activedescendant');
         this.editor.view.dom.setAttribute('aria-expanded', 'false');
@@ -1326,14 +1065,11 @@ export default class extends BaseController {
     refreshOutline() {
         // A single paragraph has no sections.
         if (!this.hasOutlineDialogListTarget) {
-            this.sections = [];
-
             return;
         }
 
         const sections = sectionsOf(this.editor.state.doc);
 
-        this.sections = sections;
         this.outlineDialogListTarget.replaceChildren(...sections.map((section) => {
             const item = document.createElement('li');
             const link = document.createElement('button');
@@ -1352,17 +1088,21 @@ export default class extends BaseController {
     }
 
     markCurrentSection() {
-        if (!this.sections || !this.hasOutlineDialogListTarget) {
+        if (!this.hasOutlineDialogListTarget) {
             return;
         }
 
-        const current = currentSection(this.sections, this.editor.state.selection.from);
+        const { doc, selection } = this.editor.state;
+        const current = currentSection(sectionsOf(doc), selection.from);
 
         for (const [index, item] of [...this.outlineDialogListTarget.children].entries()) {
+            // Each item holds the button of its section.
+            const link = /** @type {HTMLElement} */ (item.firstElementChild);
+
             if (index === current) {
-                item.firstElementChild?.setAttribute('aria-current', 'location');
+                link.setAttribute('aria-current', 'location');
             } else {
-                item.firstElementChild?.removeAttribute('aria-current');
+                link.removeAttribute('aria-current');
             }
         }
     }
@@ -1396,6 +1136,7 @@ export default class extends BaseController {
                 Paragraph,
                 Text,
                 UndoRedo,
+                ControlsShortcut.configure({ onRequest: () => this.focusControls() }),
                 Placeholder.configure({ placeholder: this.placeholderValue }),
             ];
 
@@ -1416,10 +1157,8 @@ export default class extends BaseController {
             Paragraph,
             Text,
             UndoRedo,
-            BlockMover.configure({
-                onMove: (direction, section) => this.announceMove(direction, section),
-                onControlsRequest: () => this.focusControls(),
-            }),
+            ControlsShortcut.configure({ onRequest: () => this.focusControls() }),
+            BlockMover.configure({ onMove: (direction, section) => this.announceMove(direction, section) }),
             SlashMenu.configure({ items: (query) => this.slashItems(query), render: () => this.slashRender() }),
             // The empty document says what goes in it; an empty line, how to pick a block.
             Placeholder.configure({
@@ -1468,7 +1207,7 @@ export default class extends BaseController {
 
         if (blocks.includes('widget') && this.hasWidgetLabelsValue && this.hasPageLookupUrlValue) {
             extensions.push(Widget.configure({
-                describe: (id) => this.describeWidget(id),
+                describe: (id) => this.pages.of(id),
                 views: this.widgetViews,
                 labels: this.widgetLabelsValue,
             }));

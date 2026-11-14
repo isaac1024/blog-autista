@@ -1,4 +1,4 @@
-import { imageField } from './fixtures/image_field.js';
+import { imageField } from '../Markup/image_field.js';
 import { expect, loadController, test } from './support/test.js';
 
 const IMAGE = {

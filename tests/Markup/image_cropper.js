@@ -1,6 +1,6 @@
 export const imageCropper = () => `
     <form>
-        <div data-controller="image-cropper"
+        <div data-controller="image-cropper" data-action="submit@document->image-cropper#submit"
             data-image-cropper-width-value="100"
             data-image-cropper-height-value="50"
             data-image-cropper-quality-value="0.8"

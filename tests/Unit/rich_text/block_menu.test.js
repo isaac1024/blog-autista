@@ -8,6 +8,7 @@ const button = (index, count = 4) => ({ mode: 'button', index, count });
 test('a kind answers what was typed, whatever its case or accents', () => {
     assert.equal(matches('Párrafo', 'parr'), true);
     assert.equal(matches('Título 2', 'TITULO'), true);
+    assert.equal(matches('Straße', 'STRASSE'), true);
     assert.equal(matches('Cita', 'lista'), false);
     assert.equal(matches('Cita', ''), true);
 });

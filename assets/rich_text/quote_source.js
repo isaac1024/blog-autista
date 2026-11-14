@@ -9,7 +9,7 @@ import { TextSelection } from '@tiptap/pm/state';
 const currentQuote = (state) => {
     const { $from } = state.selection;
 
-    for (let depth = $from.depth; depth > 0; depth -= 1) {
+    for (let depth = $from.depth; depth !== 0; depth -= 1) {
         if ($from.node(depth).type.name === 'blockquote') {
             return { node: $from.node(depth), pos: $from.before(depth) };
         }
@@ -54,8 +54,10 @@ export const QuoteSource = Node.create({
                 if (dispatch) {
                     const { node, pos } = quote;
                     let end = pos + node.nodeSize - 1;
+                    // A quote always holds at least a paragraph.
+                    const lastChild = /** @type {import('@tiptap/pm/model').Node} */ (node.lastChild);
 
-                    if (node.lastChild?.type.name !== this.name) {
+                    if (lastChild.type.name !== this.name) {
                         tr.insert(end, this.type.create());
                         end += 2;
                     }

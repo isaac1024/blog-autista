@@ -62,8 +62,8 @@ export default class extends BaseController {
     }
 
     fields() {
-        return Object.values(this.sourcesValue)
-            .filter((id) => id !== undefined)
+        // The sources come as JSON, where a source left out has no key at all.
+        return Object.values(/** @type {Record<string, string>} */ (this.sourcesValue))
             .map((id) => document.getElementById(id))
             .filter((field) => field !== null);
     }

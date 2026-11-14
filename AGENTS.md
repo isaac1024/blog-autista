@@ -92,18 +92,28 @@ checks belong to the `ui-check` harness (`npm run ui:check`). The harness runs
 Lighthouse at both desktop and mobile widths. Tailwind's build is the CSS syntax
 gate; the W3C CSS3 validator cannot parse its modern output.
 
-Pure JavaScript logic uses `node:test` under `tests/Unit/`. Browser interactions
-use Playwright under `tests/Browser/`, with isolated fixtures that load the real
-controllers and AssetMapper vendor modules without Symfony or a database. Run
-`npm run test:js` for both suites, or `npm run test:browser` for the browser
-suite. Install its local Chromium first with `npm run test:browser:install`.
-Browser failures are written under `var/browser-tests/`.
+The JavaScript tests are a pyramid. At its base, `node:test` under `tests/Unit/`
+covers the pure modules (`assets/form/`, `assets/image/`, `assets/rich_text/`,
+`assets/shared/`). Above them, the Stimulus controllers and `assets/web.js` run
+under `node:test` too, on happy-dom: `tests/Unit/support/dom.js` mounts a real
+Stimulus application on the markup their templates write, kept in
+`tests/Markup/`, and the tests act through its events, as a person would, never
+by calling a controller's methods or reading its state. That helper fails a test
+whose controller threw, and `assertFocused` checks the focus by identity: never
+`assert.equal` two DOM nodes, whose diff walks the whole window. At the top,
+Playwright under `tests/Browser/` loads the same markup and the real controllers
+and AssetMapper vendor modules in Chromium, without Symfony or a database, for
+the wiring only a real browser checks. Run `npm run test:js` for both suites, or
+`npm run test:browser` for the browser suite. Install its local Chromium first
+with `npm run test:browser:install`. Browser failures are written under
+`var/browser-tests/`.
 
-`npm run mutation:js` runs Stryker over the modules the unit tests cover, as
-Infection does for PHP: it ignores nothing and fails below 80 %; the report
-goes to `var/mutation/js.html`. Logic that can live outside a Stimulus
-controller goes to a module of its own with a `node:test` suite, and joins
-`mutate` in `stryker.config.mjs`; the whole run stays under five minutes.
+`npm run mutation:js` runs Stryker over every module under `assets/` but the
+vendored ones, as Infection does for PHP: it ignores nothing and fails below
+80 %; the report goes to `var/mutation/js.html`. Logic that can live outside a
+Stimulus controller goes to a module of its own with a `node:test` suite. A
+mutant that survives is fixed by a test or by rewriting the code that makes it
+equivalent, not ignored. The whole run stays under five minutes.
 `npm run check:js:full` is `check:js` plus the mutation run.
 
 Run `npm run check:js` for the frontend gate: ESLint, strict TypeScript

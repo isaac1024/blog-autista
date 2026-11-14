@@ -5,11 +5,12 @@
  */
 
 /**
- * Lower case and without accents, so "parrafo" finds "Párrafo".
+ * Upper case and without accents, so "parrafo" finds "Párrafo". Upper
+ * case also folds letters such as "ß", which lower case leaves unchanged.
  *
  * @param {string} text
  */
-const normalise = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+const normalise = (text) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toUpperCase();
 
 /**
  * Whether a kind of block answers what was typed after "/".

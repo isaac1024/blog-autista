@@ -1,4 +1,4 @@
-import { richTextEditor } from './fixtures/rich_text_editor.js';
+import { richTextEditor } from '../Markup/rich_text_editor.js';
 import { expect, loadController, test } from './support/test.js';
 
 const inputDocument = async (page) => page.locator('[data-rich-text-editor-target="input"]').evaluate((input) => JSON.parse(input.value));

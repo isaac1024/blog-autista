@@ -1,4 +1,4 @@
-import { imageCropper } from './fixtures/image_cropper.js';
+import { imageCropper } from '../Markup/image_cropper.js';
 import { expect, loadController, test } from './support/test.js';
 
 async function sourceImage(page, { width = 400, height = 200, name = 'source.png' } = {}) {

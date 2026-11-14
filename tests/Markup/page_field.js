@@ -1,4 +1,4 @@
-const LABELS = {
+export const PAGE_FIELD_LABELS = {
     empty: 'No page selected',
     loading: 'Loading page',
     missing: 'Page not found',
@@ -16,7 +16,7 @@ export const pageField = (value = '') => `
         <fieldset id="page" data-controller="page-field"
             data-page-field-search-url-value="/api/pages/search"
             data-page-field-lookup-url-value="/api/pages/lookup"
-            data-page-field-labels-value='${JSON.stringify(LABELS)}'>
+            data-page-field-labels-value='${JSON.stringify(PAGE_FIELD_LABELS)}'>
             <legend>Related page</legend>
             <input type="hidden" name="page" value="${value}" data-page-field-target="input">
             <p><span data-page-field-target="title"></span><span data-page-field-target="state"></span></p>
@@ -27,6 +27,7 @@ export const pageField = (value = '') => `
                 <button type="button" data-action="page-field#search">Search</button>
                 <p role="status" data-page-field-target="searchStatus"></p>
                 <ul data-page-field-target="results"></ul>
+                <button type="button" data-page-field-target="more" data-action="page-field#more" hidden>More</button>
             </dialog>
             <p aria-live="polite" data-page-field-target="status"></p>
         </fieldset>

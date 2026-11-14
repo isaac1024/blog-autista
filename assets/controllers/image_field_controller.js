@@ -1,9 +1,8 @@
 import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
-import { countText } from '../shared/count_text.js';
-import { fetchJson } from '../shared/http.js';
-import { LatestRequest } from '../shared/latest_request.js';
-import { LOADING, found, lookupIn, lookupText } from '../shared/lookup.js';
+import { Lookups, lookupText } from '../shared/lookup.js';
+import { imageOption } from '../shared/options.js';
+import { Search } from '../shared/search.js';
 
 /**
  * @typedef {object} Image
@@ -32,8 +31,8 @@ import { LOADING, found, lookupIn, lookupText } from '../shared/lookup.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {import('../shared/lookup.js').Lookup<Image>} image
- * @property {LatestRequest} searches
+ * @property {Lookups<Image>} images
+ * @property {Search<Image>} searches
  * @property {HTMLInputElement} inputTarget
  * @property {HTMLElement} thumbnailTarget
  * @property {HTMLElement} descriptionTarget
@@ -69,13 +68,22 @@ export default class extends BaseController {
 
     connect() {
         this.abortController = new AbortController();
-        this.searches = new LatestRequest(this.abortController.signal);
+        const owner = this.abortController;
+        this.images = /** @type {Lookups<Image>} */ (new Lookups(new URL(this.lookupUrlValue, window.location.href), 'images', owner.signal, () => this.draw()));
+        this.searches = new Search({
+            url: new URL(this.searchUrlValue, window.location.href),
+            param: 'alt',
+            key: 'images',
+            owner: owner.signal,
+            view: () => ({ input: this.searchTarget, results: this.resultsTarget, status: this.searchStatusTarget, more: null }),
+            labels: () => this.labelsValue,
+            row: (image) => imageOption(image, () => this.choose(image)),
+        });
         this.chooseTarget.hidden = false;
-        this.image = LOADING;
         this.draw();
 
         if (this.inputTarget.value !== '') {
-            this.lookUp(this.inputTarget.value);
+            this.images.ask([this.inputTarget.value]);
         }
     }
 
@@ -83,36 +91,13 @@ export default class extends BaseController {
         this.abortController.abort();
     }
 
-    /** @param {string} id */
-    async lookUp(id) {
-        const { signal } = this.abortController;
-        const url = new URL(this.lookupUrlValue, window.location.href);
-        url.searchParams.set('ids', id);
-
-        /** @type {Image[]|null} */
-        let images = null;
-
-        try {
-            images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
-        } catch {
-            // Told as unknown: the image may well exist.
-        }
-
-        // The field was disconnected meanwhile: this answer is for no one.
-        if (signal.aborted) {
-            return;
-        }
-
-        this.image = lookupIn(images, id);
-        this.draw();
-    }
-
     /** What the field holds: no image, one being looked up, missing, unknown, or the image itself. */
     draw() {
         const empty = this.inputTarget.value === '';
+        const image = this.images.of(this.inputTarget.value);
         const { name, standing } = empty
             ? { name: this.labelsValue.empty, standing: '' }
-            : lookupText(this.image, (image) => image.alt, this.labelsValue);
+            : lookupText(image, ({ alt }) => alt, this.labelsValue);
 
         this.removeTarget.hidden = empty;
         this.descriptionTarget.textContent = name;
@@ -120,11 +105,12 @@ export default class extends BaseController {
         this.thumbnailTarget.replaceChildren();
         this.thumbnailTarget.hidden = true;
 
-        if (!empty && this.image.state === 'found') {
+        // No image is known by an empty id.
+        if (image.state === 'found') {
             // Decorative: the text next to it says which image it is.
             const thumbnail = document.createElement('img');
             thumbnail.className = 'block aspect-video h-auto w-28 object-cover';
-            thumbnail.src = this.image.value.thumbnail;
+            thumbnail.src = image.value.thumbnail;
             thumbnail.alt = '';
             thumbnail.width = 112;
             thumbnail.height = 63;
@@ -136,7 +122,7 @@ export default class extends BaseController {
     /** @param {Image} image */
     choose(image) {
         this.inputTarget.value = image.id;
-        this.image = found(image);
+        this.images.know(image);
         this.dialogTarget.close();
         this.draw();
         this.statusTarget.textContent = this.labelsValue.chosen.replace('%alt%', image.alt);
@@ -146,7 +132,6 @@ export default class extends BaseController {
 
     remove() {
         this.inputTarget.value = '';
-        this.image = LOADING;
         this.draw();
         this.statusTarget.textContent = this.labelsValue.removed;
         this.chooseTarget.focus();
@@ -160,69 +145,8 @@ export default class extends BaseController {
     }
 
     /** @param {Event} [event] */
-    async search(event) {
+    search(event) {
         event?.preventDefault();
-
-        const signal = this.searches.next();
-        const url = new URL(this.searchUrlValue, window.location.href);
-        url.searchParams.set('alt', this.searchTarget.value);
-        /** @type {Image[]|null} */
-        let images = null;
-
-        try {
-            images = (/** @type {{images: Image[]}} */ (await fetchJson(url, signal))).images;
-        } catch {
-            // Told below, like an answer that isn't ok.
-        }
-
-        // A newer search went out, or the field was disconnected meanwhile.
-        if (signal.aborted) {
-            return;
-        }
-
-        if (images === null) {
-            this.searchStatusTarget.textContent = this.labelsValue.error;
-
-            return;
-        }
-
-        this.resultsTarget.replaceChildren(...images.map((image) => this.result(image)));
-        this.searchStatusTarget.textContent = countText(images.length, this.labelsValue);
+        this.searches.first();
     }
-
-    /**
-     * One image to pick: the whole row is its button, named by its text and status.
-     *
-     * @param {Image} image
-     */
-    result(image) {
-        const item = document.createElement('li');
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'rich-text-image-option';
-        button.addEventListener('click', () => this.choose(image));
-
-        const thumbnail = document.createElement('img');
-        thumbnail.src = image.thumbnail;
-        thumbnail.alt = '';
-        thumbnail.width = 112;
-        thumbnail.height = 63;
-        thumbnail.loading = 'lazy';
-
-        const text = document.createElement('span');
-        text.className = 'rich-text-image-option-text';
-        const alt = document.createElement('span');
-        alt.className = 'font-bold';
-        alt.textContent = image.alt;
-        const status = document.createElement('span');
-        status.className = 'rich-text-image-status';
-        status.textContent = image.status;
-        text.append(alt, status);
-
-        button.append(thumbnail, text);
-        item.append(button);
-
-        return item;
-    }
-
 }
