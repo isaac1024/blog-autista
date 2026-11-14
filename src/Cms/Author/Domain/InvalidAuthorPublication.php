@@ -48,6 +48,11 @@ final class InvalidAuthorPublication extends DomainError
         return new self('A published author cannot be deleted; unpublish it first.', 'errors.author.publication.published_author', []);
     }
 
+    public static function usedAuthor(): self
+    {
+        return new self('An author that signs posts cannot be deleted.', 'errors.author.publication.used_author', []);
+    }
+
     public static function incompleteDates(): self
     {
         return new self('An author published once has both a first and a last publication date.', 'errors.author.publication.incomplete_dates', []);

@@ -220,10 +220,14 @@ final class Term extends AggregateRoot
     /**
      * Deletes a term off the site.
      */
-    public function delete(TermRepository $termRepository): void
+    public function delete(TermRepository $termRepository, TermUsage $termUsage): void
     {
         if (TermStatus::Published === $this->status) {
             throw InvalidTermPublication::publishedTerm();
+        }
+
+        if ($termUsage->isInUse($this->id)) {
+            throw InvalidTermPublication::usedTerm();
         }
 
         $termRepository->delete($this);

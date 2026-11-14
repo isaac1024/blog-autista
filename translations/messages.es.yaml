@@ -954,7 +954,7 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
-            linked_page: 'Otras páginas, pies de foto, biografías de autores o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
+            linked_page: 'Otras páginas, posts, pies de foto, biografías de autores o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
             incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
     term:
         not_found: 'No hay nada publicado en «%slug%».'
@@ -973,6 +973,7 @@ errors:
             not_published: 'Solo se puede despublicar lo que está publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
+            used_term: 'Hay posts clasificados aquí, así que no se puede borrar. Quítalo antes de esos posts.'
             incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
     author:
         not_found: 'No hay ningún autor en «%slug%».'
@@ -993,6 +994,7 @@ errors:
             not_published: 'Solo se puede despublicar un autor publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
+            used_author: 'Este autor firma algún post, así que no se puede borrar. Cambia antes el autor de esos posts.'
             incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
@@ -1025,4 +1027,4 @@ errors:
             redirected: 'Hay redirecciones que llevan a esta imagen, así que no se puede despublicar hasta que lleven a otro sitio.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'
-            in_use: 'Esta imagen se usa en alguna página o biografía de autor, o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'
+            in_use: 'Esta imagen se usa en alguna página, post o biografía de autor, o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'

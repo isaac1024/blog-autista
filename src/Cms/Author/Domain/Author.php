@@ -304,12 +304,16 @@ final class Author extends AggregateRoot
     }
 
     /**
-     * Deletes an author off the site, with its avatars.
+     * Deletes an author off the site that signs no post, with its avatars.
      */
-    public function delete(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function delete(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): void
     {
         if (AuthorStatus::Published === $this->status) {
             throw InvalidAuthorPublication::publishedAuthor();
+        }
+
+        if ($authorUsage->isInUse($this->id)) {
+            throw InvalidAuthorPublication::usedAuthor();
         }
 
         // An author deleted embeds no image, nor links to any page, any longer.

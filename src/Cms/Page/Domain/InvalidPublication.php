@@ -60,7 +60,7 @@ final class InvalidPublication extends DomainError
 
     public static function linkedPage(): self
     {
-        return new self('A page linked from other pages, image captions, author bios or the menus cannot be deleted.', 'errors.page.publication.linked_page', []);
+        return new self('A page linked from other pages, posts, image captions, author bios or the menus cannot be deleted.', 'errors.page.publication.linked_page', []);
     }
 
     public static function incompleteDates(): self

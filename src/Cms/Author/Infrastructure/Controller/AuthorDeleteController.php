@@ -7,6 +7,7 @@ namespace Cms\Author\Infrastructure\Controller;
 use Cms\Author\Application\AuthorDeleter;
 use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Domain\AuthorUsage;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
@@ -23,12 +24,12 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class AuthorDeleteController extends AbstractController
 {
     #[Route('/authors/{id}/delete', name: 'cms_authors_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage, CsrfRequestGuard $csrf): Response
     {
         $csrf->assertValid($request);
 
         try {
-            new AuthorDeleter($id)($authorRepository, $eventBus, $avatarStorage);
+            new AuthorDeleter($id)($authorRepository, $eventBus, $avatarStorage, $authorUsage);
         } catch (AuthorNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

@@ -60,8 +60,8 @@ final readonly class DoctrineRelationRepository implements RelationRepository
         /** @var Query<null, Relation> $query */
         $query = $this->entityManager->createQueryBuilder()
             ->select('relation')
-            // Pages first, then images, then the settings, then the authors, whatever their names.
-            ->addSelect('CASE WHEN relation.sourceType = :page THEN 0 WHEN relation.sourceType = :image THEN 1 WHEN relation.sourceType = :settings THEN 2 ELSE 3 END AS HIDDEN sourceOrder')
+            // Pages first, then images, then the settings, then the authors, then the posts, whatever their names.
+            ->addSelect('CASE WHEN relation.sourceType = :page THEN 0 WHEN relation.sourceType = :image THEN 1 WHEN relation.sourceType = :settings THEN 2 WHEN relation.sourceType = :author THEN 3 ELSE 4 END AS HIDDEN sourceOrder')
             ->from(Relation::class, 'relation')
             ->where('relation.targetType = :targetType AND relation.targetId = :targetId')
             ->orderBy('sourceOrder')
@@ -70,6 +70,7 @@ final readonly class DoctrineRelationRepository implements RelationRepository
             ->setParameter('page', ResourceType::Page)
             ->setParameter('image', ResourceType::Image)
             ->setParameter('settings', ResourceType::Settings)
+            ->setParameter('author', ResourceType::Author)
             ->setParameter('targetType', $targetType)
             ->setParameter('targetId', $targetId)
             ->setFirstResult($offset)

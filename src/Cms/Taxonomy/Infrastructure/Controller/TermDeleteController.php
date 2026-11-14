@@ -7,6 +7,7 @@ namespace Cms\Taxonomy\Infrastructure\Controller;
 use Cms\Taxonomy\Application\TermDeleter;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Domain\TermRepository;
+use Cms\Taxonomy\Domain\TermUsage;
 use Shared\Domain\DomainError;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,12 +22,12 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class TermDeleteController extends AbstractController
 {
     #[Route('/{taxonomy}/{id}/delete', name: 'cms_terms_delete', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, CsrfRequestGuard $csrf): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, TermUsage $termUsage, CsrfRequestGuard $csrf): Response
     {
         $csrf->assertValid($request);
 
         try {
-            new TermDeleter($taxonomy->taxonomy(), $id)($termRepository);
+            new TermDeleter($taxonomy->taxonomy(), $id)($termRepository, $termUsage);
         } catch (TermNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

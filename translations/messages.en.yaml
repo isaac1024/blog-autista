@@ -954,7 +954,7 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             unique_page: 'This page is unique, so it can’t be unpublished.'
             published_page: 'A published page can’t be deleted: unpublish it first.'
-            linked_page: 'Other pages, image captions, author bios or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
+            linked_page: 'Other pages, posts, image captions, author bios or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
             incomplete_dates: 'The publication dates of the page are incomplete.'
     term:
         not_found: 'Nothing is published at “%slug%”.'
@@ -973,6 +973,7 @@ errors:
             not_published: 'Only what is published can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_term: 'What is published can’t be deleted: unpublish it first.'
+            used_term: 'Posts are filed here, so it can’t be deleted. Take it out of those posts first.'
             incomplete_dates: 'What was ever published has a first and a last publication date.'
     author:
         not_found: 'There is no author at “%slug%”.'
@@ -993,6 +994,7 @@ errors:
             not_published: 'Only a published author can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_author: 'A published author can’t be deleted: unpublish it first.'
+            used_author: 'This author signs some post, so it can’t be deleted. Change the author of those posts first.'
             incomplete_dates: 'The publication dates of the author are incomplete.'
     settings:
         already_exist: 'The site already has its settings.'
@@ -1025,4 +1027,4 @@ errors:
             redirected: 'Redirects lead to this image, so it can’t be unpublished until they lead elsewhere.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_image: 'A published image can’t be deleted: unpublish it first.'
-            in_use: 'This image is used in some page or author bio, or is the default image of the blog, so it can’t be deleted. Take it out of where it is used first.'
+            in_use: 'This image is used in some page, post or author bio, or is the default image of the blog, so it can’t be deleted. Take it out of where it is used first.'

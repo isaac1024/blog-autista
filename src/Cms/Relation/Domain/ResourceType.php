@@ -13,4 +13,10 @@ enum ResourceType: string
     case Image = 'image';
     case Settings = 'settings';
     case Author = 'author';
+    case Post = 'post';
+
+    /**
+     * A section or a tag: their ids never meet, whatever their taxonomy.
+     */
+    case Term = 'term';
 }
