@@ -71,10 +71,7 @@ final class FilesystemAvatarStorageTest extends KernelTestCase
 
     private static function directory(): string
     {
-        $directory = self::getContainer()->getParameter('cms.author.avatar_directory');
-        self::assertIsString($directory);
-
-        return $directory;
+        return self::getContainer()->getParameter('cms.author.avatar_directory');
     }
 
     private static function emptyStorage(): void
