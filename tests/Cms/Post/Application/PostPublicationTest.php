@@ -203,6 +203,55 @@ final class PostPublicationTest extends TestCase
         self::assertNull($post->publishedAddress());
     }
 
+    /**
+     * A post redirects lead to stays on the site until they lead elsewhere.
+     */
+    public function testItKeepsOnTheSiteAPostRedirectsLeadTo(): void
+    {
+        $repository = $this->repository(PostMother::published());
+        $repository->expects(self::never())->method('save');
+        $redirects = self::createStub(PostRedirects::class);
+        $redirects->method('isTargeted')->willReturn(true);
+
+        self::assertTells('errors.post.publication.redirected', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $redirects));
+    }
+
+    /**
+     * Published at the address a post off the site last had, it takes it
+     * from that one, which is saved without it, holding the address.
+     */
+    public function testItTakesTheLastAddressOfThePostOffTheSiteThatHadIt(): void
+    {
+        $former = PostMother::unpublished(id: '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0bff');
+        $repository = $this->repository(PostMother::publishable());
+        $repository->expects(self::once())->method('findOffSiteByLastAddress')->willReturn($former);
+        $saved = [];
+        $repository->expects(self::exactly(2))->method('save')->willReturnCallback(static function (Post $post) use (&$saved): void {
+            $saved[] = $post->id()->value();
+        });
+        $lock = new RecordingMutualExclusion();
+
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), $lock);
+
+        self::assertNull($former->lastAddress());
+        self::assertSame([PostIdMother::DEFAULT_VALUE, '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0bff'], $saved);
+    }
+
+    /**
+     * Its own last address it keeps, when it is published again there.
+     */
+    public function testItKeepsItsOwnLastAddress(): void
+    {
+        $post = PostMother::published(publishedTitle: 'Antes');
+        $repository = $this->repository($post);
+        $repository->method('findOffSiteByLastAddress')->willReturn($post);
+        $repository->expects(self::once())->method('save');
+
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new RecordingMutualExclusion());
+
+        self::assertEquals($post->publishedAddress(), $post->lastAddress());
+    }
+
     public function testItNeverUnpublishesAPostOffTheSite(): void
     {
         self::assertTells('errors.post.publication.not_published', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::create()), self::createStub(EventBus::class), self::createStub(PostRedirects::class)));

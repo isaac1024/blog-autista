@@ -38,7 +38,8 @@
  * published one, whose form that takes it off the site is checked too, and
  * `CMS_REDIRECT_ID`, and `CMS_SECTION_ID`, `CMS_TAG_ID` and `CMS_AUTHOR_ID`
  * those of a section, a tag and an author, and `CMS_POST_ID` that of a
- * post. Pages of the site are included with `WEB_PAGE_SLUG`,
+ * post, each published, whose forms that take them off the site and pages
+ * of what uses them are checked too. Pages of the site are included with `WEB_PAGE_SLUG`,
  * `WEB_SECTION_SLUG`, `WEB_TAG_SLUG`, `WEB_AUTHOR_SLUG`, `WEB_POST_PATH`
  * (such as /vida-diaria/2026/11/14/un-post.html) and `WEB_HOME`, once
  * published.
@@ -101,14 +102,21 @@ if (cmsSession && redirectId) {
     pages.push(cmsPage('cms-redirect-edit', `/redirects/${redirectId}`));
 }
 
+// Each is checked as edited, where it is used, and, published, as the form
+// that takes it off the site.
 for (const [name, path, variable] of [
-    ['cms-section-edit', '/sections', 'CMS_SECTION_ID'],
-    ['cms-tag-edit', '/tags', 'CMS_TAG_ID'],
-    ['cms-author-edit', '/authors', 'CMS_AUTHOR_ID'],
-    ['cms-post-edit', '/posts', 'CMS_POST_ID'],
+    ['cms-section', '/sections', 'CMS_SECTION_ID'],
+    ['cms-tag', '/tags', 'CMS_TAG_ID'],
+    ['cms-author', '/authors', 'CMS_AUTHOR_ID'],
+    ['cms-post', '/posts', 'CMS_POST_ID'],
 ]) {
     if (cmsSession && process.env[variable]) {
-        pages.push(cmsPage(name, `${path}/${process.env[variable]}`));
+        const id = process.env[variable];
+        pages.push(
+            cmsPage(`${name}-edit`, `${path}/${id}`),
+            cmsPage(`${name}-relations`, `${path}/${id}/relations`),
+            cmsPage(`${name}-unpublish`, `${path}/${id}/unpublish`),
+        );
     }
 }
 

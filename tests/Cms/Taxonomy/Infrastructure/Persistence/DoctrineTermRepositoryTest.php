@@ -59,6 +59,35 @@ final class DoctrineTermRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findBySlug(Taxonomy::Tag, SlugMother::create('dia-a-dia')));
     }
 
+    public function testItFindsTheTermOfTheTaxonomyOnTheSiteWithTheSlugOnlyThere(): void
+    {
+        $id = TermIdMother::random()->value();
+        $this->repository()->save(TermMother::published(id: $id, slug: 'dia-a-dia', publishedSlug: 'vida-diaria'));
+        $this->entityManager()->clear();
+
+        self::assertSame($id, $this->repository()->findOnSiteBySlug(Taxonomy::Section, SlugMother::create('vida-diaria'))?->id()->value());
+        self::assertNull($this->repository()->findOnSiteBySlug(Taxonomy::Section, SlugMother::create('dia-a-dia')));
+        self::assertNull($this->repository()->findOnSiteBySlug(Taxonomy::Tag, SlugMother::create('vida-diaria')));
+    }
+
+    /**
+     * Off the site, a term is found by the slug it last had there, and the
+     * newest one when two did; one of another taxonomy, or on the site, never.
+     */
+    public function testItFindsTheTermOffTheSiteThatLastHadASlug(): void
+    {
+        $older = TermMother::unpublished(id: '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0d01');
+        $older->edit(TermMother::NAME, 'antigua', TermMother::META_DESCRIPTION, 'index,follow');
+        $this->repository()->save($older);
+        $this->repository()->save(TermMother::unpublished(id: '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0d02'));
+        $this->repository()->save(TermMother::published(id: TermIdMother::random()->value(), taxonomy: Taxonomy::Tag, slug: 'sueno'));
+        $this->entityManager()->clear();
+
+        self::assertSame('01a1da50-2b7c-7d01-8a3f-5c2e9b1d0d02', $this->repository()->findOffSiteByLastSiteSlug(Taxonomy::Section, SlugMother::create(TermMother::SLUG))?->id()->value());
+        self::assertNull($this->repository()->findOffSiteByLastSiteSlug(Taxonomy::Tag, SlugMother::create(TermMother::SLUG)));
+        self::assertNull($this->repository()->findOffSiteByLastSiteSlug(Taxonomy::Tag, SlugMother::create('sueno')));
+    }
+
     public function testItRejectsSavingATermWithTheSlugOfAnotherOfTheTaxonomy(): void
     {
         $this->repository()->save(TermMother::create(id: TermIdMother::random()->value()));

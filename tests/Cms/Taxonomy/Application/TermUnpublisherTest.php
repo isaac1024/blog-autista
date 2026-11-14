@@ -43,6 +43,22 @@ final class TermUnpublisherTest extends TestCase
         new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(TermRedirects::class));
     }
 
+    /**
+     * A term redirects lead to stays on the site until they lead elsewhere.
+     */
+    public function testItKeepsOnTheSiteATermRedirectsLeadTo(): void
+    {
+        $repository = $this->createMock(TermRepository::class);
+        $repository->method('find')->willReturn(TermMother::published());
+        $repository->expects(self::never())->method('save');
+        $redirects = self::createStub(TermRedirects::class);
+        $redirects->method('isTargeted')->willReturn(true);
+
+        $this->expectExceptionObject(InvalidTermPublication::redirected());
+
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $redirects);
+    }
+
     #[DataProvider('termsOffTheSite')]
     public function testItRefusesATermOffTheSite(Term $term): void
     {

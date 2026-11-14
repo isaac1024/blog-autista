@@ -75,6 +75,24 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findOnSiteAt(self::address(TermMother::SLUG, ClockMother::NOW, 'otro-slug')));
     }
 
+    /**
+     * Off the site, a post is found at the address it last had there, and
+     * the newest one when two did; one on the site, never.
+     */
+    public function testItFindsThePostOffTheSiteThatLastHadAnAddress(): void
+    {
+        $older = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c01';
+        $newer = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c02';
+        $this->repository()->save(PostMother::unpublished(id: $older));
+        $this->repository()->save(PostMother::unpublished(id: $newer));
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'en-el-sitio'));
+        $this->entityManager()->clear();
+
+        self::assertSame($newer, $this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, PostMother::SLUG))?->id()->value());
+        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, '2026-11-08 10:00:00', PostMother::SLUG)));
+        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, 'en-el-sitio')));
+    }
+
     public function testItLetsDraftsShareTheirSlug(): void
     {
         $this->repository()->save(PostMother::publishable(id: PostIdMother::random()->value(), slug: 'borrador-repetido'));

@@ -59,6 +59,35 @@ final class DoctrineAuthorRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findBySlug(SlugMother::create('ana')));
     }
 
+    public function testItFindsTheAuthorOnTheSiteWithTheSlugOnlyThere(): void
+    {
+        $id = AuthorIdMother::random()->value();
+        $author = AuthorMother::published(id: $id);
+        $author->edit(AuthorMother::NAME, 'isaac-abreu', AuthorMother::BIO, AuthorMother::META_DESCRIPTION, 'index,follow');
+        $this->repository()->save($author);
+        $this->entityManager()->clear();
+
+        self::assertSame($id, $this->repository()->findOnSiteBySlug(SlugMother::create(AuthorMother::SLUG))?->id()->value());
+        self::assertNull($this->repository()->findOnSiteBySlug(SlugMother::create('isaac-abreu')));
+    }
+
+    /**
+     * Off the site, an author is found by the slug it last had there, and
+     * the newest one when two did; one on the site, never.
+     */
+    public function testItFindsTheAuthorOffTheSiteThatLastHadASlug(): void
+    {
+        $older = AuthorMother::unpublished(id: '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0e01');
+        $older->edit(AuthorMother::NAME, 'antiguo', AuthorMother::BIO, AuthorMother::META_DESCRIPTION, 'index,follow');
+        $this->repository()->save($older);
+        $this->repository()->save(AuthorMother::unpublished(id: '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0e02'));
+        $this->repository()->save(AuthorMother::published(id: AuthorIdMother::random()->value(), slug: 'ana'));
+        $this->entityManager()->clear();
+
+        self::assertSame('01a1da50-2b7c-7d01-8a3f-5c2e9b1d0e02', $this->repository()->findOffSiteByLastSiteSlug(SlugMother::create(AuthorMother::SLUG))?->id()->value());
+        self::assertNull($this->repository()->findOffSiteByLastSiteSlug(SlugMother::create('ana')));
+    }
+
     public function testItRejectsSavingAnAuthorWithTheSlugOfAnotherOne(): void
     {
         $this->repository()->save(AuthorMother::create(id: AuthorIdMother::random()->value()));

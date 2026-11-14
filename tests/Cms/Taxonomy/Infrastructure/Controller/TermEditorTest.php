@@ -93,6 +93,14 @@ final class TermEditorTest extends TestCase
     }
 
     /**
+     * Its editor leads to what is filed under it, on a page of its own.
+     */
+    public function testItLeadsToWhereItIsUsed(): void
+    {
+        PageComponents::one($this->edit(TaxonomySegment::Sections, TermMother::create(id: self::ID)), 'Shared:ButtonLink', ['url' => '/cms_relations?type=sections&id='.self::ID]);
+    }
+
+    /**
      * Each action on the term is offered only when the term allows it,
      * confirmed first.
      *

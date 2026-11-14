@@ -13,7 +13,10 @@ use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
 use Cms\Post\Infrastructure\Controller\PostUrl;
 use Cms\Post\Infrastructure\Controller\PreviewPost;
+use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectRepository;
+use Cms\Redirect\Domain\Resource;
+use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
@@ -23,6 +26,8 @@ use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\PostMother;
+use Cms\Tests\Redirect\Domain\RedirectIdMother;
+use Cms\Tests\Redirect\Domain\RedirectMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +43,12 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 final class PreviewPostTest extends TestCase
 {
     use ClockSensitiveTrait;
+
+    private const string NEW_SECTION = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0b01';
+
+    private const string NEW_TAG = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0b02';
+
+    private const string NEW_AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b03';
 
     #[\Override]
     protected function setUp(): void
@@ -78,6 +89,34 @@ final class PreviewPostTest extends TestCase
     }
 
     /**
+     * A section, an author or a tag off the site is previewed as the one its
+     * last address now leads to, as the site would show it.
+     */
+    public function testItShowsWhatIsOffTheSiteAsWhatItsAddressNowLeadsTo(): void
+    {
+        $page = $this->preview(
+            PostMother::publishable(tags: [PostMother::OTHER_TAG]),
+            onSite: false,
+            others: [
+                self::NEW_SECTION => TermMother::published(id: self::NEW_SECTION, name: 'Día a día', slug: 'dia-a-dia'),
+                self::NEW_TAG => TermMother::published(id: self::NEW_TAG, taxonomy: Taxonomy::Tag, name: 'Calma', slug: 'calma'),
+            ],
+            otherAuthor: AuthorMother::published(id: self::NEW_AUTHOR, name: 'Ana', slug: 'ana'),
+            redirects: [
+                RedirectMother::create(id: RedirectIdMother::random()->value(), source: '/vida-diaria/', target: Resource::term(self::NEW_SECTION), origin: Resource::term(PostMother::SECTION)),
+                RedirectMother::create(id: RedirectIdMother::random()->value(), source: '/autor/isaac.html', target: Resource::author(self::NEW_AUTHOR), origin: Resource::author(PostMother::AUTHOR)),
+                RedirectMother::create(id: RedirectIdMother::random()->value(), source: '/tag/ruido.html', target: Resource::term(self::NEW_TAG), origin: Resource::term(PostMother::OTHER_TAG)),
+            ],
+        );
+
+        PageComponents::one($page, 'Shared:PostMeta', [
+            'section' => ['name' => 'Día a día', 'url' => '/dia-a-dia/'],
+            'author' => ['name' => 'Ana', 'url' => '/autor/ana.html'],
+        ]);
+        PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Calma', 'url' => '/tag/calma.html']]]);
+    }
+
+    /**
      * Previewed, a post is dated as it would be published now.
      */
     #[DataProvider('dates')]
@@ -99,7 +138,11 @@ final class PreviewPostTest extends TestCase
         yield 'a post unpublished, published again today' => [PostMother::unpublished(), true, null];
     }
 
-    private function preview(Post $post, bool $onSite): Page
+    /**
+     * @param array<string, Term> $others    more terms the CMS has, by id
+     * @param list<Redirect>      $redirects of the last addresses of what is off the site
+     */
+    private function preview(Post $post, bool $onSite, array $others = [], ?Author $otherAuthor = null, array $redirects = []): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -114,17 +157,27 @@ final class PreviewPostTest extends TestCase
                 PostMother::SECTION => TermMother::create(id: PostMother::SECTION),
                 PostMother::OTHER_TAG => TermMother::create(id: PostMother::OTHER_TAG, taxonomy: Taxonomy::Tag, name: 'Ruido', slug: 'ruido'),
             ];
+        $terms += $others;
         $author = $onSite ? AuthorMother::published(id: PostMother::AUTHOR, name: 'Firma editada', publishedName: 'Firma publicada') : AuthorMother::create(id: PostMother::AUTHOR);
         $termRepository = self::createStub(TermRepository::class);
         $termRepository->method('find')->willReturnCallback(static fn (TermId $id): ?Term => $terms[$id->value()] ?? null);
         $authorRepository = self::createStub(AuthorRepository::class);
-        $authorRepository->method('find')->willReturnCallback(static fn (AuthorId $id): ?Author => PostMother::AUTHOR === $id->value() ? $author : null);
+        $authorRepository->method('find')->willReturnCallback(static fn (AuthorId $id): ?Author => match (true) {
+            PostMother::AUTHOR === $id->value() => $author,
+            null !== $otherAuthor && $otherAuthor->id()->equals($id) => $otherAuthor,
+            default => null,
+        });
         $authorRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => [] === array_filter($ids, static fn (mixed $id): bool => $id instanceof AuthorId && $id->equals($author->id())) ? [] : [$author]);
         $imageRepository = self::createStub(ImageRepository::class);
         $imageRepository->method('findByIds')->willReturn([]);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
-        $redirects = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
+        $redirectRepository = self::createStub(RedirectRepository::class);
+        $redirectRepository->method('findByOrigins')->willReturnCallback(static fn (ResourceType $type, array $ids): array => array_values(array_filter(
+            $redirects,
+            static fn (Redirect $redirect): bool => $type === $redirect->origin()->resource()?->type() && \in_array($redirect->origin()->resource()->id(), $ids, true),
+        )));
+        $redirects = new CmsRedirectsByOrigin($redirectRepository);
 
         $page = new PreviewPost(
             $urlGenerator,

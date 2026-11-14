@@ -4,16 +4,24 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Relation\Infrastructure\Controller;
 
+use Cms\Author\Domain\AuthorRepository;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\PageRepository;
+use Cms\Post\Domain\PostRepository;
 use Cms\Relation\Application\UsersFinder;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
+use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\TermRepository;
+use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Post\Domain\PostIdMother;
+use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Shared\Infrastructure\CmsWebTestCase;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,6 +46,10 @@ final class RelationListControllerTest extends CmsWebTestCase
     {
         yield 'pages' => ['pages'];
         yield 'images' => ['images'];
+        yield 'posts' => ['posts'];
+        yield 'sections' => ['sections'];
+        yield 'tags' => ['tags'];
+        yield 'authors' => ['authors'];
     }
 
     public function testItListsWhatUsesAPage(): void
@@ -68,6 +80,40 @@ final class RelationListControllerTest extends CmsWebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertRouteSame('cms_relations', ['type' => 'images', 'id' => $id]);
+    }
+
+    /**
+     * A section or a tag is used by the posts filed under it, an author by
+     * those it signs, and a post by nothing yet but the redirects to it.
+     */
+    #[DataProvider('classifiers')]
+    public function testItListsWhatUsesAResourceOfThePosts(string $section, string $id): void
+    {
+        $client = self::createAuthenticatedClient();
+        $terms = self::getContainer()->get(TermRepository::class);
+        $terms->save(TermMother::create(id: PostMother::SECTION));
+        $terms->save(TermMother::create(id: PostMother::TAG, taxonomy: Taxonomy::Tag, name: 'Sueño', slug: 'sueno'));
+        self::getContainer()->get(AuthorRepository::class)->save(AuthorMother::create(id: PostMother::AUTHOR));
+        $post = PostIdMother::random()->value();
+        self::getContainer()->get(PostRepository::class)->save(PostMother::publishable(id: $post, tags: [PostMother::TAG]));
+        $relations = self::getContainer()->get(RelationRepository::class);
+        $relations->replace(ResourceType::Post, $post, ResourceType::Term, [PostMother::SECTION, PostMother::TAG]);
+        $relations->replace(ResourceType::Post, $post, ResourceType::Author, [PostMother::AUTHOR]);
+
+        $client->request('GET', \sprintf(self::URL, $section, '' === $id ? $post : $id));
+
+        self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function classifiers(): iterable
+    {
+        yield 'a section' => ['sections', PostMother::SECTION];
+        yield 'a tag' => ['tags', PostMother::TAG];
+        yield 'an author' => ['authors', PostMother::AUTHOR];
+        yield 'a post' => ['posts', ''];
     }
 
     public function testItOpensTheListOfAPageNothingUses(): void
@@ -121,6 +167,10 @@ final class RelationListControllerTest extends CmsWebTestCase
         yield 'a page' => ['pages', PageIdMother::DEFAULT_VALUE];
         yield 'an image' => ['images', ImageIdMother::DEFAULT_VALUE];
         yield 'a page with the id of an image' => ['pages', ImageIdMother::DEFAULT_VALUE];
+        yield 'a post' => ['posts', PostIdMother::DEFAULT_VALUE];
+        yield 'a section' => ['sections', PostMother::SECTION];
+        yield 'a tag' => ['tags', PostMother::TAG];
+        yield 'an author' => ['authors', PostMother::AUTHOR];
         yield 'not an id' => ['pages', 'sobre-mi'];
         // The settings use pages and images, but nothing uses them.
         yield 'the settings' => ['settings', PageIdMother::DEFAULT_VALUE];

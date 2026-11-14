@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Analytics\Domain\Channel;
+use Web\Analytics\Domain\ContentType;
 use Web\Analytics\Domain\Day;
 use Web\Analytics\Domain\Device;
 use Web\Analytics\Domain\Visit;
@@ -87,6 +88,25 @@ final class DoctrineVisitRepositoryTest extends KernelTestCase
         ], $this->totals(VisitMother::DAY));
         // Only the day counted is forgotten.
         self::assertSame(['2026-11-08'], $this->connection()->fetchFirstColumn('SELECT day FROM web_visit'));
+    }
+
+    /**
+     * Each kind of content is counted by the dimension of its name, by the
+     * ids of what was seen.
+     */
+    public function testItCountsEachKindOfContentByItsOwnDimension(): void
+    {
+        $this->save(VisitMother::create(id: VisitIdMother::random()->value(), reader: self::ONE, type: ContentType::Post));
+        $this->save(VisitMother::create(id: VisitIdMother::random()->value(), reader: self::TWO, type: ContentType::Post));
+        $this->save(VisitMother::create(id: VisitIdMother::random()->value(), page: self::OTHER_PAGE, reader: self::ONE, type: ContentType::Term));
+        $this->save(VisitMother::create(id: VisitIdMother::random()->value(), reader: self::THREE, type: ContentType::Author));
+
+        $this->repository()->count(Day::fromDate(new \DateTimeImmutable(VisitMother::DAY)));
+
+        self::assertSame(
+            [['author', VisitMother::PAGE, 1, 1], ['post', VisitMother::PAGE, 2, 2], ['term', self::OTHER_PAGE, 1, 1]],
+            array_values(array_filter($this->totals(VisitMother::DAY), static fn (array $total): bool => \in_array($total[0], ['page', 'post', 'term', 'author'], true))),
+        );
     }
 
     /**

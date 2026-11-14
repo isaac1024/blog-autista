@@ -34,11 +34,35 @@ final class VisitReportFinderTest extends TestCase
     private const string PAGE = CountMother::PAGE;
     private const string OTHER_PAGE = '01a1b801-ce58-723d-8234-b76d9105f002';
     private const string DELETED_PAGE = '01a1b801-ce58-723d-8234-b76d9105f003';
+    private const string POST = '01a1b801-ce58-723d-8234-b76d9105f011';
+    private const string TAG = '01a1b801-ce58-723d-8234-b76d9105f012';
 
     #[\Override]
     protected function setUp(): void
     {
         self::mockTime(self::NOW);
+    }
+
+    /**
+     * Pages, posts, sections and tags, and authors are reported together,
+     * most seen first, then by kind and id; each named, and told what it
+     * is, as the CMS keeps it; one deleted, by the kind it was counted as.
+     */
+    public function testItReportsEveryKindOfContentTogether(): void
+    {
+        $report = self::report([
+            CountMother::create(dimension: Dimension::Page, value: self::PAGE, views: 2, visitors: 2),
+            CountMother::create(dimension: Dimension::Post, value: self::POST, views: 5, visitors: 4),
+            CountMother::create(dimension: Dimension::Term, value: self::TAG, views: 2, visitors: 1),
+            CountMother::create(dimension: Dimension::Author, value: self::DELETED_PAGE, views: 2, visitors: 2),
+        ]);
+
+        self::assertEquals([
+            new ReportRow(self::POST, 'Un post', 'post', 5, 4),
+            new ReportRow(self::DELETED_PAGE, null, 'author', 2, 2),
+            new ReportRow(self::PAGE, 'Sobre mí', 'page', 2, 2),
+            new ReportRow(self::TAG, 'Sueño', 'tag', 2, 1),
+        ], $report->period->contents);
     }
 
     /**
@@ -275,13 +299,19 @@ final class VisitReportFinderTest extends TestCase
     }
 
     /**
-     * The titles of the pages still on the CMS; the deleted one has none.
+     * The names of what is still on the CMS: two pages, a post and a tag;
+     * the deleted one has none.
      */
     private static function titles(): ContentNames
     {
         $titles = self::createStub(ContentNames::class);
-        $titles->method('namesOf')->willReturnCallback(static fn (Dimension $kind, array $ids): array => Dimension::Page !== $kind ? [] : array_filter(
-            [self::PAGE => ['name' => 'Sobre mí', 'kind' => 'page'], self::OTHER_PAGE => ['name' => 'Otra página', 'kind' => 'page']],
+        $titles->method('namesOf')->willReturnCallback(static fn (Dimension $kind, array $ids): array => array_filter(
+            match ($kind) {
+                Dimension::Page => [self::PAGE => ['name' => 'Sobre mí', 'kind' => 'page'], self::OTHER_PAGE => ['name' => 'Otra página', 'kind' => 'page']],
+                Dimension::Post => [self::POST => ['name' => 'Un post', 'kind' => 'post']],
+                Dimension::Term => [self::TAG => ['name' => 'Sueño', 'kind' => 'tag']],
+                default => [],
+            },
             static fn (string $id): bool => \in_array($id, $ids, true),
             \ARRAY_FILTER_USE_KEY,
         ));

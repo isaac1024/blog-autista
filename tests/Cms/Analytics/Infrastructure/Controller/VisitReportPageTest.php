@@ -124,6 +124,41 @@ final class VisitReportPageTest extends TestCase
     }
 
     /**
+     * Each content tells under its name what it is, and one deleted, what
+     * kind it was; no other breakdown tells anything there.
+     */
+    public function testItTellsWhatEachContentIs(): void
+    {
+        $report = $this->report(Period::Month, new VisitReport(
+            $this->summary(
+                views: 1,
+                contents: [
+                    new ReportRow('a', 'Un post', 'post', 4, 1),
+                    new ReportRow('b', 'Sueño', 'tag', 3, 1),
+                    new ReportRow('c', 'Día a día', 'section', 2, 1),
+                    new ReportRow('d', null, 'term', 1, 1),
+                ],
+                channels: [new ReportRow('search', null, null, 1, 1)],
+            ),
+            [],
+            $this->summary(views: 0),
+            null,
+        ));
+
+        [$contents, $channels] = PageComponents::find($report, 'Shared:DataTable', []);
+        self::assertSame(
+            [
+                ['Un post', 'cms.analytics.contents.kinds.post'],
+                ['Sueño', 'cms.analytics.contents.kinds.tag'],
+                ['Día a día', 'cms.analytics.contents.kinds.section'],
+                ['cms.analytics.contents.deleted.term', 'cms.analytics.contents.kinds.term'],
+            ],
+            array_map(static fn (array $row): array => [$row['name'] ?? null, $row['meta'] ?? null], self::rows($contents)),
+        );
+        self::assertSame([null], array_column(self::rows($channels), 'meta'));
+    }
+
+    /**
      * Each row is named for what it counts: a page by its title, or as
      * deleted; channels and devices by their own names; the smallest sources
      * together; a country by its name in the language, or as unknown.

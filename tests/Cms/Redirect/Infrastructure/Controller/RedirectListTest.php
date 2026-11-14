@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Redirect\Infrastructure\Controller;
 
+use Cms\Author\Domain\Author;
 use Cms\Image\Domain\Image;
 use Cms\Page\Domain\Page as PageAggregate;
+use Cms\Post\Domain\Post;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Application\RedirectsResponse;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Infrastructure\Controller\RedirectList;
 use Cms\Redirect\Infrastructure\Controller\RedirectRows;
+use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\Term;
+use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Post\Domain\PostMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\ListPagination;
@@ -40,6 +47,10 @@ final class RedirectListTest extends TestCase
     private const string DELETED = '0196f3a0-0000-7000-8000-0000000000a9';
     private const string IMAGE = '0196f3a0-0000-7000-8000-0000000000b1';
     private const string OTHER = '0196f3a0-0000-7000-8000-0000000000e2';
+    private const string POST = '0196f3a0-0000-7000-8000-0000000000f1';
+    private const string SECTION = '0196f3a0-0000-7000-8000-0000000000f2';
+    private const string TAG = '0196f3a0-0000-7000-8000-0000000000f3';
+    private const string AUTHOR = '0196f3a0-0000-7000-8000-0000000000f4';
 
     public function testItLeadsToCreateARedirect(): void
     {
@@ -111,6 +122,9 @@ final class RedirectListTest extends TestCase
             false,
             [PageMother::published(id: self::PAGE, title: 'Sobre mí')],
             [ImageMother::published(id: self::IMAGE, alt: 'Un faro')],
+            [PostMother::published(id: self::POST)],
+            [TermMother::published(id: self::SECTION), TermMother::published(id: self::TAG, taxonomy: Taxonomy::Tag, name: 'Sueño', slug: 'sueno')],
+            [AuthorMother::published(id: self::AUTHOR)],
         );
 
         PageComponents::one($list, 'Shared:ResourceRow', [
@@ -129,6 +143,11 @@ final class RedirectListTest extends TestCase
         yield 'to a page' => ['page', self::PAGE, 'cms.redirects.target.page(%name%=Sobre mí)', 'cms.redirects.status.moved'];
         yield 'to an image' => ['image', self::IMAGE, 'cms.redirects.target.image(%name%=Un faro)', 'cms.redirects.status.moved'];
         yield 'to a page deleted since' => ['page', self::DELETED, 'cms.redirects.target.deleted', 'cms.redirects.status.moved'];
+        yield 'to a post' => ['post', self::POST, 'cms.redirects.target.post(%name%='.PostMother::TITLE.')', 'cms.redirects.status.moved'];
+        yield 'to a section' => ['term', self::SECTION, 'cms.redirects.target.section(%name%='.TermMother::NAME.')', 'cms.redirects.status.moved'];
+        yield 'to a tag' => ['term', self::TAG, 'cms.redirects.target.tag(%name%=Sueño)', 'cms.redirects.status.moved'];
+        yield 'to an author' => ['author', self::AUTHOR, 'cms.redirects.target.author(%name%='.AuthorMother::NAME.')', 'cms.redirects.status.moved'];
+        yield 'to a term deleted since' => ['term', self::DELETED, 'cms.redirects.target.deleted', 'cms.redirects.status.moved'];
         yield 'nowhere' => [null, null, 'cms.redirects.target.gone', 'cms.redirects.status.gone'];
     }
 
@@ -185,8 +204,13 @@ final class RedirectListTest extends TestCase
      * @param list<RedirectResponse> $redirects
      * @param list<PageAggregate>    $pages
      * @param list<Image>            $images
+     * @param list<Post>             $posts
+     * @param list<Term>             $terms
+     * @param list<Author>           $authors
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
-    private function list(array $redirects, string $search, ?Resource $narrowedTo, int $number, bool $hasMore, array $pages = [], array $images = []): Page
+    private function list(array $redirects, string $search, ?Resource $narrowedTo, int $number, bool $hasMore, array $pages = [], array $images = [], array $posts = [], array $terms = [], array $authors = []): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -194,7 +218,7 @@ final class RedirectListTest extends TestCase
         $list = new RedirectList(
             $urlGenerator,
             $translator,
-            new RedirectRows($this->redirectNames($translator, $pages, $images), $urlGenerator, $translator),
+            new RedirectRows($this->redirectNames($translator, $pages, $images, $posts, $terms, $authors), $urlGenerator, $translator),
             new ListPagination($translator, $urlGenerator),
         )(new RedirectsResponse($redirects, $hasMore), $search, $narrowedTo, $number);
         // Whatever a test asks, the list gives every component what it takes.

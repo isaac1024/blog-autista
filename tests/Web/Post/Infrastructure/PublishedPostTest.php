@@ -24,6 +24,7 @@ use Web\Post\Application\PostResponse;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
 use Web\Post\Infrastructure\Controller\PublishedPost;
+use Web\Redirect\Domain\Redirect;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
@@ -42,6 +43,14 @@ final class PublishedPostTest extends TestCase
     private const string OTHER_TAG = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a03';
 
     private const string AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
+
+    private const string THIRD_TAG = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a04';
+
+    private const string NEW_SECTION = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0b01';
+
+    private const string NEW_TAG = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0b02';
+
+    private const string NEW_AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b03';
 
     public function testItLeadsToTheSectionTheAuthorAndTheTagsOnTheSiteByTheirNamesThere(): void
     {
@@ -62,6 +71,8 @@ final class PublishedPostTest extends TestCase
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Ruido', 'url' => '/tag/ruido.html']]]);
         self::assertSame(RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html', $page->canonical);
         self::assertSame('index,follow,max-image-preview:large', $page->robots);
+        // Its visits are counted as those of the post.
+        self::assertSame(['type' => 'post', 'id' => CmsPostSubscribersTest::POST], $page->countedContent);
     }
 
     public function testItNamesTheSectionAndTheAuthorOffTheSiteAsTheyWereWhenPublishedWithoutLinks(): void
@@ -73,6 +84,54 @@ final class PublishedPostTest extends TestCase
             'author' => ['name' => 'Isaac Abreu', 'url' => null],
         ]);
         self::assertSame([], PageComponents::find($page, 'Shared:PostTags', []));
+    }
+
+    /**
+     * A section, an author or a tag off the site is shown as the one its
+     * last address now leads to, when that is one of its kind on the site;
+     * a tag once, however many lead to it.
+     */
+    public function testItShowsWhatIsOffTheSiteAsWhatItsAddressNowLeadsTo(): void
+    {
+        $page = $this->compose(
+            [self::TAG, self::OTHER_TAG, self::THIRD_TAG],
+            terms: [
+                self::NEW_SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
+                self::NEW_TAG => self::term('tag', 'Calma', 'calma'),
+            ],
+            authors: [self::NEW_AUTHOR => self::author('Isaac', 'isaac')],
+            redirects: [
+                new Redirect('term', self::NEW_SECTION, self::SECTION),
+                new Redirect('author', self::NEW_AUTHOR, self::AUTHOR),
+                new Redirect('term', self::NEW_TAG, self::TAG),
+                new Redirect('term', self::NEW_TAG, self::OTHER_TAG),
+                // A tag never shows as a section.
+                new Redirect('term', self::NEW_SECTION, self::THIRD_TAG),
+            ],
+        );
+
+        PageComponents::one($page, 'Shared:PostMeta', [
+            'section' => ['name' => 'Día a día', 'url' => '/dia-a-dia/'],
+            'author' => ['name' => 'Isaac', 'url' => '/autor/isaac.html'],
+        ]);
+        PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Calma', 'url' => '/tag/calma.html']]]);
+    }
+
+    /**
+     * What leads to a section where a tag is, or nowhere, leaves it as it
+     * was when published, without a link.
+     */
+    public function testItNamesASectionWhoseAddressLeadsToNoSectionAsItWas(): void
+    {
+        $page = $this->compose([], terms: [self::NEW_TAG => self::term('tag', 'Calma', 'calma')], redirects: [
+            new Redirect('term', self::NEW_TAG, self::SECTION),
+            new Redirect(null, null, self::AUTHOR),
+        ]);
+
+        PageComponents::one($page, 'Shared:PostMeta', [
+            'section' => ['name' => 'Vida diaria', 'url' => null],
+            'author' => ['name' => 'Isaac Abreu', 'url' => null],
+        ]);
     }
 
     /**
@@ -97,11 +156,12 @@ final class PublishedPostTest extends TestCase
 
     /**
      * @param list<string>          $tags
-     * @param array<string, Term>   $terms   by id
-     * @param array<string, Author> $authors by id
+     * @param array<string, Term>   $terms     by id
+     * @param array<string, Author> $authors   by id
      * @param array<string, mixed>  $changes
+     * @param list<Redirect>        $redirects of the last addresses of what is off the site
      */
-    private function compose(array $tags, array $terms = [], array $authors = [], array $changes = []): SitePage
+    private function compose(array $tags, array $terms = [], array $authors = [], array $changes = [], array $redirects = []): SitePage
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -114,7 +174,12 @@ final class PublishedPostTest extends TestCase
         $imageRepository->method('findByIds')->willReturn([]);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
-        $redirects = new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class));
+        $redirectRepository = self::createStub(RedirectRepository::class);
+        $redirectRepository->method('findByOrigins')->willReturnCallback(static fn (string $type, array $ids): array => array_values(array_filter(
+            $redirects,
+            static fn (Redirect $redirect): bool => \in_array($redirect->originId(), $ids, true),
+        )));
+        $redirects = new SiteRedirectsByOrigin($redirectRepository);
 
         $post = Post::publish(CmsPostPublished::fromPrimitives(
             CmsPostSubscribersTest::POST,

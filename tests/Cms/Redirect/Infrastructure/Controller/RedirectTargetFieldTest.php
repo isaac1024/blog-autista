@@ -58,6 +58,59 @@ final class RedirectTargetFieldTest extends TestCase
     }
 
     /**
+     * Each kind is picked from what the CMS has of it, by its own search and
+     * lookup; sections and tags each from their own taxonomy.
+     *
+     * @param array{searchUrl: string, lookupUrl: string, key: string, param: string} $endpoints
+     */
+    #[DataProvider('pickers')]
+    public function testItPicksEachKindFromWhatTheCmsHasOfIt(string $kind, array $endpoints): void
+    {
+        $field = $this->field('', RedirectTargetField::OTHER_KINDS, [], []);
+
+        PageComponents::one($field, 'Shared:ResourceField', [
+            'name' => $kind.'_id',
+            'id' => 'redirect-'.$kind,
+            'label' => 'cms.redirects.form.'.$kind.'.label',
+            'texts' => 'ui.resource_field.'.$kind,
+            ...$endpoints,
+        ]);
+    }
+
+    /**
+     * @return iterable<string, array{string, array{searchUrl: string, lookupUrl: string, key: string, param: string}}>
+     */
+    public static function pickers(): iterable
+    {
+        yield 'a page' => ['page', ['searchUrl' => '/cms_pages_search', 'lookupUrl' => '/cms_pages_lookup', 'key' => 'pages', 'param' => 'title']];
+        yield 'a post' => ['post', ['searchUrl' => '/cms_posts_search', 'lookupUrl' => '/cms_posts_lookup', 'key' => 'posts', 'param' => 'title']];
+        yield 'a section' => ['section', ['searchUrl' => '/cms_terms_search?taxonomy=sections', 'lookupUrl' => '/cms_terms_lookup?taxonomy=sections', 'key' => 'terms', 'param' => 'name']];
+        yield 'a tag' => ['tag', ['searchUrl' => '/cms_terms_search?taxonomy=tags', 'lookupUrl' => '/cms_terms_lookup?taxonomy=tags', 'key' => 'terms', 'param' => 'name']];
+        yield 'an author' => ['author', ['searchUrl' => '/cms_authors_search', 'lookupUrl' => '/cms_authors_lookup', 'key' => 'authors', 'param' => 'name']];
+    }
+
+    /**
+     * An address that isn't of an image is offered every kind but images,
+     * and one of an image, only images.
+     */
+    public function testItOffersWhatAnAddressCanLeadTo(): void
+    {
+        self::assertSame(['page', 'post', 'section', 'tag', 'author'], RedirectTargetField::kindsFor(false));
+        self::assertSame(['image'], RedirectTargetField::kindsFor(true));
+    }
+
+    /**
+     * A field already leading somewhere holds the resource under the kind it
+     * is picked as, and one gone, nothing.
+     */
+    public function testItHoldsWhatItLeadsTo(): void
+    {
+        self::assertSame(['action' => 'tag', 'tag_id' => 't'], self::chosen(RedirectTargetField::leadingTo('tag', 't')));
+        self::assertSame(['action' => 'gone'], self::chosen(RedirectTargetField::leadingTo(null, 'ignored')));
+        self::assertSame(['action' => 'script'], self::chosen(RedirectTargetField::leadingTo('script', 'x')));
+    }
+
+    /**
      * The choices of the form it sits in come first and last, around the
      * targets it can lead to and saying it is gone.
      */
@@ -94,24 +147,40 @@ final class RedirectTargetFieldTest extends TestCase
      * or nowhere; any other choice is a kind of target as it is, and no
      * choice at all leads to no page, which the redirect refuses.
      *
-     * @param array{action: string, page_id: string, image_id: string} $values
+     * @param array<string, string> $values
      */
     #[DataProvider('choices')]
     public function testItTellsWhereTheChoiceLeads(array $values, TargetInput $target): void
     {
-        self::assertEquals($target, RedirectTargetField::target([...RedirectTargetField::values([]), ...$values]));
+        self::assertEquals($target, RedirectTargetField::target(RedirectTargetField::values($values)));
     }
 
     /**
-     * @return iterable<string, array{array{action: string, page_id: string, image_id: string}, TargetInput}>
+     * @return iterable<string, array{array<string, string>, TargetInput}>
      */
     public static function choices(): iterable
     {
         yield 'a page' => [['action' => 'page', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('page', 'p')];
         yield 'an image' => [['action' => 'image', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('image', 'i')];
         yield 'nowhere' => [['action' => 'gone', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput(null, null)];
+        yield 'a post' => [['action' => 'post', 'page_id' => 'p', 'post_id' => 'o'], new TargetInput('post', 'o')];
+        yield 'a section, a term' => [['action' => 'section', 'section_id' => 's', 'tag_id' => 't'], new TargetInput('term', 's')];
+        yield 'a tag, a term' => [['action' => 'tag', 'section_id' => 's', 'tag_id' => 't'], new TargetInput('term', 't')];
+        yield 'an author' => [['action' => 'author', 'author_id' => 'a'], new TargetInput('author', 'a')];
         yield 'another kind' => [['action' => 'script', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('script', null)];
         yield 'no choice at all' => [['action' => '', 'page_id' => 'p', 'image_id' => 'i'], new TargetInput('page', null)];
+    }
+
+    /**
+     * The values of a field that hold something.
+     *
+     * @param array<string, string> $values
+     *
+     * @return array<string, string>
+     */
+    private static function chosen(array $values): array
+    {
+        return array_filter($values, static fn (string $value): bool => '' !== $value);
     }
 
     /**

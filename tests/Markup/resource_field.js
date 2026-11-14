@@ -11,13 +11,20 @@ export const RESOURCE_FIELD_LABELS = {
     error: 'Search failed',
 };
 
-export const resourceField = (value = '') => `
+/**
+ * A field of one resource, of pages unless the endpoints, the key they
+ * answer under and the parameter the search takes say otherwise.
+ *
+ * @param {string} [value]
+ * @param {{searchUrl?: string, lookupUrl?: string, key?: string, param?: string}} [kind]
+ */
+export const resourceField = (value = '', { searchUrl = '/api/pages/search', lookupUrl = '/api/pages/lookup', key = 'pages', param = 'title' } = {}) => `
     <form>
         <fieldset id="page" data-controller="resource-field"
-            data-resource-field-search-url-value="/api/pages/search"
-            data-resource-field-lookup-url-value="/api/pages/lookup"
-            data-resource-field-key-value="pages"
-            data-resource-field-param-value="title"
+            data-resource-field-search-url-value="${searchUrl}"
+            data-resource-field-lookup-url-value="${lookupUrl}"
+            data-resource-field-key-value="${key}"
+            data-resource-field-param-value="${param}"
             data-resource-field-labels-value='${JSON.stringify(RESOURCE_FIELD_LABELS)}'>
             <legend>Related page</legend>
             <input type="hidden" name="page" value="${value}" data-resource-field-target="input">

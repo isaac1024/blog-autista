@@ -92,6 +92,14 @@ final class AuthorEditorTest extends TestCase
     }
 
     /**
+     * Its editor leads to what it signs, on a page of its own.
+     */
+    public function testItLeadsToWhereItIsUsed(): void
+    {
+        PageComponents::one($this->edit(AuthorMother::create(id: self::ID)), 'Shared:ButtonLink', ['url' => '/cms_relations?type=authors&id='.self::ID]);
+    }
+
+    /**
      * @param array{discard: bool, unpublish: bool, delete: bool} $offered
      */
     #[DataProvider('actionsByState')]

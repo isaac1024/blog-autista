@@ -22,6 +22,7 @@ use Cms\Author\Domain\AvatarStorage;
 use Cms\Author\Domain\InvalidAuthorPublication;
 use Cms\Tests\Author\Domain\AuthorIdMother;
 use Cms\Tests\Author\Domain\AuthorMother;
+use Cms\Tests\Shared\Domain\SlugMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\DomainError;
@@ -150,6 +151,52 @@ final class AuthorPublicationTest extends TestCase
         $storage->expects(self::never())->method('delete');
 
         new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage, self::createStub(AuthorRedirects::class));
+    }
+
+    /**
+     * An author redirects lead to stays on the site until they lead elsewhere.
+     */
+    public function testItKeepsOnTheSiteAnAuthorRedirectsLeadTo(): void
+    {
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::published());
+        $repository->expects(self::never())->method('save');
+        $redirects = self::createStub(AuthorRedirects::class);
+        $redirects->method('isTargeted')->willReturn(true);
+
+        $this->expectExceptionObject(InvalidAuthorPublication::redirected());
+
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), $redirects);
+    }
+
+    /**
+     * Published at the address an author off the site last had, it takes it
+     * from that one, which is saved without it.
+     */
+    public function testItTakesTheLastAddressOfTheAuthorOffTheSiteThatHadIt(): void
+    {
+        $former = AuthorMother::unpublished(id: AuthorIdMother::random()->value());
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::publishable());
+        $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(self::equalTo(SlugMother::create(AuthorMother::SLUG)))->willReturn($former);
+        $repository->expects(self::exactly(2))->method('save');
+
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+
+        self::assertNull($former->lastSiteSlug());
+    }
+
+    public function testItKeepsItsOwnLastAddress(): void
+    {
+        $author = AuthorMother::published(publishedName: 'Antes');
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->method('find')->willReturn($author);
+        $repository->method('findOffSiteByLastSiteSlug')->willReturn($author);
+        $repository->expects(self::once())->method('save');
+
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+
+        self::assertSame(AuthorMother::SLUG, $author->lastSiteSlug()?->value());
     }
 
     #[DataProvider('authorsOffTheSite')]

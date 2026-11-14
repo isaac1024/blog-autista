@@ -16,6 +16,7 @@ use Cms\Redirect\Domain\Timeline;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
 use Cms\Tests\Page\Domain\PageMother;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Tests\Domain\ClockMother;
@@ -25,9 +26,9 @@ use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Shared\Tests\Infrastructure\Ui\PageComponents;
 
 /**
- * What the editor of a page or an image off the site says of its last
- * address: the redirect there, to edit it, or none, and a way to create
- * one; and what publishing a page would do to the redirect at its address.
+ * What the editor of a resource off the site says of its last address: the
+ * redirect there, to edit it, or none, and a way to create one; and what
+ * publishing anything but an image would do to the redirect at its address.
  * Routes are generated as their names; the texts are their translation
  * keys, with what their placeholders are given.
  */
@@ -108,6 +109,33 @@ final class LastAddressPanelTest extends TestCase
         $editor = $this->onPage(onSite: true, address: null, next: '/quien-soy.html', redirect: $this->redirect('/quien-soy.html', Origin::from(Resource::page(self::ORIGIN))));
 
         PageComponents::one($editor, 'Shared:Notice', ['message' => 'cms.redirects.publish.replaced_origin(%address%=/quien-soy.html, %origin%=cms.redirects.target.page(%name%=Retirada), %target%=cms.redirects.target.page(%name%=Destino))']);
+    }
+
+    /**
+     * The editors of posts, sections and tags, and authors tell of their
+     * last address and of the redirect publishing deletes as that of a page
+     * does.
+     *
+     * @param \Closure(LastAddressPanel, Page): Page $on
+     */
+    #[DataProvider('publishables')]
+    public function testItTellsTheEditorOfAnyPublishableResourceAsThatOfAPage(\Closure $on): void
+    {
+        $offSite = $this->compose($on, false, '/sobre-mi.html', null, $this->redirect('/sobre-mi.html'));
+        $replacing = $this->compose($on, true, null, '/quien-soy.html', $this->redirect('/quien-soy.html'));
+
+        PageComponents::one($offSite, 'Shared:Panel', ['title' => 'cms.redirects.last_address.title']);
+        PageComponents::one($replacing, 'Shared:Notice', ['message' => 'cms.redirects.publish.replaced(%address%=/quien-soy.html, %target%=cms.redirects.target.page(%name%=Destino))']);
+    }
+
+    /**
+     * @return iterable<string, array{\Closure(LastAddressPanel, Page): Page}>
+     */
+    public static function publishables(): iterable
+    {
+        yield 'a post' => [static fn (LastAddressPanel $panel, Page $layout): Page => $panel->onPost($layout, self::PAGE)];
+        yield 'a term' => [static fn (LastAddressPanel $panel, Page $layout): Page => $panel->onTerm($layout, self::PAGE)];
+        yield 'an author' => [static fn (LastAddressPanel $panel, Page $layout): Page => $panel->onAuthor($layout, self::PAGE)];
     }
 
     private function redirect(string $source, ?Origin $origin = null): Redirect

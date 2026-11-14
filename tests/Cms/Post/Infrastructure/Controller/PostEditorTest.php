@@ -104,6 +104,14 @@ final class PostEditorTest extends TestCase
     }
 
     /**
+     * Its editor leads to what leads to it, on a page of its own.
+     */
+    public function testItLeadsToWhereItIsUsed(): void
+    {
+        PageComponents::one($this->edit(PostMother::create()), 'Shared:ButtonLink', ['url' => '/cms_relations?type=posts&id='.self::ID]);
+    }
+
+    /**
      * @param array{discard: bool, unpublish: bool, delete: bool} $offered
      */
     #[DataProvider('actionsByState')]

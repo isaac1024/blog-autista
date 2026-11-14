@@ -11,6 +11,7 @@ use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermPublished;
 use Cms\Taxonomy\Domain\TermRepository;
+use Cms\Tests\Shared\Domain\SlugMother;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -116,6 +117,36 @@ final class TermPublisherTest extends TestCase
         yield 'a draft without a meta description' => [TermMother::create(), InvalidTermPublication::withoutMetaDescription()];
         yield 'a published term saved without a meta description' => [TermMother::published(metaDescription: null), InvalidTermPublication::withoutMetaDescription()];
         yield 'a published term as it is on the site' => [TermMother::published(), InvalidTermPublication::nothingToPublish()];
+    }
+
+    /**
+     * Published at the address a term of its taxonomy off the site last had,
+     * it takes it from that one, which is saved without it.
+     */
+    public function testItTakesTheLastAddressOfTheTermOffTheSiteThatHadIt(): void
+    {
+        $former = TermMother::unpublished(id: TermIdMother::random()->value());
+        $repository = $this->createMock(TermRepository::class);
+        $repository->method('find')->willReturn(TermMother::create(metaDescription: TermMother::META_DESCRIPTION));
+        $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(Taxonomy::Section, self::equalTo(SlugMother::create(TermMother::SLUG)))->willReturn($former);
+        $repository->expects(self::exactly(2))->method('save');
+
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+
+        self::assertNull($former->lastSiteSlug());
+    }
+
+    public function testItKeepsItsOwnLastAddress(): void
+    {
+        $term = TermMother::published(publishedName: 'Antes');
+        $repository = $this->createMock(TermRepository::class);
+        $repository->method('find')->willReturn($term);
+        $repository->method('findOffSiteByLastSiteSlug')->willReturn($term);
+        $repository->expects(self::once())->method('save');
+
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+
+        self::assertSame(TermMother::SLUG, $term->lastSiteSlug()?->value());
     }
 
     public function testItThrowsWhenTheTermDoesNotExist(): void

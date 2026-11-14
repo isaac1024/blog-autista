@@ -8,7 +8,10 @@ use Cms\Page\Domain\Page as PageAggregate;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Infrastructure\Controller\RedirectEditor;
 use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
+use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\Term;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -31,6 +34,7 @@ final class RedirectEditorTest extends TestCase
 
     private const string ID = '0196f3a0-0000-7000-8000-0000000000e1';
     private const string PAGE = '0196f3a0-0000-7000-8000-0000000000a1';
+    private const string TAG = '0196f3a0-0000-7000-8000-0000000000d1';
     private const string ORIGIN = '0196f3a0-0000-7000-8000-0000000000a2';
     private const string IMAGE = '0196f3a0-0000-7000-8000-0000000000b1';
 
@@ -153,6 +157,28 @@ final class RedirectEditorTest extends TestCase
         yield 'an address of an image gone' => [$redirect(true, null, null), ['image', 'gone'], ['action' => 'gone', 'image_id' => '']];
     }
 
+    /**
+     * A term it leads to is picked as the section or the tag it is; one
+     * deleted since, as a section, the first of them.
+     */
+    #[DataProvider('terms')]
+    public function testItHoldsATermAsTheKindItIs(string $id, string $kind): void
+    {
+        $editor = $this->edit($this->redirect('term', $id), terms: [TermMother::published(id: self::TAG, taxonomy: Taxonomy::Tag, name: 'Sueño', slug: 'sueno')]);
+
+        PageComponents::one($editor, 'Shared:FormChoice', ['name' => 'action', 'value' => $kind]);
+        PageComponents::one($editor, 'Shared:ResourceField', ['name' => $kind.'_id', 'value' => $id]);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function terms(): iterable
+    {
+        yield 'a tag' => [self::TAG, 'tag'];
+        yield 'a term deleted since' => ['0196f3a0-0000-7000-8000-0000000000d9', 'section'];
+    }
+
     private function redirect(?string $targetType = 'page', ?string $targetId = self::PAGE, ?string $originType = null, ?string $originId = null): RedirectResponse
     {
         return new RedirectResponse(
@@ -170,8 +196,9 @@ final class RedirectEditorTest extends TestCase
 
     /**
      * @param list<PageAggregate> $pages
+     * @param list<Term>          $terms
      */
-    private function edit(RedirectResponse $redirect, array $pages = []): Page
+    private function edit(RedirectResponse $redirect, array $pages = [], array $terms = []): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -181,7 +208,7 @@ final class RedirectEditorTest extends TestCase
             $urlGenerator,
             $translator,
             new RedirectTargetField($translator, $urlGenerator),
-            $this->redirectNames($translator, $pages),
+            $this->redirectNames($translator, $pages, terms: $terms),
         )($redirect);
         // Whatever a test asks, the editor gives every component what it takes.
         ComponentContracts::assertHonoured($editor);

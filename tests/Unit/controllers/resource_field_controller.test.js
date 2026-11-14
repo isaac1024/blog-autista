@@ -7,8 +7,8 @@ import { answer, assertFocused, later, mount, serve, settle } from '../support/d
 const PAGE = { id: 'page-1', title: 'First page', status: 'Published', published: true };
 const SECOND = { id: 'page-2', title: 'Second page', status: 'Draft', published: false };
 
-const open = async (value = '') => {
-    const page = await mount(resourceField(value), { 'resource-field': ResourceField });
+const open = async (value = '', kind = {}) => {
+    const page = await mount(resourceField(value, kind), { 'resource-field': ResourceField });
     const { document } = page;
     const target = (name) => document.querySelector(`[data-resource-field-target="${name}"]`);
 
@@ -174,4 +174,23 @@ test('More adds the next page of results, focused on its first, until there are 
     assert.equal(field.target('searchStatus').textContent, '2 results');
     assert.equal(field.target('more').hidden, true);
     assertFocused(field.results()[1]);
+});
+
+test('a field of another kind asks its own endpoints, by the parameter and under the key they answer with', async () => {
+    const TAG = { id: 'tag-1', title: 'Sueño', status: 'Published', published: true };
+    const requests = serve(() => answer({ terms: [TAG], more: false }));
+    const field = await open(TAG.id, { searchUrl: '/api/tags/search', lookupUrl: '/api/tags/lookup', key: 'terms', param: 'name' });
+    await settle();
+
+    assert.deepEqual(field.shown(), [TAG.title, TAG.status]);
+    await field.click('Choose page');
+    field.target('search').value = 'sue';
+    await field.click('Search');
+
+    assert.deepEqual(requests.map(({ url }) => url), [
+        `https://blog.test/api/tags/lookup?ids=${TAG.id}`,
+        'https://blog.test/api/tags/search?name=&page=1',
+        'https://blog.test/api/tags/search?name=sue&page=1',
+    ]);
+    assert.deepEqual(field.results().map((button) => button.textContent), ['SueñoPublished']);
 });
