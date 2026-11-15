@@ -19,9 +19,9 @@ use Shared\Domain\Event\RevisedReceivedEvent;
 final readonly class CmsSettingsPublished extends RevisedReceivedEvent
 {
     /**
-     * @param ?string                                      $defaultImageId null for none
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
+     * @param ?string                                               $defaultImageId null for none
+     * @param list<array{type: string, id: string, label: ?string}> $mainMenu
+     * @param list<array{type: string, id: string, label: ?string}> $footerMenu
      */
     public function __construct(
         string $aggregateId,
@@ -49,8 +49,8 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
             $aggregateId,
             $body->string('name'),
             $body->nullableString('default_image_id'),
-            self::menu($body->array('main_menu')),
-            self::menu($body->array('footer_menu')),
+            MenuEntries::read($body->array('main_menu')),
+            MenuEntries::read($body->array('footer_menu')),
             $body->integer('revision'),
         );
     }
@@ -66,7 +66,7 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
     }
 
     /**
-     * @return list<array{page_id: string, label: ?string}>
+     * @return list<array{type: string, id: string, label: ?string}>
      */
     public function mainMenu(): array
     {
@@ -74,33 +74,10 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
     }
 
     /**
-     * @return list<array{page_id: string, label: ?string}>
+     * @return list<array{type: string, id: string, label: ?string}>
      */
     public function footerMenu(): array
     {
         return $this->footerMenu;
-    }
-
-    /**
-     * @param array<array-key, mixed> $items
-     *
-     * @return list<array{page_id: string, label: ?string}>
-     */
-    private static function menu(array $items): array
-    {
-        $menu = [];
-
-        foreach ($items as $item) {
-            $pageId = \is_array($item) ? $item['page_id'] ?? null : null;
-            $label = \is_array($item) ? $item['label'] ?? null : null;
-
-            if (!\is_string($pageId) || (null !== $label && !\is_string($label))) {
-                throw new \UnexpectedValueException('The event body has a menu entry without a "page_id" string or a "label" string or null.');
-            }
-
-            $menu[] = ['page_id' => $pageId, 'label' => $label];
-        }
-
-        return $menu;
     }
 }

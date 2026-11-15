@@ -26,9 +26,9 @@ const open = async ({ items = [], max = 3, lookup = () => answer({ pages: [FIRST
         button,
         /** Each entry: its page, its fields' names and ids, and its buttons' states. */
         entries: () => rows().map((row) => ({
-            page: row.dataset.pageId,
-            value: button(row, 'page_id').value,
-            names: [button(row, 'page_id').name, button(row, 'label').name],
+            page: row.dataset.id,
+            value: button(row, 'target').value,
+            names: [button(row, 'target').name, button(row, 'label').name],
             label: [button(row, 'label').id, button(row, 'label-for').htmlFor, button(row, 'label').getAttribute('aria-describedby')],
             described: ['up', 'down', 'remove'].map((name) => button(row, name).getAttribute('aria-describedby')),
             disabled: [button(row, 'up').getAttribute('aria-disabled'), button(row, 'down').getAttribute('aria-disabled')],
@@ -140,7 +140,7 @@ test('a page picked joins the menu as a numbered entry, told and focused on its 
     assert.equal(menu.status(), LABELS.repeated);
 
     await menu.press(menu.results()[1]);
-    assert.deepEqual(menu.rows().map((row) => row.dataset.pageId), ['page-1', 'page-2']);
+    assert.deepEqual(menu.rows().map((row) => row.dataset.id), ['page-1', 'page-2']);
     assert.deepEqual(menu.state(), [true, false, 'true']);
     assert.equal(inputs, 2);
 });
@@ -156,13 +156,13 @@ test('a full menu opens no search, and a page picked meanwhile is not added', as
     assert.equal(menu.requests.length, searches);
 
     await menu.press(menu.results()[1]);
-    assert.deepEqual(menu.rows().map((row) => row.dataset.pageId), ['page-1', 'page-2']);
+    assert.deepEqual(menu.rows().map((row) => row.dataset.id), ['page-1', 'page-2']);
 });
 
 test('a template without an entry\'s fields is told as broken instead of drawing half an entry', async () => {
     for (const [broken, told] of [
-        ['<li data-menu-field-target="row" data-page-id="">', 'TypeError: Missing [data-field="page_id"]'],
-        ['<div data-menu-field-target="row" data-page-id=""><input data-field="page_id"></div>', 'TypeError: Missing menu row template'],
+        ['<li data-menu-field-target="row" data-type="" data-id="">', 'TypeError: Missing [data-field="target"]'],
+        ['<div data-menu-field-target="row" data-type="" data-id=""><input data-field="target"></div>', 'TypeError: Missing menu row template'],
     ]) {
         serve(() => answer({ pages: [FIRST], more: false }));
         const markup = menuField().replace(/<template data-menu-field-target="template">[\s\S]*?<\/template>/, `<template data-menu-field-target="template">${broken}</template>`);
@@ -181,7 +181,7 @@ test('an entry moves up and down, renumbered and told, with the focus kept where
     const menu = await open({ items: [FIRST, SECOND, THIRD] });
     let inputs = 0;
     menu.document.querySelector('form').addEventListener('input', () => { inputs += 1; });
-    const order = () => menu.rows().map((row) => row.dataset.pageId);
+    const order = () => menu.rows().map((row) => row.dataset.id);
     const third = menu.rows()[2];
 
     await menu.press(menu.button(third, 'up'));
@@ -219,7 +219,7 @@ test('a removed entry is told, and the focus goes to the next one, the one befor
     const [, second, third] = menu.rows();
 
     await menu.press(menu.button(menu.rows()[0], 'remove'));
-    assert.deepEqual(menu.rows().map((row) => row.dataset.pageId), ['page-2', 'page-3']);
+    assert.deepEqual(menu.rows().map((row) => row.dataset.id), ['page-2', 'page-3']);
     assert.deepEqual(menu.entries()[0].names, ['menu[0][page_id]', 'menu[0][label]']);
     assert.equal(menu.status(), 'Removed First page');
     assertFocused(menu.button(second, 'remove'));
@@ -245,7 +245,7 @@ test('a button pressed outside an entry moves and removes nothing', async () => 
         await menu.press([...menu.document.querySelectorAll('button')].find((element) => element.textContent === action));
     }
 
-    assert.deepEqual(menu.rows().map((row) => row.dataset.pageId), ['page-1', 'page-2']);
+    assert.deepEqual(menu.rows().map((row) => row.dataset.id), ['page-1', 'page-2']);
     assert.equal(menu.status(), '');
 });
 

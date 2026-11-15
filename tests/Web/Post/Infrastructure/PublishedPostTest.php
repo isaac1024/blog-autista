@@ -18,6 +18,8 @@ use Web\Author\Domain\Author;
 use Web\Author\Domain\AuthorId;
 use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\CmsAuthorPublished;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostResponse;
@@ -35,8 +37,6 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
 use Web\Taxonomy\Domain\TermRepository;
-use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
-use Web\External\Infrastructure\Ui\SiteExternalViews;
 
 final class PublishedPostTest extends TestCase
 {
@@ -193,7 +193,7 @@ final class PublishedPostTest extends TestCase
         $page = new PublishedPost(
             $urlGenerator,
             new SitePostPage(new RichTextComponents(), $translator),
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
             $imageRepository,
             $termRepository,
             $authorRepository,

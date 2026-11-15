@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Settings\Domain;
 
 use Web\Settings\Domain\CmsSettingsPublished;
+use Web\Settings\Domain\MenuEntries;
 
 /**
  * Builds the event of the CMS publishing its settings, as the site takes it:
@@ -61,6 +62,7 @@ final class CmsSettingsPublishedMother
         string $id = self::ID,
         int $revision = 1,
     ): CmsSettingsPublished {
-        return new CmsSettingsPublished($id, $name, $defaultImageId, $mainMenu, $footerMenu, $revision);
+        // As the site reads them from the body of the event.
+        return new CmsSettingsPublished($id, $name, $defaultImageId, MenuEntries::read($mainMenu), MenuEntries::read($footerMenu), $revision);
     }
 }

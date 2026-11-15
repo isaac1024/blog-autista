@@ -9,6 +9,8 @@ use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Domain\AuthorRepository;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Domain\Page;
@@ -25,8 +27,6 @@ use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
-use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
-use Web\External\Infrastructure\Ui\SiteExternalViews;
 
 final class PublishedPageTest extends TestCase
 {
@@ -75,7 +75,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
@@ -95,7 +95,7 @@ final class PublishedPageTest extends TestCase
         $imageRepository->method('findByIds')->willReturn([]);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
-        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)));
         $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
 
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
@@ -114,7 +114,7 @@ final class PublishedPageTest extends TestCase
         $imageRepository->method('findByIds')->willReturn([]);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
-        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)));
         $page = Page::publish(CmsPagePublishedMother::create(id: self::TARGET));
 
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));

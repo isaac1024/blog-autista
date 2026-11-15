@@ -14,6 +14,8 @@ use Web\Author\Domain\Author;
 use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\CmsAuthorPublished;
 use Web\Author\Infrastructure\Controller\PublishedAuthor;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Domain\PostRepository;
@@ -23,8 +25,6 @@ use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Domain\TermRepository;
-use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
-use Web\External\Infrastructure\Ui\SiteExternalViews;
 
 final class PublishedAuthorTest extends TestCase
 {
@@ -56,7 +56,7 @@ final class PublishedAuthorTest extends TestCase
         $page = new PublishedAuthor(
             $urlGenerator,
             new SiteAuthorPage(new RichTextComponents()),
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
             $imageRepository,
             $redirects,
             new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)),

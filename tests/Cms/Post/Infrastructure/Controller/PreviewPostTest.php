@@ -7,6 +7,9 @@ namespace Cms\Tests\Post\Infrastructure\Controller;
 use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\External\Domain\ExternalResourceRepository;
+use Cms\External\Infrastructure\Controller\ExternalImageUrl;
+use Cms\External\Infrastructure\Ui\CmsExternalViews;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Application\PostResponse;
@@ -33,6 +36,7 @@ use Cms\Tests\Redirect\Domain\RedirectMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SitePostPage;
@@ -41,10 +45,6 @@ use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Shared\Tests\Infrastructure\Ui\PageComponents;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
-use Cms\External\Domain\ExternalResourceRepository;
-use Cms\External\Infrastructure\Controller\ExternalImageUrl;
-use Cms\External\Infrastructure\Ui\CmsExternalViews;
-use Shared\Infrastructure\Http\SignedUrls;
 use Symfony\Component\HttpFoundation\UriSigner;
 
 final class PreviewPostTest extends TestCase
@@ -188,7 +188,7 @@ final class PreviewPostTest extends TestCase
 
         $page = new PreviewPost(
             $urlGenerator,
-            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
+            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))))),
             new SitePostPage(new RichTextComponents(), $translator),
             new PostUrl($urlGenerator),
             $imageRepository,

@@ -32,8 +32,8 @@ final class SettingsOnSiteFinderTest extends TestCase
             new SettingsOnSiteResponse(
                 'Nombre publicado',
                 SettingsMother::IMAGE,
-                [['page_id' => SettingsMother::PAGE, 'label' => 'Sobre mí']],
-                [['page_id' => SettingsMother::OTHER_PAGE, 'label' => null]],
+                [['type' => 'page', 'id' => SettingsMother::PAGE, 'label' => 'Sobre mí']],
+                [['type' => 'page', 'id' => SettingsMother::OTHER_PAGE, 'label' => null]],
             ),
             new SettingsOnSiteFinder()($repository),
         );

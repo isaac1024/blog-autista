@@ -7,6 +7,7 @@ namespace Web\Tests\Settings\Application;
 use PHPUnit\Framework\TestCase;
 use Web\Settings\Application\PublishedSettingsFinder;
 use Web\Settings\Application\SettingsResponse;
+use Web\Settings\Domain\MenuEntries;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Tests\Settings\Domain\CmsSettingsPublishedMother as Event;
@@ -19,7 +20,7 @@ final class PublishedSettingsFinderTest extends TestCase
         $repository->method('find')->willReturn(Settings::publish(Event::create()));
 
         self::assertEquals(
-            new SettingsResponse(Event::NAME, Event::IMAGE, Event::MAIN_MENU, Event::FOOTER_MENU),
+            new SettingsResponse(Event::NAME, Event::IMAGE, MenuEntries::read(Event::MAIN_MENU), MenuEntries::read(Event::FOOTER_MENU)),
             (new PublishedSettingsFinder())($repository),
         );
     }

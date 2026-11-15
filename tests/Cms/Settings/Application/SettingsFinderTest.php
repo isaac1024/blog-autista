@@ -7,6 +7,7 @@ namespace Cms\Tests\Settings\Application;
 use Cms\Settings\Application\SettingsFinder;
 use Cms\Settings\Application\SettingsNotFound;
 use Cms\Settings\Application\SettingsResponse;
+use Cms\Settings\Domain\Menu;
 use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsRepository;
 use Cms\Tests\Settings\Domain\SettingsMother;
@@ -37,7 +38,7 @@ final class SettingsFinderTest extends TestCase
 
         yield 'a draft' => [
             SettingsMother::create($version, createdAt: '2026-10-01 09:00:00'),
-            new SettingsResponse(SettingsMother::NAME, SettingsMother::IMAGE, $menu, $footer, $created, $created, 'draft', false, true),
+            new SettingsResponse(SettingsMother::NAME, SettingsMother::IMAGE, Menu::fromArray($menu)->view(), Menu::fromArray($footer)->view(), $created, $created, 'draft', false, true),
         ];
         yield 'published settings as they are on the site' => [
             SettingsMother::published(SettingsMother::version(), createdAt: '2026-10-01 09:00:00', updatedAt: ClockMother::NOW),

@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace Cms\Settings\Domain;
 
+use Shared\Domain\RichText\InvalidRichText;
+use Shared\Domain\RichText\Link;
+use Shared\Domain\RichText\LinkType;
+
 /**
- * A menu of the site: the pages it leads to, in order, each once, and few
- * enough to read at a glance. It may be empty, and its pages needn't be on
- * the site: the site paints only those that are.
+ * A menu of the site: what it leads to, pages, posts, sections and tags,
+ * authors or external resources, in order, each once, and few enough to
+ * read at a glance. It may be empty, and what it leads to needn't be on the
+ * site: the site paints only what is.
  */
 final readonly class Menu
 {
@@ -22,10 +27,10 @@ final readonly class Menu
             throw InvalidMenu::tooManyItems(self::MAX_ITEMS);
         }
 
-        $pageIds = $this->pageIds();
+        $targets = array_map(static fn (MenuItem $item): string => $item->target()->type()->value.':'.$item->target()->id(), $items);
 
-        if (\count($pageIds) !== \count(array_unique($pageIds))) {
-            throw InvalidMenu::repeatedPage();
+        if (\count($targets) !== \count(array_unique($targets))) {
+            throw InvalidMenu::repeatedEntry();
         }
     }
 
@@ -36,7 +41,8 @@ final readonly class Menu
 
     /**
      * Builds it from what a form submits or what is stored: a list of
-     * entries, each with the id of its page and an optional label.
+     * entries, each with the id of what it leads to under the key of its
+     * kind, as a text links it, such as "page_id", and an optional label.
      *
      * @param array<array-key, mixed> $items
      */
@@ -45,36 +51,60 @@ final readonly class Menu
         $menu = [];
 
         foreach ($items as $item) {
-            if (!\is_array($item) || !\is_string($item['page_id'] ?? null)) {
+            $label = \is_array($item) ? $item['label'] ?? null : null;
+
+            if (!\is_array($item) || (null !== $label && !\is_string($label))) {
                 throw InvalidMenu::malformed();
             }
 
-            $label = $item['label'] ?? null;
-
-            if (null !== $label && !\is_string($label)) {
-                throw InvalidMenu::malformed();
+            try {
+                $target = Link::fromArray($item, 'menu');
+            } catch (InvalidRichText $exception) {
+                throw InvalidMenu::malformed($exception);
             }
 
-            $menu[] = new MenuItem(new PageId($item['page_id']), $label);
+            $menu[] = new MenuItem($target ?? throw InvalidMenu::malformed(), $label);
         }
 
         return new self($menu);
     }
 
     /**
+     * The ids of what it leads to of the kind, in order.
+     *
      * @return list<string>
      */
-    public function pageIds(): array
+    public function linkedIds(LinkType $type): array
     {
-        return array_map(static fn (MenuItem $item): string => $item->pageId()->value(), $this->items);
+        $ids = [];
+
+        foreach ($this->items as $item) {
+            $id = $item->target()->idOf($type);
+
+            if (null !== $id) {
+                $ids[] = $id;
+            }
+        }
+
+        return $ids;
     }
 
     /**
-     * @return list<array{page_id: string, label: ?string}>
+     * @return list<array<string, ?string>>
      */
     public function toArray(): array
     {
         return array_map(static fn (MenuItem $item): array => $item->toArray(), $this->items);
+    }
+
+    /**
+     * Its entries, by the kind and the id of what each leads to.
+     *
+     * @return list<array{type: string, id: string, label: ?string}>
+     */
+    public function view(): array
+    {
+        return array_map(static fn (MenuItem $item): array => $item->view(), $this->items);
     }
 
     public function equals(self $other): bool

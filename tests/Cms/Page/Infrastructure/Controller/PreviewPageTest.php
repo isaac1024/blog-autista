@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Author\Domain\AuthorRepository;
+use Cms\External\Domain\ExternalResourceRepository;
+use Cms\External\Infrastructure\Controller\ExternalImageUrl;
+use Cms\External\Infrastructure\Ui\CmsExternalViews;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
@@ -26,15 +29,12 @@ use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Settings\Domain\SettingsMother;
 use PHPUnit\Framework\TestCase;
+use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Cms\External\Domain\ExternalResourceRepository;
-use Cms\External\Infrastructure\Controller\ExternalImageUrl;
-use Cms\External\Infrastructure\Ui\CmsExternalViews;
-use Shared\Infrastructure\Http\SignedUrls;
 use Symfony\Component\HttpFoundation\UriSigner;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class PreviewPageTest extends TestCase
 {
@@ -246,7 +246,7 @@ final class PreviewPageTest extends TestCase
         return new PreviewPage(
             $urlGenerator,
             new SitePage(new RichTextComponents()),
-            new PreviewLayout($urlGenerator, $settingsRepository, $pageRepository, $imageRepository, $redirectsByOrigin),
+            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))))),
             $imageRepository,
             $redirectsByOrigin,
             new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),

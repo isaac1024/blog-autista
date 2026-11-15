@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Settings\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use Shared\Domain\RichText\LinkType;
 
 /**
  * What an editor writes in the settings: the name of the blog, its default
@@ -86,12 +87,12 @@ final readonly class SettingsVersion
     }
 
     /**
-     * The pages its menus lead to.
+     * What its menus lead to of the kind.
      *
      * @return list<string>
      */
-    public function pageIds(): array
+    public function linkedIds(LinkType $type): array
     {
-        return [...$this->mainMenu->pageIds(), ...$this->footerMenu->pageIds()];
+        return [...$this->mainMenu->linkedIds($type), ...$this->footerMenu->linkedIds($type)];
     }
 }

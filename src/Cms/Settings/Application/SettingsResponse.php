@@ -16,12 +16,12 @@ use Cms\Settings\Domain\Settings;
 final readonly class SettingsResponse
 {
     /**
-     * @param ?string                                      $defaultImage          id of the default image; null for none
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
-     * @param string                                       $status                one of the SettingsStatus values
-     * @param bool                                         $changed               whether they are published with changes not on the site yet, which can be discarded
-     * @param bool                                         $hasSomethingToPublish whether publishing would change the site
+     * @param ?string                                               $defaultImage          id of the default image; null for none
+     * @param list<array{type: string, id: string, label: ?string}> $mainMenu
+     * @param list<array{type: string, id: string, label: ?string}> $footerMenu
+     * @param string                                                $status                one of the SettingsStatus values
+     * @param bool                                                  $changed               whether they are published with changes not on the site yet, which can be discarded
+     * @param bool                                                  $hasSomethingToPublish whether publishing would change the site
      */
     public function __construct(
         public string $name,
@@ -40,8 +40,8 @@ final readonly class SettingsResponse
         return new self(
             $settings->name()->value(),
             $settings->defaultImage()?->value(),
-            $settings->mainMenu()->toArray(),
-            $settings->footerMenu()->toArray(),
+            $settings->mainMenu()->view(),
+            $settings->footerMenu()->view(),
             $settings->timeline()->createdAt(),
             $settings->timeline()->updatedAt(),
             $settings->status()->value,

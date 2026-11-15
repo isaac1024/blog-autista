@@ -8,15 +8,21 @@ use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\SiteTermPage;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
+use Web\Author\Domain\AuthorRepository;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\PageRepository;
+use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
+use Web\Taxonomy\Domain\TermRepository;
 use Web\Taxonomy\Infrastructure\Controller\PublishedTerm;
 
 final class PublishedTermTest extends TestCase
@@ -45,7 +51,7 @@ final class PublishedTermTest extends TestCase
         ]));
 
         $page = new PublishedTerm(
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $pageRepository, $imageRepository, $redirects),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
             new SiteTermPage(),
         )(TermResponse::fromTerm($term), RouteNameUrlGenerator::SITE.'/tag/sueno.html');
         ComponentContracts::assertHonoured($page);

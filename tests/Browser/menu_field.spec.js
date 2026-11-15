@@ -22,8 +22,8 @@ test('adding a page creates and numbers its fields, announces it and enforces th
 
     const row = page.locator('[data-menu-field-target="row"]');
     await expect(row).toHaveCount(1);
-    await expect(row.locator('[data-field="page_id"]')).toHaveAttribute('name', 'menu[0][page_id]');
-    await expect(row.locator('[data-field="page_id"]')).toHaveValue(FIRST.id);
+    await expect(row.locator('[data-field="target"]')).toHaveAttribute('name', 'menu[0][page_id]');
+    await expect(row.locator('[data-field="target"]')).toHaveValue(FIRST.id);
     await expect(row.locator('[data-field="label"]')).toHaveAttribute('name', 'menu[0][label]');
     await expect(row.locator('[data-field="label"]')).toBeFocused();
     await expect(page.locator('[data-menu-field-target="status"]')).toHaveText('Added First page');
@@ -42,10 +42,10 @@ test('moving an entry renumbers every field and keeps a useful button focused', 
 
     await rows.nth(0).locator('[data-field="down"]').click();
 
-    await expect(rows.nth(0)).toHaveAttribute('data-page-id', SECOND.id);
-    await expect(rows.nth(1)).toHaveAttribute('data-page-id', FIRST.id);
-    await expect(rows.nth(0).locator('[data-field="page_id"]')).toHaveAttribute('name', 'menu[0][page_id]');
-    await expect(rows.nth(1).locator('[data-field="page_id"]')).toHaveAttribute('name', 'menu[1][page_id]');
+    await expect(rows.nth(0)).toHaveAttribute('data-id', SECOND.id);
+    await expect(rows.nth(1)).toHaveAttribute('data-id', FIRST.id);
+    await expect(rows.nth(0).locator('[data-field="target"]')).toHaveAttribute('name', 'menu[0][page_id]');
+    await expect(rows.nth(1).locator('[data-field="target"]')).toHaveAttribute('name', 'menu[1][page_id]');
     await expect(rows.nth(0).locator('[data-field="label"]')).toHaveAttribute('id', 'menu-0-label');
     await expect(rows.nth(1).locator('[data-field="label"]')).toHaveAttribute('id', 'menu-1-label');
     await expect(rows.nth(1).locator('[data-field="up"]')).toBeFocused();

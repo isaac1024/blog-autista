@@ -1,10 +1,12 @@
 import { Controller } from '@hotwired/stimulus';
 import { notifyForm } from '../shared/forms.js';
-import { Lookups, lookupText } from '../shared/lookup.js';
+import { TargetLookups } from '../rich_text/targets.js';
+import { lookupText } from '../shared/lookup.js';
 import { pageOption } from '../shared/options.js';
 import { Search } from '../shared/search.js';
 
 /** @typedef {import('./resource_field_controller.js').Resource} Page */
+/** @typedef {import('../rich_text/targets.js').LinkTarget} LinkTarget */
 
 /**
  * @typedef {object} Labels
@@ -27,8 +29,9 @@ import { Search } from '../shared/search.js';
 /**
  * @typedef {object} Properties
  * @property {AbortController} abortController
- * @property {Lookups<Page>} pages
+ * @property {TargetLookups<Page>} contents
  * @property {Search<Page>} searches
+ * @property {LinkTarget} kind
  * @property {HTMLOListElement} listTarget
  * @property {HTMLLIElement[]} rowTargets
  * @property {HTMLTemplateElement} templateTarget
@@ -42,8 +45,7 @@ import { Search } from '../shared/search.js';
  * @property {HTMLButtonElement} moreTarget
  * @property {HTMLElement} statusTarget
  * @property {string} nameValue
- * @property {string} searchUrlValue
- * @property {string} lookupUrlValue
+ * @property {LinkTarget[]} targetsValue
  * @property {number} maxValue
  * @property {Labels} labelsValue
  */
@@ -68,12 +70,12 @@ const field = (root, selector, type) => {
 };
 
 /**
- * The id of the page an entry leads to: every entry carries one, empty in
- * the template.
+ * What an entry leads to, by its kind and its id: every entry carries them,
+ * empty in the template.
  *
  * @param {HTMLLIElement} row
  */
-const pageIdOf = (row) => /** @type {string} */ (row.dataset.pageId);
+const targetOf = (row) => ({ type: row.dataset.type ?? '', id: row.dataset.id ?? '' });
 
 /**
  * @param {Event} event
@@ -82,19 +84,19 @@ const pageIdOf = (row) => /** @type {string} */ (row.dataset.pageId);
 const eventRow = (event) => event.target instanceof Element ? event.target.closest('li') : null;
 
 /*
- * Edits a menu of pages: adds pages searched by title, moves entries with
- * Up and Down, takes them out with Remove, and names each by the page it
- * leads to and where that page stands for the site, in words. The entries
- * are form fields of their own, renumbered after every change, so the form
- * posts them in order.
+ * Edits a menu: adds contents of the kind chosen, pages, posts, sections,
+ * tags, authors or external resources, searched by title or name, moves
+ * entries with Up and Down, takes them out with Remove, and names each by
+ * what it leads to and where that stands for the site, in words. The
+ * entries are form fields of their own, renumbered after every change, so
+ * the form posts them in order.
  */
 export default class extends BaseController {
     static targets = ['list', 'row', 'template', 'empty', 'add', 'full', 'dialog', 'search', 'searchStatus', 'results', 'more', 'status'];
 
     static values = {
         name: String,
-        searchUrl: String,
-        lookupUrl: String,
+        targets: Array,
         max: Number,
         labels: Object,
     };
@@ -102,19 +104,29 @@ export default class extends BaseController {
     connect() {
         this.abortController = new AbortController();
         const owner = this.abortController.signal;
-        this.pages = /** @type {Lookups<Page>} */ (new Lookups(new URL(this.lookupUrlValue, window.location.href), 'pages', owner, () => this.refresh()));
-        this.searches = new Search({
-            url: new URL(this.searchUrlValue, window.location.href),
-            param: 'title',
-            key: 'pages',
+        this.contents = /** @type {TargetLookups<Page>} */ (new TargetLookups(this.targetsValue, owner, () => this.refresh()));
+        this.kind = this.targetsValue[0];
+        // One search, of the kind of content chosen when it goes out, so a
+        // search of another kind still on its way is outdated by it.
+        const kind = () => this.kind;
+        this.searches = /** @type {Search<Page>} */ (new Search({
+            get url() {
+                return new URL(kind().searchUrl, window.location.href);
+            },
+            get param() {
+                return kind().param;
+            },
+            get key() {
+                return kind().key;
+            },
             owner,
             view: () => ({ input: this.searchTarget, results: this.resultsTarget, status: this.searchStatusTarget, more: this.moreTarget }),
             labels: () => this.labelsValue,
             row: (page) => pageOption(page, () => this.add(page), this.labelsValue.offSite),
-        });
+        }));
         this.addTarget.hidden = false;
         this.refresh();
-        this.pages.ask(this.rowTargets.map(pageIdOf));
+        this.contents.ask(this.rowTargets.map(targetOf));
     }
 
     disconnect() {
@@ -152,7 +164,7 @@ export default class extends BaseController {
         }
 
         const next = row.nextElementSibling ?? row.previousElementSibling;
-        const title = this.titleOf(pageIdOf(row));
+        const title = this.titleOf(row);
         row.remove();
         this.refresh();
         this.announce(this.labelsValue.removed.replace('%title%', title));
@@ -163,7 +175,9 @@ export default class extends BaseController {
 
     /** @param {Page} page */
     add(page) {
-        if (this.rowTargets.some((row) => row.dataset.pageId === page.id)) {
+        const { type } = this.kind;
+
+        if (this.rowTargets.some((row) => row.dataset.type === type && row.dataset.id === page.id)) {
             this.announce(this.labelsValue.repeated);
 
             return;
@@ -173,7 +187,7 @@ export default class extends BaseController {
             return;
         }
 
-        this.pages.know(page);
+        this.contents.know(type, page);
         const template = this.templateTarget.content.firstElementChild;
 
         if (!(template instanceof HTMLLIElement)) {
@@ -181,8 +195,9 @@ export default class extends BaseController {
         }
 
         const row = /** @type {HTMLLIElement} */ (template.cloneNode(true));
-        row.dataset.pageId = page.id;
-        field(row, '[data-field="page_id"]', HTMLInputElement).value = page.id;
+        row.dataset.type = type;
+        row.dataset.id = page.id;
+        field(row, '[data-field="target"]', HTMLInputElement).value = page.id;
         this.listTarget.append(row);
         this.dialogTarget.close();
         this.refresh();
@@ -200,7 +215,7 @@ export default class extends BaseController {
      */
     changed(row, direction, message) {
         this.refresh();
-        this.announce(message.replace('%title%', this.titleOf(pageIdOf(row))));
+        this.announce(message.replace('%title%', this.titleOf(row)));
         const button = field(row, `[data-field="${direction}"]`, HTMLButtonElement);
         const other = field(row, `[data-field="${direction === 'up' ? 'down' : 'up'}"]`, HTMLButtonElement);
         (button.getAttribute('aria-disabled') === 'true' ? other : button).focus();
@@ -214,7 +229,7 @@ export default class extends BaseController {
 
         rows.forEach((row, index) => {
             const prefix = `${this.nameValue}[${index}]`;
-            field(row, '[data-field="page_id"]', HTMLInputElement).name = `${prefix}[page_id]`;
+            field(row, '[data-field="target"]', HTMLInputElement).name = `${prefix}[${targetOf(row).type}_id]`;
             const label = field(row, '[data-field="label"]', HTMLInputElement);
             label.name = `${prefix}[label]`;
             label.id = `${id}-${index}-label`;
@@ -241,21 +256,23 @@ export default class extends BaseController {
 
     /** @param {HTMLLIElement} row */
     drawPage(row) {
-        const lookup = this.pages.of(pageIdOf(row));
+        const { type, id } = targetOf(row);
+        const lookup = this.contents.of(type, id);
         const { name, standing } = lookupText(lookup, (page) => page.title, this.labelsValue);
 
         field(row, '[data-menu-field-target="pageTitle"]', HTMLElement).textContent = name;
         field(row, '[data-menu-field-target="pageStatus"]', HTMLElement).textContent = standing;
 
-        // The label left empty takes the title of the page.
+        // The label left empty takes the title or the name of what it leads to.
         if (lookup.state === 'found') {
             field(row, '[data-field="label"]', HTMLInputElement).placeholder = lookup.value.title;
         }
     }
 
-    /** @param {string} id */
-    titleOf(id) {
-        const lookup = this.pages.of(id);
+    /** @param {HTMLLIElement} row */
+    titleOf(row) {
+        const { type, id } = targetOf(row);
+        const lookup = this.contents.of(type, id);
 
         return lookup.state === 'found' ? lookup.value.title : '';
     }
@@ -269,6 +286,17 @@ export default class extends BaseController {
 
         this.dialogTarget.showModal();
         this.searchTarget.focus();
+        this.search();
+    }
+
+    /**
+     * Searches the kind of content chosen, from its first results.
+     *
+     * @param {Event} event
+     */
+    chooseKind(event) {
+        const { value } = /** @type {HTMLInputElement} */ (event.currentTarget);
+        this.kind = this.targetsValue.find((target) => target.kind === value) ?? this.kind;
         this.search();
     }
 

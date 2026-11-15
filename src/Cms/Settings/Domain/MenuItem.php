@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Settings\Domain;
 
+use Shared\Domain\RichText\Link;
+
 /**
- * One entry of a menu: a page, named by its own label or, without one, by
- * the title the page has on the site. The label is a single line, with its
+ * One entry of a menu: what it leads to, a page, a post, a section or a tag,
+ * an author or an external resource, named by its own label or, without
+ * one, by the name it has on the site. The label is a single line, with its
  * whitespace collapsed; a blank one means none.
  */
 final readonly class MenuItem
@@ -16,7 +19,7 @@ final readonly class MenuItem
     private ?string $label;
 
     public function __construct(
-        private PageId $pageId,
+        private Link $target,
         ?string $label,
     ) {
         $label = trim((string) preg_replace('/\s+/u', ' ', (string) $label));
@@ -28,16 +31,29 @@ final readonly class MenuItem
         $this->label = '' === $label ? null : $label;
     }
 
-    public function pageId(): PageId
+    public function target(): Link
     {
-        return $this->pageId;
+        return $this->target;
     }
 
     /**
-     * @return array{page_id: string, label: ?string}
+     * What it leads to, under the key of its kind, as a text links it, such
+     * as "page_id", and its label.
+     *
+     * @return array<string, ?string>
      */
     public function toArray(): array
     {
-        return ['page_id' => $this->pageId->value(), 'label' => $this->label];
+        return [...$this->target->toArray(), 'label' => $this->label];
+    }
+
+    /**
+     * What it leads to, by its kind and its id, and its label.
+     *
+     * @return array{type: string, id: string, label: ?string}
+     */
+    public function view(): array
+    {
+        return ['type' => $this->target->type()->value, 'id' => $this->target->id(), 'label' => $this->label];
     }
 }

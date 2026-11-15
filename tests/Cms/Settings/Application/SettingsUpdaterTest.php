@@ -230,12 +230,12 @@ final class SettingsUpdaterTest extends TestCase
         yield 'name one character too long' => [str_repeat('a', 61), '', [], 'errors.settings.name.too_long', ['%max%' => 60]];
         yield 'image that is not an id' => [$name, 'rectangulo', [], 'errors.uuid.invalid', ['%value%' => 'rectangulo']];
         yield 'menu one entry too long' => [$name, '', $nine, 'errors.settings.menu.too_many_items', ['%max%' => 8]];
-        yield 'menu with a page twice' => [$name, '', [Mother::item(), Mother::item(label: 'Otra vez')], 'errors.settings.menu.repeated_page', []];
+        yield 'menu with a page twice' => [$name, '', [Mother::item(), Mother::item(label: 'Otra vez')], 'errors.settings.menu.repeated_entry', []];
         yield 'label one character too long' => [$name, '', [Mother::item(label: str_repeat('a', 41))], 'errors.settings.menu.label_too_long', ['%max%' => 40]];
         yield 'entry without a page' => [$name, '', [['label' => 'Sobre mí']], 'errors.settings.menu.malformed', []];
         yield 'entry that is not a list' => [$name, '', ['Sobre mí'], 'errors.settings.menu.malformed', []];
         yield 'label that is not text' => [$name, '', [['page_id' => Mother::PAGE, 'label' => ['Sobre mí']]], 'errors.settings.menu.malformed', []];
-        yield 'page that is not an id' => [$name, '', [['page_id' => 'sobre-mi', 'label' => null]], 'errors.uuid.invalid', ['%value%' => 'sobre-mi']];
+        yield 'page that is not an id' => [$name, '', [['page_id' => 'sobre-mi', 'label' => null]], 'errors.settings.menu.malformed', []];
     }
 
     public function testItFailsWhileTheSettingsDoNotExist(): void

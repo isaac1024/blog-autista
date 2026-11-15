@@ -13,9 +13,9 @@ use Cms\Settings\Domain\SettingsVersion;
 final readonly class SettingsOnSiteResponse
 {
     /**
-     * @param ?string                                      $defaultImage id of the default image; null for none
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
+     * @param ?string                                               $defaultImage id of the default image; null for none
+     * @param list<array{type: string, id: string, label: ?string}> $mainMenu
+     * @param list<array{type: string, id: string, label: ?string}> $footerMenu
      */
     public function __construct(
         public string $name,
@@ -29,8 +29,8 @@ final readonly class SettingsOnSiteResponse
         return new self(
             $version->name()->value(),
             $version->defaultImage()?->value(),
-            $version->mainMenu()->toArray(),
-            $version->footerMenu()->toArray(),
+            $version->mainMenu()->view(),
+            $version->footerMenu()->view(),
         );
     }
 }

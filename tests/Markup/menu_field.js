@@ -14,9 +14,18 @@ export const MENU_FIELD_LABELS = {
     error: 'Search failed',
 };
 
-const row = (pageId = '', label = '') => `
-    <li data-menu-field-target="row" data-page-id="${pageId}">
-        <input type="hidden" value="${pageId}" data-field="page_id">
+/**
+ * The kinds of content an entry may lead to, as the CMS offers them: pages,
+ * and external resources, each searched and looked up apart.
+ */
+export const MENU_FIELD_TARGETS = [
+    { kind: 'page', type: 'page', searchUrl: '/api/pages/search', param: 'title', key: 'pages', lookupUrl: '/api/pages/lookup' },
+    { kind: 'external', type: 'external', searchUrl: '/api/externals/search', param: 'title', key: 'externals', lookupUrl: '/api/externals/lookup' },
+];
+
+const row = (type = '', id = '', label = '') => `
+    <li data-menu-field-target="row" data-type="${type}" data-id="${id}">
+        <input type="hidden" value="${id}" data-field="target">
         <p data-field="page">
             <span data-menu-field-target="pageTitle">Loading page</span>
             <span data-menu-field-target="pageStatus"></span>
@@ -33,18 +42,22 @@ export const menuField = ({ items = [], max = 2 } = {}) => `
     <form>
         <fieldset id="menu" data-controller="menu-field"
             data-menu-field-name-value="menu"
-            data-menu-field-search-url-value="/api/pages/search"
-            data-menu-field-lookup-url-value="/api/pages/lookup"
+            data-menu-field-targets-value='${JSON.stringify(MENU_FIELD_TARGETS)}'
             data-menu-field-max-value="${max}"
             data-menu-field-labels-value='${JSON.stringify(MENU_FIELD_LABELS)}'>
             <legend>Main menu</legend>
             <p id="menu-label-hint" hidden>Optional label</p>
             <p data-menu-field-target="empty">No entries</p>
-            <ol data-menu-field-target="list">${items.map((item) => row(item.id, item.label ?? '')).join('')}</ol>
+            <ol data-menu-field-target="list">${items.map((item) => row(item.type ?? 'page', item.id, item.label ?? '')).join('')}</ol>
             <template data-menu-field-target="template">${row()}</template>
             <button type="button" data-menu-field-target="add" data-action="menu-field#openDialog" hidden>Add page</button>
             <span data-menu-field-target="full" hidden>The menu is full</span>
             <dialog data-menu-field-target="dialog">
+                <fieldset>
+                    <legend>What to link</legend>
+                    <label><input type="radio" name="menu-kind" value="page" checked data-action="change->menu-field#chooseKind"> Page</label>
+                    <label><input type="radio" name="menu-kind" value="external" data-action="change->menu-field#chooseKind"> External resource</label>
+                </fieldset>
                 <label for="menu-search">Search pages</label>
                 <input id="menu-search" type="search" data-menu-field-target="search">
                 <button type="button" data-action="menu-field#search">Search</button>

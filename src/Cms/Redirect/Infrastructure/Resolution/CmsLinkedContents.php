@@ -58,12 +58,38 @@ final readonly class CmsLinkedContents
      */
     public function __invoke(RichText $content, array $images, ?string $painted): array
     {
+        return $this->linked(static fn (LinkType $type): array => SitePage::linkedIds($content, $images, $type), $painted);
+    }
+
+    /**
+     * What the entries of menus lead to, as for a text: those of each kind
+     * on the site, or redirected, with their address and name, keyed by id.
+     *
+     * @param list<array{type: string, id: string, label: ?string}> $entries
+     *
+     * @return array<string, array{url: string, title: string, external?: ExternalView}>
+     */
+    public function menuTargets(array $entries): array
+    {
+        return $this->linked(static fn (LinkType $type): array => array_values(array_map(
+            static fn (array $entry): string => $entry['id'],
+            array_filter($entries, static fn (array $entry): bool => $type->value === $entry['type']),
+        )), null);
+    }
+
+    /**
+     * @param \Closure(LinkType): list<string> $ids what is linked of each kind
+     *
+     * @return array<string, array{url: string, title: string, external?: ExternalView}>
+     */
+    private function linked(\Closure $ids, ?string $painted): array
+    {
         return [
-            ...$this->resolve(LinkType::Page, $content, $images, $painted, fn (array $ids): array => array_map(fn (PageOnSiteResponse $page): array => [
+            ...$this->resolve(LinkType::Page, $ids(LinkType::Page), $painted, fn (array $ids): array => array_map(fn (PageOnSiteResponse $page): array => [
                 'url' => null === $page->slug ? $this->urlGenerator->generate('web_home') : $this->urlGenerator->generate('web_page', ['slug' => $page->slug]),
                 'title' => $page->title,
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
-            ...$this->resolve(LinkType::Post, $content, $images, $painted, fn (array $ids): array => array_map(function (PostOnSiteResponse $post): array {
+            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => array_map(function (PostOnSiteResponse $post): array {
                 [$year, $month, $day] = explode('-', $post->address->day);
 
                 return [
@@ -71,7 +97,7 @@ final readonly class CmsLinkedContents
                     'title' => $post->title,
                 ];
             }, new PostsOnSiteFinder($ids)($this->postRepository))),
-            ...$this->resolve(LinkType::Term, $content, $images, $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
+            ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
                 $section = new TermOnSiteFinder(Taxonomy::Section, $id)($this->termRepository);
 
                 if (null !== $section) {
@@ -82,25 +108,25 @@ final readonly class CmsLinkedContents
 
                 return null === $tag ? null : ['url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]), 'title' => $tag->name];
             })),
-            ...$this->resolve(LinkType::Author, $content, $images, $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
+            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
                 $author = new AuthorOnSiteFinder($id)($this->authorRepository);
 
                 return null === $author ? null : ['url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]), 'title' => $author->name];
             })),
             // No address of the site leads to an external resource, so none is redirected.
-            ...($this->externalViews)(SitePage::linkedIds($content, $images, LinkType::External)),
+            ...($this->externalViews)($ids(LinkType::External)),
         ];
     }
 
     /**
-     * @param array<string, array{caption: RichText}>                                  $images
+     * @param list<string>                                                             $ids
      * @param \Closure(list<string>): array<string, array{url: string, title: string}> $onSite
      *
      * @return array<string, array{url: string, title: string}>
      */
-    private function resolve(LinkType $type, RichText $content, array $images, ?string $painted, \Closure $onSite): array
+    private function resolve(LinkType $type, array $ids, ?string $painted, \Closure $onSite): array
     {
-        return new ReferenceResolver($type->value, SitePage::linkedIds($content, $images, $type), $painted)($onSite, $this->redirectsByOrigin);
+        return new ReferenceResolver($type->value, $ids, $painted)($onSite, $this->redirectsByOrigin);
     }
 
     /**

@@ -12,9 +12,7 @@ use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\PublishedImagesFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Page\Application\PageResponse;
-use Web\Page\Application\PublishedPagesFinder;
-use Web\Page\Domain\PageRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Application\PublishedSettingsFinder;
 use Web\Settings\Application\SettingsResponse;
@@ -34,9 +32,9 @@ final readonly class SiteLayout
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private SettingsRepository $settingsRepository,
-        private PageRepository $pageRepository,
         private ImageRepository $imageRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
+        private SiteLinkedContents $linkedContents,
     ) {}
 
     public function page(string $title): Page
@@ -48,60 +46,36 @@ final readonly class SiteLayout
             return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], null));
         }
 
-        $pages = $this->menuPages($settings);
+        $targets = $this->linkedContents->menuTargets([...$settings->mainMenu, ...$settings->footerMenu]);
 
         return WebLayout::page($title, new SiteChrome(
             $settings->name,
             $homeUrl,
-            $this->links($settings->mainMenu, $pages),
-            $this->links($settings->footerMenu, $pages),
+            self::links($settings->mainMenu, $targets),
+            self::links($settings->footerMenu, $targets),
             $this->shareImage($settings),
         ));
     }
 
     /**
-     * The pages of the menus on the site, keyed by id; one off it, as the
-     * one its address now leads to.
+     * The entries of a menu whose contents are on the site, named by their
+     * labels or else by the names of what they lead to.
      *
-     * @return array<string, PageResponse>
-     */
-    private function menuPages(SettingsResponse $settings): array
-    {
-        return new ReferenceResolver('page', [
-            ...array_column($settings->mainMenu, 'page_id'),
-            ...array_column($settings->footerMenu, 'page_id'),
-        ], null)(
-            fn (array $ids): array => new PublishedPagesFinder($ids)($this->pageRepository),
-            $this->redirectsByOrigin,
-        );
-    }
-
-    /**
-     * The entries of a menu whose pages are on the site, named by their
-     * labels or else by the titles of their pages.
-     *
-     * @param list<array{page_id: string, label: ?string}> $menu
-     * @param array<string, PageResponse>                  $pages on the site, keyed by id
+     * @param list<array{type: string, id: string, label: ?string}> $menu
+     * @param array<string, array{url: string, title: string}>      $targets on the site, keyed by id
      *
      * @return list<array{label: string, url: string}>
      */
-    private function links(array $menu, array $pages): array
+    private static function links(array $menu, array $targets): array
     {
         $links = [];
 
         foreach ($menu as $item) {
-            $page = $pages[$item['page_id']] ?? null;
+            $target = $targets[$item['id']] ?? null;
 
-            if (null === $page) {
-                continue;
+            if (null !== $target) {
+                $links[] = ['label' => $item['label'] ?? $target['title'], 'url' => $target['url']];
             }
-
-            $links[] = [
-                'label' => $item['label'] ?? $page->title,
-                'url' => null === $page->slug
-                    ? $this->urlGenerator->generate('web_home')
-                    : $this->urlGenerator->generate('web_page', ['slug' => $page->slug]),
-            ];
         }
 
         return $links;

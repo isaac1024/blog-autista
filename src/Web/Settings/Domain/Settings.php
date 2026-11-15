@@ -19,9 +19,9 @@ use Doctrine\ORM\Mapping as ORM;
 final class Settings
 {
     /**
-     * @param ?string                                      $defaultImageId null for none
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
+     * @param ?string                 $defaultImageId null for none
+     * @param array<array-key, mixed> $mainMenu       its entries, as kept, which MenuEntries reads
+     * @param array<array-key, mixed> $footerMenu
      */
     public function __construct(
         #[ORM\Id]
@@ -75,18 +75,18 @@ final class Settings
     }
 
     /**
-     * @return list<array{page_id: string, label: ?string}>
+     * @return list<array{type: string, id: string, label: ?string}>
      */
     public function mainMenu(): array
     {
-        return $this->mainMenu;
+        return MenuEntries::read($this->mainMenu);
     }
 
     /**
-     * @return list<array{page_id: string, label: ?string}>
+     * @return list<array{type: string, id: string, label: ?string}>
      */
     public function footerMenu(): array
     {
-        return $this->footerMenu;
+        return MenuEntries::read($this->footerMenu);
     }
 }

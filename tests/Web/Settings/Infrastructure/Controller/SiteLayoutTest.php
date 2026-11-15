@@ -8,17 +8,23 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Uuid;
 use Shared\Infrastructure\Ui\Page\Page;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Author\Domain\AuthorRepository;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\Image;
 use Web\Image\Domain\ImageId;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page as SitePage;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
+use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\RedirectRepository;
+use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Settings\Domain\CmsSettingsPublishedMother as Event;
@@ -146,7 +152,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $pages, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)));
+        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator)));
     }
 
     /**

@@ -11,6 +11,7 @@ use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SiteName;
 use Cms\Settings\Infrastructure\Controller\SettingsEditor;
 use Cms\Settings\Infrastructure\Controller\SettingsState;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Tests\Settings\Domain\SettingsMother as Mother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -118,7 +119,7 @@ final class SettingsEditorTest extends TestCase
     /**
      * The editor saves the settings with the fields their update reads, held
      * to what they accept: a name, a default image picked among the images,
-     * and two menus of pages, each as long as a menu can be.
+     * and two menus of any content a text links, each as long as a menu can be.
      */
     public function testItSavesTheSettingsWithTheFieldsTheirUpdateReads(): void
     {
@@ -138,9 +139,8 @@ final class SettingsEditorTest extends TestCase
         foreach (['main_menu' => $mainMenu, 'footer_menu' => $footerMenu] as $menu => $items) {
             PageComponents::one($form, 'Shared:MenuField', [
                 'name' => $menu,
-                'items' => $items,
-                'searchUrl' => '/cms_pages_search',
-                'lookupUrl' => '/cms_pages_lookup',
+                'items' => Menu::fromArray($items)->view(),
+                'targets' => new LinkTargets(new RouteNameUrlGenerator())(null),
                 'maxItems' => Menu::MAX_ITEMS,
                 'labelMaxLength' => MenuItem::LABEL_MAX_LENGTH,
             ]);
@@ -163,7 +163,7 @@ final class SettingsEditorTest extends TestCase
         $translator = new CatalogueTranslator();
         $translator->setLocale('es');
 
-        $editor = new SettingsEditor(new RouteNameUrlGenerator(), $translator, new SettingsState($translator))(SettingsResponse::fromSettings($settings));
+        $editor = new SettingsEditor(new RouteNameUrlGenerator(), $translator, new SettingsState($translator), new LinkTargets(new RouteNameUrlGenerator()))(SettingsResponse::fromSettings($settings));
         // Whatever a test asks, the editor gives every component what it takes.
         ComponentContracts::assertHonoured($editor);
 

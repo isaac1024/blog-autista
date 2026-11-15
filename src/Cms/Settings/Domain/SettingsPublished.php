@@ -17,8 +17,8 @@ use Shared\Domain\Event\RevisedDomainEvent;
 final readonly class SettingsPublished extends RevisedDomainEvent
 {
     /**
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
+     * @param list<array<string, ?string>> $mainMenu   each entry with the id of what it leads to under the key of its kind, such as "page_id", and its label
+     * @param list<array<string, ?string>> $footerMenu
      */
     public function __construct(
         string $aggregateId,

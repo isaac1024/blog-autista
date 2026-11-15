@@ -8,6 +8,7 @@ use Cms\Settings\Application\SettingsResponse;
 use Cms\Settings\Domain\Menu;
 use Cms\Settings\Domain\MenuItem;
 use Cms\Settings\Domain\SiteName;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -31,6 +32,7 @@ final readonly class SettingsEditor
         private UrlGeneratorInterface $urlGenerator,
         private TranslatorInterface $translator,
         private SettingsState $settingsState,
+        private LinkTargets $linkTargets,
     ) {}
 
     /**
@@ -113,7 +115,7 @@ final readonly class SettingsEditor
     /**
      * A menu field, with its texts under cms.settings.menus.{menu}.
      *
-     * @param list<array{page_id: string, label: ?string}> $items
+     * @param list<array{type: string, id: string, label: ?string}> $items
      */
     private function menuField(string $name, string $menu, array $items): PageComponent
     {
@@ -123,8 +125,7 @@ final readonly class SettingsEditor
             'label' => $this->translator->trans(\sprintf('cms.settings.menus.%s.label', $menu)),
             'hint' => $this->translator->trans(\sprintf('cms.settings.menus.%s.hint', $menu)),
             'items' => $items,
-            'searchUrl' => $this->urlGenerator->generate('cms_pages_search'),
-            'lookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+            'targets' => ($this->linkTargets)(null),
             'maxItems' => Menu::MAX_ITEMS,
             'labelMaxLength' => MenuItem::LABEL_MAX_LENGTH,
         ]);

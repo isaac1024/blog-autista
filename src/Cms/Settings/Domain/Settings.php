@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\RichText\LinkType;
 
 /**
  * The settings of the site: the name of the blog, the image it is shared
@@ -224,22 +225,47 @@ final class Settings extends AggregateRoot
         if ($before['pages'] !== $after['pages']) {
             $this->record(new SettingsPagesLinked($this->id->value(), $after['pages']));
         }
+
+        $contents = static fn (array $used): array => [$used['posts'], $used['terms'], $used['authors'], $used['externals']];
+
+        if ($contents($before) !== $contents($after)) {
+            $this->record(new SettingsContentsLinked($this->id->value(), $after['posts'], $after['terms'], $after['authors'], $after['externals']));
+        }
     }
 
     /**
-     * The images and pages used by the version being edited and the one last
-     * published, each once and in order.
+     * The images and what the menus lead to, of the version being edited
+     * and of the one last published, each once and in order: the pages apart
+     * from the posts, sections and tags, authors and external resources.
      *
-     * @return array{images: list<string>, pages: list<string>}
+     * @return array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>, externals: list<string>}
      */
     private function resourcesUsed(): array
     {
         $images = [...$this->version->imageIds(), ...($this->published?->imageIds() ?? [])];
-        $pages = [...$this->version->pageIds(), ...($this->published?->pageIds() ?? [])];
         sort($images);
-        sort($pages);
+        $linked = fn (LinkType $type): array => self::eachOnce([...$this->version->linkedIds($type), ...($this->published?->linkedIds($type) ?? [])]);
 
-        return ['images' => array_values(array_unique($images)), 'pages' => array_values(array_unique($pages))];
+        return [
+            'images' => array_values(array_unique($images)),
+            'pages' => $linked(LinkType::Page),
+            'posts' => $linked(LinkType::Post),
+            'terms' => $linked(LinkType::Term),
+            'authors' => $linked(LinkType::Author),
+            'externals' => $linked(LinkType::External),
+        ];
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return list<string>
+     */
+    private static function eachOnce(array $ids): array
+    {
+        sort($ids);
+
+        return array_values(array_unique($ids));
     }
 
     /**

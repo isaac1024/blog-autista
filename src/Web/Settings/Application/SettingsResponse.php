@@ -13,9 +13,9 @@ use Web\Settings\Domain\Settings;
 final readonly class SettingsResponse
 {
     /**
-     * @param ?string                                      $defaultImageId null for none
-     * @param list<array{page_id: string, label: ?string}> $mainMenu
-     * @param list<array{page_id: string, label: ?string}> $footerMenu
+     * @param ?string                                               $defaultImageId null for none
+     * @param list<array{type: string, id: string, label: ?string}> $mainMenu
+     * @param list<array{type: string, id: string, label: ?string}> $footerMenu
      */
     public function __construct(
         public string $name,
