@@ -43,4 +43,15 @@ final class ExternalResourcesOnSiteFinderTest extends TestCase
             new ExternalResourcesOnSiteFinder([ExternalResourceMother::ID, self::DRAFT, ExternalResourceMother::ID, 'no-es-un-id', self::GONE])($repository),
         );
     }
+
+    public function testItFindsEveryResourceOnTheSiteWithTheShapeItsProviderGivesIt(): void
+    {
+        $tiktok = ExternalResourceMother::resource(self::GONE, ResourceKind::Video, 'tiktok', ExternalResourceMother::version(ResourceKind::Video, 'https://www.tiktok.com/@scout2015/video/6718335390845095173', 'scout2015/6718335390845095173', 'Un tiktok', [], ExternalResourceMother::IMAGE), ResourceStatus::Published, null, Availability::Available);
+        $repository = self::createStub(ExternalResourceRepository::class);
+        $repository->method('findByIds')->willReturn([ExternalResourceMother::video(status: ResourceStatus::Published), $tiktok]);
+
+        $found = new ExternalResourcesOnSiteFinder([ExternalResourceMother::ID, self::GONE])($repository);
+
+        self::assertSame([ExternalResourceMother::ID => 'landscape', self::GONE => 'portrait'], array_map(static fn (ExternalResourceOnSiteResponse $resource): ?string => $resource->imageShape, $found));
+    }
 }

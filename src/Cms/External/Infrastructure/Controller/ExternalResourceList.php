@@ -126,7 +126,9 @@ final readonly class ExternalResourceList
 
         return ['Shared:EmptyState', [
             'title' => $this->translator->trans('cms.externals.search.empty.title'),
-            'message' => $this->translator->trans('' === $title ? 'cms.externals.search.empty.unavailable' : 'cms.externals.search.empty.message', ['%title%' => $title]),
+            'message' => '' === $title
+                ? $this->translator->trans('cms.externals.search.empty.unavailable')
+                : $this->translator->trans('cms.externals.search.empty.message', ['%title%' => $title]),
         ], [
             new PageComponent('Shared:ButtonLink', [
                 'url' => $this->urlGenerator->generate('cms_externals'),

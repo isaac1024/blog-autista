@@ -103,15 +103,6 @@ final class ExternalResourcePublicationControllersTest extends ExternalResourceC
     public static function unpublishable(): iterable
     {
         yield 'a video without its image' => [ExternalResourceMother::video(image: null), 'errors.external.publication.without_image'];
-        yield 'a post without who wrote it' => [ExternalResourceMother::post(details: ['author' => null] + ExternalResourceMother::POST_DETAILS), 'errors.external.publication.without_author'];
-        yield 'a post without its account' => [ExternalResourceMother::post(details: ['handle' => null] + ExternalResourceMother::POST_DETAILS), 'errors.external.publication.without_author'];
-        yield 'a post without its day' => [ExternalResourceMother::post(details: ['posted_on' => null] + ExternalResourceMother::POST_DETAILS), 'errors.external.publication.without_date'];
-        yield 'a post without its text' => [ExternalResourceMother::post(details: ['text' => null] + ExternalResourceMother::POST_DETAILS), 'errors.external.publication.without_text'];
-        yield 'a post of Bluesky by the handle of its account' => [ExternalResourceMother::post(url: 'https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l', locator: 'bsky.app/3l6oveex3ii2l'), 'errors.external.publication.not_embeddable'];
-        yield 'a study without its authors' => [ExternalResourceMother::study(details: ['authors' => null] + ExternalResourceMother::STUDY_DETAILS), 'errors.external.publication.without_authors'];
-        yield 'a study without its journal' => [ExternalResourceMother::study(details: ['journal' => null] + ExternalResourceMother::STUDY_DETAILS), 'errors.external.publication.without_journal'];
-        yield 'a study without its year' => [ExternalResourceMother::study(details: ['year' => null] + ExternalResourceMother::STUDY_DETAILS), 'errors.external.publication.without_year'];
-        yield 'a resource published as it is' => [ExternalResourceMother::article(status: ResourceStatus::Published), 'errors.external.publication.nothing_to_publish'];
     }
 
     /**

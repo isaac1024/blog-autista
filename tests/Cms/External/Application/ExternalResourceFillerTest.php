@@ -9,6 +9,7 @@ use Cms\External\Application\ExternalResourceNotFound;
 use Cms\External\Domain\ExternalResource;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\InvalidResourceUrl;
+use Cms\External\Domain\Reading;
 use Cms\External\Domain\ResourceImageFetcher;
 use Cms\External\Domain\ResourceImagePath;
 use Cms\External\Domain\ResourceImageStorage;
@@ -18,6 +19,7 @@ use Cms\Tests\External\Domain\ExternalResourceMother;
 use Cms\Tests\External\Domain\ReadingMother;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -79,6 +81,19 @@ final class ExternalResourceFillerTest extends TestCase
         $repository->expects(self::never())->method('save');
         $reader = self::createStub(ResourceReader::class);
         $reader->method('read')->willReturn(ReadingMother::article());
+
+        $this->expectExceptionObject(InvalidResourceUrl::anotherKind());
+
+        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    public function testItRefusesWhatTheAddressTellsOfTheSameKindByAnotherProvider(): void
+    {
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->method('find')->willReturn(ExternalResourceMother::video());
+        $repository->expects(self::never())->method('save');
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturn(new Reading(ResourceKind::Video, 'tiktok', 'scout2015/6718335390845095173', 'Otro vídeo', null, null, [], [], true));
 
         $this->expectExceptionObject(InvalidResourceUrl::anotherKind());
 

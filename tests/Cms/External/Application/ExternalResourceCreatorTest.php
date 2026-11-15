@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Cms\Tests\External\Application;
 
 use Cms\External\Application\ExternalResourceCreator;
+use Cms\External\Application\ExternalResourcePublisher;
 use Cms\External\Domain\ExternalResource;
+use Cms\External\Domain\ExternalResourcePublished;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\InvalidResourceUrl;
+use Cms\External\Domain\Language;
+use Cms\External\Domain\Reading;
 use Cms\External\Domain\ResourceImageFetcher;
 use Cms\External\Domain\ResourceImagePath;
 use Cms\External\Domain\ResourceImageStorage;
@@ -16,16 +20,19 @@ use Cms\External\Domain\ResourceStatus;
 use Cms\External\Domain\ResourceUrl;
 use Cms\Tests\External\Domain\ExternalResourceMother;
 use Cms\Tests\External\Domain\ReadingMother;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ImageShape;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceCreatorTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
     use ExternalResourceImageFile;
 
     private const string OWN_HOST = 'www.blogautista.es';
@@ -67,6 +74,90 @@ final class ExternalResourceCreatorTest extends TestCase
         self::assertTrue(new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, $fetcher, $storage));
     }
 
+    /**
+     * What the resource tells is kept as a title can be: cut with an
+     * ellipsis when too long, the host of its address when it tells none
+     * long enough; its summary cut to what one can hold, and its language
+     * Spanish unless it tells one.
+     */
+    #[DataProvider('readings')]
+    public function testItKeepsWhatTheResourceTellsAsItCanBeKept(Reading $reading, string $title, ?string $summary, Language $language): void
+    {
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->method('findByUrl')->willReturn(null);
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (ExternalResource $resource): bool => [$title, $summary, $language]
+            === [$resource->version()->title()->value(), $resource->version()->summary(), $resource->version()->language()]));
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturn($reading);
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * @return iterable<string, array{Reading, string, ?string, Language}>
+     */
+    public static function readings(): iterable
+    {
+        $article = static fn (?string $title, ?string $summary = null, ?Language $language = null): Reading => new Reading(ResourceKind::Article, null, null, $title, $summary, $language, [], [], true);
+
+        yield 'a title too long, cut before the space it ends in' => [$article(str_repeat('á', 198).' bcd'), str_repeat('á', 198).'…', null, Language::Spanish];
+        yield 'a title as long as one can be' => [$article(str_repeat('á', 200)), str_repeat('á', 200), null, Language::Spanish];
+        yield 'a title written with spaces' => [$article("  Una \n noticia "), 'Una noticia', null, Language::Spanish];
+        yield 'a title of three letters' => [$article('ñúa'), 'ñúa', null, Language::Spanish];
+        yield 'a title too short' => [$article('ñú'), 'example.org', null, Language::Spanish];
+        yield 'no title' => [$article(null), 'example.org', null, Language::Spanish];
+        yield 'a summary too long' => [$article('Una noticia', str_repeat('é', 400)), 'Una noticia', str_repeat('é', 300), Language::Spanish];
+        yield 'a language of its own' => [$article('Una noticia', null, Language::English), 'Una noticia', null, Language::English];
+    }
+
+    public function testItRefusesAnAddressOfTheBlogWrittenInCapitals(): void
+    {
+        $reader = $this->createMock(ResourceReader::class);
+        $reader->expects(self::never())->method('read');
+
+        $this->expectExceptionObject(InvalidResourceUrl::ownSite());
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, 'https://blogautista.es/sobre-mi.html', 'WWW.BlogAutista.ES')(self::createStub(ExternalResourceRepository::class), self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    public function testItKeepsAnAddressAsLongAsOneCanBe(): void
+    {
+        $url = 'https://example.org/'.str_repeat('a', 1980);
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->method('findByUrl')->willReturn(null);
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (ExternalResource $resource): bool => $url === $resource->version()->url()->value()));
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturn(new Reading(ResourceKind::Article, null, null, 'Una noticia', null, null, [], [], true));
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * A new resource has never been on the site: publishing it is its
+     * first revision there.
+     */
+    public function testItStartsAResourceTheSiteHasNeverHad(): void
+    {
+        $saved = null;
+        $repository = self::createStub(ExternalResourceRepository::class);
+        $repository->method('findByUrl')->willReturn(null);
+        $repository->method('save')->willReturnCallback(static function (ExternalResource $resource) use (&$saved): void {
+            $saved = $resource;
+        });
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturn(new Reading(ResourceKind::Article, null, null, 'Una noticia', null, null, ['publisher' => 'El Medio'], [], true));
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+
+        self::assertInstanceOf(ExternalResource::class, $saved);
+        $published = self::createStub(ExternalResourceRepository::class);
+        $published->method('find')->willReturn($saved);
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(static fn (ExternalResourcePublished $event): bool => 1 === $event->revision()));
+
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($published, $eventBus, self::createStub(ResourceImageStorage::class));
+    }
+
     public function testItTellsWhenTheAddressCouldNotBeReached(): void
     {
         $repository = $this->createMock(ExternalResourceRepository::class);
@@ -98,6 +189,36 @@ final class ExternalResourceCreatorTest extends TestCase
         $this->expectExceptionObject($failure);
 
         new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, $fetcher, $storage);
+    }
+
+    /**
+     * @param array<string, int|string> $parameters
+     */
+    #[DataProvider('refusedAddresses')]
+    public function testItRefusesWhatCannotBeTheAddressOfAResourceWithoutReadingIt(string $url, string $key, array $parameters): void
+    {
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->expects(self::never())->method('save');
+        $reader = $this->createMock(ResourceReader::class);
+        $reader->expects(self::never())->method('read');
+
+        self::assertTells($key, $parameters, static fn () => new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class)));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, array<string, int|string>}>
+     */
+    public static function refusedAddresses(): iterable
+    {
+        yield 'none' => ['vídeo de YouTube', 'errors.external.url.not_an_address', []];
+        yield 'one with a user' => ['https://yo:secreto@example.org/', 'errors.external.url.not_an_address', []];
+        yield 'one of another scheme' => ['ftp://example.org/informe.pdf', 'errors.external.url.not_an_address', []];
+        yield 'one too long' => ['https://example.org/'.str_repeat('a', 2000), 'errors.external.url.too_long', ['%max%' => 2000]];
+        yield 'one with a user and no password' => ['https://yo@example.org/', 'errors.external.url.not_an_address', []];
+        yield 'one with a password and no user' => ['https://:secreto@example.org/', 'errors.external.url.not_an_address', []];
+        yield 'one with spaces within' => ['https://example.org/una noticia', 'errors.external.url.not_an_address', []];
+        yield 'one of a host without a domain' => ['https://localhost/', 'errors.external.url.not_an_address', []];
+        yield 'one of a host no domain can be' => ['https://exa_mple.org/', 'errors.external.url.not_an_address', []];
     }
 
     public function testItRefusesAnAddressOfTheBlogItselfWithoutReadingIt(): void

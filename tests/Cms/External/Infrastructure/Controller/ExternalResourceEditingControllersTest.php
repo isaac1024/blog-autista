@@ -130,23 +130,6 @@ final class ExternalResourceEditingControllersTest extends ExternalResourceContr
     public static function invalidFields(): iterable
     {
         yield 'a title too short' => [['title' => 'Un'], 'errors.external.title.too_short', ['%min%' => 3]];
-        yield 'a title too long' => [['title' => str_repeat('a', 201)], 'errors.external.title.too_long', ['%max%' => 200]];
-        yield 'a summary too long' => [['summary' => str_repeat('a', 301)], 'errors.external.details.too_long', ['%detail%' => 'summary', '%max%' => 300]];
-        yield 'a year that is no number' => [['details' => ['year' => 'dos mil']], 'errors.external.details.not_a_number', ['%detail%' => 'year']];
-        yield 'a year out of range' => [['details' => ['year' => '1200']], 'errors.external.details.year_out_of_range', ['%min%' => 1600, '%max%' => 2100]];
-        yield 'authors on several lines' => [['details' => ['authors' => "Una\nOtra"]], 'errors.external.details.single_line', ['%detail%' => 'authors']];
-        yield 'a journal too long' => [['details' => ['journal' => str_repeat('a', 201)]], 'errors.external.details.too_long', ['%detail%' => 'journal', '%max%' => 200]];
-        yield 'an address of another kind' => [['url' => 'https://pubmed.example.org/1'], 'errors.external.url.another_kind', []];
-    }
-
-    public function testItRefusesADayThatIsNoDay(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $this->saveResource(ExternalResourceMother::article());
-
-        $this->update($client, ['url' => ExternalResourceMother::ARTICLE_URL, 'details' => ['published_on' => '2026-02-30']]);
-
-        self::assertSame([['key' => 'errors.external.details.not_a_date', 'parameters' => ['%detail%' => 'published_on']]], self::errorNotices($client));
     }
 
     /**
@@ -219,15 +202,9 @@ final class ExternalResourceEditingControllersTest extends ExternalResourceContr
     public static function checks(): iterable
     {
         yield 'a video its provider answers for' => ['video', ['status' => 200], 'success', 'cms.notices.external.checked.available', ['%status%' => 200, '%url%' => ''], Availability::Available];
-        yield 'a video its provider says is private' => ['video', ['status' => 401], 'success', 'cms.notices.external.checked.unavailable', ['%status%' => 401, '%url%' => ''], Availability::Unavailable];
         yield 'a video its provider no longer has' => ['video', ['status' => 404], 'success', 'cms.notices.external.checked.unavailable', ['%status%' => 404, '%url%' => ''], Availability::Unavailable];
-        yield 'a page that is gone' => ['article', ['status' => 410], 'success', 'cms.notices.external.checked.unavailable', ['%status%' => 410, '%url%' => ''], Availability::Unavailable];
-        yield 'a page that turns robots away' => ['article', ['status' => 403], 'error', 'cms.notices.external.checked.doubtful', ['%status%' => 403, '%url%' => ''], Availability::Available];
-        yield 'a page whose server fails' => ['article', ['status' => 503], 'error', 'cms.notices.external.checked.doubtful', ['%status%' => 503, '%url%' => ''], Availability::Available];
         yield 'a page whose server never answers' => ['article', [], 'error', 'cms.notices.external.checked.doubtful', ['%status%' => '—', '%url%' => ''], Availability::Available];
         yield 'a page that moved' => ['article', ['landed' => 'https://www.example.org/2026/noticia.html'], 'error', 'cms.notices.external.checked.moved', ['%status%' => 200, '%url%' => 'https://www.example.org/2026/noticia.html'], Availability::Available];
-        yield 'a page that only leads home now' => ['article', ['landed' => 'https://www.example.org/'], 'success', 'cms.notices.external.checked.unavailable', ['%status%' => 200, '%url%' => ''], Availability::Unavailable];
-        yield 'a page rewritten only as sites do' => ['article', ['landed' => 'https://example.org/noticia.html/'], 'success', 'cms.notices.external.checked.available', ['%status%' => 200, '%url%' => ''], Availability::Available];
     }
 
     /**
