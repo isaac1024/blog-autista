@@ -1,5 +1,5 @@
 <select{{ attributes.defaults({class: 'w-full min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]'}) }} id="{{ id }}" name="{{ name }}">
-    <option value=""{% if value == '' %} selected{% endif %}>{{ none }}</option>
+    <option value=""{% if value == '' %} selected{% endif %}>{{ this.none }}</option>
 {% for option in options %}
     <option value="{{ option.value }}"{% if option.value == value %} selected{% endif %}>{{ option.label }}</option>
 {% endfor %}
