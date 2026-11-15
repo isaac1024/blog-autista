@@ -9,7 +9,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\RichText\LinkedContents;
 
 /**
- * The posts, sections and tags, and authors the captions of an image link to changed: those of the caption being edited and of the one last published, together; none once the image is deleted. It is told at once, so
+ * The posts, sections and tags, authors and external resources the captions of an image link to changed: those of the caption being edited and of the one last published, together; none once the image is deleted. It is told at once, so
  * whoever keeps track of what is linked is never behind.
  */
 final readonly class ImageContentsLinked extends DomainEvent implements DeliveredImmediately
@@ -30,6 +30,6 @@ final readonly class ImageContentsLinked extends DomainEvent implements Delivere
     #[\Override]
     public function toPrimitives(): array
     {
-        return ['post_ids' => $this->linked->posts(), 'term_ids' => $this->linked->terms(), 'author_ids' => $this->linked->authors()];
+        return ['post_ids' => $this->linked->posts(), 'term_ids' => $this->linked->terms(), 'author_ids' => $this->linked->authors(), 'external_ids' => $this->linked->externals()];
     }
 }

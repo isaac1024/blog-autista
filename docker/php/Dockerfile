@@ -20,13 +20,15 @@ RUN apt-get update \
         libicu-dev \
         libzip-dev \
         # GD with WebP: the site makes the smaller copies of the images it
-        # publishes, as Hetzner's PHP does with its GD.
+        # publishes, as Hetzner's PHP does with its GD. With JPEG too: the CMS
+        # reads the images of external resources, most of which are JPEG.
+        libjpeg-dev \
         libpng-dev \
         libwebp-dev \
         ${PHPIZE_DEPS} \
     # OPcache already ships compiled in php:8.5-fpm-trixie (Zend OPcache);
     # only the extensions that are missing from the base image are built.
-    && docker-php-ext-configure gd --with-webp \
+    && docker-php-ext-configure gd --with-webp --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         gd \
         intl \

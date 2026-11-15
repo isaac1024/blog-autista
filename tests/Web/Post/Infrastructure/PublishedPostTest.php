@@ -35,6 +35,8 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 
 final class PublishedPostTest extends TestCase
 {
@@ -196,7 +198,7 @@ final class PublishedPostTest extends TestCase
             $termRepository,
             $authorRepository,
             $redirects,
-            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects),
+            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 

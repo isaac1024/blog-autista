@@ -9,7 +9,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\RichText\LinkedContents;
 
 /**
- * The posts, sections and tags, and authors the bio of an author links to or shows in widgets changed: those of the bio being edited and of the one last published, together; none once the author is deleted. It is told at once, so
+ * The posts, sections and tags, authors and external resources the bio of an author links to or shows in widgets changed: those of the bio being edited and of the one last published, together; none once the author is deleted. It is told at once, so
  * whoever keeps track of what is linked is never behind.
  */
 final readonly class AuthorContentsLinked extends DomainEvent implements DeliveredImmediately
@@ -30,6 +30,6 @@ final readonly class AuthorContentsLinked extends DomainEvent implements Deliver
     #[\Override]
     public function toPrimitives(): array
     {
-        return ['post_ids' => $this->linked->posts(), 'term_ids' => $this->linked->terms(), 'author_ids' => $this->linked->authors()];
+        return ['post_ids' => $this->linked->posts(), 'term_ids' => $this->linked->terms(), 'author_ids' => $this->linked->authors(), 'external_ids' => $this->linked->externals()];
     }
 }

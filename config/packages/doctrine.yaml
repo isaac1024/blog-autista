@@ -11,6 +11,8 @@ doctrine:
             cms_author_id: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
             cms_author_avatar: Cms\Author\Infrastructure\Persistence\Doctrine\AvatarType
             cms_author_version: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorVersionType
+            cms_external_resource_id: Cms\External\Infrastructure\Persistence\Doctrine\ExternalResourceIdType
+            cms_external_resource_version: Cms\External\Infrastructure\Persistence\Doctrine\ResourceVersionType
             cms_image_id: Cms\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
@@ -31,6 +33,7 @@ doctrine:
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
             web_author_id: Web\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
+            web_external_resource_id: Web\External\Infrastructure\Persistence\Doctrine\ExternalResourceIdType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType
             web_visit_id: Web\Analytics\Infrastructure\Persistence\Doctrine\VisitIdType
             web_page_id: Web\Page\Infrastructure\Persistence\Doctrine\PageIdType
@@ -56,6 +59,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Cms/Author/Domain'
                 prefix: 'Cms\Author\Domain'
+            CmsExternal:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Cms/External/Domain'
+                prefix: 'Cms\External\Domain'
             CmsImage:
                 type: attribute
                 is_bundle: false
@@ -106,6 +114,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Author/Domain'
                 prefix: 'Web\Author\Domain'
+            WebExternal:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/External/Domain'
+                prefix: 'Web\External\Domain'
             WebImage:
                 type: attribute
                 is_bundle: false

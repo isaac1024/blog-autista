@@ -24,6 +24,8 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
  * Turns rich text into the Twig components that paint it, one per block, to
  * set in a Prose column. Each module keeps its content as rich text and
  * leaves how it is painted to this adapter.
+ *
+ * @phpstan-import-type ExternalView from ExternalComponents
  */
 final readonly class RichTextComponents
 {
@@ -34,7 +36,7 @@ final readonly class RichTextComponents
      * shared, so pages, posts, terms and authors share one map.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
-     * @param array<string, array{url: string, title: string}>                                                           $pages  the contents linked on the site, pages or posts, sections, tags or authors, with their current address and name, keyed by id
+     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages  the contents linked on the site, pages or posts, sections, tags, authors or external resources, with their current address and name, and all a widget paints of an external resource, keyed by id
      *
      * @return list<PageComponent>
      */
@@ -71,10 +73,17 @@ final readonly class RichTextComponents
     }
 
     /**
-     * @param array{url: string, title: string} $page
+     * An external resource is painted as what it is: behind its facade, or
+     * as a card that leads to it.
+     *
+     * @param array{url: string, title: string, external?: ExternalView} $page
      */
     private static function widget(WidgetKind $kind, array $page): PageComponent
     {
+        if (isset($page['external'])) {
+            return ExternalComponents::component($page['external']);
+        }
+
         return match ($kind) {
             WidgetKind::RelatedPage => new PageComponent('Shared:ContentRelatedPage', [
                 'title' => $page['title'],

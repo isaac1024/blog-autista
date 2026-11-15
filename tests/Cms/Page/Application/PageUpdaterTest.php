@@ -659,8 +659,8 @@ final class PageUpdaterTest extends TestCase
     }
 
     /**
-     * The posts, sections and tags, and authors it links to or shows are
-     * told apart from the pages, each once and in order.
+     * The posts, sections and tags, authors and external resources it links
+     * to or shows are told apart from the pages, each once and in order.
      */
     public function testItTellsThePostsTermsAndAuthorsThePageLinksTo(): void
     {
@@ -676,6 +676,7 @@ final class PageUpdaterTest extends TestCase
                     'post_ids' => ['01a1b801-ce58-723d-8234-b76d9105e011', '01a1b801-ce58-723d-8234-b76d9105e012'],
                     'term_ids' => ['01a1b801-ce58-723d-8234-b76d9105e021'],
                     'author_ids' => ['01a1b801-ce58-723d-8234-b76d9105e031'],
+                    'external_ids' => ['01a1b801-ce58-723d-8234-b76d9105e041'],
                 ] === $event->toPrimitives(),
         ));
 
@@ -687,6 +688,7 @@ final class PageUpdaterTest extends TestCase
             ]],
             ['type' => 'widget', 'kind' => 'related_page', 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e021'],
             ['type' => 'widget', 'kind' => 'related_page', 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e011'],
+            ['type' => 'widget', 'kind' => 'related_page', 'external_id' => '01a1b801-ce58-723d-8234-b76d9105e041'],
         ), PageMother::META_DESCRIPTION)($repository, $eventBus);
     }
 

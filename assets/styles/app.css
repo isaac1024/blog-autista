@@ -165,6 +165,28 @@
  * Mobile first: one readable column, generous spacing between blocks.
  */
 @layer components {
+    /*
+     * The frame of a resource embedded behind a facade takes the facade's
+     * place, in the same cell, unseen until it has painted itself. A frame
+     * of a fixed room fills it; one that reports its height has that height.
+     */
+    .external-embed-frame > iframe {
+        grid-column: 1;
+        grid-row: 1;
+        display: block;
+        width: 100%;
+        border: 0;
+        visibility: hidden;
+
+        &[data-shown] {
+            visibility: visible;
+        }
+    }
+
+    .external-embed:not([data-space="reported"]) .external-embed-frame > iframe {
+        height: 100%;
+    }
+
     .rich-text {
         display: flex;
         flex-direction: column;

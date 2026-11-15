@@ -48,6 +48,17 @@ final readonly class EventBody
         return $value;
     }
 
+    public function boolean(string $key): bool
+    {
+        $value = $this->body[$key] ?? null;
+
+        if (!\is_bool($value)) {
+            throw new \UnexpectedValueException(\sprintf('The event body has no "%s" boolean.', $key));
+        }
+
+        return $value;
+    }
+
     /**
      * @return list<string>
      */

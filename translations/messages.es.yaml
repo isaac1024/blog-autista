@@ -1,5 +1,20 @@
 cms:
     notices:
+        external:
+            created: 'Recurso creado con lo que dice de sí mismo. Revisa sus datos antes de publicarlo.'
+            created_unread: 'Recurso creado, pero no se ha podido leer su dirección: rellena sus datos a mano o vuelve a intentarlo con «Rellenar desde la dirección».'
+            saved: 'Cambios guardados.'
+            filled: 'Datos y imagen leídos de nuevo desde su dirección. Revísalos y guarda.'
+            unread: 'No se ha podido leer la dirección del recurso. No ha cambiado nada.'
+            published: 'Recurso publicado en la web.'
+            unpublished: 'Recurso retirado de la web: los textos que lo enlazan lo muestran como texto normal.'
+            discarded: 'Cambios descartados: el recurso vuelve a ser el publicado.'
+            deleted: 'Recurso borrado.'
+            checked:
+                available: 'Comprobado: la dirección lleva al recurso (respuesta %status%).'
+                unavailable: 'Comprobado: el recurso ya no está disponible (respuesta %status%). La web deja de mostrarlo.'
+                moved: 'La dirección ahora lleva a %url%. Si es el mismo recurso, cambia su dirección y publica.'
+                doubtful: 'No se ha podido comprobar (respuesta %status%): puede que el sitio rechace a los robots o que no responda. La disponibilidad no ha cambiado.'
         page:
             created: 'Página creada.'
             saved: 'Cambios guardados.'
@@ -47,6 +62,7 @@ cms:
         sections: 'Secciones'
         tags: 'Etiquetas'
         authors: 'Autores'
+        externals: 'Recursos externos'
         redirects: 'Redirecciones'
         settings: 'Ajustes'
         logout: 'Cerrar sesión'
@@ -393,6 +409,13 @@ cms:
             empty:
                 title: 'Nada usa este autor'
                 message: 'Ningún post lo firma y nada lo enlaza.'
+        external:
+            subtitle: 'Lo que enlaza o muestra el recurso «%name%».'
+            back: 'Editar el recurso'
+            list: 'Lo que usa el recurso «%name%»'
+            empty:
+                title: 'Nada usa este recurso'
+                message: 'Ninguna página, post, pie de foto, biografía ni menú lo enlaza o lo muestra.'
     settings:
         title: 'Ajustes'
         dates: 'Creados el %created% · Modificados el %updated%'
@@ -780,6 +803,169 @@ cms:
         publish:
             page_title: 'Publicar «%name%»'
             submit: 'Publicar el autor'
+    externals:
+        title: 'Recursos externos'
+        subtitle: 'Vídeos, publicaciones de redes sociales, audios, noticias, estudios y PDFs de otros sitios. Se enlazan desde los textos y los menús como el recurso que son: al despublicarlos o cambiar su dirección, cambian en todas partes.'
+        add: 'Añadir recurso'
+        url_label: 'Dirección'
+        kind_by: '%kind% de %provider%'
+        kind:
+            video: 'Vídeo'
+            social_post: 'Publicación'
+            audio: 'Audio'
+            article: 'Artículo'
+            study: 'Estudio'
+            document: 'Documento'
+        provider:
+            youtube: 'YouTube'
+            tiktok: 'TikTok'
+            mastodon: 'Mastodon'
+            bluesky: 'Bluesky'
+            x: 'X'
+            threads: 'Threads'
+            spotify: 'Spotify'
+        language:
+            es: 'Español'
+            en: 'Inglés'
+            ca: 'Catalán'
+            gl: 'Gallego'
+            eu: 'Euskera'
+            fr: 'Francés'
+            pt: 'Portugués'
+            it: 'Italiano'
+            de: 'Alemán'
+        empty:
+            title: 'Todavía no hay recursos externos'
+            message: 'Cuando añadas un vídeo, una publicación, una noticia o un PDF, aparecerá aquí.'
+            action: 'Añadir el primer recurso'
+        filter:
+            label: 'Qué recursos mostrar'
+            all: 'Todos'
+            unavailable: 'No disponibles (%count%)'
+        unavailable_alert:
+            title: 'Hay recursos que ya no están disponibles'
+            message: '{1}Un recurso publicado ya no lleva a donde debía, así que la web no lo muestra. Cámbiale la dirección o despublícalo.|]1,Inf[%count% recursos publicados ya no llevan a donde debían, así que la web no los muestra. Cámbiales la dirección o despublícalos.'
+        search:
+            label: 'Buscar por título'
+            submit: 'Buscar'
+            empty:
+                title: 'No hay resultados'
+                message: 'Ningún recurso tiene «%title%» en el título.'
+                unavailable: 'Todos los recursos están disponibles.'
+                action: 'Ver todos los recursos'
+        list:
+            label: 'Recursos externos'
+            updated_at: 'Modificado el %date%'
+        modal:
+            title: 'Nuevo recurso externo'
+            description: 'Pega la dirección del vídeo, la publicación, el audio, la noticia, el estudio o el PDF. El CMS la lee para saber qué es y rellenar sus datos y su imagen.'
+            url_hint: 'Por ejemplo: https://www.youtube.com/watch?v=… o https://doi.org/10.…'
+            submit: 'Añadir recurso'
+        edit:
+            title: 'Editar recurso externo'
+            dates: 'Creado el %created% · Modificado el %updated%'
+            open: 'Abrir el original'
+            relations: 'Dónde se usa'
+            url_hint: 'Solo puede cambiar por otra dirección del mismo tipo y del mismo sitio. Para otra cosa, añade un recurso nuevo.'
+            title_label: 'Título'
+            title_hint: 'Cómo se llama el recurso en la tarjeta, en los menús y para los lectores de pantalla.'
+            summary_label: 'Resumen'
+            summary_hint: 'Una o dos frases que aparecen en la tarjeta. Puedes dejarlo vacío.'
+            language_label: 'Idioma'
+            language_hint: 'En qué idioma está el recurso, para que los lectores de pantalla lo lean bien.'
+            submit: 'Guardar'
+            publish: 'Publicar'
+            republish: 'Republicar'
+            publish_unsaved: 'Guarda los cambios para poder publicarlos.'
+            unavailable:
+                title: 'Este recurso ya no está disponible'
+                message: 'La última comprobación dice que su dirección ya no lleva a él, así que la web no lo muestra en ningún sitio. Cambia la dirección y publica, o despublícalo.'
+        details:
+            author:
+                label: 'Autor'
+                hint: 'Quién escribió la publicación, como aparece en la red.'
+            handle:
+                label: 'Cuenta'
+                hint: 'La cuenta desde la que se publicó, por ejemplo @usuario.'
+            posted_on:
+                label: 'Fecha de la publicación'
+                hint: 'El día en que se publicó.'
+            text:
+                label: 'Texto'
+                hint: 'Lo que dice la publicación. Se muestra antes de cargarla, y sigue ahí aunque la borren.'
+            with_media:
+                label: '¿Incluye fotos o vídeos?'
+                hint: ''
+                yes: 'Sí, se avisará de que los tiene'
+                no: 'No'
+            show:
+                label: 'Programa'
+                hint: 'El podcast o el programa al que pertenece, si es un episodio.'
+            publisher:
+                label: 'Medio o editor'
+                hint: 'Quién lo publica, por ejemplo el periódico o la asociación.'
+            published_on:
+                label: 'Fecha de publicación'
+                hint: 'El día en que se publicó, si se sabe.'
+            authors:
+                label: 'Autores'
+                hint: 'Quiénes firman el estudio, separados por comas.'
+            journal:
+                label: 'Revista'
+                hint: 'Dónde se publicó el estudio.'
+            year:
+                label: 'Año'
+                hint: 'El año en que se publicó.'
+            bytes:
+                label: 'Tamaño (bytes)'
+                hint: 'Lo que pesa el PDF. Se rellena solo al leer la dirección.'
+            pages:
+                label: 'Páginas'
+                hint: 'Cuántas páginas tiene, si lo sabes.'
+        fill:
+            title: 'Datos leídos de la dirección'
+            description: 'El CMS rellena el recurso con lo que dice de sí mismo en su dirección. Si ha cambiado, vuelve a leerlo: se sustituyen el título, el resumen y los demás datos por los que diga ahora.'
+            description_image: 'El CMS rellena el recurso y su imagen con lo que dice de sí mismo en su dirección: la imagen no se elige a mano. Si ha cambiado, vuelve a leerlo: se sustituyen el título, el resumen, los demás datos y la imagen por los que diga ahora.'
+            no_image: 'El recurso no tiene imagen: su dirección no dice ninguna, o no se ha podido leer.'
+            image_alt: 'Imagen de «%title%»'
+            submit: 'Rellenar desde la dirección'
+        check:
+            title: 'Disponibilidad'
+            available: 'Disponible: %url% llevaba al recurso en la última comprobación (%date%).'
+            unavailable: 'No disponible: %url% ya no llevaba al recurso en la última comprobación (%date%). La web no lo muestra.'
+            never: 'nunca'
+            submit: 'Comprobar ahora'
+        discard:
+            trigger: 'Descartar cambios'
+            title: '¿Descartar los cambios?'
+            description: 'El recurso «%title%» volverá a ser el que está publicado en la web. Los cambios guardados desde entonces se perderán. No se puede deshacer.'
+            submit: 'Sí, descartar los cambios'
+        unpublish:
+            trigger: 'Despublicar'
+            title: '¿Despublicar el recurso?'
+            description: 'El recurso «%title%» dejará de mostrarse en la web: sus widgets desaparecerán y los textos y menús que lo enlazan lo mostrarán como texto normal.'
+            submit: 'Sí, despublicar'
+        delete:
+            trigger: 'Borrar recurso'
+            title: '¿Borrar este recurso?'
+            description: 'El recurso «%title%» y su imagen dejarán de existir. No se puede deshacer.'
+            submit: 'Sí, borrar el recurso'
+        status:
+            draft:
+                label: 'Borrador'
+                description: 'Borrador: todavía no está en la web.'
+            published:
+                label: 'Publicado'
+                description: 'Publicado: la web muestra esta versión.'
+            changed:
+                label: 'Publicado con cambios'
+                description: 'Publicado con cambios: la web muestra la versión anterior hasta que republiques.'
+            unpublished:
+                label: 'Despublicado'
+                description: 'Despublicado: ya no está en la web.'
+            unavailable:
+                label: 'No disponible'
+                description: 'Publicado pero no disponible: la web no lo muestra hasta que su dirección vuelva a llevar a él.'
     posts:
         title: 'Posts'
         subtitle: 'Los artículos del blog, cada uno en una sección y firmado por un autor. Los más recientes primero.'
@@ -901,6 +1087,30 @@ cms:
 content:
     related_page:
         label: 'Contenido relacionado'
+    external:
+        from: 'Contenido de %provider%'
+        open: 'Abrir en %provider%'
+        load: 'Cargar aquí el contenido de %provider%'
+        forget: 'No cargar más contenido de %provider% automáticamente'
+        frame_title: '%title% (%provider%)'
+        with_media: 'Incluye fotos o vídeos: ábrelo en %provider% para verlos.'
+        leaves: 'sale del blog'
+        size: '%size% MB'
+        pages: '{1}1 página|]1,Inf[%count% páginas'
+        label:
+            article: 'Contenido externo'
+            study: 'Estudio'
+            document: 'Documento PDF'
+            video: 'Vídeo'
+            social_post: 'Publicación'
+            audio: 'Audio'
+        notice:
+            title: 'Esto carga contenido de %provider%'
+            message: '%provider% puede guardar cookies y saber que has visto este contenido. Si aceptas, el blog recordará en tu navegador que lo has aceptado para %provider%, y podrás retirarlo cuando quieras.'
+            cookies: 'Política de cookies'
+            privacy: 'Privacidad de %provider%'
+            accept: 'Aceptar y cargar'
+            cancel: 'Cancelar'
     callout:
         note: 'Nota'
         important: 'Importante'
@@ -1150,6 +1360,7 @@ ui:
                 section: 'Sección'
                 tag: 'Etiqueta'
                 author: 'Autor'
+                external: 'Recurso externo'
         image:
             insert: 'Imagen'
             title: 'Insertar una imagen'
@@ -1296,6 +1507,37 @@ errors:
             incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
             redirected: 'Hay redirecciones que llevan a este autor, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un autor publicado conserva su dirección en la web.'
+    external:
+        url:
+            not_an_address: 'La dirección debe ser completa, empezando por https:// o http://.'
+            too_long: 'La dirección no puede pasar de %max% caracteres.'
+            own_site: 'Es una dirección del propio blog: enlaza el contenido directamente, no como recurso externo.'
+            another_kind: 'Esa dirección es de otro tipo de recurso o de otro sitio. Añade un recurso nuevo para ella.'
+            taken: 'Ya hay un recurso con esa dirección: te llevamos a él.'
+        title:
+            too_short: 'El título debe tener al menos %min% caracteres.'
+            too_long: 'El título no puede pasar de %max% caracteres.'
+        details:
+            too_long: 'Un dato del recurso es demasiado largo: como mucho, %max% caracteres.'
+            single_line: 'Un dato del recurso debe ir en una sola línea.'
+            not_a_number: 'Un dato del recurso debe ser un número entero.'
+            not_a_date: 'Una fecha del recurso no es válida.'
+            year_out_of_range: 'El año del estudio debe estar entre %min% y %max%.'
+        publication:
+            without_image: 'Un vídeo o un audio no se puede publicar sin imagen, que es lo que se ve antes de cargarlo. Usa «Rellenar desde la dirección».'
+            not_embeddable: 'Todavía no se sabe cómo insertar este recurso: usa «Rellenar desde la dirección» para que su proveedor lo diga.'
+            without_author: 'La publicación no se puede publicar sin autor y cuenta.'
+            without_date: 'La publicación no se puede publicar sin su fecha.'
+            without_text: 'La publicación no se puede publicar sin su texto.'
+            without_authors: 'El estudio no se puede publicar sin sus autores.'
+            without_journal: 'El estudio no se puede publicar sin la revista.'
+            without_year: 'El estudio no se puede publicar sin el año.'
+            nothing_to_publish: 'El recurso ya está publicado tal como está: no hay nada que publicar.'
+            not_published: 'Solo se puede despublicar un recurso publicado.'
+            no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            published_resource: 'Un recurso publicado no se puede borrar: despublícalo antes.'
+            used_resource: 'Hay textos o menús que usan este recurso, así que no se puede borrar. Quítalo antes de donde se use.'
+            incomplete_dates: 'Las fechas de publicación del recurso están incompletas.'
     post:
         title:
             too_short: 'El título debe tener al menos %min% caracteres.'

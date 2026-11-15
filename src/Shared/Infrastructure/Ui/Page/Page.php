@@ -27,6 +27,7 @@ final readonly class Page
      * @param list<PageComponent>                                       $footer
      * @param ?array{src: string, width: int, height: int, alt: string} $image          the image it is shared with, null for none
      * @param ?array{type: string, id: string}                          $countedContent what its visits are counted by, its kind and its id, null for a page whose visits aren't
+     * @param list<string>                                              $frames         the origins of the resources it embeds behind facades, which it lets frame them
      */
     private function __construct(
         public string $title,
@@ -40,11 +41,12 @@ final readonly class Page
         public ?string $canonical,
         public ?array $image,
         public ?array $countedContent,
+        public array $frames,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, []);
     }
 
     /**
@@ -103,6 +105,7 @@ final readonly class Page
             $canonical,
             $this->image,
             $this->countedContent,
+            $this->frames,
         );
     }
 
@@ -124,6 +127,7 @@ final readonly class Page
             $this->canonical,
             ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt],
             $this->countedContent,
+            $this->frames,
         );
     }
 
@@ -146,6 +150,31 @@ final readonly class Page
             $this->canonical,
             $this->image,
             ['type' => $type, 'id' => $id],
+            $this->frames,
+        );
+    }
+
+    /**
+     * Lets the page frame the resources it embeds from those origins, such
+     * as the videos of a post, besides those it already does.
+     *
+     * @param list<string> $origins
+     */
+    public function withFrames(array $origins): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $this->countedContent,
+            array_values(array_unique([...$this->frames, ...$origins])),
         );
     }
 
@@ -173,6 +202,7 @@ final readonly class Page
             $this->canonical,
             $this->image,
             $this->countedContent,
+            $this->frames,
         );
     }
 }

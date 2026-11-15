@@ -18,6 +18,11 @@ parameters:
     cms.author.avatar_directory: '%kernel.project_dir%/media/avatars'
     web.author.originals_directory: '%cms.author.avatar_directory%'
     web.author.public_directory: '%web.image.public_directory%/autores'
+    # Where the CMS keeps the images it reads of the external resources, out
+    # of public/; the site makes their copies under its public media.
+    cms.external.image_directory: '%kernel.project_dir%/media/externos'
+    web.external.originals_directory: '%cms.external.image_directory%'
+    web.external.public_directory: '%web.image.public_directory%/externos'
 
 services:
     # default configuration for services in *this* file
@@ -36,13 +41,29 @@ services:
     Shared\:
         resource: '../src/Shared/'
 
+    # Other sites are read only over the public network, whatever an address
+    # or a redirect names, so nothing pasted makes the server read itself or
+    # its neighbours. It is a service of its own, as no attribute can build a
+    # decorator of the framework's client; the tests answer for the sites in
+    # its place.
+    shared.public_network_client:
+        class: Symfony\Component\HttpClient\NoPrivateNetworkHttpClient
+        arguments: ['@http_client']
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
 when@test:
+    services:
+        shared.public_network_client:
+            alias: http_client
+        # Answers for the sites the tests read, as each test records them.
+        Shared\Tests\Infrastructure\Http\RecordedSites: ~
+
     parameters:
         # Tests keep their files apart from the real ones, one directory per
         # parallel process, as they do with their databases.
         cms.image.storage_directory: '%kernel.project_dir%/var/test/media%env(default::TEST_TOKEN)%'
         web.image.public_directory: '%kernel.project_dir%/var/test/public-media%env(default::TEST_TOKEN)%'
         cms.author.avatar_directory: '%kernel.project_dir%/var/test/avatars%env(default::TEST_TOKEN)%'
+        cms.external.image_directory: '%kernel.project_dir%/var/test/externals%env(default::TEST_TOKEN)%'

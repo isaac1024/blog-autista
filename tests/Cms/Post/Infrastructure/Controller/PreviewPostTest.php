@@ -41,6 +41,11 @@ use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Shared\Tests\Infrastructure\Ui\PageComponents;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Cms\External\Domain\ExternalResourceRepository;
+use Cms\External\Infrastructure\Controller\ExternalImageUrl;
+use Cms\External\Infrastructure\Ui\CmsExternalViews;
+use Shared\Infrastructure\Http\SignedUrls;
+use Symfony\Component\HttpFoundation\UriSigner;
 
 final class PreviewPostTest extends TestCase
 {
@@ -190,7 +195,7 @@ final class PreviewPostTest extends TestCase
             $termRepository,
             $authorRepository,
             $redirects,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 

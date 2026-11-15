@@ -64,9 +64,15 @@ final readonly class RelationList
                 ], $rows)
                 ->withMain('Shared:Pagination', ($this->listPagination)('cms_relations', ['type' => $type->value, 'id' => $id], $page, $users->hasMore));
 
+        $redirectType = $type->redirectType();
+
+        if (null === $redirectType) {
+            return $layout;
+        }
+
         // The redirects that lead to it keep it on the site, as what uses it
         // keeps it in the library.
-        $panel = ($this->incomingRedirectsPanel)($type->redirectType(), $id, $name);
+        $panel = ($this->incomingRedirectsPanel)($redirectType, $id, $name);
 
         return $layout->withMain($panel->name, $panel->props, $panel->children);
     }

@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Cms\Relation\Infrastructure\Event;
+
+use Cms\Relation\Application\PostExternalsRelator;
+use Cms\Relation\Domain\CmsPostExternalsLinked;
+use Cms\Relation\Domain\RelationRepository;
+use Shared\Domain\Event\ReceivedEvent;
+use Shared\Infrastructure\Event\DomainEventSubscriber;
+
+/**
+ * Keeps the relations of each post to the external resources it links to,
+ * as the post tells them.
+ */
+final readonly class CmsPostExternalsLinkedSubscriber implements DomainEventSubscriber
+{
+    public function __construct(private RelationRepository $relationRepository) {}
+
+    #[\Override]
+    public static function subscribedTo(): array
+    {
+        return [CmsPostExternalsLinked::class];
+    }
+
+    #[\Override]
+    public function handle(ReceivedEvent $event): void
+    {
+        if ($event instanceof CmsPostExternalsLinked) {
+            new PostExternalsRelator($event)($this->relationRepository);
+        }
+    }
+}

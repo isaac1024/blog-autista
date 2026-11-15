@@ -238,13 +238,14 @@ final class AuthorUpdaterTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof AuthorContentsLinked
                 && 'cms.author.contents_linked' === $event::eventName()
-                && ['post_ids' => [self::PAGE], 'term_ids' => [], 'author_ids' => [AuthorIdMother::DEFAULT_VALUE]] === $event->toPrimitives(),
+                && ['post_ids' => [self::PAGE], 'term_ids' => [], 'author_ids' => [AuthorIdMother::DEFAULT_VALUE], 'external_ids' => [self::PAGE]] === $event->toPrimitives(),
         ));
 
         new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
             ['type' => 'paragraph', 'text' => [
                 ['text' => 'Mi post', 'marks' => ['link'], 'post_id' => self::PAGE],
                 ['text' => ' y yo', 'marks' => ['link'], 'author_id' => AuthorIdMother::DEFAULT_VALUE],
+                ['text' => ' y un vídeo', 'marks' => ['link'], 'external_id' => self::PAGE],
             ]],
         ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
     }

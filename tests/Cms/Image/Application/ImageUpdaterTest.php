@@ -230,7 +230,7 @@ final class ImageUpdaterTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof ImageContentsLinked
                 && 'cms.image.contents_linked' === $event::eventName()
-                && ['post_ids' => [], 'term_ids' => [self::LINKED], 'author_ids' => []] === $event->toPrimitives(),
+                && ['post_ids' => [], 'term_ids' => [self::LINKED], 'author_ids' => [], 'external_ids' => []] === $event->toPrimitives(),
         ));
 
         (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Sueño', 'marks' => ['link'], 'term_id' => self::LINKED]]])))($repository, $eventBus);

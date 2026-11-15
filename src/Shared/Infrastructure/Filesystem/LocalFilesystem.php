@@ -25,6 +25,18 @@ final readonly class LocalFilesystem
         $this->filesystem->chmod($target, $permissions);
     }
 
+    /**
+     * A new file in the directory of temporary files, holding the content
+     * given, or nothing, which its caller removes once done with it.
+     */
+    public function temporary(string $prefix, string $content): string
+    {
+        $path = $this->filesystem->tempnam(sys_get_temp_dir(), $prefix);
+        $this->filesystem->dumpFile($path, $content);
+
+        return $path;
+    }
+
     public function exists(string $path): bool
     {
         return $this->filesystem->exists($path);

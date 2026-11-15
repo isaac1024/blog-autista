@@ -30,6 +30,11 @@ use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Cms\External\Domain\ExternalResourceRepository;
+use Cms\External\Infrastructure\Controller\ExternalImageUrl;
+use Cms\External\Infrastructure\Ui\CmsExternalViews;
+use Shared\Infrastructure\Http\SignedUrls;
+use Symfony\Component\HttpFoundation\UriSigner;
 
 final class PreviewPageTest extends TestCase
 {
@@ -244,7 +249,7 @@ final class PreviewPageTest extends TestCase
             new PreviewLayout($urlGenerator, $settingsRepository, $pageRepository, $imageRepository, $redirectsByOrigin),
             $imageRepository,
             $redirectsByOrigin,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
         );
     }
 }

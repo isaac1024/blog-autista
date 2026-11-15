@@ -13,7 +13,8 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
  * What pages, bios, captions and posts link to, as each tells it, kept in
- * use: the posts, sections and tags, and authors of each, as told last.
+ * use: the posts, sections and tags, authors and external resources of
+ * each, as told last.
  */
 final class CmsContentsLinkedSubscribersTest extends KernelTestCase
 {
@@ -22,6 +23,7 @@ final class CmsContentsLinkedSubscribersTest extends KernelTestCase
     private const string OTHER_POST = '01a1b801-ce58-723d-8234-b76d9105f912';
     private const string TERM = '01a1b801-ce58-723d-8234-b76d9105f921';
     private const string AUTHOR = '01a1b801-ce58-723d-8234-b76d9105f931';
+    private const string EXTERNAL = '01a1b801-ce58-723d-8234-b76d9105f941';
 
     /**
      * @return iterable<string, array{string}>
@@ -36,16 +38,17 @@ final class CmsContentsLinkedSubscribersTest extends KernelTestCase
     #[DataProvider('sources')]
     public function testItKeepsInUseWhatTheSourceLinksToAsItTellsItLast(string $event): void
     {
-        $this->handle($event, ['post_ids' => [self::POST], 'term_ids' => [self::TERM], 'author_ids' => [self::AUTHOR]]);
-        $this->handle($event, ['post_ids' => [self::OTHER_POST], 'term_ids' => [self::TERM], 'author_ids' => []]);
+        $this->handle($event, ['post_ids' => [self::POST], 'term_ids' => [self::TERM], 'author_ids' => [self::AUTHOR], 'external_ids' => []]);
+        $this->handle($event, ['post_ids' => [self::OTHER_POST], 'term_ids' => [self::TERM], 'author_ids' => [], 'external_ids' => [self::EXTERNAL]]);
 
         self::assertSame(
-            [false, true, true, false],
+            [false, true, true, false, true],
             [
                 $this->repository()->isUsed(ResourceType::Post, self::POST),
                 $this->repository()->isUsed(ResourceType::Post, self::OTHER_POST),
                 $this->repository()->isUsed(ResourceType::Term, self::TERM),
                 $this->repository()->isUsed(ResourceType::Author, self::AUTHOR),
+                $this->repository()->isUsed(ResourceType::External, self::EXTERNAL),
             ],
         );
     }
@@ -58,7 +61,7 @@ final class CmsContentsLinkedSubscribersTest extends KernelTestCase
     {
         $this->repository()->replace(ResourceType::Page, self::SOURCE, ResourceType::Page, [self::OTHER_POST]);
 
-        $this->handle('cms.page.contents_linked', ['post_ids' => [], 'term_ids' => [], 'author_ids' => []]);
+        $this->handle('cms.page.contents_linked', ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]);
 
         self::assertTrue($this->repository()->isUsed(ResourceType::Page, self::OTHER_POST));
     }
@@ -70,6 +73,21 @@ final class CmsContentsLinkedSubscribersTest extends KernelTestCase
         self::assertTrue($this->repository()->isUsed(ResourceType::Post, self::POST));
     }
 
+    public function testItKeepsInUseTheExternalResourcesAPostLinksToAsItTellsItLast(): void
+    {
+        $this->handle('cms.post.externals_linked', ['external_ids' => [self::EXTERNAL]]);
+        $this->handle('cms.post.externals_linked', ['external_ids' => []]);
+
+        self::assertFalse($this->repository()->isUsed(ResourceType::External, self::EXTERNAL));
+    }
+
+    public function testItKeepsInUseTheExternalResourcesAPostLinksTo(): void
+    {
+        $this->handle('cms.post.externals_linked', ['external_ids' => [self::EXTERNAL]]);
+
+        self::assertTrue($this->repository()->isUsed(ResourceType::External, self::EXTERNAL));
+    }
+
     /**
      * A body the CMS never sends is refused, and relates nothing.
      */
@@ -77,7 +95,7 @@ final class CmsContentsLinkedSubscribersTest extends KernelTestCase
     {
         $this->expectException(\UnexpectedValueException::class);
 
-        $this->handle('cms.page.contents_linked', ['post_ids' => [5], 'term_ids' => [], 'author_ids' => []]);
+        $this->handle('cms.page.contents_linked', ['post_ids' => [5], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]);
     }
 
     /**

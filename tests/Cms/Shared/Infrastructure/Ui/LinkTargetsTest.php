@@ -10,7 +10,7 @@ use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 
 /**
  * What a rich text of the CMS links to, as its editor picks it: pages,
- * posts, sections, tags and authors, in that order, each searched and
+ * posts, sections, tags, authors and external resources, in that order, each searched and
  * looked up where the CMS keeps it, sections and tags as terms looked up
  * together. Routes are generated as their names.
  */
@@ -24,6 +24,7 @@ final class LinkTargetsTest extends TestCase
             ['kind' => 'section', 'type' => 'term', 'searchUrl' => '/cms_terms_search?taxonomy=sections', 'param' => 'name', 'key' => 'terms', 'lookupUrl' => '/cms_any_terms_lookup'],
             ['kind' => 'tag', 'type' => 'term', 'searchUrl' => '/cms_terms_search?taxonomy=tags', 'param' => 'name', 'key' => 'terms', 'lookupUrl' => '/cms_any_terms_lookup'],
             ['kind' => 'author', 'type' => 'author', 'searchUrl' => '/cms_authors_search', 'param' => 'name', 'key' => 'authors', 'lookupUrl' => '/cms_authors_lookup'],
+            ['kind' => 'external', 'type' => 'external', 'searchUrl' => '/cms_externals_search', 'param' => 'title', 'key' => 'externals', 'lookupUrl' => '/cms_externals_lookup'],
         ], new LinkTargets(new RouteNameUrlGenerator())(null));
     }
 
@@ -35,7 +36,7 @@ final class LinkTargetsTest extends TestCase
         $targets = new LinkTargets(new RouteNameUrlGenerator())('01a1b801-ce58-723d-8234-b76d9105d001');
 
         self::assertSame(
-            ['/cms_pages_search?except=01a1b801-ce58-723d-8234-b76d9105d001', '/cms_posts_search?except=01a1b801-ce58-723d-8234-b76d9105d001', '/cms_terms_search?taxonomy=sections', '/cms_terms_search?taxonomy=tags', '/cms_authors_search'],
+            ['/cms_pages_search?except=01a1b801-ce58-723d-8234-b76d9105d001', '/cms_posts_search?except=01a1b801-ce58-723d-8234-b76d9105d001', '/cms_terms_search?taxonomy=sections', '/cms_terms_search?taxonomy=tags', '/cms_authors_search', '/cms_externals_search'],
             array_column($targets, 'searchUrl'),
         );
     }

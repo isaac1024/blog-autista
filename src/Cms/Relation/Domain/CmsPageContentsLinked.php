@@ -8,7 +8,7 @@ use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\ReceivedEvent;
 
 /**
- * The posts, sections and tags, and authors a page of the CMS links to
+ * The posts, sections and tags, authors and external resources a page of the CMS links to
  * changed. Relations declare it on their own, by the name the pages
  * publish it under.
  */
@@ -18,12 +18,14 @@ final readonly class CmsPageContentsLinked extends ReceivedEvent
      * @param list<string> $postIds
      * @param list<string> $termIds
      * @param list<string> $authorIds
+     * @param list<string> $externalIds
      */
     public function __construct(
         string $aggregateId,
         private array $postIds,
         private array $termIds,
         private array $authorIds,
+        private array $externalIds,
     ) {
         parent::__construct($aggregateId);
     }
@@ -39,7 +41,7 @@ final readonly class CmsPageContentsLinked extends ReceivedEvent
     {
         $body = new EventBody($body);
 
-        return new static($aggregateId, $body->stringList('post_ids'), $body->stringList('term_ids'), $body->stringList('author_ids'));
+        return new static($aggregateId, $body->stringList('post_ids'), $body->stringList('term_ids'), $body->stringList('author_ids'), $body->stringList('external_ids'));
     }
 
     /**
@@ -64,5 +66,13 @@ final readonly class CmsPageContentsLinked extends ReceivedEvent
     public function authorIds(): array
     {
         return $this->authorIds;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function externalIds(): array
+    {
+        return $this->externalIds;
     }
 }

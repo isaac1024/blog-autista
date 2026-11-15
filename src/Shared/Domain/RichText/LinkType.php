@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Shared\Domain\RichText;
 
 /**
- * The kinds of content a rich text links to, each kept under a key of its
+ * The kinds of content a rich text links to, the blog's and those of other
+ * sites, each kept under a key of its
  * own next to what links to it, such as "page_id".
  */
 enum LinkType: string
@@ -18,6 +19,11 @@ enum LinkType: string
      */
     case Term = 'term';
     case Author = 'author';
+
+    /**
+     * Something of another site, kept as an external resource of the CMS.
+     */
+    case External = 'external';
 
     /**
      * The key the id of what is linked is kept under.

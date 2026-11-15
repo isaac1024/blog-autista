@@ -6,6 +6,7 @@ namespace Shared\Infrastructure\Ui;
 
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
+use Shared\Domain\RichText\Widget;
 use Shared\Infrastructure\Ui\Page\Page;
 
 /**
@@ -13,6 +14,8 @@ use Shared\Infrastructure\Ui\Page\Page;
  * tells search engines what the caller wants them told: its title as the main
  * heading, and its content below. The site serves it this way, and the CMS
  * previews it the same.
+ *
+ * @phpstan-import-type ExternalView from ExternalComponents
  */
 final readonly class SitePage
 {
@@ -24,7 +27,7 @@ final readonly class SitePage
      * site, isn't painted, and text linking it stays plain.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images as SiteMedia::image() paints them
-     * @param array<string, array{url: string, title: string}>                                                           $pages
+     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
      */
     public function __invoke(
         Page $layout,
@@ -35,7 +38,8 @@ final readonly class SitePage
     ): Page {
         return $layout
             ->withMain('Shared:PageTitle', ['title' => $title])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages));
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages))
+            ->withFrames(self::frames($content, $pages));
     }
 
     /**
@@ -55,5 +59,29 @@ final readonly class SitePage
         }
 
         return array_values(array_unique($ids));
+    }
+
+    /**
+     * The origins of the resources the widgets of the content embed, which
+     * the page lets frame them, each once.
+     *
+     * @param array<string, array{url: string, title: string, external?: ExternalView}> $pages
+     *
+     * @return list<string>
+     */
+    private static function frames(RichText $content, array $pages): array
+    {
+        $origins = [];
+
+        foreach ($content->blocks() as $block) {
+            $external = $block instanceof Widget ? $pages[$block->target()->id()]['external'] ?? null : null;
+            $origin = null === $external ? null : ExternalComponents::frameOrigin($external);
+
+            if (null !== $origin) {
+                $origins[$origin] = $origin;
+            }
+        }
+
+        return array_values($origins);
     }
 }

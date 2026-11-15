@@ -25,6 +25,8 @@ use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
+use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 
 final class PublishedPageTest extends TestCase
 {
@@ -129,6 +131,7 @@ final class PublishedPageTest extends TestCase
             self::createStub(TermRepository::class),
             self::createStub(AuthorRepository::class),
             new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)),
+            new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator),
         );
     }
 }

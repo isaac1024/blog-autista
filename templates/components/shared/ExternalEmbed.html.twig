@@ -1,0 +1,62 @@
+{#
+    The facade keeps the room of what it embeds from the start, so nothing
+    moves when it loads: a proportion of its width for a video, the height
+    of the player for an audio, and, for a post, the height of what it says,
+    which the frame then takes as its own. Nothing of the provider loads
+    until the reader agrees, in the notice that takes the place of the
+    facade, without a modal. Without scripts, the line below leads to the
+    original, and the buttons stay hidden.
+#}
+{% set frame = {
+    landscape: 'aspect-video',
+    portrait: 'mx-auto aspect-[9/16] w-full max-w-[22rem]',
+    compact: 'h-[152px]',
+    tall: 'h-[352px]',
+    reported: '',
+}[space] %}
+<figure class="external-embed m-0 border-2 border-border bg-surface" data-external-embed data-provider="{{ provider }}" data-src="{{ embedUrl }}" data-origin="{{ frameOrigin }}" data-space="{{ space }}" data-title="{{ 'content.external.frame_title'|trans({'%title%': title, '%provider%': providerLabel}) }}">
+    <div class="external-embed-frame relative grid {{ frame }}" data-external-frame>
+        <div class="col-start-1 row-start-1 grid min-h-0" data-external-facade>
+{% if post %}
+            <blockquote class="m-0 grid content-start gap-3 p-5" cite="{{ url }}" lang="{{ language }}">
+                <p class="m-0"><span class="font-bold">{{ post.author }}</span> <span class="text-muted">{{ post.handle }}</span></p>
+{% for paragraph in post.paragraphs %}
+                <p class="m-0 break-words">{% for line in paragraph %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+{% endfor %}
+{% if post.withMedia %}
+                <p class="m-0 text-[1rem] text-muted">{{ 'content.external.with_media'|trans({'%provider%': providerLabel}) }}</p>
+{% endif %}
+{% if post.date %}
+                <p class="m-0 text-[1rem] text-muted"><time datetime="{{ post.day }}">{{ post.date }}</time></p>
+{% endif %}
+            </blockquote>
+{% elseif image %}
+            <img class="block h-full w-full bg-bg object-cover" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
+{% else %}
+            <p class="m-0 self-center p-5 text-xl font-bold text-balance" lang="{{ language }}">{{ title }}</p>
+{% endif %}
+        </div>
+        <div class="col-start-1 row-start-1 grid content-center gap-3 bg-surface p-5" id="{{ id }}" role="group" aria-labelledby="{{ id }}-title" data-external-notice hidden>
+            <p class="m-0 font-bold" id="{{ id }}-title" tabindex="-1" data-external-notice-title>{{ 'content.external.notice.title'|trans({'%provider%': providerLabel}) }}</p>
+            <p class="m-0">{{ 'content.external.notice.message'|trans({'%provider%': providerLabel}) }}</p>
+            <p class="m-0">
+{% if cookiesUrl %}
+                <a href="{{ cookiesUrl }}">{{ 'content.external.notice.cookies'|trans }}</a> ·
+{% endif %}
+                <a href="{{ privacyUrl }}" rel="external noopener">{{ 'content.external.notice.privacy'|trans({'%provider%': providerLabel}) }}</a>
+            </p>
+            <div class="flex flex-wrap gap-3">
+                <button class="min-h-12 cursor-pointer rounded-control border-2 border-transparent bg-accent px-5 py-3 font-bold text-on-accent hover:bg-accent-strong forced-colors:border-[ButtonText]" type="button" data-external-accept>{{ 'content.external.notice.accept'|trans }}</button>
+                <button class="min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-5 py-3 font-bold text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" data-external-cancel>{{ 'content.external.notice.cancel'|trans }}</button>
+            </div>
+        </div>
+    </div>
+    <figcaption class="grid gap-1 border-t-2 border-border px-4 py-2 text-[1rem]">
+        <p class="m-0">{{ 'content.external.from'|trans({'%provider%': providerLabel}) }}{% if show %} · <span lang="{{ language }}">{{ show }}</span>{% endif %} · <a href="{{ url }}" rel="external">{{ 'content.external.open'|trans({'%provider%': providerLabel}) }}<span class="sr-only"> ({{ title }})</span></a></p>
+        {# Two lines are kept for the button whichever it says, so changing it moves nothing. #}
+        <p class="m-0 min-h-[3.25rem] sm:min-h-[1.625rem]">
+            <button class="cursor-pointer border-0 bg-transparent p-0 text-left font-bold text-accent underline decoration-[0.1em] underline-offset-[0.15em] hover:text-accent-strong" type="button" aria-controls="{{ id }}" data-external-load hidden>{{ 'content.external.load'|trans({'%provider%': providerLabel}) }}</button>
+            <button class="cursor-pointer border-0 bg-transparent p-0 text-left font-bold text-accent underline decoration-[0.1em] underline-offset-[0.15em] hover:text-accent-strong" type="button" data-external-forget hidden>{{ 'content.external.forget'|trans({'%provider%': providerLabel}) }}</button>
+        </p>
+    </figcaption>
+</figure>

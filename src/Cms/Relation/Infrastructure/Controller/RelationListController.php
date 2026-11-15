@@ -7,6 +7,9 @@ namespace Cms\Relation\Infrastructure\Controller;
 use Cms\Author\Application\AuthorFinder;
 use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\External\Application\ExternalResourceFinder;
+use Cms\External\Application\ExternalResourceNotFound;
+use Cms\External\Domain\ExternalResourceRepository;
 use Cms\Image\Application\ImageFinder;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\ImageRepository;
@@ -32,7 +35,8 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 
 /**
- * Where a page, an image, a post, a section, a tag or an author is used:
+ * Where a page, an image, a post, a section, a tag, an author or an
+ * external resource is used:
  * every resource of the CMS that relates to it, each leading to where it is
  * edited, apart from the editor itself, and the redirects that lead to it.
  *
@@ -52,6 +56,7 @@ final class RelationListController extends AbstractController
         private readonly PostRepository $postRepository,
         private readonly TermRepository $termRepository,
         private readonly AuthorRepository $authorRepository,
+        private readonly ExternalResourceRepository $externalRepository,
     ) {}
 
     /**
@@ -67,7 +72,7 @@ final class RelationListController extends AbstractController
     ): Response {
         try {
             $name = $this->name($type, $id);
-        } catch (PageNotFound|ImageNotFound|PostNotFound|TermNotFound|AuthorNotFound $exception) {
+        } catch (PageNotFound|ImageNotFound|PostNotFound|TermNotFound|AuthorNotFound|ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
@@ -82,7 +87,8 @@ final class RelationListController extends AbstractController
 
     /**
      * How an editor names the resource: the title of a page or a post, the
-     * alternative text of an image, the name of a term or an author.
+     * alternative text of an image, the name of a term or an author, the
+     * title of an external resource.
      */
     private function name(RelationSegment $type, string $id): string
     {
@@ -93,6 +99,7 @@ final class RelationListController extends AbstractController
             RelationSegment::Sections => new TermFinder(Taxonomy::Section->value, $id)($this->termRepository)->name,
             RelationSegment::Tags => new TermFinder(Taxonomy::Tag->value, $id)($this->termRepository)->name,
             RelationSegment::Authors => new AuthorFinder($id)($this->authorRepository)->name,
+            RelationSegment::Externals => new ExternalResourceFinder($id)($this->externalRepository)->title,
         };
     }
 }

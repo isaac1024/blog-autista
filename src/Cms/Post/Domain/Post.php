@@ -373,7 +373,7 @@ final class Post extends AggregateRoot
         }
 
         // A post deleted uses nothing any longer.
-        $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'posts' => [], 'terms' => [], 'authors' => []]);
+        $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'posts' => [], 'terms' => [], 'authors' => [], 'externals' => []]);
 
         $events = $this->pullDomainEvents();
         $postRepository->delete($this);
@@ -499,8 +499,8 @@ final class Post extends AggregateRoot
     }
 
     /**
-     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>} $before
-     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>} $after
+     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>, externals: list<string>} $before
+     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>, externals: list<string>} $after
      */
     private function recordResourcesUsed(array $before, array $after): void
     {
@@ -523,15 +523,19 @@ final class Post extends AggregateRoot
         if ($before['authors'] !== $after['authors']) {
             $this->record(new PostAuthorsUsed($this->id->value(), $after['authors']));
         }
+
+        if ($before['externals'] !== $after['externals']) {
+            $this->record(new PostExternalsLinked($this->id->value(), $after['externals']));
+        }
     }
 
     /**
      * What the version being edited and the one last published use, each
      * once and in order: the images embedded, the pages and posts linked,
-     * the section and the tags filed under or linked, and the author signed
-     * by or linked.
+     * the section and the tags filed under or linked, the author signed by
+     * or linked, and the external resources linked.
      *
-     * @return array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>}
+     * @return array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>, externals: list<string>}
      */
     private function resourcesUsed(): array
     {
@@ -540,6 +544,7 @@ final class Post extends AggregateRoot
         $posts = [];
         $terms = [];
         $authors = [];
+        $externals = [];
 
         foreach ([$this->version, $this->published] as $version) {
             if (null === $version) {
@@ -554,6 +559,7 @@ final class Post extends AggregateRoot
             // What it is filed under and signed by, and what its content links to, alike.
             $terms = [...$terms, ...$classification->tags()->values(), ...$linked->terms()];
             $authors = [...$authors, ...$linked->authors()];
+            $externals = [...$externals, ...$linked->externals()];
 
             if (null !== $classification->section()) {
                 $terms[] = $classification->section()->value();
@@ -570,6 +576,7 @@ final class Post extends AggregateRoot
             'posts' => self::eachOnce($posts),
             'terms' => self::eachOnce($terms),
             'authors' => self::eachOnce($authors),
+            'externals' => self::eachOnce($externals),
         ];
     }
 

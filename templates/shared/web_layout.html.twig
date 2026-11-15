@@ -6,12 +6,17 @@
 #}
 
 {#
-    The only script of the public site, for a page whose visits are counted:
-    it tells the site once its reader sees the page, with no cookie and
-    nothing kept in the browser. Loaded as a plain module, with no import map.
+    The scripts of the public site, loaded as plain modules, with no import
+    map. A page whose visits are counted tells the site once its reader sees
+    it, with no cookie and nothing kept in the browser. A page that embeds
+    resources of other sites loads them behind their facades once the reader
+    agrees, which their browser keeps.
 #}
 {% block javascripts %}
 {% if page.countedContent %}
         <script type="module" src="{{ asset('web.js') }}" data-type="{{ page.countedContent.type }}" data-content="{{ page.countedContent.id }}" data-visit="{{ path('web_visit') }}"></script>
+{% endif %}
+{% if page.frames is not empty %}
+        <script type="module" src="{{ asset('external.js') }}"></script>
 {% endif %}
 {% endblock %}

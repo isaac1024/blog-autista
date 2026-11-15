@@ -33,4 +33,10 @@ interface PageRepository
      * The page served at the root of the site, which has no slug.
      */
     public function findHome(): ?Page;
+
+    /**
+     * The page that tells what the site keeps in the browsers of its readers,
+     * while it is on the site.
+     */
+    public function findCookiePolicy(): ?Page;
 }

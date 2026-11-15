@@ -11,7 +11,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * editor picks it: each kind with where it is searched, the parameter the
  * search takes, the key the answers come under, where those already linked
  * are looked up, and the kind of content it is kept as. Sections and tags
- * are both terms, looked up together.
+ * are both terms, looked up together. External resources are those of
+ * other sites the CMS keeps.
  */
 final readonly class LinkTargets
 {
@@ -33,6 +34,7 @@ final readonly class LinkTargets
             $this->target('section', 'term', $this->urlGenerator->generate('cms_terms_search', ['taxonomy' => 'sections']), 'name', 'terms', $terms),
             $this->target('tag', 'term', $this->urlGenerator->generate('cms_terms_search', ['taxonomy' => 'tags']), 'name', 'terms', $terms),
             $this->target('author', 'author', $this->urlGenerator->generate('cms_authors_search'), 'name', 'authors', $this->urlGenerator->generate('cms_authors_lookup')),
+            $this->target('external', 'external', $this->urlGenerator->generate('cms_externals_search'), 'title', 'externals', $this->urlGenerator->generate('cms_externals_lookup')),
         ];
     }
 

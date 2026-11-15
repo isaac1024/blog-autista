@@ -7,10 +7,12 @@ namespace Web\Redirect\Infrastructure\Resolution;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
+use Shared\Infrastructure\Ui\ExternalComponents;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
+use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PublishedPagesFinder;
 use Web\Page\Domain\PageRepository;
@@ -22,17 +24,20 @@ use Web\Taxonomy\Domain\TermRepository;
 
 /**
  * What a rich text painted on the site links to, its widgets and the
- * captions of its images too: the pages, posts, sections, tags and authors
- * on the site, each with its current address and name, keyed by the id
+ * captions of its images too: the pages, posts, sections, tags, authors and
+ * external resources on the site, each with its current address and name, keyed by the id
  * linked; one off the site, as the one of its kind its last address now
  * leads to. One neither on the site nor redirected isn't there, so its text
  * stays plain and its widget isn't painted; nor is the content painted,
  * which doesn't link itself.
  *
- * It reaches every module a link can lead to, so its coupling grows with
- * the kinds of content and says nothing about its design.
+ * It reaches every module a link can lead to, so its coupling and what it
+ * takes grow with the kinds of content and say nothing about its design.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+ *
+ * @phpstan-import-type ExternalView from ExternalComponents
  */
 final readonly class SiteLinkedContents
 {
@@ -43,13 +48,14 @@ final readonly class SiteLinkedContents
         private TermRepository $termRepository,
         private AuthorRepository $authorRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
+        private SiteExternalViews $externalViews,
     ) {}
 
     /**
      * @param array<string, array{caption: RichText}> $images  as painted, keyed by id
      * @param ?string                                 $painted the id of the content painted, linked by no text of its own
      *
-     * @return array<string, array{url: string, title: string}>
+     * @return array<string, array{url: string, title: string, external?: ExternalView}>
      */
     public function __invoke(RichText $content, array $images, ?string $painted): array
     {
@@ -85,6 +91,8 @@ final readonly class SiteLinkedContents
 
                 return null === $author ? null : ['url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]), 'title' => $author->name];
             })),
+            // No address of the site leads to an external resource, so none is redirected.
+            ...($this->externalViews)(SitePage::linkedIds($content, $images, LinkType::External)),
         ];
     }
 

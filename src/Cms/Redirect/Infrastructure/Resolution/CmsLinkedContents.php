@@ -6,6 +6,7 @@ namespace Cms\Redirect\Infrastructure\Resolution;
 
 use Cms\Author\Application\AuthorOnSiteFinder;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\External\Infrastructure\Ui\CmsExternalViews;
 use Cms\Page\Application\PageOnSiteResponse;
 use Cms\Page\Application\PagesOnSiteFinder;
 use Cms\Page\Domain\PageRepository;
@@ -18,6 +19,7 @@ use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
+use Shared\Infrastructure\Ui\ExternalComponents;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -28,10 +30,13 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * there, keyed by the id linked; one off the site, as the one of its kind
  * its last address now leads to, as SiteLinkedContents does on the site.
  *
- * It reaches every module a link can lead to, so its coupling grows with
- * the kinds of content and says nothing about its design.
+ * It reaches every module a link can lead to, so its coupling and what it
+ * takes grow with the kinds of content and say nothing about its design.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+ *
+ * @phpstan-import-type ExternalView from ExternalComponents
  */
 final readonly class CmsLinkedContents
 {
@@ -42,13 +47,14 @@ final readonly class CmsLinkedContents
         private TermRepository $termRepository,
         private AuthorRepository $authorRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
+        private CmsExternalViews $externalViews,
     ) {}
 
     /**
      * @param array<string, array{caption: RichText}> $images  as painted, keyed by id
      * @param ?string                                 $painted the id of the content previewed, linked by no text of its own
      *
-     * @return array<string, array{url: string, title: string}>
+     * @return array<string, array{url: string, title: string, external?: ExternalView}>
      */
     public function __invoke(RichText $content, array $images, ?string $painted): array
     {
@@ -81,6 +87,8 @@ final readonly class CmsLinkedContents
 
                 return null === $author ? null : ['url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]), 'title' => $author->name];
             })),
+            // No address of the site leads to an external resource, so none is redirected.
+            ...($this->externalViews)(SitePage::linkedIds($content, $images, LinkType::External)),
         ];
     }
 

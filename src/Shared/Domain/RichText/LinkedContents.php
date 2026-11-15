@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Shared\Domain\RichText;
 
 /**
- * The posts, the sections and tags, and the authors some rich texts link to
- * or show in widgets, such as a version being edited and the one on the
+ * The posts, the sections and tags, the authors and the external resources
+ * some rich texts link to or show in widgets, such as a version being edited and the one on the
  * site, each once and in order.
  */
 final readonly class LinkedContents
@@ -15,11 +15,13 @@ final readonly class LinkedContents
      * @param list<string> $posts
      * @param list<string> $terms
      * @param list<string> $authors
+     * @param list<string> $externals
      */
     private function __construct(
         private array $posts,
         private array $terms,
         private array $authors,
+        private array $externals,
     ) {}
 
     public static function fromTexts(?RichText ...$texts): self
@@ -36,7 +38,7 @@ final readonly class LinkedContents
             return array_values(array_unique($ids));
         };
 
-        return new self($ids(LinkType::Post), $ids(LinkType::Term), $ids(LinkType::Author));
+        return new self($ids(LinkType::Post), $ids(LinkType::Term), $ids(LinkType::Author), $ids(LinkType::External));
     }
 
     /**
@@ -63,13 +65,21 @@ final readonly class LinkedContents
         return $this->authors;
     }
 
+    /**
+     * @return list<string>
+     */
+    public function externals(): array
+    {
+        return $this->externals;
+    }
+
     public function isEmpty(): bool
     {
-        return [] === $this->posts && [] === $this->terms && [] === $this->authors;
+        return [] === $this->posts && [] === $this->terms && [] === $this->authors && [] === $this->externals;
     }
 
     public function equals(self $other): bool
     {
-        return $this->posts === $other->posts && $this->terms === $other->terms && $this->authors === $other->authors;
+        return $this->posts === $other->posts && $this->terms === $other->terms && $this->authors === $other->authors && $this->externals === $other->externals;
     }
 }

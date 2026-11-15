@@ -9,8 +9,8 @@ use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
 
 /**
- * Replaces the relations of a image to the posts, sections and tags, and
- * authors it links to with those it tells.
+ * Replaces the relations of a image to the posts, sections and tags,
+ * authors and external resources it links to with those it tells.
  */
 final readonly class ImageContentsRelator
 {
@@ -22,5 +22,6 @@ final readonly class ImageContentsRelator
         $relationRepository->replace(ResourceType::Image, $id, ResourceType::Post, $this->event->postIds());
         $relationRepository->replace(ResourceType::Image, $id, ResourceType::Term, $this->event->termIds());
         $relationRepository->replace(ResourceType::Image, $id, ResourceType::Author, $this->event->authorIds());
+        $relationRepository->replace(ResourceType::Image, $id, ResourceType::External, $this->event->externalIds());
     }
 }

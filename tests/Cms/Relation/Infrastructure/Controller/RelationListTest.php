@@ -142,7 +142,7 @@ final class RelationListTest extends TestCase
 
         $last = $list->main[\count($list->main) - 1];
         self::assertSame(['Shared:Panel', 'cms.redirects.incoming.title'], [$last->name, $last->props['title']]);
-        self::assertSame(\sprintf('cms.redirects.incoming.%s.empty(%%name%%=Sobre mí)', $type->redirectType()->value), $last->props['description']);
+        self::assertSame(\sprintf('cms.redirects.incoming.%s.empty(%%name%%=Sobre mí)', $type->redirectType()?->value), $last->props['description']);
     }
 
     /**

@@ -62,7 +62,7 @@ final readonly class TextRun
     }
 
     /**
-     * @return array{text: string, marks?: list<string>, page_id?: string, post_id?: string, term_id?: string, author_id?: string}
+     * @return array{text: string, marks?: list<string>, page_id?: string, post_id?: string, term_id?: string, author_id?: string, external_id?: string}
      */
     public function toArray(): array
     {
@@ -77,6 +77,7 @@ final readonly class TextRun
             LinkType::Post => [...$data, 'post_id' => $link->id()],
             LinkType::Term => [...$data, 'term_id' => $link->id()],
             LinkType::Author => [...$data, 'author_id' => $link->id()],
+            LinkType::External => [...$data, 'external_id' => $link->id()],
         };
     }
 

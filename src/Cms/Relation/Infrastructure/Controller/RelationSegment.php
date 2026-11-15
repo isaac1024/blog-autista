@@ -21,11 +21,12 @@ enum RelationSegment: string
     case Sections = 'sections';
     case Tags = 'tags';
     case Authors = 'authors';
+    case Externals = 'externals';
 
     /**
      * What a route takes as the segment.
      */
-    public const string REQUIREMENT = 'pages|images|posts|sections|tags|authors';
+    public const string REQUIREMENT = 'pages|images|posts|sections|tags|authors|externals';
 
     public function resourceType(): ResourceType
     {
@@ -35,10 +36,15 @@ enum RelationSegment: string
             self::Posts => ResourceType::Post,
             self::Sections, self::Tags => ResourceType::Term,
             self::Authors => ResourceType::Author,
+            self::Externals => ResourceType::External,
         };
     }
 
-    public function redirectType(): RedirectResourceType
+    /**
+     * What kind of resource it is to the redirects, null for an external
+     * resource, which no address of the site leads to.
+     */
+    public function redirectType(): ?RedirectResourceType
     {
         return match ($this) {
             self::Pages => RedirectResourceType::Page,
@@ -46,6 +52,7 @@ enum RelationSegment: string
             self::Posts => RedirectResourceType::Post,
             self::Sections, self::Tags => RedirectResourceType::Term,
             self::Authors => RedirectResourceType::Author,
+            self::Externals => null,
         };
     }
 
@@ -74,6 +81,7 @@ enum RelationSegment: string
             self::Sections => 'section',
             self::Tags => 'tag',
             self::Authors => 'author',
+            self::Externals => 'external',
         }, $key);
     }
 }

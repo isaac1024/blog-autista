@@ -1,5 +1,20 @@
 cms:
     notices:
+        external:
+            created: 'Resource created with what it tells of itself. Check its details before publishing it.'
+            created_unread: 'Resource created, but its address could not be read: fill its details by hand or try again with “Fill from its address”.'
+            saved: 'Changes saved.'
+            filled: 'Details and image read again from its address. Check them and save.'
+            unread: 'The address of the resource could not be read. Nothing changed.'
+            published: 'Resource published on the site.'
+            unpublished: 'Resource taken off the site: texts that link it show it as plain text.'
+            discarded: 'Changes discarded: the resource is the published one again.'
+            deleted: 'Resource deleted.'
+            checked:
+                available: 'Checked: the address leads to the resource (status %status%).'
+                unavailable: 'Checked: the resource is no longer available (status %status%). The site stops showing it.'
+                moved: 'The address now leads to %url%. If it is the same resource, change its address and publish.'
+                doubtful: 'It could not be checked (status %status%): the site may turn robots away, or not answer. Its availability did not change.'
         page:
             created: 'Page created.'
             saved: 'Changes saved.'
@@ -393,6 +408,13 @@ cms:
             empty:
                 title: 'Nothing uses this author'
                 message: 'No post is signed by them and nothing links to them.'
+        external:
+            subtitle: 'What links or shows the resource “%name%”.'
+            back: 'Edit the resource'
+            list: 'What uses the resource “%name%”'
+            empty:
+                title: 'Nothing uses this resource'
+                message: 'No page, post, caption, bio or menu links or shows it.'
     settings:
         title: 'Settings'
         dates: 'Created on %created% · Changed on %updated%'
@@ -780,6 +802,169 @@ cms:
         publish:
             page_title: 'Publish “%name%”'
             submit: 'Publish the author'
+    externals:
+        title: 'External resources'
+        subtitle: 'Videos, posts of social networks, audios, news, studies and PDFs of other sites. Texts and menus link them as the resource they are: unpublishing them, or changing their address, changes them everywhere.'
+        add: 'Add resource'
+        url_label: 'Address'
+        kind_by: '%kind% of %provider%'
+        kind:
+            video: 'Video'
+            social_post: 'Post'
+            audio: 'Audio'
+            article: 'Article'
+            study: 'Study'
+            document: 'Document'
+        provider:
+            youtube: 'YouTube'
+            tiktok: 'TikTok'
+            mastodon: 'Mastodon'
+            bluesky: 'Bluesky'
+            x: 'X'
+            threads: 'Threads'
+            spotify: 'Spotify'
+        language:
+            es: 'Spanish'
+            en: 'English'
+            ca: 'Catalan'
+            gl: 'Galician'
+            eu: 'Basque'
+            fr: 'French'
+            pt: 'Portuguese'
+            it: 'Italian'
+            de: 'German'
+        empty:
+            title: 'No external resources yet'
+            message: 'When you add a video, a post, a piece of news or a PDF, it will show here.'
+            action: 'Add the first resource'
+        filter:
+            label: 'Which resources to show'
+            all: 'All'
+            unavailable: 'Unavailable (%count%)'
+        unavailable_alert:
+            title: 'Some resources are no longer available'
+            message: '{1}A published resource no longer leads where it should, so the site does not show it. Change its address or unpublish it.|]1,Inf[%count% published resources no longer lead where they should, so the site does not show them. Change their address or unpublish them.'
+        search:
+            label: 'Search by title'
+            submit: 'Search'
+            empty:
+                title: 'No results'
+                message: 'No resource has “%title%” in its title.'
+                unavailable: 'Every resource is available.'
+                action: 'See every resource'
+        list:
+            label: 'External resources'
+            updated_at: 'Changed on %date%'
+        modal:
+            title: 'New external resource'
+            description: 'Paste the address of the video, the post, the audio, the news, the study or the PDF. The CMS reads it to tell what it is and fill its details and its image.'
+            url_hint: 'For instance: https://www.youtube.com/watch?v=… or https://doi.org/10.…'
+            submit: 'Add resource'
+        edit:
+            title: 'Edit external resource'
+            dates: 'Created on %created% · Changed on %updated%'
+            open: 'Open the original'
+            relations: 'Where it is used'
+            url_hint: 'It only changes to another address of the same kind and site. For anything else, add a new resource.'
+            title_label: 'Title'
+            title_hint: 'What the resource is called on its card, in menus and for screen readers.'
+            summary_label: 'Summary'
+            summary_hint: 'One or two sentences shown on the card. It may be left empty.'
+            language_label: 'Language'
+            language_hint: 'The language of the resource, so screen readers read it right.'
+            submit: 'Save'
+            publish: 'Publish'
+            republish: 'Republish'
+            publish_unsaved: 'Save your changes to publish them.'
+            unavailable:
+                title: 'This resource is no longer available'
+                message: 'The last check says its address no longer leads to it, so the site shows it nowhere. Change its address and publish, or unpublish it.'
+        details:
+            author:
+                label: 'Author'
+                hint: 'Who wrote the post, as the network shows it.'
+            handle:
+                label: 'Account'
+                hint: 'The account it was posted from, such as @user.'
+            posted_on:
+                label: 'Date of the post'
+                hint: 'The day it was posted.'
+            text:
+                label: 'Text'
+                hint: 'What the post says. It shows before the post loads, and stays if it is deleted.'
+            with_media:
+                label: 'Does it show photos or videos?'
+                hint: ''
+                yes: 'Yes, readers are told it has them'
+                no: 'No'
+            show:
+                label: 'Show'
+                hint: 'The podcast or show it belongs to, for an episode.'
+            publisher:
+                label: 'Outlet or publisher'
+                hint: 'Who publishes it, such as the newspaper or the association.'
+            published_on:
+                label: 'Publication date'
+                hint: 'The day it was published, if known.'
+            authors:
+                label: 'Authors'
+                hint: 'Who signs the study, separated by commas.'
+            journal:
+                label: 'Journal'
+                hint: 'Where the study was published.'
+            year:
+                label: 'Year'
+                hint: 'The year it was published.'
+            bytes:
+                label: 'Size (bytes)'
+                hint: 'How heavy the PDF is. It is filled in when its address is read.'
+            pages:
+                label: 'Pages'
+                hint: 'How many pages it has, if you know.'
+        fill:
+            title: 'Details read from its address'
+            description: 'The CMS fills the resource with what it tells of itself at its address. If that changed, read it again: its title, summary and other details are replaced by what it tells now.'
+            description_image: 'The CMS fills the resource and its image with what it tells of itself at its address: the image is never chosen by hand. If that changed, read it again: its title, summary, other details and image are replaced by what it tells now.'
+            no_image: 'The resource has no image: its address tells none, or it could not be read.'
+            image_alt: 'Image of “%title%”'
+            submit: 'Fill from its address'
+        check:
+            title: 'Availability'
+            available: 'Available: %url% led to the resource when last checked (%date%).'
+            unavailable: 'Unavailable: %url% no longer led to the resource when last checked (%date%). The site does not show it.'
+            never: 'never'
+            submit: 'Check now'
+        discard:
+            trigger: 'Discard changes'
+            title: 'Discard the changes?'
+            description: 'The resource “%title%” will be the one published on the site again. The changes saved since will be lost. This cannot be undone.'
+            submit: 'Yes, discard the changes'
+        unpublish:
+            trigger: 'Unpublish'
+            title: 'Unpublish the resource?'
+            description: 'The resource “%title%” will no longer show on the site: its widgets will go, and texts and menus that link it will show it as plain text.'
+            submit: 'Yes, unpublish'
+        delete:
+            trigger: 'Delete resource'
+            title: 'Delete this resource?'
+            description: 'The resource “%title%” and its image will cease to exist. This cannot be undone.'
+            submit: 'Yes, delete the resource'
+        status:
+            draft:
+                label: 'Draft'
+                description: 'Draft: not on the site yet.'
+            published:
+                label: 'Published'
+                description: 'Published: the site shows this version.'
+            changed:
+                label: 'Published with changes'
+                description: 'Published with changes: the site shows the previous version until you republish.'
+            unpublished:
+                label: 'Unpublished'
+                description: 'Unpublished: no longer on the site.'
+            unavailable:
+                label: 'Unavailable'
+                description: 'Published but unavailable: the site does not show it until its address leads to it again.'
     posts:
         title: 'Posts'
         subtitle: 'The articles of the blog, each under a section and signed by an author. Newest first.'
@@ -901,6 +1086,30 @@ cms:
 content:
     related_page:
         label: 'Related content'
+    external:
+        from: 'Content of %provider%'
+        open: 'Open on %provider%'
+        load: 'Load the content of %provider% here'
+        forget: 'Stop loading content of %provider% on its own'
+        frame_title: '%title% (%provider%)'
+        with_media: 'It shows photos or videos: open it on %provider% to see them.'
+        leaves: 'leaves the blog'
+        size: '%size% MB'
+        pages: '{1}1 page|]1,Inf[%count% pages'
+        label:
+            article: 'External content'
+            study: 'Study'
+            document: 'PDF document'
+            video: 'Video'
+            social_post: 'Post'
+            audio: 'Audio'
+        notice:
+            title: 'This loads content of %provider%'
+            message: '%provider% may keep cookies and learn that you saw this content. If you agree, the blog remembers in your browser that you agreed for %provider%, and you can take it back whenever you wish.'
+            cookies: 'Cookie policy'
+            privacy: 'Privacy of %provider%'
+            accept: 'Agree and load'
+            cancel: 'Cancel'
     callout:
         note: 'Note'
         important: 'Important'
@@ -1150,6 +1359,7 @@ ui:
                 section: 'Section'
                 tag: 'Tag'
                 author: 'Author'
+                external: 'External resource'
         image:
             insert: 'Image'
             title: 'Insert an image'
@@ -1296,6 +1506,37 @@ errors:
             incomplete_dates: 'The publication dates of the author are incomplete.'
             redirected: 'Redirects lead to this author, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published author keeps its address on the site.'
+    external:
+        url:
+            not_an_address: 'The address must be complete, starting with https:// or http://.'
+            too_long: 'The address cannot exceed %max% characters.'
+            own_site: 'It is an address of the blog itself: link the content directly, not as an external resource.'
+            another_kind: 'That address is of another kind of resource, or of another site. Add a new resource for it.'
+            taken: 'A resource has that address already: here it is.'
+        title:
+            too_short: 'The title must have at least %min% characters.'
+            too_long: 'The title cannot exceed %max% characters.'
+        details:
+            too_long: 'A detail of the resource is too long: %max% characters at most.'
+            single_line: 'A detail of the resource goes on a single line.'
+            not_a_number: 'A detail of the resource must be a whole number.'
+            not_a_date: 'A date of the resource is not valid.'
+            year_out_of_range: 'The year of the study must be between %min% and %max%.'
+        publication:
+            without_image: 'A video or an audio cannot be published without an image, which shows before it loads. Use “Fill from its address”.'
+            not_embeddable: 'How to embed this resource is not known yet: use “Fill from its address” so its provider tells.'
+            without_author: 'The post cannot be published without its author and account.'
+            without_date: 'The post cannot be published without its date.'
+            without_text: 'The post cannot be published without its text.'
+            without_authors: 'The study cannot be published without its authors.'
+            without_journal: 'The study cannot be published without its journal.'
+            without_year: 'The study cannot be published without its year.'
+            nothing_to_publish: 'The resource is published as it is: there is nothing to publish.'
+            not_published: 'Only a published resource can be unpublished.'
+            no_changes_to_discard: 'There are no unpublished changes to discard.'
+            published_resource: 'A published resource cannot be deleted: unpublish it first.'
+            used_resource: 'Texts or menus use this resource, so it cannot be deleted. Remove it from where it is used first.'
+            incomplete_dates: 'The publication dates of the resource are incomplete.'
     post:
         title:
             too_short: 'The title must have at least %min% characters.'
