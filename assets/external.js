@@ -93,7 +93,7 @@ const reveal = (embed, iframe) => {
         return;
     }
 
-    iframe.dataset.shown = '';
+    iframe.toggleAttribute('data-shown', true);
     embed.facade.hidden = true;
 };
 
@@ -104,10 +104,6 @@ const reveal = (embed, iframe) => {
  * @param {Embed} embed
  */
 const load = (embed) => {
-    if (embed.iframe !== null) {
-        return;
-    }
-
     const { src, title, origin } = /** @type {{src: string, title: string, origin: string}} */ (embed.element.dataset);
     const iframe = document.createElement('iframe');
     iframe.src = frameUrl(embed.provider, src, embed.id);
@@ -130,7 +126,7 @@ const load = (embed) => {
         const hello = greeting(embed.provider, embed.id);
 
         if (hello !== null) {
-            iframe.contentWindow?.postMessage(hello, origin);
+            /** @type {Window} */ (iframe.contentWindow).postMessage(hello, origin);
         }
 
         if (!reportsHeight(embed.provider)) {
@@ -146,12 +142,13 @@ const load = (embed) => {
 };
 
 const observer = 'IntersectionObserver' in window
-    ? new IntersectionObserver((entries) => {
+    ? new window.IntersectionObserver((entries, self) => {
         for (const entry of entries) {
-            const embed = embeds.find((candidate) => candidate.element === entry.target);
+            // It watches the embeds alone.
+            const embed = /** @type {Embed} */ (embeds.find((candidate) => candidate.element === entry.target));
 
-            if (entry.isIntersecting && embed !== undefined && hasConsent(storage, embed.provider)) {
-                observer?.unobserve(entry.target);
+            if (entry.isIntersecting && hasConsent(storage, embed.provider)) {
+                self.unobserve(entry.target);
                 load(embed);
             }
         }
@@ -235,7 +232,7 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
     /** @type {Embed} */
     const embed = {
         element,
-        provider: element.dataset.provider ?? '',
+        provider: String(element.dataset.provider),
         frame: part(element, '[data-external-frame]', HTMLElement),
         facade: part(element, '[data-external-facade]', HTMLElement),
         notice: part(element, '[data-external-notice]', HTMLElement),
@@ -268,16 +265,18 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
 
 /* A frame that reports its height is shown once it does, at that height. */
 window.addEventListener('message', (event) => {
-    const embed = embeds.find((candidate) => candidate.iframe !== null && candidate.iframe.contentWindow === event.source);
+    for (const embed of embeds) {
+        const { iframe } = embed;
 
-    if (embed === undefined || embed.iframe === null || event.origin !== embed.element.dataset.origin) {
-        return;
-    }
+        if (iframe === null || iframe.contentWindow !== event.source || event.origin !== embed.element.dataset.origin) {
+            continue;
+        }
 
-    const height = reportedHeight(embed.provider, event.data, embed.id);
+        const height = reportedHeight(embed.provider, event.data, embed.id);
 
-    if (height !== null) {
-        embed.iframe.height = String(height);
-        reveal(embed, embed.iframe);
+        if (height !== null) {
+            iframe.height = String(height);
+            reveal(embed, iframe);
+        }
     }
 });

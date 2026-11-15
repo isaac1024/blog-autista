@@ -75,7 +75,7 @@ const field = (root, selector, type) => {
  *
  * @param {HTMLLIElement} row
  */
-const targetOf = (row) => ({ type: row.dataset.type ?? '', id: row.dataset.id ?? '' });
+const targetOf = (row) => ({ type: String(row.dataset.type), id: String(row.dataset.id) });
 
 /**
  * @param {Event} event

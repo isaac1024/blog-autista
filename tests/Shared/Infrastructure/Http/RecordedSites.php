@@ -48,6 +48,23 @@ final class RecordedSites
     }
 
     /**
+     * What the address answers once redirects took it to another, as the
+     * client tells after following them.
+     */
+    public static function answerRedirected(string $url, string $landed, string $body, string $contentType): void
+    {
+        self::$answers[$url] = [$body, ['http_code' => 200, 'response_headers' => ['content-type' => $contentType], 'url' => $landed, 'redirect_count' => 1]];
+    }
+
+    /**
+     * An address whose host never answers.
+     */
+    public static function failToReach(string $url): void
+    {
+        self::$answers[$url] = ['', ['error' => 'Could not resolve host']];
+    }
+
+    /**
      * @param array<array-key, mixed> $data
      */
     public static function answerJson(string $url, array $data, int $status = 200): void

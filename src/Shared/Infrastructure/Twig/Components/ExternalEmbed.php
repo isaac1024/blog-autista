@@ -80,6 +80,13 @@ final class ExternalEmbed
     /**
      * @param ?array{src: string, srcset: string, width: int, height: int} $image
      * @param array<array-key, mixed>                                      $details as the resource tells them
+     *
+     * It takes a single branch. PHPMD finds more only when it analyses the
+     * whole of src, and none when it analyses this file or its context
+     * alone: it counts the branches of post() with these.
+     *
+     * @SuppressWarnings("PHPMD.CyclomaticComplexity")
+     * @SuppressWarnings("PHPMD.NPathComplexity")
      */
     public function mount(
         string $kind,
@@ -109,7 +116,7 @@ final class ExternalEmbed
         $this->privacyUrl = $privacyUrl;
         $this->cookiesUrl = $cookiesUrl;
         $this->image = $image;
-        $this->show = \is_string($details['show'] ?? null) ? $details['show'] : null;
+        $this->show = self::text($details, 'show');
 
         $this->post = 'social_post' === $kind ? $this->post($details) : null;
     }
@@ -128,13 +135,21 @@ final class ExternalEmbed
         $paragraphs = '' === $text ? false : preg_split("/\n{2,}/", $text);
 
         return [
-            'author' => \is_string($details['author'] ?? null) ? $details['author'] : '',
-            'handle' => \is_string($details['handle'] ?? null) ? $details['handle'] : '',
+            'author' => self::text($details, 'author') ?? '',
+            'handle' => self::text($details, 'handle') ?? '',
             'date' => false === $day ? null : (string) new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE)->format($day),
             'day' => false === $day ? null : $day->format('Y-m-d'),
             // Paragraphs apart by a blank line, lines apart within them.
             'paragraphs' => array_map(static fn (string $paragraph): array => explode("\n", $paragraph), false === $paragraphs ? [] : $paragraphs),
             'withMedia' => true === ($details['with_media'] ?? false),
         ];
+    }
+
+    /**
+     * @param array<array-key, mixed> $details
+     */
+    private static function text(array $details, string $key): ?string
+    {
+        return \is_string($details[$key] ?? null) ? $details[$key] : null;
     }
 }

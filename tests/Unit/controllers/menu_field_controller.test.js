@@ -145,6 +145,32 @@ test('a page picked joins the menu as a numbered entry, told and focused on its 
     assert.equal(inputs, 2);
 });
 
+test('choosing another kind searches it, and an entry of it joins the menu even with the id of a page', async () => {
+    const VIDEO = { id: 'page-1', title: 'A video', status: 'Published', published: true };
+    const menu = await open({
+        items: [FIRST],
+        lookup: () => answer({ pages: [FIRST] }),
+        search: (url) => answer(new URL(url).pathname === '/api/externals/search' ? { externals: [VIDEO], more: false } : { pages: [FIRST], more: false }),
+    });
+
+    await menu.press(menu.target('add'));
+    const external = menu.document.querySelector('input[name="menu-kind"][value="external"]');
+    external.checked = true;
+    external.dispatchEvent(new menu.window.Event('change', { bubbles: true }));
+    await settle();
+
+    assert.equal(menu.requests.at(-1).url, 'https://blog.test/api/externals/search?title=&page=1');
+    assert.deepEqual(menu.results().map((button) => button.textContent), ['A videoPublished']);
+
+    await menu.press(menu.results()[0]);
+
+    assert.deepEqual(menu.entries().map(({ page, names }) => ({ page, names })), [
+        { page: 'page-1', names: ['menu[0][page_id]', 'menu[0][label]'] },
+        { page: 'page-1', names: ['menu[1][external_id]', 'menu[1][label]'] },
+    ]);
+    assert.equal(menu.status(), 'Added A video');
+});
+
 test('a full menu opens no search, and a page picked meanwhile is not added', async () => {
     const menu = await open({ items: [FIRST], max: 2, search: () => answer({ pages: [SECOND, THIRD], more: false }) });
     await menu.press(menu.target('add'));

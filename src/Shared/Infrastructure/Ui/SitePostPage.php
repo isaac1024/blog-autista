@@ -16,6 +16,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * It always dates the post by when it was last published, the day of Madrid
  * the site keeps, and says it was updated when that day isn't the one it
  * was first published.
+ *
+ * @phpstan-import-type ExternalView from ExternalComponents
  */
 final readonly class SitePostPage
 {
@@ -36,7 +38,7 @@ final readonly class SitePostPage
      * @param array{name: string, url: ?string}                                                                          $author
      * @param list<array{name: string, url: string}>                                                                     $tags    those on the site, in order
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
-     * @param array<string, array{url: string, title: string}>                                                           $pages
+     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
@@ -65,7 +67,8 @@ final readonly class SitePostPage
                 'section' => $section,
                 'author' => $author,
             ])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages));
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages))
+            ->withFrames(SitePage::frames($content, $pages));
 
         return [] === $tags ? $page : $page->withMain('Shared:PostTags', ['tags' => $tags]);
     }

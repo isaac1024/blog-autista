@@ -13,11 +13,10 @@ const KEY = 'external-consent';
  */
 const read = (storage) => {
     try {
-        const kept = JSON.parse(storage?.getItem(KEY) ?? '{}');
-
-        if (kept === null || typeof kept !== 'object' || Array.isArray(kept)) {
-            return {};
-        }
+        // Without storage, or with nothing kept, this throws: null has no
+        // entries. A list or a text kept has entries of its own, by their
+        // position, which no provider is named after.
+        const kept = JSON.parse(String(/** @type {Storage} */ (storage).getItem(KEY)));
 
         return Object.fromEntries(Object.entries(kept).filter(([, moment]) => typeof moment === 'string'));
     } catch {
@@ -31,9 +30,10 @@ const read = (storage) => {
  */
 const write = (storage, consents) => {
     try {
-        storage?.setItem(KEY, JSON.stringify(consents));
+        /** @type {Storage} */ (storage).setItem(KEY, JSON.stringify(consents));
     } catch {
-        // A browser that refuses to keep it asks again on the next page.
+        // A browser without storage, or that refuses to keep it, asks again
+        // on the next page.
     }
 };
 

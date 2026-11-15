@@ -39,7 +39,8 @@
  * `CMS_REDIRECT_ID`, and `CMS_SECTION_ID`, `CMS_TAG_ID` and `CMS_AUTHOR_ID`
  * those of a section, a tag and an author, and `CMS_POST_ID` that of a
  * post, each published, whose forms that take them off the site and pages
- * of what uses them are checked too. Pages of the site are included with `WEB_PAGE_SLUG`,
+ * of what uses them are checked too, and `CMS_EXTERNAL_ID` that of an
+ * external resource, checked as edited and where it is used. Pages of the site are included with `WEB_PAGE_SLUG`,
  * `WEB_SECTION_SLUG`, `WEB_TAG_SLUG`, `WEB_AUTHOR_SLUG`, `WEB_POST_PATH`
  * (such as /vida-diaria/2026/11/14/un-post.html) and `WEB_HOME`, once
  * published.
@@ -77,6 +78,7 @@ if (cmsSession) {
         cmsPage('cms-redirect-new', '/redirects/new'),
         cmsPage('cms-settings', '/settings'),
         cmsPage('cms-analytics', '/analytics'),
+        cmsPage('cms-externals', '/externals'),
     );
 }
 
@@ -100,6 +102,16 @@ if (cmsSession && imageId) {
 const redirectId = process.env.CMS_REDIRECT_ID;
 if (cmsSession && redirectId) {
     pages.push(cmsPage('cms-redirect-edit', `/redirects/${redirectId}`));
+}
+
+// An external resource is taken off the site by a button of its editor,
+// with no form of its own.
+const externalId = process.env.CMS_EXTERNAL_ID;
+if (cmsSession && externalId) {
+    pages.push(
+        cmsPage('cms-external-edit', `/externals/${externalId}`),
+        cmsPage('cms-external-relations', `/externals/${externalId}/relations`),
+    );
 }
 
 // Each is checked as edited, where it is used, and, published, as the form

@@ -63,13 +63,13 @@ final readonly class SitePage
 
     /**
      * The origins of the resources the widgets of the content embed, which
-     * the page lets frame them, each once.
+     * the page lets frame them, each once: those of a page, and of a post.
      *
      * @param array<string, array{url: string, title: string, external?: ExternalView}> $pages
      *
      * @return list<string>
      */
-    private static function frames(RichText $content, array $pages): array
+    public static function frames(RichText $content, array $pages): array
     {
         $origins = [];
 

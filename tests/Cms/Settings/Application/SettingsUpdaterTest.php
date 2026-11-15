@@ -24,6 +24,13 @@ final class SettingsUpdaterTest extends TestCase
     use ClockSensitiveTrait;
     use DomainErrorAssertions;
     use PublishedEvents;
+    private const string POST = '01a1e2a0-0000-7000-8000-0000000000d1';
+
+    private const string TERM = '01a1e2a0-0000-7000-8000-0000000000d2';
+
+    private const string AUTHOR = '01a1e2a0-0000-7000-8000-0000000000d3';
+
+    private const string EXTERNAL = '01a1e2a0-0000-7000-8000-0000000000d4';
 
     /**
      * When the settings edited here were created and last changed.
@@ -126,6 +133,29 @@ final class SettingsUpdaterTest extends TestCase
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => [Mother::IMAGE]]],
             ['cms.settings.pages_linked', SettingsIdMother::DEFAULT_VALUE, ['page_ids' => [Mother::PAGE, Mother::OTHER_PAGE]]],
+        ], $told);
+    }
+
+    /**
+     * Besides pages, a menu leads to posts, sections and tags, authors and
+     * external resources, each kind told apart from the pages.
+     */
+    public function testItTellsTheOtherContentsTheMenusLeadTo(): void
+    {
+        $told = [];
+        $repository = self::createStub(SettingsRepository::class);
+        $repository->method('find')->willReturn(Mother::create());
+
+        (new SettingsUpdater(Mother::NAME, '', [
+            ['external_id' => self::EXTERNAL, 'label' => 'Un vídeo'],
+            ['post_id' => self::POST, 'label' => null],
+        ], [
+            ['term_id' => self::TERM, 'label' => null],
+            ['author_id' => self::AUTHOR, 'label' => null],
+        ]))($repository, $this->eventBusCollecting($told));
+
+        self::assertSame([
+            ['cms.settings.contents_linked', SettingsIdMother::DEFAULT_VALUE, ['post_ids' => [self::POST], 'term_ids' => [self::TERM], 'author_ids' => [self::AUTHOR], 'external_ids' => [self::EXTERNAL]]],
         ], $told);
     }
 
@@ -236,6 +266,10 @@ final class SettingsUpdaterTest extends TestCase
         yield 'entry that is not a list' => [$name, '', ['Sobre mí'], 'errors.settings.menu.malformed', []];
         yield 'label that is not text' => [$name, '', [['page_id' => Mother::PAGE, 'label' => ['Sobre mí']]], 'errors.settings.menu.malformed', []];
         yield 'page that is not an id' => [$name, '', [['page_id' => 'sobre-mi', 'label' => null]], 'errors.settings.menu.malformed', []];
+        yield 'entry leading to two contents' => [$name, '', [['page_id' => Mother::PAGE, 'post_id' => Mother::OTHER_PAGE, 'label' => null]], 'errors.settings.menu.malformed', []];
+        yield 'entry leading nowhere' => [$name, '', [['label' => 'Sobre mí']], 'errors.settings.menu.malformed', []];
+        yield 'entry with a label that is no text' => [$name, '', [['page_id' => Mother::PAGE, 'label' => ['Sobre mí']]], 'errors.settings.menu.malformed', []];
+        yield 'a post twice' => [$name, '', [['post_id' => Mother::PAGE, 'label' => null], ['post_id' => Mother::PAGE, 'label' => 'Otra vez']], 'errors.settings.menu.repeated_entry', []];
     }
 
     public function testItFailsWhileTheSettingsDoNotExist(): void

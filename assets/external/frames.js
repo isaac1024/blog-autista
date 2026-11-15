@@ -59,23 +59,25 @@ export const greeting = (provider, id) => (provider === 'mastodon' ? { type: 'se
  * @returns {number | null}
  */
 export const reportedHeight = (provider, data, id) => {
-    let height = null;
+    // No height until a provider's own message tells one. Object() reads a
+    // message that isn't one, such as null or a text, as one without fields.
+    let height = Number.NaN;
 
     if (provider === 'threads') {
-        height = typeof data === 'number' || typeof data === 'string' ? Number(data) : null;
+        height = typeof data === 'number' || typeof data === 'string' ? Number(data) : Number.NaN;
     }
 
     if (provider === 'bluesky' || provider === 'mastodon') {
-        const message = /** @type {{id?: unknown, height?: unknown, type?: unknown}} */ (data !== null && typeof data === 'object' ? data : {});
+        const message = /** @type {{id?: unknown, height?: unknown, type?: unknown}} */ (Object(data));
         const ours = String(message.id) === id && (provider === 'bluesky' || message.type === 'setHeight');
-        height = ours ? Number(message.height) : null;
+        height = ours ? Number(message.height) : Number.NaN;
     }
 
     if (provider === 'x') {
-        const call = /** @type {{id?: unknown, method?: unknown, params?: unknown}} */ (data !== null && typeof data === 'object' ? (/** @type {Record<string, unknown>} */ (data)['twttr.embed'] ?? {}) : {});
-        const params = Array.isArray(call.params) ? /** @type {{height?: unknown}} */ (call.params[0] ?? {}) : {};
-        height = call.method === 'twttr.private.resize' && String(call.id) === id ? Number(params.height) : null;
+        const call = /** @type {{id?: unknown, method?: unknown, params?: unknown}} */ (Object(Object(data)['twttr.embed']));
+        const params = /** @type {{height?: unknown}} */ (Object(Object(call.params)[0]));
+        height = call.method === 'twttr.private.resize' && String(call.id) === id ? Number(params.height) : Number.NaN;
     }
 
-    return height !== null && Number.isFinite(height) && height > 0 ? Math.ceil(height) : null;
+    return Number.isFinite(height) && height > 0 ? Math.ceil(height) : null;
 };

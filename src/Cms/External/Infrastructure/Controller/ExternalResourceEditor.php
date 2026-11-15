@@ -235,12 +235,14 @@ final readonly class ExternalResourceEditor
             'name' => 'language',
             'id' => 'external-language',
             'value' => $resource->language,
-            'none' => '',
+            // A resource always has one, and the list, with no option for
+            // none, always sends one: it needs no "required".
+            'none' => null,
             'options' => array_map(fn (Language $language): array => [
                 'value' => $language->value,
                 'label' => $this->translator->trans('cms.externals.language.'.$language->value),
             ], Language::cases()),
-            'attributes' => ['required' => true, 'aria-describedby' => 'external-language-hint'],
+            'attributes' => ['aria-describedby' => 'external-language-hint'],
         ]));
     }
 

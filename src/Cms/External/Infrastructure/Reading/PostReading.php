@@ -108,6 +108,9 @@ final readonly class PostReading
         }
 
         [$text, $language] = PostText::quoted($html);
+        // Its photos and videos show in the text as links to them, which the
+        // facade tells otherwise.
+        $text = null === $text ? null : trim((string) preg_replace('#\s*\bpic\.(?:twitter|x)\.com/\S+#', '', $text));
         $authorUrl = JsonReading::text($data, 'author_url');
         $day = 1 === preg_match('#<a href="[^"]*/status/[0-9]+[^"]*">([A-Z][a-z]+ \d{1,2}, \d{4})</a>\s*</blockquote>#', $html, $date)
             ? \DateTimeImmutable::createFromFormat('!F j, Y', $date[1])
