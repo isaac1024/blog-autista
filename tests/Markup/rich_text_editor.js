@@ -188,7 +188,7 @@ export const richTextEditor = ({
             ${links || widgets ? `
                 <dialog id="content-page-dialog" data-rich-text-editor-target="pageDialog">
                     <h2 data-rich-text-editor-target="pageDialogTitle">${links ? PAGE_LABELS.title : WIDGET_LABELS.title}</h2>
-                    <fieldset data-rich-text-editor-target="pageKinds">
+                    <fieldset>
                         <legend>What to link</legend>
                         ${LINK_TARGETS.map(({ kind }, index) => `<label><input type="radio" name="content-page-kind" value="${kind}"${index === 0 ? ' checked' : ''} data-action="change->rich-text-editor#chooseKind"> ${kind}</label>`).join('')}
                     </fieldset>

@@ -293,6 +293,19 @@ final class PostPublicationTest extends TestCase
         self::assertTells('errors.post.publication.published_post', [], static fn () => new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(PostUsage::class)));
     }
 
+    /**
+     * A post another content links to stays, as a page does.
+     */
+    public function testItNeverDeletesAPostAnythingLinksTo(): void
+    {
+        $repository = $this->repository(PostMother::create());
+        $repository->expects(self::never())->method('delete');
+        $usage = self::createStub(PostUsage::class);
+        $usage->method('isInUse')->willReturn(true);
+
+        self::assertTells('errors.post.publication.used_post', [], static fn () => new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $usage));
+    }
+
     #[DataProvider('useCases')]
     public function testItThrowsWhenThePostDoesNotExist(\Closure $useCase): void
     {

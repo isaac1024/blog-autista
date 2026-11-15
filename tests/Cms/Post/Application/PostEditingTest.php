@@ -10,6 +10,7 @@ use Cms\Post\Application\PostUpdater;
 use Cms\Post\Domain\PostAuthorsUsed;
 use Cms\Post\Domain\PostImagesUsed;
 use Cms\Post\Domain\PostPagesLinked;
+use Cms\Post\Domain\PostPostsLinked;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostTermsUsed;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
@@ -98,6 +99,31 @@ final class PostEditingTest extends TestCase
         self::update($repository, $eventBus, section: PostMother::SECTION, author: PostMother::AUTHOR, tags: [PostMother::TAG], content: RichTextMother::stored(
             ['type' => 'image', 'id' => self::IMAGE],
             ['type' => 'paragraph', 'text' => [['text' => 'Más', 'marks' => ['link'], 'page_id' => self::PAGE]]],
+        ));
+    }
+
+    /**
+     * The posts its content links to are told, and the sections, tags and
+     * authors it links to, together with those it is filed under and
+     * signed by.
+     */
+    public function testItTellsWhatItsContentLinksToWithWhatItIsFiledUnder(): void
+    {
+        $repository = self::createStub(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostPostsLinked && 'cms.post.posts_linked' === $event::eventName() && ['post_ids' => [self::PAGE]] === $event->toPrimitives()),
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostTermsUsed && ['term_ids' => [PostMother::SECTION, PostMother::OTHER_TAG]] === $event->toPrimitives()),
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostAuthorsUsed && ['author_ids' => [PostMother::AUTHOR]] === $event->toPrimitives()),
+        );
+
+        self::update($repository, $eventBus, section: PostMother::SECTION, author: '', tags: [], content: RichTextMother::stored(
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'Otro post', 'marks' => ['link'], 'post_id' => self::PAGE],
+                ['text' => ' de esta etiqueta', 'marks' => ['link'], 'term_id' => PostMother::OTHER_TAG],
+            ]],
+            ['type' => 'widget', 'kind' => 'related_page', 'author_id' => PostMother::AUTHOR],
         ));
     }
 

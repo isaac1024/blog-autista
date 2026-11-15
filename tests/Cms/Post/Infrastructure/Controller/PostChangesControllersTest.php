@@ -269,6 +269,28 @@ final class PostChangesControllersTest extends PostControllerTestCase
     }
 
     /**
+     * A post another links to, even a draft, goes back to its editor and
+     * stays; once nothing links to it, it goes.
+     */
+    public function testItKeepsAPostAnotherLinksTo(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $linked = $this->savePost(PostMother::create(id: PostIdMother::random()->value()));
+        $linking = PostIdMother::random()->value();
+        $this->savePost(PostMother::create(id: $linking));
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$linking, ['content' => json_encode(['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [
+            ['type' => 'text', 'text' => 'Otro post', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'post', 'id' => $linked->id()->value()]]]],
+        ]]]], \JSON_THROW_ON_ERROR)] + self::form());
+
+        $this->post($client, 'cms_posts_delete', self::HOST.'/posts/'.$linked->id()->value().'/delete');
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$linked->id()->value(), Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.post.publication.used_post', 'parameters' => []]], self::errorNotices($client));
+        self::assertNotNull($this->storedPost($linked));
+    }
+
+    /**
      * What is posted cannot be deleted while a post, even a draft, uses it.
      */
     public function testItKeepsTheSectionTheTagsAndTheAuthorOfAPost(): void

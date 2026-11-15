@@ -389,3 +389,69 @@ test('a page picked is known, so editing after asks nothing about it', async () 
 
     assert.deepEqual(editor.requests.map(({ url }) => new URL(url).pathname), ['/api/pages/search']);
 });
+
+/** Each kind answers under its own key, from its own list. */
+const contentsOf = (lists) => (path, query) => {
+    const key = { pages: 'pages', posts: 'posts', sections: 'terms', tags: 'terms', terms: 'terms', authors: 'authors' }[path.split('/').at(-2)];
+    const list = lists[path.split('/').at(-2)] ?? [];
+
+    if (path.endsWith('/lookup')) {
+        return answer({ [key]: list.filter((item) => query.get('ids').split(',').includes(item.id)) });
+    }
+
+    return answer({ [key]: list, more: false });
+};
+
+const POST = { id: 'post-1', title: 'A post', status: 'Published', published: true };
+const TAG = { id: 'tag-1', title: 'A tag', status: 'Published', published: true };
+const AUTHOR = { id: 'author-1', title: 'An author', status: 'Draft', published: false };
+const CONTENTS = { posts: [POST], tags: [TAG], terms: [TAG], authors: [AUTHOR] };
+
+test('what is linked of every kind is looked up where its kind is, sections and tags together', async () => {
+    const editor = await open({
+        document: doc(
+            paragraph('A post', [{ type: 'link', attrs: { type: 'post', id: 'post-1' } }]),
+            paragraph('A tag', [{ type: 'link', attrs: { type: 'term', id: 'tag-1' } }]),
+            { type: 'widget', attrs: { kind: 'related_page', type: 'author', id: 'author-1' } },
+        ),
+        respond: contentsOf(CONTENTS),
+    });
+    await settle();
+
+    assert.deepEqual(editor.requests.map(({ url }) => url), [
+        'https://blog.test/api/posts/lookup?ids=post-1',
+        'https://blog.test/api/terms/lookup?ids=tag-1',
+        'https://blog.test/api/authors/lookup?ids=author-1',
+    ]);
+    assert.deepEqual(links(editor).map(([, text, look]) => [text, look]), [['A post', null], ['A tag', null]]);
+    assert.deepEqual(widgets(editor), [['related_page', `Related content:An authorDraft${WIDGET_LABELS.offSite}`]]);
+});
+
+test('the kind chosen is searched where it is, and what is picked is linked, or shown, as that kind', async () => {
+    const editor = await open({ document: doc(paragraph('Read this tag')), respond: contentsOf(CONTENTS) });
+    await editor.focus();
+    editor.editor.commands.setTextSelection({ from: 1, to: 5 });
+    await editor.press('insertLink');
+
+    const tag = editor.document.querySelector('input[value="tag"]');
+    tag.checked = true;
+    tag.dispatchEvent(new editor.window.Event('change', { bubbles: true }));
+    await settle();
+
+    assert.equal(editor.requests.at(-1).url, 'https://blog.test/api/tags/search?name=&page=1');
+    results(editor)[0].click();
+    await editor.frame();
+    assert.deepEqual(editor.posted(), doc({ type: 'paragraph', content: [{ type: 'text', text: 'Read', marks: [{ type: 'link', attrs: { type: 'term', id: 'tag-1' } }] }, { type: 'text', text: ' this tag' }] }));
+    assert.equal(editor.target('linkTarget').textContent, 'Linked page: A tag. Published.');
+
+    await editor.focus('end');
+    await editor.press('insertWidget');
+    const author = editor.document.querySelector('input[value="author"]');
+    author.checked = true;
+    author.dispatchEvent(new editor.window.Event('change', { bubbles: true }));
+    await settle();
+    results(editor)[0].click();
+    await editor.frame();
+
+    assert.deepEqual(editor.posted().content.at(-1), { type: 'widget', attrs: { kind: 'related_page', type: 'author', id: 'author-1' } });
+});

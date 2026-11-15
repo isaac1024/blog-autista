@@ -149,7 +149,6 @@ import { Search } from '../shared/search.js';
  * @property {HTMLElement} pageStatusTarget
  * @property {HTMLElement} pageResultsTarget
  * @property {HTMLElement} pageMoreTarget
- * @property {HTMLFieldSetElement} pageKindsTarget
  * @property {HTMLElement} linkToolsTarget
  * @property {boolean} hasLinkToolsTarget
  * @property {HTMLElement} linkTargetTarget
@@ -234,7 +233,7 @@ export default class extends BaseController {
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
         'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
-        'pageDialog', 'pageDialogTitle', 'pageKinds', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
+        'pageDialog', 'pageDialogTitle', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
     ];
 
     static values = {
@@ -658,7 +657,7 @@ export default class extends BaseController {
             const inLink = this.editor.isActive('link');
             this.linkToolsTarget.hidden = !inLink;
             const link = this.editor.getAttributes('link');
-            this.linkTargetTarget.textContent = inLink ? this.describePage(link.type ?? 'page', link.id) : '';
+            this.linkTargetTarget.textContent = inLink ? this.describePage(link.type, link.id) : '';
         }
 
         this.markCurrentSection();

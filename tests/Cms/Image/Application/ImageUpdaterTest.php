@@ -7,6 +7,7 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUpdater;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageContentsLinked;
 use Cms\Image\Domain\ImagePagesLinked;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Tests\Image\Domain\ImageIdMother;
@@ -214,6 +215,25 @@ final class ImageUpdaterTest extends TestCase
         ));
 
         (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus);
+    }
+
+    /**
+     * The posts, sections and tags, and authors a caption links to are told
+     * apart from its pages.
+     */
+    public function testItTellsThePostsTermsAndAuthorsTheCaptionLinksTo(): void
+    {
+        $id = ImageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(self::image($id, Text::stored(Text::paragraph('Pie anterior.'))));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof ImageContentsLinked
+                && 'cms.image.contents_linked' === $event::eventName()
+                && ['post_ids' => [], 'term_ids' => [self::LINKED], 'author_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Sueño', 'marks' => ['link'], 'term_id' => self::LINKED]]])))($repository, $eventBus);
     }
 
     public function testItTellsNothingWhenTheCaptionLinksToTheSamePages(): void

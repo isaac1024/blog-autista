@@ -233,4 +233,34 @@ final class RichTextComponentsTest extends TestCase
             array_map(static fn (PageComponent $component): string => $component->name, $components),
         );
     }
+
+    /**
+     * A post, a section or a tag, or an author is linked and shown in a
+     * widget as a page is, by the id it is given under, whatever its kind:
+     * ids are never shared.
+     */
+    public function testItLinksAndShowsEveryKindOfContentAsAPage(): void
+    {
+        $content = RichText::fromArray(['version' => 1, 'blocks' => [
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'un post', 'marks' => ['link'], 'post_id' => self::PUBLISHED],
+                ['text' => ' y un autor', 'marks' => ['link'], 'author_id' => self::OTHER_PUBLISHED],
+                ['text' => ' y una sección que no está', 'marks' => ['link'], 'term_id' => self::MISSING],
+            ]],
+            ['type' => 'widget', 'kind' => 'related_page', 'term_id' => self::OTHER_PUBLISHED],
+        ]]);
+
+        $components = new RichTextComponents()($content, [], [
+            self::PUBLISHED => ['url' => '/vida-diaria/2026/11/07/un-post.html', 'title' => 'Un post'],
+            self::OTHER_PUBLISHED => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
+        ]);
+
+        self::assertSame([
+            ['href' => '/vida-diaria/2026/11/07/un-post.html', 'runs' => [['text' => 'un post', 'bold' => false]]],
+            ['href' => '/autor/isaac.html', 'runs' => [['text' => ' y un autor', 'bold' => false]]],
+            ['href' => null, 'runs' => [['text' => ' y una sección que no está', 'bold' => false]]],
+        ], $components[0]->props['text']);
+        self::assertSame(['Shared:ContentRelatedPage', ['title' => 'Isaac', 'url' => '/autor/isaac.html']], [$components[1]->name, $components[1]->props]);
+        self::assertSame([], $content->pageIds());
+    }
 }

@@ -53,13 +53,27 @@ final class PostPickerControllersTest extends PostControllerTestCase
         self::assertSame(['posts' => [self::picked(self::NEWER, 'Un día de lluvia', 'published', true), self::picked(self::OLDER, PostMother::TITLE, 'draft', false)], 'more' => false], self::json($client));
     }
 
-    public function testItAnswersNotFoundForAPageOfResultsThatCannotBe(): void
+    /**
+     * The post edited is left out: a post doesn't link itself.
+     */
+    public function testItLeavesOutThePostItIsAskedTo(): void
     {
         $client = $this->clientWithPosts();
 
-        $client->request('GET', self::HOST.'/posts/search?page=0');
+        $client->request('GET', self::HOST.'/posts/search?except='.self::NEWER);
 
-        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertSame([self::OLDER], array_column((array) (self::json($client)['posts'] ?? []), 'id'));
+    }
+
+    public function testItAnswersNotFoundForAPageOfResultsOrAPostThatCannotBe(): void
+    {
+        $client = $this->clientWithPosts();
+
+        foreach (['?page=0', '?except=post'] as $query) {
+            $client->request('GET', self::HOST.'/posts/search'.$query);
+
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        }
     }
 
     /**

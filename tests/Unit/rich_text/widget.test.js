@@ -54,6 +54,15 @@ test('its kind and page id are read from and written to data attributes', () => 
     assert.deepEqual(id.renderHTML({ id: 'a-page' }), { 'data-page-id': 'a-page' });
 });
 
+test('the kind of what it shows is read from and written to its data attribute, a page when it names none', () => {
+    const { type } = Widget.config.addAttributes();
+
+    assert.equal(type.default, 'page');
+    assert.equal(type.parseHTML({ getAttribute: (name) => name === 'data-widget-type' ? 'author' : null }), 'author');
+    assert.equal(type.parseHTML({ getAttribute: () => null }), 'page');
+    assert.deepEqual(type.renderHTML({ type: 'post' }), { 'data-widget-type': 'post' });
+});
+
 test('a widget is read from and written to its own element', () => {
     assert.deepEqual(Widget.config.parseHTML(), [{ tag: 'div[data-widget-kind]' }]);
     assert.deepEqual(Widget.config.renderHTML({ HTMLAttributes: { 'data-widget-kind': 'related_page', class: 'existing' } }), [

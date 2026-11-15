@@ -33,6 +33,15 @@ test('its page id is read from and written to its data attribute', () => {
     assert.deepEqual(id.renderHTML({ id: 'a-page' }), { 'data-page-id': 'a-page' });
 });
 
+test('its kind is read from and written to its data attribute, a page when it names none', () => {
+    const { type } = PageLink.config.addAttributes();
+
+    assert.equal(type.default, 'page');
+    assert.equal(type.parseHTML({ getAttribute: (name) => name === 'data-link-type' ? 'post' : null }), 'post');
+    assert.equal(type.parseHTML({ getAttribute: () => null }), 'page');
+    assert.deepEqual(type.renderHTML({ type: 'term' }), { 'data-link-type': 'term' });
+});
+
 test('a page link is read from and written to an anchor without an address of its own', () => {
     assert.deepEqual(PageLink.config.parseHTML(), [{ tag: 'a[data-page-id]' }]);
     assert.deepEqual(PageLink.config.renderHTML({ HTMLAttributes: { 'data-page-id': 'a-page' } }), [

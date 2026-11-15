@@ -10,6 +10,7 @@ use Cms\Page\Domain\InvalidContent;
 use Cms\Page\Domain\InvalidPageSlug;
 use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageContentsLinked;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
@@ -654,6 +655,38 @@ final class PageUpdaterTest extends TestCase
             self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
             self::linking('01a1b801-ce58-723d-8234-b76d9105e002'),
             self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+    }
+
+    /**
+     * The posts, sections and tags, and authors it links to or shows are
+     * told apart from the pages, each once and in order.
+     */
+    public function testItTellsThePostsTermsAndAuthorsThePageLinksTo(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageContentsLinked
+                && 'cms.page.contents_linked' === $event::eventName()
+                && $id === $event->aggregateId()
+                && [
+                    'post_ids' => ['01a1b801-ce58-723d-8234-b76d9105e011', '01a1b801-ce58-723d-8234-b76d9105e012'],
+                    'term_ids' => ['01a1b801-ce58-723d-8234-b76d9105e021'],
+                    'author_ids' => ['01a1b801-ce58-723d-8234-b76d9105e031'],
+                ] === $event->toPrimitives(),
+        ));
+
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'Un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e012'],
+                ['text' => ' y otro', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e011'],
+                ['text' => ' y su autor', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e031'],
+            ]],
+            ['type' => 'widget', 'kind' => 'related_page', 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e021'],
+            ['type' => 'widget', 'kind' => 'related_page', 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e011'],
         ), PageMother::META_DESCRIPTION)($repository, $eventBus);
     }
 

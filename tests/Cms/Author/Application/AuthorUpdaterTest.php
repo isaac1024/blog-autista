@@ -7,6 +7,7 @@ namespace Cms\Tests\Author\Application;
 use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Application\AuthorUpdater;
 use Cms\Author\Domain\Author;
+use Cms\Author\Domain\AuthorContentsLinked;
 use Cms\Author\Domain\AuthorImagesUsed;
 use Cms\Author\Domain\AuthorPagesLinked;
 use Cms\Author\Domain\AuthorRepository;
@@ -222,6 +223,29 @@ final class AuthorUpdaterTest extends TestCase
         new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
             ['type' => 'image', 'id' => self::IMAGE],
             ['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::PAGE]]],
+        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+    }
+
+    /**
+     * The posts, sections and tags, and authors the bio links to are told
+     * apart, so none is deleted while it links them.
+     */
+    public function testItTellsThePostsTermsAndAuthorsTheBioLinksTo(): void
+    {
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create());
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof AuthorContentsLinked
+                && 'cms.author.contents_linked' === $event::eventName()
+                && ['post_ids' => [self::PAGE], 'term_ids' => [], 'author_ids' => [AuthorIdMother::DEFAULT_VALUE]] === $event->toPrimitives(),
+        ));
+
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'Mi post', 'marks' => ['link'], 'post_id' => self::PAGE],
+                ['text' => ' y yo', 'marks' => ['link'], 'author_id' => AuthorIdMother::DEFAULT_VALUE],
+            ]],
         ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
     }
 

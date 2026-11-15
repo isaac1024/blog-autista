@@ -56,6 +56,22 @@ final class TiptapRichTextTest extends TestCase
                 ['text' => 'la página', 'marks' => ['bold', 'link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
             ]]],
         ];
+        yield 'links to a post, a term and an author, each by its kind' => [
+            [['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'un post', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'post', 'id' => '01a1b801-ce58-723d-8234-b76d9105d011']]]],
+                ['type' => 'text', 'text' => 'una sección', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'term', 'id' => '01a1b801-ce58-723d-8234-b76d9105d012']]]],
+                ['type' => 'text', 'text' => 'un autor', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'author', 'id' => '01a1b801-ce58-723d-8234-b76d9105d013']]]],
+            ]]],
+            [['type' => 'paragraph', 'text' => [
+                ['text' => 'un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105d011'],
+                ['text' => 'una sección', 'marks' => ['link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105d012'],
+                ['text' => 'un autor', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105d013'],
+            ]]],
+        ];
+        yield 'a widget showing a post' => [
+            [['type' => 'widget', 'attrs' => ['kind' => 'related_page', 'type' => 'post', 'id' => '01a1b801-ce58-723d-8234-b76d9105d011']]],
+            [['type' => 'widget', 'kind' => 'related_page', 'post_id' => '01a1b801-ce58-723d-8234-b76d9105d011']],
+        ];
         yield 'link to a page, partly bold' => [
             [['type' => 'paragraph', 'content' => [
                 ['type' => 'text', 'text' => 'quién ', 'marks' => [['type' => 'link', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]],
@@ -156,6 +172,14 @@ final class TiptapRichTextTest extends TestCase
             self::document([['type' => 'video', 'attrs' => ['src' => 'x.mp4']]]),
             InvalidRichText::malformed('document.content[0].type', 'a block the editor offers'),
         ];
+        yield 'link to a kind of content the blog has none of' => [
+            self::document([['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Enlace', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'video', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]]]]]),
+            InvalidRichText::malformed('document.content[0].content[0].marks[0].attrs.type', 'a kind of content'),
+        ];
+        yield 'widget naming its kind of content with no text' => [
+            self::document([['type' => 'widget', 'attrs' => ['kind' => 'related_page', 'type' => 3, 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']]]),
+            InvalidRichText::malformed('document.content[0].attrs.type', 'a kind of content'),
+        ];
         yield 'node without a type' => [self::document([['content' => []]]), InvalidRichText::malformed('document.content[0]', 'a node with a type')];
         yield 'inline node other than text' => [
             self::document([['type' => 'paragraph', 'content' => [['type' => 'hardBreak']]]]),
@@ -255,6 +279,14 @@ final class TiptapRichTextTest extends TestCase
         yield 'page id malformed' => [
             ['text' => 'Enlace', 'marks' => ['link'], 'page_id' => 'pagina'],
             InvalidRichText::malformed($path, 'the id of a page'),
+        ];
+        yield 'post id malformed' => [
+            ['text' => 'Enlace', 'marks' => ['link'], 'post_id' => 'post'],
+            InvalidRichText::malformed('blocks[0].text[0].post_id', 'the id of a post'),
+        ];
+        yield 'two contents at once' => [
+            ['text' => 'Enlace', 'marks' => ['link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001', 'author_id' => '01a1b801-ce58-723d-8234-b76d9105d013'],
+            InvalidRichText::malformed('blocks[0].text[0]', 'a link to one content at most'),
         ];
     }
 

@@ -31,10 +31,9 @@ export class TargetLookups {
      * @param {() => void} answered Told once what was asked is known.
      */
     constructor(targets, owner, answered) {
-        for (const { type, lookupUrl, key } of targets) {
-            if (!this.#byType.has(type)) {
-                this.#byType.set(type, /** @type {Lookups<T>} */ (new Lookups(new URL(lookupUrl, window.location.href), key, owner, answered)));
-            }
+        // One lookup for each kind kept, whatever kinds share it.
+        for (const { type, lookupUrl, key } of new Map(targets.map((target) => [target.type, target])).values()) {
+            this.#byType.set(type, /** @type {Lookups<T>} */ (new Lookups(new URL(lookupUrl, window.location.href), key, owner, answered)));
         }
     }
 

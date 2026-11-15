@@ -42,6 +42,23 @@ final class TermLookupControllerTest extends TermControllerTestCase
         self::assertSame(['terms' => [['id' => self::TAG, 'title' => 'Sueño', 'status' => self::label('published'), 'published' => true]]], self::json($client));
     }
 
+    /**
+     * Sections and tags a text links to are looked up together, whatever
+     * their taxonomy.
+     */
+    public function testItLooksUpTermsOfEveryTaxonomyTogether(): void
+    {
+        $client = $this->clientWithTerms();
+
+        $client->request('GET', self::HOST.'/terms/lookup?ids='.implode(',', [self::TAG, self::SECTION, 'etiqueta', '']));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['terms' => [
+            ['id' => self::TAG, 'title' => 'Sueño', 'status' => self::label('published'), 'published' => true],
+            ['id' => self::SECTION, 'title' => TermMother::NAME, 'status' => self::label('draft'), 'published' => false],
+        ]], self::json($client));
+    }
+
     public function testItSearchesTheTermsNamedAsTheTitleOfWhatIsPicked(): void
     {
         $client = $this->clientWithTerms();
