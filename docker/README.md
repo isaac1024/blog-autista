@@ -79,8 +79,8 @@ takes 60 visits a minute per reader.
 
 - `REDIS_URL` names Redis: the `redis` service locally,
   `redis:///run/redis_<login>/redis.sock` on the account (enable Redis in
-  konsoleH first). Symfony needs `ext-redis` for it: check `php -m` on the
-  account.
+  konsoleH first). Symfony needs `ext-redis` for it, which `composer.json`
+  declares: `composer check-platform-reqs` tells whether the account has it.
 - `SYMFONY_TRUSTED_PROXIES=private_ranges` makes Symfony read the reader's
   address from the proxies in front of PHP. If the site logs "A visit came from
   a private or loopback address", the proxies aren't trusted, and every reader
@@ -207,6 +207,14 @@ images, from `public/media/`, under `/media/`.
 ## Production checklist
 
 - `APP_ENV=prod` and `APP_DEBUG=0`.
+- In konsoleH (PHP configuration), enable OPcache, so PHP doesn't compile the
+  app again on every request, and APCu, which Symfony's system cache (Doctrine
+  metadata, validation, serialization) uses on its own when it finds it.
+- Run `composer check-platform-reqs --no-dev` on the account over SSH. It
+  fails when PHP lacks an extension the app needs at runtime: `gd` (with
+  WebP and JPEG), `intl`, `redis`, `pdo_mysql`, `dom` and `fileinfo`, all
+  declared in `composer.json`. It can't tell whether GD reads WebP and JPEG:
+  check `php -r 'var_dump(gd_info());'` too.
 - `APP_SECRET`: random and non-empty, for example `php -r 'echo bin2hex(random_bytes(32));'`.
   `.env` leaves it empty on purpose, and the CMS refuses to authenticate with
   an empty one.
