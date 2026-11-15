@@ -1092,6 +1092,7 @@ content:
         load: 'Load the content of %provider% here'
         forget: 'Stop loading content of %provider% on its own'
         frame_title: '%title% (%provider%)'
+        play: 'Play %title% (%provider%)'
         with_media: 'It shows photos or videos: open it on %provider% to see them.'
         leaves: 'leaves the blog'
         size: '%size% MB'

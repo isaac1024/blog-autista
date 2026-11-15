@@ -64,3 +64,17 @@ test('remembers the consent on the next page, and forgets it when asked', async 
     await expect(page.locator('[data-external-facade]')).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('external-consent'))).toBe('{}');
 });
+
+test('plays a video from its facade, after asking', async ({ page }) => {
+    const served = await serveFrames(page);
+    await loadPage(page, externalEmbed() + SCRIPT, { mocked: ['/embed/'] });
+
+    await page.getByRole('button', { name: 'Reproducir Un vídeo (youtube)' }).click();
+    await expect(page.locator('[data-external-notice-title]')).toBeFocused();
+    expect(served).toEqual([]);
+
+    await page.getByRole('button', { name: 'Aceptar y cargar' }).click();
+
+    await expect(page.locator('iframe')).toHaveAttribute('data-shown', '');
+    await expect(page.locator('[data-external-facade]')).toBeHidden();
+});

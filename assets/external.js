@@ -37,6 +37,10 @@ let frames = 0;
  * @property {HTMLElement} notice
  * @property {HTMLElement} noticeTitle
  * @property {HTMLButtonElement} load
+ * @property {HTMLButtonElement | null} play The facade of a video or an audio
+ *     plays it; that of a post is what the post says, loaded from the line below.
+ * @property {HTMLButtonElement | null} opener What opened the notice, which
+ *     closing it goes back to.
  * @property {HTMLButtonElement} forget
  * @property {HTMLButtonElement} accept
  * @property {HTMLButtonElement} cancel
@@ -104,6 +108,11 @@ const reveal = (embed, iframe) => {
  * @param {Embed} embed
  */
 const load = (embed) => {
+    // Played again while its frame still paints.
+    if (embed.iframe !== null) {
+        return;
+    }
+
     const { src, title, origin } = /** @type {{src: string, title: string, origin: string}} */ (embed.element.dataset);
     const iframe = document.createElement('iframe');
     iframe.src = frameUrl(embed.provider, src, embed.id);
@@ -174,13 +183,35 @@ const loadWhenNear = (embed) => {
 /** @param {Embed} embed */
 const closeNotice = (embed) => {
     embed.notice.hidden = true;
-    embed.load.focus();
+    // Only an open notice closes, and opening it said what opened it.
+    /** @type {HTMLButtonElement} */ (embed.opener).focus();
 };
 
-/** @param {Embed} embed */
-const openNotice = (embed) => {
+/**
+ * @param {Embed} embed
+ * @param {HTMLButtonElement} opener
+ */
+const openNotice = (embed, opener) => {
+    embed.opener = opener;
     embed.notice.hidden = false;
     embed.noticeTitle.focus();
+};
+
+/**
+ * Plays it from its facade: at once once the reader agreed for its
+ * provider, as when its frame never painted, or after the notice.
+ *
+ * @param {Embed} embed
+ * @param {HTMLButtonElement} button
+ */
+const play = (embed, button) => {
+    if (hasConsent(storage, embed.provider)) {
+        load(embed);
+
+        return;
+    }
+
+    openNotice(embed, button);
 };
 
 /**
@@ -229,6 +260,7 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
     }
 
     frames += 1;
+    const facadePlay = element.querySelector('[data-external-play]');
     /** @type {Embed} */
     const embed = {
         element,
@@ -238,6 +270,8 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
         notice: part(element, '[data-external-notice]', HTMLElement),
         noticeTitle: part(element, '[data-external-notice-title]', HTMLElement),
         load: part(element, '[data-external-load]', HTMLButtonElement),
+        play: facadePlay instanceof HTMLButtonElement ? facadePlay : null,
+        opener: null,
         forget: part(element, '[data-external-forget]', HTMLButtonElement),
         accept: part(element, '[data-external-accept]', HTMLButtonElement),
         cancel: part(element, '[data-external-cancel]', HTMLButtonElement),
@@ -246,7 +280,13 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
     };
     embeds.push(embed);
 
-    embed.load.addEventListener('click', () => openNotice(embed));
+    embed.load.addEventListener('click', () => openNotice(embed, embed.load));
+
+    if (embed.play !== null) {
+        const button = embed.play;
+        button.hidden = false;
+        button.addEventListener('click', () => play(embed, button));
+    }
     embed.accept.addEventListener('click', () => agree(embed));
     embed.cancel.addEventListener('click', () => closeNotice(embed));
     embed.forget.addEventListener('click', () => disagree(embed));

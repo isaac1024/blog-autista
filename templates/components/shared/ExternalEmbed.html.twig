@@ -30,10 +30,19 @@
                 <p class="m-0 text-[1rem] text-muted"><time datetime="{{ post.day }}">{{ post.date }}</time></p>
 {% endif %}
             </blockquote>
-{% elseif image %}
-            <img class="block h-full w-full bg-bg object-cover" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
 {% else %}
-            <p class="m-0 self-center p-5 text-xl font-bold text-balance" lang="{{ language }}">{{ title }}</p>
+{% if image %}
+            <img class="col-start-1 row-start-1 block h-full min-h-0 w-full bg-bg object-cover" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
+            <p class="col-start-1 row-start-1 m-0 self-end border-t-2 border-border bg-surface px-4 py-2 font-bold text-balance" lang="{{ language }}">{{ title }}</p>
+{% else %}
+            <p class="col-start-1 row-start-1 m-0 self-center p-5 text-xl font-bold text-balance" lang="{{ language }}">{{ title }}</p>
+{% endif %}
+            {# The whole facade plays it, once the script can: without one, the line below leads to the original. #}
+            <button class="group col-start-1 row-start-1 grid cursor-pointer place-items-center border-0 bg-transparent p-0" type="button" aria-controls="{{ id }}" aria-label="{{ 'content.external.play'|trans({'%title%': title, '%provider%': providerLabel}) }}" data-external-play hidden>
+                <span class="grid size-16 place-items-center border-2 border-surface bg-accent text-on-accent group-hover:bg-accent-strong forced-colors:border-[ButtonText]">
+                    <svg class="size-8" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                </span>
+            </button>
 {% endif %}
         </div>
         <div class="col-start-1 row-start-1 grid content-center gap-3 bg-surface p-5" id="{{ id }}" role="group" aria-labelledby="{{ id }}-title" data-external-notice hidden>

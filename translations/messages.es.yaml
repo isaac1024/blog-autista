@@ -1093,6 +1093,7 @@ content:
         load: 'Cargar aquí el contenido de %provider%'
         forget: 'No cargar más contenido de %provider% automáticamente'
         frame_title: '%title% (%provider%)'
+        play: 'Reproducir %title% (%provider%)'
         with_media: 'Incluye fotos o vídeos: ábrelo en %provider% para verlos.'
         leaves: 'sale del blog'
         size: '%size% MB'

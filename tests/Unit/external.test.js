@@ -104,6 +104,45 @@ test('loading asks first, in a notice that takes the focus, and cancelling, or E
     assert.equal(loaded(), false);
 });
 
+test('the facade of a video plays it once the script runs, asking first, and cancelling goes back to it', async () => {
+    const { loaded, part, click } = await page();
+
+    assert.equal(part(0, '[data-external-play]').hidden, false);
+    await click(0, '[data-external-play]');
+    assert.equal(part(0, '[data-external-notice]').hidden, false);
+    assertFocused(part(0, '[data-external-notice-title]'));
+    assert.equal(loaded(), false);
+
+    await click(0, '[data-external-cancel]');
+    assertFocused(part(0, '[data-external-play]'));
+
+    await click(0, '[data-external-play]');
+    await click(0, '[data-external-accept]');
+    assert.equal(loaded(), true);
+});
+
+test('with consent, a frame that never painted plays again from its facade, one at a time', async () => {
+    const { loaded, click, timers, part, document } = await page({ kept: { youtube: '2026-11-15T10:00:00.000Z' }, observer: false });
+    timers[0].callback();
+    assert.equal(loaded(), false);
+
+    await click(0, '[data-external-play]');
+    await click(0, '[data-external-play]');
+
+    assert.equal(document.querySelectorAll('iframe').length, 1);
+    assert.equal(part(0, '[data-external-notice]').hidden, true, 'agreed, it asks nothing');
+});
+
+test('the facade of a post is what it says, and has nothing to play', async () => {
+    const markup = externalEmbed({ provider: 'bluesky', src: 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b', origin: 'https://embed.bsky.app', space: 'reported' });
+    const { loaded, part, click } = await page({ markup });
+
+    assert.equal(part(0, '[data-external-play]') === null, true);
+    await click(0, '[data-external-load]');
+    await click(0, '[data-external-accept]');
+    assert.equal(loaded(), true);
+});
+
 test('agreeing keeps it for the provider and loads its frame, unseen until it paints, then in place of the facade', async () => {
     const { part, click, iframe, consent, window } = await page();
 

@@ -134,7 +134,11 @@ site's own files run and style the pages. No inline `<script>`, `<style>` or
 `app.css`), and a stylesheet is linked from a layout, never imported from
 JavaScript, which AssetMapper would turn into a `data:` module. The CMS import
 map is the one inline script, with `csp_nonce('script')`; the public site uses
-no nonce, so Varnish can cache its pages.
+no nonce, so Varnish can cache its pages. Without an import map there, a
+module of the site imports the ones beside it by relative paths, which
+`Shared\Infrastructure\AssetMapper\VersionedImports` rewrites to their
+versioned addresses; the test servers serve plain paths, so only a page of the
+running app shows a broken import.
 
 ## Code style
 
