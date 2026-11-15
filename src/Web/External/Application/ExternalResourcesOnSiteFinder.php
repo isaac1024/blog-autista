@@ -19,10 +19,10 @@ final readonly class ExternalResourcesOnSiteFinder
     public function __construct(private array $ids) {}
 
     /**
-     * @return array<string, ExternalResourceOnSite>
+     * @return array<string, ExternalResourceOnSiteResponse>
      */
     public function __invoke(ExternalResourceRepository $resourceRepository): array
     {
-        return array_map(ExternalResourceOnSite::fromResource(...), $resourceRepository->availableAmong($this->ids));
+        return array_map(ExternalResourceOnSiteResponse::fromResource(...), $resourceRepository->availableAmong($this->ids));
     }
 }

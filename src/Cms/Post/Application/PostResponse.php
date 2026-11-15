@@ -21,6 +21,7 @@ final readonly class PostResponse
      * @param ?string                                                 $sectionId             null while it is filed under none
      * @param ?string                                                 $authorId              null while it is signed by none
      * @param list<string>                                            $tagIds                in order
+     * @param ?string                                                 $openingImageId        null while it opens with none
      * @param array{version: int, blocks: list<array<string, mixed>>} $content               in the stored rich text format
      * @param string                                                  $metaDescription       empty when there is none
      * @param string                                                  $robots                one of the Robots values
@@ -40,6 +41,7 @@ final readonly class PostResponse
         public ?string $sectionId,
         public ?string $authorId,
         public array $tagIds,
+        public ?string $openingImageId,
         public array $content,
         public string $metaDescription,
         public string $robots,
@@ -68,6 +70,7 @@ final readonly class PostResponse
             $classification->section()?->value(),
             $classification->author()?->value(),
             $classification->tags()->values(),
+            $post->openingImage()?->value(),
             $post->content()->toArray(),
             $post->seo()->description() ?? '',
             $post->seo()->robots()->value,

@@ -11,7 +11,7 @@ use Shared\Infrastructure\Ui\SiteMedia;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
 use Web\Image\Application\ImageResponse;
-use Web\Image\Application\PublishedImagesFinder;
+use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
@@ -43,7 +43,7 @@ final readonly class PublishedAuthor
         $images = array_map(
             static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
             new ReferenceResolver('image', $author->bio->imageIds(), null)(
-                fn (array $ids): array => new PublishedImagesFinder($ids)($this->imageRepository),
+                fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
                 $this->redirectsByOrigin,
             ),
         );

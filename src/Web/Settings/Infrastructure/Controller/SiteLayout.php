@@ -10,11 +10,11 @@ use Shared\Infrastructure\Ui\SiteChrome;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Web\Image\Application\PublishedImagesFinder;
+use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
-use Web\Settings\Application\PublishedSettingsFinder;
+use Web\Settings\Application\SettingsOnSiteFinder;
 use Web\Settings\Application\SettingsResponse;
 use Web\Settings\Domain\SettingsRepository;
 
@@ -39,7 +39,7 @@ final readonly class SiteLayout
 
     public function page(string $title): Page
     {
-        $settings = new PublishedSettingsFinder()($this->settingsRepository);
+        $settings = new SettingsOnSiteFinder()($this->settingsRepository);
         $homeUrl = $this->urlGenerator->generate('web_home');
 
         if (null === $settings) {
@@ -93,7 +93,7 @@ final readonly class SiteLayout
         }
 
         $image = new ReferenceResolver('image', [$settings->defaultImageId], null)(
-            fn (array $ids): array => new PublishedImagesFinder($ids)($this->imageRepository),
+            fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         )[$settings->defaultImageId] ?? null;
 

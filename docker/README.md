@@ -188,7 +188,13 @@ docker compose exec -u www-data php bin/console importmap:install
 docker compose exec -u www-data php bin/console tailwind:build --minify
 docker compose exec -u www-data php bin/console cache:clear --env=prod
 docker compose exec -u www-data php bin/console asset-map:compile --env=prod
+docker compose exec -u www-data php bin/console error:dump public/error 500 502 503 504 --env=prod --force
 ```
+
+`error:dump` writes the error page as static HTML to `public/error/`, which
+Apache serves (`ErrorDocument` in `public/.htaccess`) when PHP doesn't answer
+at all. It names the compiled assets, so run it after `asset-map:compile` and
+upload `public/error/` with them.
 
 ## Images
 

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\UniquePageCreator;
+use Cms\Page\Domain\InvalidPageTitle;
 use Cms\Page\Domain\InvalidPageType;
-use Cms\Page\Domain\InvalidTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageSlugAlreadyTaken;
+use Cms\Page\Domain\PageTitle;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\SlugAlreadyTaken;
-use Cms\Page\Domain\Title;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Shared\Domain\InvalidSlug;
 use Cms\Tests\Page\Domain\PageIdMother;
@@ -106,8 +106,8 @@ final class UniquePageCreatorTest extends TestCase
         yield 'type in another case' => [$id, 'Home', 'Portada', InvalidPageType::unknown('Home')];
         yield 'empty type' => [$id, '', 'Portada', InvalidPageType::unknown('')];
         yield 'id is not a UUID' => ['page-id', 'contact', 'Contacto', InvalidUuid::withValue('page-id')];
-        yield 'title too short' => [$id, 'contact', 'Sí', InvalidTitle::tooShort(Title::MIN_LENGTH)];
-        yield 'title too short, also for the home page' => [$id, 'home', 'Sí', InvalidTitle::tooShort(Title::MIN_LENGTH)];
+        yield 'title too short' => [$id, 'contact', 'Sí', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
+        yield 'title too short, also for the home page' => [$id, 'home', 'Sí', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
         yield 'title without sluggable characters' => [$id, 'contact', '¡!?', InvalidSlug::malformed('')];
     }
 
@@ -148,7 +148,7 @@ final class UniquePageCreatorTest extends TestCase
             ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
+        $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
         (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, self::createStub(EventBus::class));
     }

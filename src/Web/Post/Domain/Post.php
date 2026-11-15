@@ -6,6 +6,7 @@ namespace Web\Post\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\RichText\RichText;
+use Web\Shared\Domain\Robots;
 
 /**
  * A post on the site, as the CMS last published it: only published posts are
@@ -46,6 +47,11 @@ final class Post
         private string $authorName,
         #[ORM\Column(type: 'json')]
         private array $tagIds,
+        /*
+         * The image it opens with, by id: the site shows it while it is on it.
+         */
+        #[ORM\Column(type: 'guid')]
+        private string $openingImageId,
         #[ORM\Column(type: 'rich_text')]
         private RichText $content,
         #[ORM\Column(length: 200, nullable: true)]
@@ -72,6 +78,7 @@ final class Post
             $event->authorId(),
             $event->authorName(),
             $event->tagIds(),
+            $event->openingImageId(),
             $event->content(),
             $event->metaDescription(),
             $event->robots(),
@@ -99,6 +106,7 @@ final class Post
         $this->authorId = $event->authorId();
         $this->authorName = $event->authorName();
         $this->tagIds = $event->tagIds();
+        $this->openingImageId = $event->openingImageId();
         $this->content = $event->content();
         $this->metaDescription = $event->metaDescription();
         $this->robots = $event->robots();
@@ -172,6 +180,11 @@ final class Post
     public function tagIds(): array
     {
         return $this->tagIds;
+    }
+
+    public function openingImageId(): string
+    {
+        return $this->openingImageId;
     }
 
     public function content(): RichText

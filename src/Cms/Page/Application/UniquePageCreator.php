@@ -7,8 +7,8 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\InvalidPageType;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageSlugAvailability;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\SlugAvailability;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Shared\Domain\Event\EventBus;
 
@@ -32,7 +32,7 @@ final readonly class UniquePageCreator
             throw UniquePageAlreadyExists::ofType($type);
         }
 
-        new SlugAvailability($page)($pageRepository);
+        new PageSlugAvailability($page)($pageRepository);
         $page->save($pageRepository, $eventBus);
     }
 }

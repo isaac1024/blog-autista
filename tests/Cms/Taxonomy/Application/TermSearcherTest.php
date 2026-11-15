@@ -6,83 +6,121 @@ namespace Cms\Tests\Taxonomy\Application;
 
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermSearcher;
+use Cms\Taxonomy\Application\TermsResponse;
+use Cms\Taxonomy\Domain\InvalidTaxonomy;
+use Cms\Taxonomy\Domain\NameFilter;
 use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\TaxonomyFilter;
+use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
-use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
 
-/**
- * Searches the terms stored, as the CMS lists them.
- */
-final class TermSearcherTest extends KernelTestCase
+final class TermSearcherTest extends TestCase
 {
-    #[\Override]
-    protected function tearDown(): void
+    #[DataProvider('searches')]
+    public function testItAsksTheRepositoryForTheRequestedSliceOfTheTermsOfTheTaxonomy(TermSearcher $searcher, Criteria $expected): void
     {
-        self::getContainer()->get(EntityManagerInterface::class)->clear();
+        $repository = $this->createMock(TermRepository::class);
+        $repository->expects(self::once())
+            ->method('matching')
+            ->with(self::equalTo($expected))
+            ->willReturn([]);
 
-        parent::tearDown();
-    }
-
-    public function testItListsTheTermsOfTheTaxonomyNewestFirst(): void
-    {
-        $older = TermIdMother::random()->value();
-        $newer = TermIdMother::random()->value();
-        $repository = self::repository();
-        $repository->save(TermMother::create(id: $older, name: 'Vida diaria', slug: 'vida-diaria'));
-        $repository->save(TermMother::create(id: $newer, name: 'Trabajo', slug: 'trabajo'));
-        $repository->save(TermMother::create(id: TermIdMother::random()->value(), taxonomy: Taxonomy::Tag, name: 'Sueño', slug: 'sueno'));
-
-        $found = new TermSearcher('section', '', 1)($repository);
-
-        self::assertSame([$newer, $older], array_map(static fn (TermResponse $term): string => $term->id, $found->terms));
-        self::assertFalse($found->hasMore);
+        $searcher($repository);
     }
 
     /**
-     * Names are short, as short as an acronym, so any part of one finds it.
+     * @return iterable<string, array{TermSearcher, Criteria}>
      */
-    public function testItNarrowsTheTermsDownToThoseWhoseNameHasTheText(): void
+    public static function searches(): iterable
     {
-        $tea = TermIdMother::random()->value();
-        $repository = self::repository();
-        $repository->save(TermMother::create(id: $tea, taxonomy: Taxonomy::Tag, name: 'TEA', slug: 'tea'));
-        $repository->save(TermMother::create(id: TermIdMother::random()->value(), taxonomy: Taxonomy::Tag, name: 'Sueño', slug: 'sueno'));
+        $newestFirst = new Order('id', OrderDirection::Descending);
+        $pageSize = TermSearcher::PAGE_SIZE;
+        // One more than a page tells whether another follows.
+        $limit = $pageSize + 1;
+        $sections = TaxonomyFilter::equalTo(Taxonomy::Section);
+        $tags = TaxonomyFilter::equalTo(Taxonomy::Tag);
 
-        $found = new TermSearcher('tag', ' te ', 1)($repository);
-
-        self::assertSame([$tea], array_map(static fn (TermResponse $term): string => $term->id, $found->terms));
+        yield 'the sections, first page' => [
+            new TermSearcher('section', '', 1),
+            new Criteria(limit: $limit, filters: [$sections], order: $newestFirst, offset: 0),
+        ];
+        yield 'blank name does not filter' => [
+            new TermSearcher('tag', '   ', 1),
+            new Criteria(limit: $limit, filters: [$tags], order: $newestFirst, offset: 0),
+        ];
+        yield 'name is trimmed before filtering' => [
+            new TermSearcher('tag', ' te ', 1),
+            new Criteria(limit: $limit, filters: [$tags, NameFilter::contains('te')], order: $newestFirst, offset: 0),
+        ];
+        yield 'later pages skip every previous one' => [
+            new TermSearcher('section', 'vida', 3),
+            new Criteria(limit: $limit, filters: [$sections, NameFilter::contains('vida')], order: $newestFirst, offset: 2 * $pageSize),
+        ];
     }
 
-    public function testItTellsWhetherMoreTermsFollow(): void
+    public function testItReturnsTheFoundTermsInTheRepositoryOrder(): void
     {
-        $repository = self::repository();
+        $newer = TermMother::create(id: TermIdMother::random()->value(), name: 'Trabajo', slug: 'trabajo');
+        $older = TermMother::create(id: TermIdMother::random()->value());
+        $repository = self::createStub(TermRepository::class);
+        $repository->method('matching')->willReturn([$newer, $older]);
 
-        for ($i = 0; $i <= TermSearcher::PAGE_SIZE; ++$i) {
-            $repository->save(TermMother::create(id: TermIdMother::random()->value(), taxonomy: Taxonomy::Tag, name: 'Etiqueta '.$i, slug: 'etiqueta-'.$i));
-        }
+        self::assertEquals(
+            new TermsResponse([TermResponse::fromTerm($newer), TermResponse::fromTerm($older)], false),
+            new TermSearcher('section', '', 1)($repository),
+        );
+    }
 
-        $first = new TermSearcher('tag', '', 1)($repository);
-        $second = new TermSearcher('tag', '', 2)($repository);
+    #[DataProvider('pageSizes')]
+    public function testItTellsWhetherMoreTermsFollow(int $found, int $listed, bool $hasMore): void
+    {
+        $repository = self::createStub(TermRepository::class);
+        $repository->method('matching')->willReturn(array_map(
+            static fn (int $index): Term => TermMother::create(id: TermIdMother::random()->value(), name: 'Sección '.$index, slug: 'seccion-'.$index),
+            range(1, $found),
+        ));
 
-        self::assertCount(TermSearcher::PAGE_SIZE, $first->terms);
-        self::assertTrue($first->hasMore);
-        self::assertCount(1, $second->terms);
-        self::assertFalse($second->hasMore);
+        $terms = new TermSearcher('section', '', 1)($repository);
+
+        self::assertCount($listed, $terms->terms);
+        self::assertSame($hasMore, $terms->hasMore);
+    }
+
+    /**
+     * @return iterable<string, array{int, int, bool}>
+     */
+    public static function pageSizes(): iterable
+    {
+        yield 'fewer than a page' => [3, 3, false];
+        yield 'exactly a page' => [TermSearcher::PAGE_SIZE, TermSearcher::PAGE_SIZE, false];
+        yield 'more than a page' => [TermSearcher::PAGE_SIZE + 1, TermSearcher::PAGE_SIZE, true];
     }
 
     public function testItRefusesAPageBeforeTheFirst(): void
     {
+        $repository = $this->createMock(TermRepository::class);
+        $repository->expects(self::never())->method('matching');
+
         $this->expectExceptionObject(InvalidCriteria::nonPositivePage(0));
 
-        new TermSearcher('section', '', 0)(self::repository());
+        new TermSearcher('section', '', 0)($repository);
     }
 
-    private static function repository(): TermRepository
+    public function testItRefusesATaxonomyThatIsNone(): void
     {
-        return self::getContainer()->get(TermRepository::class);
+        $repository = $this->createMock(TermRepository::class);
+        $repository->expects(self::never())->method('matching');
+
+        $this->expectExceptionObject(InvalidTaxonomy::unknown('categoria'));
+
+        new TermSearcher('categoria', '', 1)($repository);
     }
 }

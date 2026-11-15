@@ -11,7 +11,7 @@ use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostStatus;
-use Cms\Post\Domain\Title;
+use Cms\Post\Domain\PostTitle;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
@@ -31,8 +31,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Composes the editor of a post: where it stands and what is done to it
- * apart from editing, its fields, where it is filed and who signs it, its
- * content, and the actions that save and publish it, each offered only when
+ * apart from editing, its fields, where it is filed and who signs it, the
+ * image it opens with, its content, and the actions that save and publish it, each offered only when
  * the post allows it.
  *
  * Composing a page reaches every component it is made of, and the sections,
@@ -106,6 +106,17 @@ final readonly class PostEditor
                 $this->titleField($post),
                 $this->slugField($post, $address),
                 $this->classificationSection($post, $sections, $authors, $tags),
+                // The image the post opens with, also the one it is shared with.
+                new PageComponent('Shared:ImageField', [
+                    'name' => 'opening_image',
+                    'id' => 'post-opening-image',
+                    'label' => $this->translator->trans('cms.posts.edit.opening_image_label'),
+                    'hint' => $this->translator->trans('cms.posts.edit.opening_image_hint'),
+                    'value' => $post->openingImageId ?? '',
+                    'searchUrl' => $this->urlGenerator->generate('cms_images_search'),
+                    'lookupUrl' => $this->urlGenerator->generate('cms_images_lookup'),
+                    'offSite' => $this->translator->trans('cms.posts.edit.opening_image_off_site'),
+                ]),
                 new PageComponent('Shared:RichTextEditor', [
                     'name' => 'content',
                     'id' => 'post-content-editor',
@@ -279,8 +290,8 @@ final readonly class PostEditor
                 'recommendedMax' => SearchPreview::TITLE_LIMIT,
                 'attributes' => [
                     'required' => true,
-                    'minlength' => Title::MIN_LENGTH,
-                    'maxlength' => Title::MAX_LENGTH,
+                    'minlength' => PostTitle::MIN_LENGTH,
+                    'maxlength' => PostTitle::MAX_LENGTH,
                     'aria-describedby' => 'post-title-count',
                 ],
             ]),

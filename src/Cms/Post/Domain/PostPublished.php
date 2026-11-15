@@ -10,7 +10,8 @@ use Shared\Domain\Event\RevisedDomainEvent;
  * A post went on the site, or its version there was replaced, with all the
  * site needs to serve it: where it is served, and the name of its section
  * and of its author as they were then, which the site shows once either is
- * off it. Its tags are told by id alone: the site only shows those on it.
+ * off it. Its tags and its opening image are told by id alone: the site
+ * only shows those on it.
  *
  * It carries what the site shows, one parameter each.
  *
@@ -33,6 +34,7 @@ final readonly class PostPublished extends RevisedDomainEvent
         private string $authorId,
         private string $authorName,
         private array $tagIds,
+        private string $openingImageId,
         private array $content,
         private string $metaDescription,
         private string $robots,
@@ -62,6 +64,7 @@ final readonly class PostPublished extends RevisedDomainEvent
             'author_id' => $this->authorId,
             'author_name' => $this->authorName,
             'tag_ids' => $this->tagIds,
+            'opening_image_id' => $this->openingImageId,
             'content' => $this->content,
             'meta_description' => $this->metaDescription,
             'robots' => $this->robots,

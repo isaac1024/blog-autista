@@ -7,6 +7,7 @@ namespace Web\Page\Domain;
 use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedReceivedEvent;
 use Shared\Domain\RichText\RichText;
+use Web\Shared\Domain\Robots;
 
 /**
  * The CMS put a page on the site, or replaced its version there, with all the

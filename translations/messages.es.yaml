@@ -997,6 +997,9 @@ cms:
             slug_label: 'Dirección web (slug)'
             slug_hint: 'Solo minúsculas sin tildes, números y guiones. Va tras la sección y la fecha de la primera publicación, que no cambia nunca. Puedes dejarla vacía hasta publicar el post.'
             no_section: 'seccion'
+            opening_image_label: 'Imagen de apertura'
+            opening_image_hint: 'Abre el post, y es la que muestran Google y Discover al enlazarlo y al compartirlo. Hace falta para publicar, y tiene que estar publicada.'
+            opening_image_off_site: 'No se podrá publicar el post hasta que la publiques.'
             content_title: 'Contenido'
             content_placeholder: 'Escribe aquí el post…'
             meta_description_hint: 'El resumen que aparece bajo el título en los resultados: una o dos frases que inviten a leerlo.'
@@ -1125,6 +1128,9 @@ site:
     gone:
         title: 'Esta página ya no existe'
         message: 'Se retiró del blog y no volverá a estar disponible.'
+    server_error:
+        title: 'Algo ha fallado en el blog'
+        message: 'No es culpa tuya. Vuelve a intentarlo dentro de un rato.'
     post:
         published: 'Publicado el'
         updated: 'Actualizado el'
@@ -1554,10 +1560,12 @@ errors:
             without_slug: 'El post no se puede publicar sin dirección.'
             without_section: 'El post no se puede publicar sin sección.'
             without_author: 'El post no se puede publicar sin autor.'
+            without_opening_image: 'El post no se puede publicar sin imagen de apertura.'
             without_content: 'El post no se puede publicar sin contenido.'
             without_meta_description: 'El post no se puede publicar sin meta descripción.'
             section_off_site: 'La sección del post no está publicada. Publícala antes, o elige otra.'
             author_off_site: 'El autor del post no está publicado. Publícalo antes, o elige otro.'
+            opening_image_off_site: 'La imagen de apertura del post no está publicada. Publícala antes, o elige otra.'
             nothing_to_publish: 'El post ya está publicado tal como está: no hay nada que publicar.'
             not_published: 'Solo se puede despublicar un post publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
@@ -1579,6 +1587,7 @@ errors:
         publication:
             nothing_to_publish: 'Los ajustes ya están publicados tal como están: no hay nada que publicar.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
+            incomplete_dates: 'Las fechas de publicación de los ajustes están incompletas.'
     image:
         alt:
             empty: 'El texto alternativo no puede estar vacío.'
@@ -1598,3 +1607,4 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'
             in_use: 'Esta imagen se usa en alguna página, post o biografía de autor, o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'
+            incomplete_dates: 'Las fechas de publicación de la imagen están incompletas.'

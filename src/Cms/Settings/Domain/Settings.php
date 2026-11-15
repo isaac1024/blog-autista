@@ -112,6 +112,7 @@ final class Settings extends AggregateRoot
         $this->changeResourcesUsed(function (): void {
             $this->published = $this->version;
         });
+        $this->timeline = $this->timeline->published(Clock::now());
         ++$this->publicationRevision;
 
         $this->record(new SettingsPublished(

@@ -94,6 +94,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
         self::assertTrue($relations->isUsed(ResourceType::Term, PostMother::SECTION));
         self::assertTrue($relations->isUsed(ResourceType::Term, PostMother::OTHER_TAG));
         self::assertTrue($relations->isUsed(ResourceType::Author, PostMother::AUTHOR));
+        self::assertTrue($relations->isUsed(ResourceType::Image, PostMother::OPENING_IMAGE));
     }
 
     public function testItGoesBackAndKeepsThePostFiledUnderASectionTheCmsHasNot(): void
@@ -128,10 +129,10 @@ final class PostChangesControllersTest extends PostControllerTestCase
     }
 
     #[DataProvider('offTheSite')]
-    public function testItGoesBackAndTellsWhatThePostLacksToBePublished(bool $sectionOnSite, bool $authorOnSite, string $key): void
+    public function testItGoesBackAndTellsWhatThePostLacksToBePublished(bool $sectionOnSite, bool $authorOnSite, bool $openingImageOnSite, string $key): void
     {
         $client = self::createAuthenticatedClient();
-        $this->saveClassifiers($sectionOnSite, $authorOnSite);
+        $this->saveClassifiers($sectionOnSite, $authorOnSite, $openingImageOnSite);
         $id = PostIdMother::random()->value();
         $post = $this->savePost(PostMother::publishable(id: $id));
 
@@ -144,12 +145,13 @@ final class PostChangesControllersTest extends PostControllerTestCase
     }
 
     /**
-     * @return iterable<string, array{bool, bool, string}>
+     * @return iterable<string, array{bool, bool, bool, string}>
      */
     public static function offTheSite(): iterable
     {
-        yield 'its section off the site' => [false, true, 'errors.post.publication.section_off_site'];
-        yield 'its author off the site' => [true, false, 'errors.post.publication.author_off_site'];
+        yield 'its section off the site' => [false, true, true, 'errors.post.publication.section_off_site'];
+        yield 'its author off the site' => [true, false, true, 'errors.post.publication.author_off_site'];
+        yield 'its opening image off the site' => [true, true, false, 'errors.post.publication.opening_image_off_site'];
     }
 
     public function testItGoesBackAndTellsAnotherPostOnTheSiteHasTheAddress(): void
@@ -330,6 +332,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
             'section' => PostMother::SECTION,
             'author' => PostMother::AUTHOR,
             'tags' => $tags,
+            'opening_image' => PostMother::OPENING_IMAGE,
             'content' => json_encode(['type' => 'doc', 'content' => [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Hoy probé los tapones en el metro.']]]]], \JSON_THROW_ON_ERROR),
             'meta_description' => PostMother::META_DESCRIPTION,
             'robots' => 'index,follow',

@@ -50,7 +50,7 @@ final readonly class RichTextComponents
                 $image = $images[$block->imageId()] ?? null;
 
                 if (null !== $image) {
-                    $components[] = self::image($image, $links);
+                    $components[] = self::image($image, $links, false);
                 }
 
                 continue;
@@ -70,6 +70,18 @@ final readonly class RichTextComponents
         }
 
         return $components;
+    }
+
+    /**
+     * The image a content opens with, apart from its text, with its caption
+     * linking what is on the site, as an embedded image's does.
+     *
+     * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
+     * @param array<string, array{url: string, title: string, external?: ExternalView}>                   $pages as for its text
+     */
+    public function opening(array $image, array $pages): PageComponent
+    {
+        return self::image($image, array_map(static fn (array $page): string => $page['url'], $pages), true);
     }
 
     /**
@@ -95,8 +107,9 @@ final readonly class RichTextComponents
     /**
      * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
      * @param array<string, string>                                                                       $links
+     * @param bool                                                                                        $opening whether it opens the content rather than sits in it
      */
-    private static function image(array $image, array $links): PageComponent
+    private static function image(array $image, array $links, bool $opening): PageComponent
     {
         $caption = $image['caption']->blocks()[0] ?? null;
 
@@ -108,6 +121,7 @@ final readonly class RichTextComponents
             'alt' => $image['alt'],
             // A caption is a single paragraph.
             'caption' => $caption instanceof Paragraph ? self::runs($caption->text(), $links) : [],
+            'opening' => $opening,
         ]);
     }
 

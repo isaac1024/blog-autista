@@ -17,9 +17,12 @@ use Shared\Domain\Uuid;
  * identifiers keep sorting by creation.
  *
  * Each context extends it for its own identifier and registers it under its
- * own name in doctrine.yaml.
+ * own name in doctrine.yaml, so they grow in number with the identifiers
+ * rather than with how the persistence is designed.
  *
  * @template T of Uuid
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract class UuidType extends Type
 {

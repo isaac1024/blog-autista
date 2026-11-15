@@ -10,7 +10,7 @@ use Web\Analytics\Domain\ContentType;
 use Web\Analytics\Domain\PublishedContents;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
-use Web\Page\Application\PublishedPagesFinder;
+use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
@@ -38,7 +38,7 @@ final readonly class SitePublishedContents implements PublishedContents
         $id = $content->id()->value();
 
         return match ($content->type()) {
-            ContentType::Page => [] !== new PublishedPagesFinder([$id])($this->pageRepository),
+            ContentType::Page => [] !== new PagesOnSiteFinder([$id])($this->pageRepository),
             ContentType::Post => null !== new PostOnSiteFinder($id)($this->postRepository),
             ContentType::Term => null !== new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository)
                 || null !== new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository),

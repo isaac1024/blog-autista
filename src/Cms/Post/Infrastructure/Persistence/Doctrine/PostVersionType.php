@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Cms\Post\Infrastructure\Persistence\Doctrine;
 
 use Cms\Post\Domain\Classification;
+use Cms\Post\Domain\ImageId;
+use Cms\Post\Domain\PostTitle;
 use Cms\Post\Domain\PostVersion;
-use Cms\Post\Domain\Title;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -53,11 +54,13 @@ final class PostVersionType extends Type
         $tags = TagIdsType::ids($data['tag_ids'] ?? [])
             ?? throw ValueNotConvertible::new($value, self::class, 'The stored post version has tags that are not a list of ids.');
         $description = $data['meta_description'] ?? null;
+        $openingImage = $data['opening_image_id'] ?? null;
 
         return new PostVersion(
-            new Title(self::string($data, 'title', $value)),
+            new PostTitle(self::string($data, 'title', $value)),
             \is_string($slug) ? new Slug($slug) : null,
             Classification::fromPrimitives(\is_string($section) ? $section : '', \is_string($author) ? $author : '', $tags),
+            \is_string($openingImage) ? new ImageId($openingImage) : null,
             RichText::fromArray(\is_array($data['content'] ?? null) ? $data['content'] : []),
             new Seo(\is_string($description) ? $description : null, Robots::from(self::string($data, 'robots', $value))),
         );
@@ -82,6 +85,7 @@ final class PostVersionType extends Type
             'section_id' => $classification->section()?->value(),
             'author_id' => $classification->author()?->value(),
             'tag_ids' => $classification->tags()->values(),
+            'opening_image_id' => $value->openingImage()?->value(),
             'content' => $value->content()->toArray(),
             'meta_description' => $value->seo()->description(),
             'robots' => $value->seo()->robots()->value,

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Page\Infrastructure\Persistence\Doctrine;
 
+use Cms\Page\Domain\PageTitle;
 use Cms\Page\Domain\PageVersion;
-use Cms\Page\Domain\Title;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -50,7 +50,7 @@ final class PageVersionType extends Type
         $description = $data['meta_description'] ?? null;
 
         return new PageVersion(
-            new Title(self::string($data, 'title', $value)),
+            new PageTitle(self::string($data, 'title', $value)),
             \is_string($slug) ? new Slug($slug) : null,
             RichText::fromArray(\is_array($data['content'] ?? null) ? $data['content'] : []),
             new Seo(\is_string($description) ? $description : null, Robots::from(self::string($data, 'robots', $value))),

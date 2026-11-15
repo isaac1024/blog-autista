@@ -23,7 +23,8 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
-use Web\Tests\Post\Infrastructure\CmsPostSubscribersTest;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostIdMother;
 
 /**
  * What a visit records, and what it can't take, is told by
@@ -81,7 +82,7 @@ final class VisitControllerTest extends WebTestCase
      */
     public static function contents(): iterable
     {
-        yield 'a post' => ['post', CmsPostSubscribersTest::POST, Response::HTTP_NO_CONTENT, 1];
+        yield 'a post' => ['post', PostIdMother::DEFAULT_VALUE, Response::HTTP_NO_CONTENT, 1];
         yield 'a section' => ['term', self::SECTION, Response::HTTP_NO_CONTENT, 1];
         yield 'a tag' => ['term', self::TAG, Response::HTTP_NO_CONTENT, 1];
         yield 'an author' => ['author', self::AUTHOR, Response::HTTP_NO_CONTENT, 1];
@@ -227,7 +228,7 @@ final class VisitControllerTest extends WebTestCase
      */
     private function saveContents(): void
     {
-        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(CmsPostSubscribersTest::POST, CmsPostSubscribersTest::body() + ['revision' => 1])));
+        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::DEFAULT_VALUE, CmsPostPublishedMother::body() + ['revision' => 1])));
         $terms = self::getContainer()->get(TermRepository::class);
 
         foreach ([[self::SECTION, 'section', 'vida-diaria'], [self::TAG, 'tag', 'sueno']] as [$id, $taxonomy, $slug]) {

@@ -3,6 +3,8 @@
 /media/
 # Copies of the published images the site serves: made on the server.
 /public/media/
+# Static copies of the error page, written at deploy time by error:dump.
+/public/error/
 
 ###> symfony/framework-bundle ###
 /.env.local

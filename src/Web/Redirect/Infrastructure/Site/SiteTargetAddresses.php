@@ -9,9 +9,9 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
-use Web\Image\Application\PublishedImagesFinder;
+use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Page\Application\PublishedPagesFinder;
+use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
@@ -58,7 +58,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
 
     private function pageAddress(string $id): ?string
     {
-        $page = new PublishedPagesFinder([$id])($this->pageRepository)[$id] ?? null;
+        $page = new PagesOnSiteFinder([$id])($this->pageRepository)[$id] ?? null;
 
         if (null === $page) {
             return null;
@@ -71,7 +71,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
 
     private function imageAddress(string $id, int $width): ?string
     {
-        $image = new PublishedImagesFinder([$id])($this->imageRepository)[$id] ?? null;
+        $image = new ImagesOnSiteFinder([$id])($this->imageRepository)[$id] ?? null;
 
         return null === $image ? null : new ImageCopy($image->path, $width)->url();
     }

@@ -9,6 +9,11 @@ namespace Shared\Domain\Event;
  * the one that listens to it declares it: rebuilt from the primitives it
  * travels as, under the name it was told with, never told again. Of what
  * travels with it, it keeps only what the listener needs.
+ *
+ * Each listener declares every event it hears, so they grow in number with
+ * what the contexts tell each other rather than with how they are designed.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract readonly class ReceivedEvent
 {

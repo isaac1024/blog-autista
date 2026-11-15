@@ -10,6 +10,11 @@ namespace Shared\Domain\Event;
  * It travels as primitives under its name, so a context that listens to it
  * declares its own ReceivedEvent with the same name instead of depending on
  * the context that records it.
+ *
+ * Everything that happens to an aggregate is an event of its own, so they
+ * grow in number with the domain rather than with how it is designed.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract readonly class DomainEvent
 {

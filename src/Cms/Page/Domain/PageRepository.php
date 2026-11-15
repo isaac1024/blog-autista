@@ -13,7 +13,7 @@ use Shared\Domain\Criteria\Criteria;
 interface PageRepository
 {
     /**
-     * @throws SlugAlreadyTaken        when another page is saved with the same slug meanwhile
+     * @throws PageSlugAlreadyTaken    when another page is saved with the same slug meanwhile
      * @throws UniquePageAlreadyExists when another page of the same unique type is saved meanwhile
      */
     public function save(Page $page): void;

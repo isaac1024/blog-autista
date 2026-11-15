@@ -29,7 +29,7 @@ final readonly class Timeline
         private ?\DateTimeImmutable $lastPublishedAt,
     ) {
         if ((null === $firstPublishedAt) !== (null === $lastPublishedAt)) {
-            throw InvalidPublication::incompleteDates();
+            throw InvalidPagePublication::incompleteDates();
         }
     }
 

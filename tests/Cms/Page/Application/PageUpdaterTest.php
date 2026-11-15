@@ -6,17 +6,17 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
-use Cms\Page\Domain\InvalidContent;
+use Cms\Page\Domain\InvalidPageContent;
 use Cms\Page\Domain\InvalidPageSlug;
-use Cms\Page\Domain\InvalidTitle;
+use Cms\Page\Domain\InvalidPageTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageContentsLinked;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageSlugAlreadyTaken;
+use Cms\Page\Domain\PageTitle;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\SlugAlreadyTaken;
-use Cms\Page\Domain\Title;
 use Cms\Shared\Domain\InvalidSeo;
 use Cms\Shared\Domain\InvalidSlug;
 use Cms\Shared\Domain\Robots;
@@ -111,9 +111,9 @@ final class PageUpdaterTest extends TestCase
      */
     public static function invalidEdits(): iterable
     {
-        yield 'empty title' => ['   ', 'quien-soy', InvalidTitle::tooShort(Title::MIN_LENGTH)];
-        yield 'title one character too short' => ['Sí', 'quien-soy', InvalidTitle::tooShort(Title::MIN_LENGTH)];
-        yield 'title one character too long' => [str_repeat('a', 101), 'quien-soy', InvalidTitle::tooLong(Title::MAX_LENGTH)];
+        yield 'empty title' => ['   ', 'quien-soy', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
+        yield 'title one character too short' => ['Sí', 'quien-soy', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
+        yield 'title one character too long' => [str_repeat('a', 101), 'quien-soy', InvalidPageTitle::tooLong(PageTitle::MAX_LENGTH)];
         yield 'slug with uppercase letters' => ['Quién soy', 'Quien-Soy', InvalidSlug::malformed('Quien-Soy')];
         yield 'slug with accents' => ['Quién soy', 'quién-soy', InvalidSlug::malformed('quién-soy')];
         yield 'slug with spaces' => ['Quién soy', 'quien soy', InvalidSlug::malformed('quien soy')];
@@ -260,7 +260,7 @@ final class PageUpdaterTest extends TestCase
         ];
         yield 'link to the page itself' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'esta página', 'marks' => ['link'], 'page_id' => PageIdMother::DEFAULT_VALUE]]]),
-            InvalidContent::linksItself(),
+            InvalidPageContent::linksItself(),
         ];
     }
 
@@ -332,7 +332,7 @@ final class PageUpdaterTest extends TestCase
             ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Contacto', slug: 'contacto'));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
+        $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
         self::updater($id, 'Sobre mí', 'contacto')($repository, self::createStub(EventBus::class));
     }
@@ -382,7 +382,7 @@ final class PageUpdaterTest extends TestCase
         $repository->method('find')->willReturn(PageMother::home(id: $id, title: 'Portada'));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(InvalidTitle::tooShort(Title::MIN_LENGTH));
+        $this->expectExceptionObject(InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH));
 
         self::updater($id, 'Sí', '')($repository, self::createStub(EventBus::class));
     }

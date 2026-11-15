@@ -157,7 +157,7 @@ final class PostRedirectsTest extends PostControllerTestCase
     {
         $id = PostIdMother::random()->value();
         $post = PostMother::published(id: $id);
-        $post->edit(PostMother::TITLE, 'otro-dia', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
+        $post->edit(PostMother::TITLE, 'otro-dia', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
         $this->savePost($post);
 
         return $id;

@@ -10,6 +10,8 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Infrastructure\Controller\ExternalImageUrl;
 use Cms\External\Infrastructure\Ui\CmsExternalViews;
+use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Application\PostResponse;
@@ -30,6 +32,7 @@ use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Author\Domain\AuthorMother;
+use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Redirect\Domain\RedirectIdMother;
 use Cms\Tests\Redirect\Domain\RedirectMother;
@@ -73,6 +76,24 @@ final class PreviewPostTest extends TestCase
         ]);
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Sensorialidad', 'url' => '/tag/sensorialidad.html']]]);
         self::assertSame('noindex,nofollow', $page->robots);
+    }
+
+    /**
+     * The opening image saved is previewed as the site would paint it while
+     * it is on the site, and the preview is shared with it.
+     */
+    public function testItOpensWithTheImageSavedWhileItIsOnTheSite(): void
+    {
+        $page = $this->preview(PostMother::publishable(), onSite: true, images: [PostMother::OPENING_IMAGE => ImageMother::published(id: PostMother::OPENING_IMAGE, alt: 'Andén del metro vacío')]);
+
+        $opening = PageComponents::one($page, 'Shared:ContentImage', ['opening' => true, 'alt' => 'Andén del metro vacío']);
+        self::assertSame($opening->props['src'], $page->image['src'] ?? null);
+    }
+
+    public function testItOpensWithItsTextWhileItsImageIsOffTheSiteOrUnchosen(): void
+    {
+        self::assertSame([], PageComponents::find($this->preview(PostMother::publishable(), onSite: true), 'Shared:ContentImage', []));
+        self::assertSame([], PageComponents::find($this->preview(PostMother::create(), onSite: true, images: [PostMother::OPENING_IMAGE => ImageMother::published(id: PostMother::OPENING_IMAGE)]), 'Shared:ContentImage', []));
     }
 
     public function testItNamesTheSectionAndTheAuthorOffTheSiteAsTheyAreSavedWithoutLinks(): void
@@ -146,10 +167,11 @@ final class PreviewPostTest extends TestCase
     }
 
     /**
-     * @param array<string, Term> $others    more terms the CMS has, by id
-     * @param list<Redirect>      $redirects of the last addresses of what is off the site
+     * @param array<string, Term>  $others    more terms the CMS has, by id
+     * @param list<Redirect>       $redirects of the last addresses of what is off the site
+     * @param array<string, Image> $images    the images of the library, by id
      */
-    private function preview(Post $post, bool $onSite, array $others = [], ?Author $otherAuthor = null, array $redirects = []): Page
+    private function preview(Post $post, bool $onSite, array $others = [], ?Author $otherAuthor = null, array $redirects = [], array $images = []): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -177,6 +199,7 @@ final class PreviewPostTest extends TestCase
         $authorRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => [] === array_filter($ids, static fn (mixed $id): bool => $id instanceof AuthorId && $id->equals($author->id())) ? [] : [$author]);
         $imageRepository = self::createStub(ImageRepository::class);
         $imageRepository->method('findByIds')->willReturn([]);
+        $imageRepository->method('find')->willReturnCallback(static fn (ImageId $id): ?Image => $images[$id->value()] ?? null);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);
         $redirectRepository = self::createStub(RedirectRepository::class);

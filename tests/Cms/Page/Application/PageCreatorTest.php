@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageCreator;
-use Cms\Page\Domain\InvalidTitle;
+use Cms\Page\Domain\InvalidPageTitle;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\SlugAlreadyTaken;
-use Cms\Page\Domain\Title;
+use Cms\Page\Domain\PageSlugAlreadyTaken;
+use Cms\Page\Domain\PageTitle;
 use Cms\Shared\Domain\InvalidSlug;
 use Cms\Shared\Domain\Slug;
 use Cms\Tests\Page\Domain\PageIdMother;
@@ -98,9 +98,9 @@ final class PageCreatorTest extends TestCase
         $id = PageIdMother::DEFAULT_VALUE;
 
         yield 'id is not a UUID' => ['page-id', 'Posts', InvalidUuid::withValue('page-id')];
-        yield 'empty title' => [$id, '   ', InvalidTitle::tooShort(Title::MIN_LENGTH)];
-        yield 'title one character too short' => [$id, 'Sí', InvalidTitle::tooShort(Title::MIN_LENGTH)];
-        yield 'title one character too long' => [$id, str_repeat('a', 101), InvalidTitle::tooLong(Title::MAX_LENGTH)];
+        yield 'empty title' => [$id, '   ', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
+        yield 'title one character too short' => [$id, 'Sí', InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH)];
+        yield 'title one character too long' => [$id, str_repeat('a', 101), InvalidPageTitle::tooLong(PageTitle::MAX_LENGTH)];
         yield 'title without sluggable characters' => [$id, '¡!?', InvalidSlug::malformed('')];
         yield 'slug far too short' => [$id, 'C++', InvalidSlug::tooShort(Slug::MIN_LENGTH)];
         yield 'slug one character too short' => [$id, 'Ab!', InvalidSlug::tooShort(Slug::MIN_LENGTH)];
@@ -116,7 +116,7 @@ final class PageCreatorTest extends TestCase
             ->willReturn(PageMother::create(id: PageIdMother::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
+        $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
         (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, self::createStub(EventBus::class));
     }

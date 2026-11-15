@@ -54,13 +54,13 @@ final class ImagePublisherTest extends TestCase
             ImageMother::create(caption: ImageMother::CAPTION, createdAt: self::BEFORE),
             ImageMother::published(createdAt: self::BEFORE),
         ];
-        yield 'a published image with changes' => [
-            ImageMother::published(alt: 'Otro texto', publishedAlt: ImageMother::ALT, createdAt: self::BEFORE),
-            ImageMother::published(alt: 'Otro texto', createdAt: self::BEFORE, publicationRevision: 2),
+        yield 'a published image with changes, keeping its first publication' => [
+            ImageMother::published(alt: 'Otro texto', publishedAlt: ImageMother::ALT, createdAt: self::BEFORE, firstPublishedAt: self::BEFORE, lastPublishedAt: self::BEFORE),
+            ImageMother::published(alt: 'Otro texto', createdAt: self::BEFORE, firstPublishedAt: self::BEFORE, publicationRevision: 2),
         ];
-        yield 'an unpublished image' => [
-            ImageMother::unpublished(createdAt: self::BEFORE),
-            ImageMother::published(createdAt: self::BEFORE, publicationRevision: 3),
+        yield 'an unpublished image, keeping its first publication' => [
+            ImageMother::unpublished(createdAt: self::BEFORE, firstPublishedAt: self::BEFORE, lastPublishedAt: self::BEFORE),
+            ImageMother::published(createdAt: self::BEFORE, firstPublishedAt: self::BEFORE, publicationRevision: 3),
         ];
     }
 

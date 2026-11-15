@@ -6,7 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUnpublisher;
-use Cms\Page\Domain\InvalidPublication;
+use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
@@ -78,15 +78,15 @@ final class PageUnpublisherTest extends TestCase
      */
     public static function pagesThatStay(): iterable
     {
-        yield 'a draft' => [PageMother::create(), InvalidPublication::notPublished()];
-        yield 'an unpublished page' => [PageMother::unpublished(), InvalidPublication::notPublished()];
-        yield 'the published home page' => [PageMother::published(type: PageType::Home), InvalidPublication::uniquePage(PageType::Home)];
+        yield 'a draft' => [PageMother::create(), InvalidPagePublication::notPublished()];
+        yield 'an unpublished page' => [PageMother::unpublished(), InvalidPagePublication::notPublished()];
+        yield 'the published home page' => [PageMother::published(type: PageType::Home), InvalidPagePublication::uniquePage(PageType::Home)];
 
         foreach (PageType::uniqueTypes() as $type) {
             if (!$type->isHome()) {
                 yield \sprintf('the published %s page', $type->value) => [
                     PageMother::published(slug: str_replace('_', '-', $type->value), type: $type),
-                    InvalidPublication::uniquePage($type),
+                    InvalidPagePublication::uniquePage($type),
                 ];
             }
         }
@@ -104,7 +104,7 @@ final class PageUnpublisherTest extends TestCase
         $pageRedirects = $this->createMock(PageRedirects::class);
         $pageRedirects->expects(self::once())->method('isTargeted')->with(self::equalTo($page->id()))->willReturn(true);
 
-        $this->expectExceptionObject(InvalidPublication::redirected());
+        $this->expectExceptionObject(InvalidPagePublication::redirected());
 
         (new PageUnpublisher($page->id()->value()))($repository, self::createStub(EventBus::class), $pageRedirects);
     }

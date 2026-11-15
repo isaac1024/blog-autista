@@ -57,7 +57,7 @@ final class ImageMother
             self::path($id, $createdAt),
             ImageStatus::Draft,
             null,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
             0,
         );
     }
@@ -77,9 +77,11 @@ final class ImageMother
         ?array $publishedCaption = null,
         string $createdAt = ClockMother::NOW,
         ?string $updatedAt = null,
+        string $firstPublishedAt = ClockMother::NOW,
+        string $lastPublishedAt = ClockMother::NOW,
         int $publicationRevision = 1,
     ): Image {
-        return self::onTheSite(ImageStatus::Published, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $publicationRevision);
+        return self::onTheSite(ImageStatus::Published, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $firstPublishedAt, $lastPublishedAt, $publicationRevision);
     }
 
     /**
@@ -97,9 +99,11 @@ final class ImageMother
         ?array $publishedCaption = null,
         string $createdAt = ClockMother::NOW,
         ?string $updatedAt = null,
+        string $firstPublishedAt = ClockMother::NOW,
+        string $lastPublishedAt = ClockMother::NOW,
         int $publicationRevision = 2,
     ): Image {
-        return self::onTheSite(ImageStatus::Unpublished, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $publicationRevision);
+        return self::onTheSite(ImageStatus::Unpublished, $id, $alt, $caption, $publishedAlt ?? $alt, $publishedCaption ?? $caption, $createdAt, $updatedAt, $firstPublishedAt, $lastPublishedAt, $publicationRevision);
     }
 
     /**
@@ -126,6 +130,8 @@ final class ImageMother
         array $publishedCaption,
         string $createdAt,
         ?string $updatedAt,
+        string $firstPublishedAt,
+        string $lastPublishedAt,
         int $publicationRevision,
     ): Image {
         return new Image(
@@ -134,7 +140,7 @@ final class ImageMother
             self::path($id, $createdAt),
             $status,
             new ImageVersion(new Alt($publishedAlt), RichText::fromArray($publishedCaption)),
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
             $publicationRevision,
         );
     }

@@ -23,6 +23,11 @@ final class InvalidPostPublication extends DomainError
         return new self('A post cannot be published without an author.', 'errors.post.publication.without_author', []);
     }
 
+    public static function withoutOpeningImage(): self
+    {
+        return new self('A post cannot be published without an opening image.', 'errors.post.publication.without_opening_image', []);
+    }
+
     public static function withoutContent(): self
     {
         return new self('A post cannot be published without content.', 'errors.post.publication.without_content', []);
@@ -41,6 +46,11 @@ final class InvalidPostPublication extends DomainError
     public static function authorOffSite(): self
     {
         return new self('A post cannot be published while its author is off the site.', 'errors.post.publication.author_off_site', []);
+    }
+
+    public static function openingImageOffSite(): self
+    {
+        return new self('A post cannot be published while its opening image is off the site.', 'errors.post.publication.opening_image_off_site', []);
     }
 
     public static function nothingToPublish(): self

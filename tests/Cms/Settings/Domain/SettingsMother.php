@@ -82,7 +82,7 @@ final class SettingsMother
             $version ?? self::version(),
             SettingsStatus::Draft,
             null,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
             0,
         );
     }
@@ -98,6 +98,8 @@ final class SettingsMother
         string $createdAt = ClockMother::NOW,
         ?string $updatedAt = null,
         int $publicationRevision = 1,
+        string $firstPublishedAt = ClockMother::NOW,
+        string $lastPublishedAt = ClockMother::NOW,
     ): Settings {
         $version ??= self::version();
 
@@ -106,7 +108,7 @@ final class SettingsMother
             $version,
             SettingsStatus::Published,
             $published ?? $version,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt)),
+            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
             $publicationRevision,
         );
     }

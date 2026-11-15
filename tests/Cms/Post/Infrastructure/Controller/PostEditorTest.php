@@ -8,7 +8,7 @@ use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Infrastructure\Controller\AuthorState;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
-use Cms\Post\Domain\Title;
+use Cms\Post\Domain\PostTitle;
 use Cms\Post\Infrastructure\Controller\PostEditor;
 use Cms\Post\Infrastructure\Controller\PostState;
 use Cms\Post\Infrastructure\Controller\PostUrl;
@@ -97,7 +97,7 @@ final class PostEditorTest extends TestCase
     public static function addressesOnTheSite(): iterable
     {
         $moved = PostMother::published(firstPublishedAt: '2026-10-01 10:00:00');
-        $moved->edit(PostMother::TITLE, 'otro-slug', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers());
+        $moved->edit(PostMother::TITLE, 'otro-slug', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers());
 
         yield 'a published post, at its address there' => [$moved, self::SITE.'/vida-diaria/2026/10/01/'.PostMother::SLUG.'.html'];
         yield 'a draft' => [PostMother::publishable(), null];
@@ -172,7 +172,7 @@ final class PostEditorTest extends TestCase
         $form = PageComponents::one($editor, 'Shared:Form', ['action' => '/cms_posts_update?id='.self::ID, 'method' => 'post', 'csrfTokenId' => 'cms_posts_update', 'id' => 'post-form']);
         PageComponents::one($form, 'Shared:FormLabel', ['for' => 'post-title', 'text' => 'cms.posts.title_label']);
         $title = PageComponents::one($form, 'Shared:FormTextarea', ['name' => 'title', 'id' => 'post-title', 'value' => PostMother::TITLE, 'singleLine' => true, 'recommendedMax' => SearchPreview::TITLE_LIMIT]);
-        self::assertSame(['required' => true, 'minlength' => Title::MIN_LENGTH, 'maxlength' => Title::MAX_LENGTH, 'aria-describedby' => 'post-title-count'], $title->props['attributes']);
+        self::assertSame(['required' => true, 'minlength' => PostTitle::MIN_LENGTH, 'maxlength' => PostTitle::MAX_LENGTH, 'aria-describedby' => 'post-title-count'], $title->props['attributes']);
         PageComponents::one($form, 'Shared:FormLabel', ['for' => 'post-slug', 'text' => 'cms.posts.edit.slug_label']);
         PageComponents::one($form, 'Shared:FormHint', ['id' => 'post-slug-hint', 'text' => 'cms.posts.edit.slug_hint']);
         $slug = PageComponents::one($form, 'Shared:FormInput', ['name' => 'slug', 'id' => 'post-slug', 'value' => PostMother::SLUG, 'prefix' => '/vida-diaria/2026/11/07/', 'suffix' => '.html']);
@@ -184,6 +184,30 @@ final class PostEditorTest extends TestCase
             'spellcheck' => 'false',
             'aria-describedby' => 'post-slug-hint',
         ], $slug->props['attributes']);
+    }
+
+    /**
+     * The image it opens with is picked from the library, above its content.
+     */
+    public function testItPicksTheOpeningImageAboveTheContent(): void
+    {
+        $form = PageComponents::one($this->edit(PostMother::publishable()), 'Shared:Form', ['id' => 'post-form']);
+
+        $names = array_map(static fn (PageComponent $component): string => $component->name, $form->children);
+        $image = array_search('Shared:ImageField', $names, true);
+        self::assertIsInt($image);
+        self::assertSame('Shared:RichTextEditor', $names[$image + 1] ?? null);
+        PageComponents::one($form, 'Shared:ImageField', [
+            'name' => 'opening_image',
+            'id' => 'post-opening-image',
+            'label' => 'cms.posts.edit.opening_image_label',
+            'hint' => 'cms.posts.edit.opening_image_hint',
+            'value' => PostMother::OPENING_IMAGE,
+            'searchUrl' => '/cms_images_search',
+            'lookupUrl' => '/cms_images_lookup',
+            'offSite' => 'cms.posts.edit.opening_image_off_site',
+        ]);
+        PageComponents::one($this->edit(PostMother::create()), 'Shared:ImageField', ['name' => 'opening_image', 'value' => '']);
     }
 
     #[DataProvider('prefixes')]
@@ -198,7 +222,7 @@ final class PostEditorTest extends TestCase
     public static function prefixes(): iterable
     {
         $moved = PostMother::published(sectionSlug: 'antes', firstPublishedAt: '2026-10-01 10:00:00');
-        $moved->edit(PostMother::TITLE, PostMother::SLUG, self::OTHER_SECTION, PostMother::AUTHOR, [], PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(sections: [self::OTHER_SECTION => null]));
+        $moved->edit(PostMother::TITLE, PostMother::SLUG, self::OTHER_SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(sections: [self::OTHER_SECTION => null]));
 
         yield 'a draft, under its section, today' => [PostMother::publishable(), '/vida-diaria/2026/11/07/'];
         yield 'an unfiled draft' => [PostMother::create(), '/cms.posts.edit.no_section/2026/11/07/'];

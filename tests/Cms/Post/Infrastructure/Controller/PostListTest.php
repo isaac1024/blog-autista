@@ -7,7 +7,7 @@ namespace Cms\Tests\Post\Infrastructure\Controller;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Application\PostsResponse;
 use Cms\Post\Domain\Post;
-use Cms\Post\Domain\Title;
+use Cms\Post\Domain\PostTitle;
 use Cms\Post\Infrastructure\Controller\PostList;
 use Cms\Post\Infrastructure\Controller\PostState;
 use Cms\Post\Infrastructure\Controller\PostUrl;
@@ -33,7 +33,7 @@ final class PostListTest extends TestCase
         $form = PageComponents::one($list, 'Shared:Form', ['action' => '/cms_posts_create', 'method' => 'post', 'csrfTokenId' => 'cms_posts_create']);
         PageComponents::one($form, 'Shared:FormLabel', ['for' => 'post-title', 'text' => 'cms.posts.title_label']);
         $title = PageComponents::one($form, 'Shared:FormInput', ['name' => 'title', 'id' => 'post-title']);
-        self::assertSame(['required' => true, 'minlength' => Title::MIN_LENGTH, 'maxlength' => Title::MAX_LENGTH, 'autofocus' => true], $title->props['attributes']);
+        self::assertSame(['required' => true, 'minlength' => PostTitle::MIN_LENGTH, 'maxlength' => PostTitle::MAX_LENGTH, 'autofocus' => true], $title->props['attributes']);
         PageComponents::one($form, 'Shared:FormButton', ['label' => 'cms.posts.modal.submit']);
         self::assertSame('cms.posts.title · CMS', $list->title);
     }

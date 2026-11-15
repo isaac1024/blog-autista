@@ -10,7 +10,7 @@ use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
-use Web\Image\Application\PublishedImagesFinder;
+use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
@@ -44,7 +44,7 @@ final readonly class PublishedPage
         $images = array_map(
             static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
             new ReferenceResolver('image', $page->content->imageIds(), null)(
-                fn (array $ids): array => new PublishedImagesFinder($ids)($this->imageRepository),
+                fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
                 $this->redirectsByOrigin,
             ),
         );

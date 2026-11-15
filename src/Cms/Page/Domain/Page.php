@@ -127,7 +127,7 @@ final class Page extends AggregateRoot
             new PageId($id),
             PageType::Standard,
             new PageVersion(
-                new Title($title),
+                new PageTitle($title),
                 new Slug(new Slugger($title)()),
                 RichText::empty(),
                 Seo::initial(PageType::Standard->initialRobots()),
@@ -153,7 +153,7 @@ final class Page extends AggregateRoot
             new PageId($id),
             $type,
             new PageVersion(
-                new Title($title),
+                new PageTitle($title),
                 $type->isHome() ? null : new Slug(new Slugger($title)()),
                 RichText::empty(),
                 Seo::initial($type->initialRobots()),
@@ -202,7 +202,7 @@ final class Page extends AggregateRoot
         // Everything is validated before anything is assigned, so an invalid
         // field doesn't leave the page with only part of the edit.
         $version = new PageVersion(
-            new Title($title),
+            new PageTitle($title),
             $this->type->slugFrom($slug),
             RichText::fromArray($content),
             Seo::fromPrimitives($metaDescription, $robots),
@@ -210,7 +210,7 @@ final class Page extends AggregateRoot
         self::contentFeatures()->assertAllows($version->content());
 
         if (\in_array($this->id->value(), $version->content()->pageIds(), true)) {
-            throw InvalidContent::linksItself();
+            throw InvalidPageContent::linksItself();
         }
 
         $this->changeResourcesUsed(fn () => $this->replaceVersion($version));
@@ -226,7 +226,7 @@ final class Page extends AggregateRoot
         $this->version->assertPublishableAs($this->type);
 
         if (!$this->hasSomethingToPublish()) {
-            throw InvalidPublication::nothingToPublish();
+            throw InvalidPagePublication::nothingToPublish();
         }
 
         $this->status = PageStatus::Published;
@@ -260,15 +260,15 @@ final class Page extends AggregateRoot
     public function unpublish(PageRedirects $pageRedirects): void
     {
         if ($this->type->isUnique()) {
-            throw InvalidPublication::uniquePage($this->type);
+            throw InvalidPagePublication::uniquePage($this->type);
         }
 
         if (PageStatus::Published !== $this->status) {
-            throw InvalidPublication::notPublished();
+            throw InvalidPagePublication::notPublished();
         }
 
         if ($pageRedirects->isTargeted($this->id)) {
-            throw InvalidPublication::redirected();
+            throw InvalidPagePublication::redirected();
         }
 
         $this->status = PageStatus::Unpublished;
@@ -285,7 +285,7 @@ final class Page extends AggregateRoot
     public function loseLastAddress(): void
     {
         if (PageStatus::Published === $this->status) {
-            throw InvalidPublication::addressOnSite();
+            throw InvalidPagePublication::addressOnSite();
         }
 
         $this->lastSiteSlug = null;
@@ -297,7 +297,7 @@ final class Page extends AggregateRoot
     public function discardChanges(): void
     {
         if (null === $this->published || !$this->hasUnpublishedChanges()) {
-            throw InvalidPublication::noChangesToDiscard();
+            throw InvalidPagePublication::noChangesToDiscard();
         }
 
         $published = $this->published;
@@ -364,11 +364,11 @@ final class Page extends AggregateRoot
         }
 
         if (PageStatus::Published === $this->status) {
-            throw InvalidPublication::publishedPage();
+            throw InvalidPagePublication::publishedPage();
         }
 
         if ($pageUsage->isInUse($this->id)) {
-            throw InvalidPublication::linkedPage();
+            throw InvalidPagePublication::linkedPage();
         }
 
         // A page deleted embeds no image, nor links to any page, any longer.
@@ -401,7 +401,7 @@ final class Page extends AggregateRoot
         return $this->type;
     }
 
-    public function title(): Title
+    public function title(): PageTitle
     {
         return $this->version->title();
     }

@@ -6,7 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageChangesDiscarder;
 use Cms\Page\Application\PageNotFound;
-use Cms\Page\Domain\InvalidPublication;
+use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
@@ -52,7 +52,7 @@ final class PageChangesDiscarderTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(InvalidPublication::noChangesToDiscard());
+        $this->expectExceptionObject(InvalidPagePublication::noChangesToDiscard());
 
         (new PageChangesDiscarder($page->id()->value()))($repository, self::createStub(EventBus::class));
     }

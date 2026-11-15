@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{#
+    The page of an error when the site can't paint its own: the database is
+    down, or PHP doesn't answer at all, and Apache serves the static copy that
+    `error:dump` makes of it at deploy time. It reads nothing of the database,
+    so it goes without the menus of the site, and speaks the language of the
+    site whatever the request asked for, since a static copy has none.
+#}
+
+{% set locale = constant('Shared\\Infrastructure\\Ui\\WebLayout::LOCALE') %}
+{% set reason = enum('Shared\\Infrastructure\\Ui\\SiteError').fromStatusCode(status_code).value %}
+
+{% block lang %}{{ locale }}{% endblock %}
+
+{% block title %}{{ ('site.' ~ reason ~ '.title')|trans({}, null, locale) }}{% endblock %}
+
+{% block body %}
+    <main id="main" class="{{ constant('Shared\\Infrastructure\\Ui\\WebLayout::MAIN_CLASS') }} grow">
+        <twig:Shared:PageTitle :title="('site.' ~ reason ~ '.title')|trans({}, null, locale)" :subtitle="('site.' ~ reason ~ '.message')|trans({}, null, locale)" />
+        <twig:Shared:ButtonLink :url="path('web_home')" :label="'site.home'|trans({}, null, locale)" />
+    </main>
+{% endblock %}

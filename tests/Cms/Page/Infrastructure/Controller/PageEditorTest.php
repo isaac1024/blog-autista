@@ -9,8 +9,8 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageTitle;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\Title;
 use Cms\Page\Infrastructure\Controller\PageEditor;
 use Cms\Page\Infrastructure\Controller\PageRole;
 use Cms\Page\Infrastructure\Controller\PageState;
@@ -270,7 +270,7 @@ final class PageEditorTest extends TestCase
         $metaDescription = PageComponents::one($form, 'Shared:FormTextarea', ['name' => 'meta_description']);
         PageComponents::one($form, 'Shared:FormRadioGroup', ['name' => 'robots']);
         self::assertSame(
-            ['required' => true, 'minlength' => Title::MIN_LENGTH, 'maxlength' => Title::MAX_LENGTH],
+            ['required' => true, 'minlength' => PageTitle::MIN_LENGTH, 'maxlength' => PageTitle::MAX_LENGTH],
             $this->constraints($title, ['required', 'minlength', 'maxlength']),
         );
         self::assertSame(

@@ -30,8 +30,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  * - Editing saves whatever valid fields an editor writes, complete or not,
  *   as long as its section, author and tags are ones the CMS has.
  * - A post is published only with everything the site shows: a slug, a
- *   section and an author, both on the site, content and a meta
- *   description. Its tags needn't be: the site only shows those on it.
+ *   section, an author and an opening image, all three on the site,
+ *   content and a meta description. Its tags needn't be: the site only
+ *   shows those on it.
  * - Its address on the site is taken as it is published: the slug its
  *   section has on the site then, the day it was first published, and its
  *   own slug. Two posts on the site never share one; drafts take none, so
@@ -41,14 +42,15 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   the site while redirects lead to it.
  * - Once off the site, it keeps the last address it had there, until
  *   another post is published at it.
- * - The sections, tags and author it uses, the images it embeds and the
- *   pages it links to are told to whoever keeps track of what is in use, so
+ * - The sections, tags and author it uses, the images it opens with and
+ *   embeds, and the pages it links to are told to whoever keeps track of what is in use, so
  *   none is deleted while the post uses it.
  *
  * Its rules reach every value object, error and event of the post, so its
- * coupling and its methods grow with what a post is.
+ * coupling, its methods and its length grow with what a post is.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveClassLength")
  * @SuppressWarnings("PHPMD.TooManyMethods")
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
@@ -132,16 +134,18 @@ final class Post extends AggregateRoot
 
     /**
      * Initialises a new post from its title, deriving its slug from it. It
-     * starts unfiled and unsigned, without content, listed in search results.
+     * starts unfiled and unsigned, without an opening image or content,
+     * listed in search results.
      */
     public static function create(string $id, string $title): self
     {
         return new self(
             new PostId($id),
             new PostVersion(
-                new Title($title),
+                new PostTitle($title),
                 new Slug(new Slugger($title)()),
                 Classification::none(),
+                null,
                 RichText::empty(),
                 Seo::initial(Robots::IndexFollow),
             ),
@@ -170,9 +174,9 @@ final class Post extends AggregateRoot
 
     /**
      * Replaces everything an editor writes: the title, the slug, the section,
-     * the author and the tags, the content and how the post presents itself
-     * to search engines. A blank slug, section or author leaves the post
-     * without one.
+     * the author and the tags, the opening image, the content and how the
+     * post presents itself to search engines. A blank slug, section, author
+     * or opening image leaves the post without one.
      *
      * On a published post, it only changes the version being edited: the
      * site keeps its version until the post is published again.
@@ -188,6 +192,7 @@ final class Post extends AggregateRoot
         string $section,
         string $author,
         array $tags,
+        string $openingImage,
         array $content,
         string $metaDescription,
         string $robots,
@@ -196,9 +201,10 @@ final class Post extends AggregateRoot
         // Everything is validated before anything is assigned, so an invalid
         // field doesn't leave the post with only part of the edit.
         $version = new PostVersion(
-            new Title($title),
+            new PostTitle($title),
             '' === $slug ? null : new Slug($slug),
             Classification::fromPrimitives($section, $author, $tags),
+            '' === $openingImage ? null : new ImageId($openingImage),
             RichText::fromArray($content),
             Seo::fromPrimitives($metaDescription, $robots),
         );
@@ -211,10 +217,10 @@ final class Post extends AggregateRoot
     /**
      * Puts the version last saved on the site, for the first time or in place
      * of the one there, once it has everything the site shows and its
-     * section and author are on the site. It takes its address there then;
-     * whether another post has it is checked apart, by AddressAvailability.
+     * section, author and opening image are on the site. It takes its address there then;
+     * whether another post has it is checked apart, by PostAddressAvailability.
      */
-    public function publish(Classifiers $classifiers): void
+    public function publish(Classifiers $classifiers, ImagesOnSite $imagesOnSite): void
     {
         $now = Clock::now();
         $this->version->assertPublishable();
@@ -228,6 +234,12 @@ final class Post extends AggregateRoot
         $authorId = $classification->author() ?? throw InvalidPostPublication::withoutAuthor();
         $section = $classifiers->sectionOnSite($sectionId) ?? throw InvalidPostPublication::sectionOffSite();
         $author = $classifiers->authorOnSite($authorId) ?? throw InvalidPostPublication::authorOffSite();
+        $openingImage = $this->version->openingImage() ?? throw InvalidPostPublication::withoutOpeningImage();
+
+        if (!$imagesOnSite->isOnSite($openingImage)) {
+            throw InvalidPostPublication::openingImageOffSite();
+        }
+
         $slug = $this->version->slug() ?? throw InvalidPostPublication::withoutSlug();
 
         $timeline = $this->timeline->published($now);
@@ -256,6 +268,7 @@ final class Post extends AggregateRoot
             $authorId->value(),
             $author->name(),
             $classification->tags()->values(),
+            $openingImage->value(),
             $this->version->content()->toArray(),
             (string) $this->version->seo()->description(),
             $this->version->seo()->robots()->value,
@@ -385,7 +398,7 @@ final class Post extends AggregateRoot
         return $this->id;
     }
 
-    public function title(): Title
+    public function title(): PostTitle
     {
         return $this->version->title();
     }
@@ -401,6 +414,14 @@ final class Post extends AggregateRoot
     public function classification(): Classification
     {
         return $this->version->classification();
+    }
+
+    /**
+     * Null while the post is left without one.
+     */
+    public function openingImage(): ?ImageId
+    {
+        return $this->version->openingImage();
     }
 
     public function content(): RichText
@@ -531,7 +552,7 @@ final class Post extends AggregateRoot
 
     /**
      * What the version being edited and the one last published use, each
-     * once and in order: the images embedded, the pages and posts linked,
+     * once and in order: the images it opens with and embeds, the pages and posts linked,
      * the section and the tags filed under or linked, the author signed by
      * or linked, and the external resources linked.
      *
@@ -552,7 +573,7 @@ final class Post extends AggregateRoot
             }
 
             $classification = $version->classification();
-            $images = [...$images, ...$version->content()->imageIds()];
+            $images = [...$images, ...$version->imageIds()];
             $pages = [...$pages, ...$version->content()->pageIds()];
             $linked = LinkedContents::fromTexts($version->content());
             $posts = [...$posts, ...$linked->posts()];

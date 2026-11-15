@@ -6,7 +6,7 @@ namespace Cms\Post\Infrastructure\Controller;
 
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Application\PostsResponse;
-use Cms\Post\Domain\Title;
+use Cms\Post\Domain\PostTitle;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -140,8 +140,8 @@ final readonly class PostList
                         'id' => 'post-title',
                         'attributes' => [
                             'required' => true,
-                            'minlength' => Title::MIN_LENGTH,
-                            'maxlength' => Title::MAX_LENGTH,
+                            'minlength' => PostTitle::MIN_LENGTH,
+                            'maxlength' => PostTitle::MAX_LENGTH,
                             'autofocus' => true,
                         ],
                     ]),

@@ -6,8 +6,8 @@ namespace Cms\Tests\Page\Infrastructure\Console;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageTitle;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\Title;
 use Cms\Shared\Domain\Slug;
 use Cms\Tests\Page\Domain\PageIdMother;
 use Cms\Tests\Page\Domain\PageMother;
@@ -31,7 +31,7 @@ final class UniquePageCreateCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $exitCode);
         $home = $this->storedPage(PageType::Home);
         self::assertNotNull($home);
-        self::assertEquals(new Title('Portada'), $home->title());
+        self::assertEquals(new PageTitle('Portada'), $home->title());
         self::assertNull($home->slug());
     }
 
@@ -41,7 +41,7 @@ final class UniquePageCreateCommandTest extends KernelTestCase
 
         self::assertSame(Command::SUCCESS, $exitCode);
         $page = $this->storedPage(PageType::CookiePolicy);
-        self::assertEquals(new Title('Política de cookies'), $page?->title());
+        self::assertEquals(new PageTitle('Política de cookies'), $page?->title());
         self::assertEquals(new Slug('politica-cookies'), $page?->slug());
     }
 

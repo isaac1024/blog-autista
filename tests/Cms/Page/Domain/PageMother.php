@@ -56,7 +56,7 @@ final class PageMother
      */
     public static function create(
         string $id = PageIdMother::DEFAULT_VALUE,
-        string $title = TitleMother::DEFAULT_VALUE,
+        string $title = PageTitleMother::DEFAULT_VALUE,
         string $slug = SlugMother::DEFAULT_VALUE,
         PageType $type = PageType::Standard,
         array $content = RichTextMother::EMPTY,
@@ -120,7 +120,7 @@ final class PageMother
      */
     public static function published(
         string $id = PageIdMother::DEFAULT_VALUE,
-        string $title = TitleMother::DEFAULT_VALUE,
+        string $title = PageTitleMother::DEFAULT_VALUE,
         string $slug = SlugMother::DEFAULT_VALUE,
         PageType $type = PageType::Standard,
         array $content = self::CONTENT,
@@ -157,7 +157,7 @@ final class PageMother
      */
     public static function unpublished(
         string $id = PageIdMother::DEFAULT_VALUE,
-        string $title = TitleMother::DEFAULT_VALUE,
+        string $title = PageTitleMother::DEFAULT_VALUE,
         string $slug = SlugMother::DEFAULT_VALUE,
         array $content = self::CONTENT,
         string $metaDescription = self::META_DESCRIPTION,
@@ -187,7 +187,7 @@ final class PageMother
         ?Robots $robots,
     ): PageVersion {
         return new PageVersion(
-            TitleMother::create($title),
+            PageTitleMother::create($title),
             self::slug($type, $slug),
             RichText::fromArray($content),
             new Seo($metaDescription, $robots ?? $type->initialRobots()),

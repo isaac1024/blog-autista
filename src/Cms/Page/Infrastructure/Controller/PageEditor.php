@@ -7,7 +7,7 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Domain\Page as PageAggregate;
 use Cms\Page\Domain\PageStatus;
-use Cms\Page\Domain\Title;
+use Cms\Page\Domain\PageTitle;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
@@ -271,8 +271,8 @@ final readonly class PageEditor
                 'recommendedMax' => SearchPreview::TITLE_LIMIT,
                 'attributes' => [
                     'required' => true,
-                    'minlength' => Title::MIN_LENGTH,
-                    'maxlength' => Title::MAX_LENGTH,
+                    'minlength' => PageTitle::MIN_LENGTH,
+                    'maxlength' => PageTitle::MAX_LENGTH,
                     'aria-describedby' => 'page-title-count',
                 ],
             ]),

@@ -14,7 +14,7 @@ use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
 use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Page\Application\PageResponse;
-use Web\Page\Application\PublishedPagesFinder;
+use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
@@ -89,7 +89,7 @@ final readonly class SiteLinkedContents
             ...$this->resolve(LinkType::Page, $ids(LinkType::Page), $painted, fn (array $ids): array => array_map(fn (PageResponse $page): array => [
                 'url' => null === $page->slug ? $this->urlGenerator->generate('web_home') : $this->urlGenerator->generate('web_page', ['slug' => $page->slug]),
                 'title' => $page->title,
-            ], new PublishedPagesFinder($ids)($this->pageRepository))),
+            ], new PagesOnSiteFinder($ids)($this->pageRepository))),
             ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
                 $post = new PostOnSiteFinder($id)($this->postRepository);
 

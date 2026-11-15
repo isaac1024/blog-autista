@@ -7,9 +7,9 @@ namespace Cms\Page\Infrastructure\Persistence;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageSlugAlreadyTaken;
 use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -149,6 +149,6 @@ final readonly class DoctrinePageRepository implements PageRepository
 
         $slug = str_contains($message, 'uniq_cms_page_published_slug') ? $page->publishedSlug() : $page->slug();
 
-        return null === $slug ? $exception : SlugAlreadyTaken::bySlug($slug, $exception);
+        return null === $slug ? $exception : PageSlugAlreadyTaken::bySlug($slug, $exception);
     }
 }

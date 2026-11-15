@@ -66,7 +66,7 @@ final readonly class PreviewPost
         $content = RichText::fromArray($post->content);
         $images = array_map(
             static fn (ImageOnSiteResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
-            new ReferenceResolver('image', $content->imageIds(), null)(
+            new ReferenceResolver('image', [...null === $post->openingImageId ? [] : [$post->openingImageId], ...$content->imageIds()], null)(
                 fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
                 $this->redirectsByOrigin,
             ),
@@ -86,6 +86,7 @@ final readonly class PreviewPost
             $this->section($post->sectionId),
             $this->author($post->authorId),
             $this->tags($post->tagIds),
+            null === $post->openingImageId ? null : $images[$post->openingImageId] ?? null,
             $content,
             $images,
             ($this->linkedContents)($content, $images, $post->id),

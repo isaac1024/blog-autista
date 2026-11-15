@@ -17,6 +17,7 @@ doctrine:
             cms_image_version: Cms\Image\Infrastructure\Persistence\Doctrine\ImageVersionType
             cms_page_id: Cms\Page\Infrastructure\Persistence\Doctrine\PageIdType
             cms_post_id: Cms\Post\Infrastructure\Persistence\Doctrine\PostIdType
+            cms_post_image_id: Cms\Post\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_post_author_id: Cms\Post\Infrastructure\Persistence\Doctrine\AuthorIdType
             cms_post_section_id: Cms\Post\Infrastructure\Persistence\Doctrine\SectionIdType
             cms_post_tag_ids: Cms\Post\Infrastructure\Persistence\Doctrine\TagIdsType

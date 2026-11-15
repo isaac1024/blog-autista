@@ -6,7 +6,7 @@ namespace Cms\Page\Application;
 
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\SlugAvailability;
+use Cms\Page\Domain\PageSlugAvailability;
 use Shared\Domain\Event\EventBus;
 
 /**
@@ -34,7 +34,7 @@ final readonly class PageUpdater
 
         $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots);
 
-        new SlugAvailability($page)($pageRepository);
+        new PageSlugAvailability($page)($pageRepository);
         $page->save($pageRepository, $eventBus);
     }
 }

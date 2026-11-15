@@ -7,8 +7,11 @@ namespace Cms\Image\Domain;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * When an image was uploaded and last changed. The update date only moves
- * when what an editor writes changes.
+ * When an image was uploaded, last changed, and first and last published.
+ *
+ * - The update date only moves when what an editor writes changes.
+ * - The first publication date never moves once set.
+ * - The last publication date is when the site last changed.
  */
 #[ORM\Embeddable]
 final readonly class Timeline
@@ -18,16 +21,29 @@ final readonly class Timeline
         private \DateTimeImmutable $createdAt,
         #[ORM\Column(name: 'updated_at')]
         private \DateTimeImmutable $updatedAt,
-    ) {}
+        #[ORM\Column(name: 'first_published_at', nullable: true)]
+        private ?\DateTimeImmutable $firstPublishedAt,
+        #[ORM\Column(name: 'last_published_at', nullable: true)]
+        private ?\DateTimeImmutable $lastPublishedAt,
+    ) {
+        if ((null === $firstPublishedAt) !== (null === $lastPublishedAt)) {
+            throw InvalidImagePublication::incompleteDates();
+        }
+    }
 
     public static function start(\DateTimeImmutable $now): self
     {
-        return new self($now, $now);
+        return new self($now, $now, null, null);
     }
 
     public function updated(\DateTimeImmutable $now): self
     {
-        return new self($this->createdAt, $now);
+        return new self($this->createdAt, $now, $this->firstPublishedAt, $this->lastPublishedAt);
+    }
+
+    public function published(\DateTimeImmutable $now): self
+    {
+        return new self($this->createdAt, $this->updatedAt, $this->firstPublishedAt ?? $now, $now);
     }
 
     public function createdAt(): \DateTimeImmutable

@@ -38,6 +38,7 @@ final class PostUpdateController extends AbstractController
                 $request->request->getString('section'),
                 $request->request->getString('author'),
                 self::tags($request),
+                $request->request->getString('opening_image'),
                 // The editor posts its own document, which only this adapter knows.
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),

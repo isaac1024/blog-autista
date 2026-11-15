@@ -6,7 +6,7 @@ namespace Cms\Page\Application;
 
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\SlugAvailability;
+use Cms\Page\Domain\PageSlugAvailability;
 use Shared\Domain\Event\EventBus;
 
 /**
@@ -23,7 +23,7 @@ final readonly class PageCreator
     {
         $page = Page::create($this->id, $this->title);
 
-        new SlugAvailability($page)($pageRepository);
+        new PageSlugAvailability($page)($pageRepository);
         $page->save($pageRepository, $eventBus);
     }
 }

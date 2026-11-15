@@ -11,7 +11,7 @@ use Shared\Domain\Event\EventBus;
 
 /**
  * Saves everything edited on an existing post: its title, slug, section,
- * author and tags, content and search engine settings. A published post
+ * author and tags, opening image, content and search engine settings. A published post
  * stays on the site as it was until it is published again.
  *
  * It carries what an editor writes, one parameter each.
@@ -21,10 +21,11 @@ use Shared\Domain\Event\EventBus;
 final readonly class PostUpdater
 {
     /**
-     * @param string                  $section blank for none
-     * @param string                  $author  blank for none
-     * @param list<string>            $tags    ids, in order
-     * @param array<array-key, mixed> $content in the stored rich text format
+     * @param string                  $section      blank for none
+     * @param string                  $author       blank for none
+     * @param list<string>            $tags         ids, in order
+     * @param string                  $openingImage id of the image, blank for none
+     * @param array<array-key, mixed> $content      in the stored rich text format
      */
     public function __construct(
         private string $id,
@@ -33,6 +34,7 @@ final readonly class PostUpdater
         private string $section,
         private string $author,
         private array $tags,
+        private string $openingImage,
         private array $content,
         private string $metaDescription,
         private string $robots,
@@ -48,6 +50,7 @@ final readonly class PostUpdater
             $this->section,
             $this->author,
             $this->tags,
+            $this->openingImage,
             $this->content,
             $this->metaDescription,
             $this->robots,

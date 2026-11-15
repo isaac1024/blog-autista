@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cms\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\PublicationOutlookFinder;
-use Cms\Redirect\Application\RedirectResponse;
+use Cms\Redirect\Application\RedirectAtAddressFinder;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
@@ -101,9 +101,9 @@ final readonly class LastAddressPanel
             return null;
         }
 
-        $redirect = $this->redirectRepository->findBySource($address);
+        $response = new RedirectAtAddressFinder($address)($this->redirectRepository);
 
-        if (null === $redirect) {
+        if (null === $response) {
             $url = rtrim($this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL), '/').$address->shown();
 
             return new PageComponent('Shared:Panel', [
@@ -116,8 +116,6 @@ final readonly class LastAddressPanel
                 ]),
             ]);
         }
-
-        $response = RedirectResponse::fromRedirect($redirect);
 
         return new PageComponent('Shared:Panel', [
             'title' => $this->translator->trans('cms.redirects.last_address.title'),

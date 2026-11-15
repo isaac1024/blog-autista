@@ -6,6 +6,7 @@ namespace Web\Page\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\RichText\RichText;
+use Web\Shared\Domain\Robots;
 
 /**
  * A page on the site, as the CMS last published it: only published pages

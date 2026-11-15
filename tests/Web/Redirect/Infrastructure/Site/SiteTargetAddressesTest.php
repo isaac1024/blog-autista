@@ -23,7 +23,8 @@ use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
-use Web\Tests\Post\Infrastructure\CmsPostSubscribersTest;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostIdMother;
 
 /**
  * Where the site serves each resource now: a page at its slug, the home
@@ -48,7 +49,7 @@ final class SiteTargetAddressesTest extends KernelTestCase
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Destino', slug: 'destino')));
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::HOME, title: 'Portada', slug: null, type: PageType::Home)));
         self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/'.self::IMAGE.'.webp')));
-        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(CmsPostSubscribersTest::POST, CmsPostSubscribersTest::body() + ['revision' => 1])));
+        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::DEFAULT_VALUE, CmsPostPublishedMother::body() + ['revision' => 1])));
         $terms = self::getContainer()->get(TermRepository::class);
         $terms->save(self::term(self::SECTION, 'section', 'vida-diaria'));
         $terms->save(self::term(self::TAG, 'tag', 'sueno'));
@@ -76,7 +77,7 @@ final class SiteTargetAddressesTest extends KernelTestCase
         yield 'an image at a width' => ['image', self::IMAGE, 400, '/media/2026/11/'.self::IMAGE.'-400w.webp'];
         yield 'an image at no width' => ['image', self::IMAGE, null, '/media/2026/11/'.self::IMAGE.'-1200w.webp'];
         yield 'an image not on the site' => ['image', self::NONE, 400, null];
-        yield 'a post' => ['post', CmsPostSubscribersTest::POST, null, '/vida-diaria/2026/11/07/mi-primer-dia.html'];
+        yield 'a post' => ['post', PostIdMother::DEFAULT_VALUE, null, '/vida-diaria/2026/11/07/mi-primer-dia.html'];
         yield 'a post not on the site' => ['post', self::NONE, null, null];
         yield 'a section' => ['term', self::SECTION, null, '/vida-diaria/'];
         yield 'a tag' => ['term', self::TAG, null, '/tag/sueno.html'];

@@ -6,7 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
-use Cms\Page\Domain\InvalidPublication;
+use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
@@ -81,7 +81,7 @@ final class PageDeleterTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::never())->method('delete');
 
-        $this->expectExceptionObject(InvalidPublication::publishedPage());
+        $this->expectExceptionObject(InvalidPagePublication::publishedPage());
 
         (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
     }
@@ -151,7 +151,7 @@ final class PageDeleterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        $this->expectExceptionObject(InvalidPublication::linkedPage());
+        $this->expectExceptionObject(InvalidPagePublication::linkedPage());
 
         (new PageDeleter($page->id()->value()))($repository, $eventBus, $pageUsage);
     }

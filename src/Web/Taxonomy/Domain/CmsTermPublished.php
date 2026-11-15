@@ -6,6 +6,7 @@ namespace Web\Taxonomy\Domain;
 
 use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedReceivedEvent;
+use Web\Shared\Domain\Robots;
 
 /**
  * The CMS put a term on the site, or replaced its version there, with all the

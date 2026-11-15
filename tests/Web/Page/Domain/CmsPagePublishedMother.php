@@ -8,7 +8,7 @@ use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
 use Web\Page\Domain\CmsPagePublished;
 use Web\Page\Domain\PageType;
-use Web\Page\Domain\Robots;
+use Web\Shared\Domain\Robots;
 
 /**
  * Builds the event the CMS sends the site when it publishes a page, as the

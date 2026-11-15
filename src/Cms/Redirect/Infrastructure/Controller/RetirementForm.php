@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
+use Cms\Redirect\Application\AllIncomingRedirectsFinder;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
@@ -44,7 +45,7 @@ final readonly class RetirementForm
      */
     public function __invoke(Resource $resource, string $action, string $csrfTokenId, string $submit, array $posted): array
     {
-        $incoming = array_map(RedirectResponse::fromRedirect(...), $this->redirectRepository->findTargeting($resource));
+        $incoming = new AllIncomingRedirectsFinder($resource)($this->redirectRepository);
 
         return [
             new PageComponent('Shared:Form', [

@@ -87,7 +87,7 @@ final class CmsSiteResourcesTest extends KernelTestCase
         $authors->save(AuthorMother::unpublished(id: self::AUTHOR_OFF_SITE, slug: 'ana'));
         $posts = self::getContainer()->get(PostRepository::class);
         $post = PostMother::published(id: self::POST, slug: 'otro-dia', section: self::SECTION, author: self::AUTHOR);
-        $post->edit(PostMother::TITLE, 'otro-dia-mas', self::SECTION, self::AUTHOR, [], PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
+        $post->edit(PostMother::TITLE, 'otro-dia-mas', self::SECTION, self::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
         $posts->save($post);
         $posts->save(PostMother::unpublished(id: self::POST_OFF_SITE));
         $posts->save(PostMother::publishable(id: self::POST_DRAFT, slug: 'borrador', section: self::SECTION, author: self::AUTHOR));

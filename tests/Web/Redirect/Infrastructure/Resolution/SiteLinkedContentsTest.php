@@ -20,7 +20,8 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
-use Web\Tests\Post\Infrastructure\CmsPostSubscribersTest;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostIdMother;
 
 /**
  * What a rich text painted on the site links to, its widgets and the
@@ -43,7 +44,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
     protected function setUp(): void
     {
         self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi')));
-        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(CmsPostSubscribersTest::POST, CmsPostSubscribersTest::body() + ['revision' => 1])));
+        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::DEFAULT_VALUE, CmsPostPublishedMother::body() + ['revision' => 1])));
         $terms = self::getContainer()->get(TermRepository::class);
         $terms->save(self::term(self::SECTION, 'section', 'Vida diaria', 'vida-diaria'));
         $terms->save(self::term(self::TAG, 'tag', 'Sueño', 'sueno'));
@@ -68,7 +69,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
     {
         $content = self::text(
             ['page_id' => self::PAGE],
-            ['post_id' => CmsPostSubscribersTest::POST],
+            ['post_id' => PostIdMother::DEFAULT_VALUE],
             ['term_id' => self::SECTION],
             ['author_id' => self::AUTHOR],
             ['term_id' => self::GONE_TAG],
@@ -81,7 +82,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
 
         self::assertEqualsCanonicalizing([
             self::PAGE => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí'],
-            CmsPostSubscribersTest::POST => ['url' => '/vida-diaria/2026/11/07/mi-primer-dia.html', 'title' => 'Mi primer día sin ruido'],
+            PostIdMother::DEFAULT_VALUE => ['url' => '/vida-diaria/2026/11/07/mi-primer-dia.html', 'title' => 'Mi primer día sin ruido'],
             self::SECTION => ['url' => '/vida-diaria/', 'title' => 'Vida diaria'],
             self::AUTHOR => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
             self::TAG => ['url' => '/tag/sueno.html', 'title' => 'Sueño'],
@@ -95,10 +96,10 @@ final class SiteLinkedContentsTest extends KernelTestCase
      */
     public function testItNeverShowsTheContentPaintedInPlaceOfAnother(): void
     {
-        self::redirect('01a1b801-ce58-723d-8234-b76d9105c003', '/vida-diaria/2026/11/01/antiguo.html', 'post', CmsPostSubscribersTest::POST, 'post', self::OFF_SITE);
+        self::redirect('01a1b801-ce58-723d-8234-b76d9105c003', '/vida-diaria/2026/11/01/antiguo.html', 'post', PostIdMother::DEFAULT_VALUE, 'post', self::OFF_SITE);
         $content = self::text(['post_id' => self::OFF_SITE], ['page_id' => self::PAGE]);
 
-        self::assertSame([self::PAGE], array_keys(self::getContainer()->get(SiteLinkedContents::class)($content, [], CmsPostSubscribersTest::POST)));
+        self::assertSame([self::PAGE], array_keys(self::getContainer()->get(SiteLinkedContents::class)($content, [], PostIdMother::DEFAULT_VALUE)));
         self::assertSame([self::PAGE, self::OFF_SITE], array_keys(self::getContainer()->get(SiteLinkedContents::class)($content, [], null)));
     }
 

@@ -18,8 +18,8 @@ use Shared\Domain\RichText\RichText;
 final readonly class PageVersion
 {
     public function __construct(
-        #[ORM\Embedded(class: Title::class, columnPrefix: false)]
-        private Title $title,
+        #[ORM\Embedded(class: PageTitle::class, columnPrefix: false)]
+        private PageTitle $title,
         #[ORM\Column(name: 'slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
         private ?Slug $slug,
         #[ORM\Column(name: 'content', type: 'rich_text')]
@@ -37,15 +37,15 @@ final readonly class PageVersion
     public function assertPublishableAs(PageType $type): void
     {
         if (null === $this->slug && !$type->isHome()) {
-            throw InvalidPublication::withoutSlug();
+            throw InvalidPagePublication::withoutSlug();
         }
 
         if ([] === $this->content->blocks()) {
-            throw InvalidPublication::withoutContent();
+            throw InvalidPagePublication::withoutContent();
         }
 
         if (null === $this->seo->description()) {
-            throw InvalidPublication::withoutMetaDescription();
+            throw InvalidPagePublication::withoutMetaDescription();
         }
     }
 
@@ -58,7 +58,7 @@ final readonly class PageVersion
             && $this->seo->robots() === $other->seo->robots();
     }
 
-    public function title(): Title
+    public function title(): PageTitle
     {
         return $this->title;
     }

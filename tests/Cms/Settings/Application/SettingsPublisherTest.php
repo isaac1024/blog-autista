@@ -53,9 +53,9 @@ final class SettingsPublisherTest extends TestCase
 
         yield 'a draft with only a name' => [Mother::create(createdAt: self::BEFORE), Mother::published(createdAt: self::BEFORE)];
         yield 'a draft with everything' => [Mother::create($edited, createdAt: self::BEFORE), Mother::published($edited, createdAt: self::BEFORE)];
-        yield 'published settings with changes' => [
-            Mother::published($edited, Mother::version(), createdAt: self::BEFORE),
-            Mother::published($edited, createdAt: self::BEFORE, publicationRevision: 2),
+        yield 'published settings with changes, keeping their first publication' => [
+            Mother::published($edited, Mother::version(), createdAt: self::BEFORE, firstPublishedAt: self::BEFORE, lastPublishedAt: self::BEFORE),
+            Mother::published($edited, createdAt: self::BEFORE, publicationRevision: 2, firstPublishedAt: self::BEFORE),
         ];
     }
 

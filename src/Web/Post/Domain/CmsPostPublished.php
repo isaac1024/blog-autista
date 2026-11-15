@@ -7,11 +7,12 @@ namespace Web\Post\Domain;
 use Shared\Domain\Event\EventBody;
 use Shared\Domain\Event\RevisedReceivedEvent;
 use Shared\Domain\RichText\RichText;
+use Web\Shared\Domain\Robots;
 
 /**
  * The CMS put a post on the site, or replaced its version there, with all the
- * site needs to serve it: where it is served, and the names of its section
- * and its author as they were then. The site declares it on its own, by the
+ * site needs to serve it: where it is served, the image it opens with, and
+ * the names of its section and its author as they were then. The site declares it on its own, by the
  * name the CMS publishes it under.
  *
  * It carries what the site shows, one parameter each.
@@ -35,6 +36,7 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
         private string $authorId,
         private string $authorName,
         private array $tagIds,
+        private string $openingImageId,
         private RichText $content,
         private ?string $metaDescription,
         private Robots $robots,
@@ -68,6 +70,7 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
             $body->string('author_id'),
             $body->string('author_name'),
             $body->stringList('tag_ids'),
+            $body->string('opening_image_id'),
             RichText::fromArray($body->array('content')),
             '' === $metaDescription ? null : $metaDescription,
             Robots::from($body->string('robots')),
@@ -119,6 +122,11 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
     public function tagIds(): array
     {
         return $this->tagIds;
+    }
+
+    public function openingImageId(): string
+    {
+        return $this->openingImageId;
     }
 
     public function content(): RichText

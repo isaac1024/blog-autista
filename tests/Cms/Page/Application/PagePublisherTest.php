@@ -6,7 +6,7 @@ namespace Cms\Tests\Page\Application;
 
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PagePublisher;
-use Cms\Page\Domain\InvalidPublication;
+use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
@@ -164,27 +164,27 @@ final class PagePublisherTest extends TestCase
     {
         yield 'a draft without a slug' => [
             PageMother::create(slug: '', content: PageMother::CONTENT, metaDescription: PageMother::META_DESCRIPTION),
-            InvalidPublication::withoutSlug(),
+            InvalidPagePublication::withoutSlug(),
         ];
         yield 'a draft without content' => [
             PageMother::create(metaDescription: PageMother::META_DESCRIPTION),
-            InvalidPublication::withoutContent(),
+            InvalidPagePublication::withoutContent(),
         ];
         yield 'a draft without a meta description' => [
             PageMother::create(content: PageMother::CONTENT),
-            InvalidPublication::withoutMetaDescription(),
+            InvalidPagePublication::withoutMetaDescription(),
         ];
         yield 'a published page saved without content' => [
             PageMother::published(content: RichTextMother::EMPTY, publishedContent: PageMother::CONTENT),
-            InvalidPublication::withoutContent(),
+            InvalidPagePublication::withoutContent(),
         ];
         yield 'a published page saved without a meta description' => [
             PageMother::published(metaDescription: null, publishedMetaDescription: PageMother::META_DESCRIPTION),
-            InvalidPublication::withoutMetaDescription(),
+            InvalidPagePublication::withoutMetaDescription(),
         ];
         yield 'a published page as it is on the site' => [
             PageMother::published(),
-            InvalidPublication::nothingToPublish(),
+            InvalidPagePublication::nothingToPublish(),
         ];
     }
 

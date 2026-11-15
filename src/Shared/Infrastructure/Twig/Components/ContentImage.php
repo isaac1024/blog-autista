@@ -8,7 +8,9 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
  * An image of written content with its caption: the browser picks the copy
- * that fits from the srcset.
+ * that fits from the srcset. The one a post opens with is fetched first,
+ * since it is the largest thing the reader sees as the page loads; any other
+ * waits until it is about to be seen.
  *
  * Its props are declared in mount(), as for every component, so it takes as
  * many parameters as it has props.
@@ -37,10 +39,16 @@ final class ContentImage
     public array $caption = [];
 
     /**
+     * Whether it opens the page, so it is fetched first rather than lazily.
+     */
+    public bool $opening = false;
+
+    /**
      * @param list<array{href: ?string, runs: list<array{text: string, bold: bool}>}> $caption stretches of text, each linking one page or none
      */
-    public function mount(string $src, string $srcset, int $width, int $height, string $alt, array $caption): void
+    public function mount(string $src, string $srcset, int $width, int $height, string $alt, array $caption, bool $opening): void
     {
+        $this->opening = $opening;
         $this->src = $src;
         $this->srcset = $srcset;
         $this->width = $width;

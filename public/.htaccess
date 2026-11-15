@@ -5,6 +5,15 @@
 # to each configured DirectoryIndex file (e.g. index.php, index.html, index.pl).
 DirectoryIndex index.php
 
+# When PHP doesn't answer at all (its processes are all busy, or it is down),
+# Apache serves the static copy of the site's error page that `error:dump`
+# writes at deploy time (see docker/README.md), instead of its own. An error
+# PHP answers keeps the page PHP paints.
+ErrorDocument 500 /error/500.html
+ErrorDocument 502 /error/502.html
+ErrorDocument 503 /error/503.html
+ErrorDocument 504 /error/504.html
+
 # By default, Apache does not evaluate symbolic links if you did not enable this
 # feature in your server configuration. Uncomment the following line if you
 # install assets as symlinks or if you experience problems related to symlinks

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /*
@@ -27,7 +28,7 @@ return static function (RoutingConfigurator $routes): void {
     // The public site is only in Spanish, whatever language the browser asks for.
     $routes->import(['path' => '../src/Web/', 'namespace' => 'Web'], 'attribute')
         ->host($host('WEB_HOST'))
-        ->defaults(['_locale' => 'es']);
+        ->defaults(['_locale' => WebLayout::LOCALE]);
 
     $routes->import(['path' => '../src/Cms/', 'namespace' => 'Cms'], 'attribute')
         ->host($host('CMS_HOST'));

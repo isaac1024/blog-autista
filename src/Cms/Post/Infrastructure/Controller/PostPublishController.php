@@ -7,6 +7,7 @@ namespace Cms\Post\Infrastructure\Controller;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostPublisher;
 use Cms\Post\Domain\Classifiers;
+use Cms\Post\Domain\ImagesOnSite;
 use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Application\ResourcePublication;
@@ -51,7 +52,7 @@ final class PostPublishController extends AbstractController
     ) {}
 
     #[Route('/posts/{id}/publish', name: 'cms_posts_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, ImagesOnSite $imagesOnSite): Response
     {
         $this->csrf->assertValid($request);
 
@@ -72,8 +73,8 @@ final class PostPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($id, $postRepository, $eventBus, $classifiers, $mutualExclusion): void {
-                    new PostPublisher($id)($postRepository, $eventBus, $classifiers, $mutualExclusion);
+                static function () use ($id, $postRepository, $eventBus, $classifiers, $imagesOnSite, $mutualExclusion): void {
+                    new PostPublisher($id)($postRepository, $eventBus, $classifiers, $imagesOnSite, $mutualExclusion);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PostNotFound $exception) {

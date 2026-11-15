@@ -79,16 +79,7 @@ final readonly class RedirectNames
      */
     private function resourceNames(array $redirects): array
     {
-        $ids = array_fill_keys(array_map(static fn (ResourceType $type): string => $type->value, ResourceType::cases()), []);
-
-        foreach ($redirects as $redirect) {
-            foreach ([[$redirect->targetType, $redirect->targetId], [$redirect->originType, $redirect->originId]] as [$type, $id]) {
-                if (null !== $type && null !== $id && \array_key_exists($type, $ids)) {
-                    $ids[$type][] = $id;
-                }
-            }
-        }
-
+        $ids = self::idsByType($redirects);
         $names = [];
         $named = static function (ResourceType $type, string $id, string $name, string $kind) use (&$names): void {
             $names[$type->value.':'.$id] = ['name' => $name, 'kind' => $kind];
@@ -116,6 +107,30 @@ final readonly class RedirectNames
         }
 
         return $names;
+    }
+
+    /**
+     * The ids of what the redirects lead to and of what was at their
+     * addresses, by the value of each type of resource; every type is there,
+     * with no id when none names one.
+     *
+     * @param list<RedirectResponse> $redirects
+     *
+     * @return array<string, list<string>>
+     */
+    private static function idsByType(array $redirects): array
+    {
+        $ids = array_fill_keys(array_map(static fn (ResourceType $type): string => $type->value, ResourceType::cases()), []);
+
+        foreach ($redirects as $redirect) {
+            foreach ([[$redirect->targetType, $redirect->targetId], [$redirect->originType, $redirect->originId]] as [$type, $id]) {
+                if (null !== $type && null !== $id && \array_key_exists($type, $ids)) {
+                    $ids[$type][] = $id;
+                }
+            }
+        }
+
+        return $ids;
     }
 
     /**

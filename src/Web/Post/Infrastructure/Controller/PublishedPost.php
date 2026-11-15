@@ -13,7 +13,7 @@ use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Application\AuthorResponse;
 use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImageResponse;
-use Web\Image\Application\PublishedImagesFinder;
+use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Application\PostResponse;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
@@ -61,12 +61,13 @@ final readonly class PublishedPost
             'slug' => $post->slug,
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        // An image off the site is painted as the one its address now leads
-        // to, if any, so the pages its caption links to are those of that one.
+        // An image off the site, the opening one too, is painted as the one
+        // its address now leads to, if any, so the pages its caption links to
+        // are those of that one.
         $images = array_map(
             static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
-            new ReferenceResolver('image', $post->content->imageIds(), null)(
-                fn (array $ids): array => new PublishedImagesFinder($ids)($this->imageRepository),
+            new ReferenceResolver('image', [$post->openingImageId, ...$post->content->imageIds()], null)(
+                fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
                 $this->redirectsByOrigin,
             ),
         );
@@ -93,6 +94,7 @@ final readonly class PublishedPost
                 ? ['name' => $post->authorName, 'url' => null]
                 : ['name' => $author->name, 'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug])],
             $this->tags($post->tagIds),
+            $images[$post->openingImageId] ?? null,
             $post->content,
             $images,
             ($this->linkedContents)($post->content, $images, $post->id),

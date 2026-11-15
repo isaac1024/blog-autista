@@ -6,76 +6,106 @@ namespace Cms\Tests\Author\Application;
 
 use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Application\AuthorSearcher;
-use Cms\Author\Application\AuthorsFinder;
+use Cms\Author\Application\AuthorsResponse;
+use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Domain\NameFilter;
 use Cms\Tests\Author\Domain\AuthorIdMother;
 use Cms\Tests\Author\Domain\AuthorMother;
-use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\InvalidCriteria;
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
 
-/**
- * Searches and finds the authors stored, as the CMS lists them.
- */
-final class AuthorSearcherTest extends KernelTestCase
+final class AuthorSearcherTest extends TestCase
 {
-    #[\Override]
-    protected function tearDown(): void
+    #[DataProvider('searches')]
+    public function testItAsksTheRepositoryForTheRequestedSliceOfAuthors(AuthorSearcher $searcher, Criteria $expected): void
     {
-        self::getContainer()->get(EntityManagerInterface::class)->clear();
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->expects(self::once())
+            ->method('matching')
+            ->with(self::equalTo($expected))
+            ->willReturn([]);
 
-        parent::tearDown();
+        $searcher($repository);
     }
 
-    public function testItListsTheAuthorsNewestFirstAndNarrowsThemDownByName(): void
+    /**
+     * @return iterable<string, array{AuthorSearcher, Criteria}>
+     */
+    public static function searches(): iterable
     {
-        $older = AuthorIdMother::random()->value();
-        $newer = AuthorIdMother::random()->value();
-        self::repository()->save(AuthorMother::create(id: $older, name: 'Isaac Abreu', slug: 'isaac'));
-        self::repository()->save(AuthorMother::create(id: $newer, name: 'Ana Ruiz', slug: 'ana'));
+        $newestFirst = new Order('id', OrderDirection::Descending);
+        $pageSize = AuthorSearcher::PAGE_SIZE;
+        // One more than a page tells whether another follows.
+        $limit = $pageSize + 1;
 
-        self::assertSame([$newer, $older], self::ids(new AuthorSearcher('', 1)(self::repository())->authors));
-        self::assertSame([$older], self::ids(new AuthorSearcher(' abreu ', 1)(self::repository())->authors));
+        yield 'no name, first page' => [
+            new AuthorSearcher('', 1),
+            new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0),
+        ];
+        yield 'blank name does not filter' => [
+            new AuthorSearcher('   ', 1),
+            new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0),
+        ];
+        yield 'name is trimmed before filtering' => [
+            new AuthorSearcher(' abreu ', 1),
+            new Criteria(limit: $limit, filters: [NameFilter::contains('abreu')], order: $newestFirst, offset: 0),
+        ];
+        yield 'later pages skip every previous one' => [
+            new AuthorSearcher('abreu', 3),
+            new Criteria(limit: $limit, filters: [NameFilter::contains('abreu')], order: $newestFirst, offset: 2 * $pageSize),
+        ];
     }
 
-    public function testItTellsWhetherMoreAuthorsFollow(): void
+    public function testItReturnsTheFoundAuthorsInTheRepositoryOrder(): void
     {
-        for ($i = 0; $i <= AuthorSearcher::PAGE_SIZE; ++$i) {
-            self::repository()->save(AuthorMother::create(id: AuthorIdMother::random()->value(), name: 'Autor '.$i, slug: 'autor-'.$i));
-        }
+        $newer = AuthorMother::create(id: AuthorIdMother::random()->value(), name: 'Ana Ruiz', slug: 'ana');
+        $older = AuthorMother::create(id: AuthorIdMother::random()->value());
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('matching')->willReturn([$newer, $older]);
 
-        self::assertTrue(new AuthorSearcher('', 1)(self::repository())->hasMore);
-        self::assertCount(1, new AuthorSearcher('', 2)(self::repository())->authors);
+        self::assertEquals(
+            new AuthorsResponse([AuthorResponse::fromAuthor($newer), AuthorResponse::fromAuthor($older)], false),
+            new AuthorSearcher('', 1)($repository),
+        );
+    }
+
+    #[DataProvider('pageSizes')]
+    public function testItTellsWhetherMoreAuthorsFollow(int $found, int $listed, bool $hasMore): void
+    {
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('matching')->willReturn(array_map(
+            static fn (int $index): Author => AuthorMother::create(id: AuthorIdMother::random()->value(), name: 'Autor '.$index, slug: 'autor-'.$index),
+            range(1, $found),
+        ));
+
+        $authors = new AuthorSearcher('', 1)($repository);
+
+        self::assertCount($listed, $authors->authors);
+        self::assertSame($hasMore, $authors->hasMore);
+    }
+
+    /**
+     * @return iterable<string, array{int, int, bool}>
+     */
+    public static function pageSizes(): iterable
+    {
+        yield 'fewer than a page' => [3, 3, false];
+        yield 'exactly a page' => [AuthorSearcher::PAGE_SIZE, AuthorSearcher::PAGE_SIZE, false];
+        yield 'more than a page' => [AuthorSearcher::PAGE_SIZE + 1, AuthorSearcher::PAGE_SIZE, true];
     }
 
     public function testItRefusesAPageBeforeTheFirst(): void
     {
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->expects(self::never())->method('matching');
+
         $this->expectExceptionObject(InvalidCriteria::nonPositivePage(0));
 
-        new AuthorSearcher('', 0)(self::repository());
-    }
-
-    public function testItFindsTheAuthorsAmongTheIdsGiven(): void
-    {
-        $id = AuthorIdMother::random()->value();
-        self::repository()->save(AuthorMother::create(id: $id));
-
-        self::assertSame([$id], self::ids(new AuthorsFinder([$id, AuthorIdMother::random()->value()])(self::repository())));
-        self::assertSame([], new AuthorsFinder([])(self::repository()));
-    }
-
-    /**
-     * @param list<AuthorResponse> $authors
-     *
-     * @return list<string>
-     */
-    private static function ids(array $authors): array
-    {
-        return array_map(static fn (AuthorResponse $author): string => $author->id, $authors);
-    }
-
-    private static function repository(): AuthorRepository
-    {
-        return self::getContainer()->get(AuthorRepository::class);
+        new AuthorSearcher('', 0)($repository);
     }
 }

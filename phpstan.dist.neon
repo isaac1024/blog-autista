@@ -37,6 +37,6 @@ services:
         tags:
             - phpat.test
     -
-        class: Cms\Tests\Architecture\HexagonalArchitectureRules
+        class: Shared\Tests\Architecture\HexagonalArchitectureRules
         tags:
             - phpat.test

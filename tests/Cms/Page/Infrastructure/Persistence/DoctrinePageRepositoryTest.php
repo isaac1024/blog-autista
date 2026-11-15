@@ -9,8 +9,8 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
+use Cms\Page\Domain\PageSlugAlreadyTaken;
 use Cms\Page\Domain\PageType;
-use Cms\Page\Domain\SlugAlreadyTaken;
 use Cms\Page\Domain\TitleFilter;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Shared\Domain\Robots;
@@ -123,7 +123,7 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $repository = $this->repository();
         $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Sobre mí', slug: 'sobre-mi'));
 
-        $this->expectExceptionObject(SlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
+        $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
         $repository->save(PageMother::create(id: PageId::random()->value(), title: 'Quién soy', slug: 'sobre-mi'));
     }
@@ -239,7 +239,7 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         $published->edit('Quién soy', 'quien-soy', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');
         $this->repository()->save($published);
 
-        $this->expectException(SlugAlreadyTaken::class);
+        $this->expectException(PageSlugAlreadyTaken::class);
 
         $other = PageMother::published(id: PageId::random()->value(), title: 'Otra', slug: 'otra');
         $other->edit('Otra', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION, 'index,follow');

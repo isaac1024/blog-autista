@@ -127,6 +127,7 @@ final class Image extends AggregateRoot
         $this->changePagesLinked(function (): void {
             $this->published = $this->version;
         });
+        $this->timeline = $this->timeline->published(Clock::now());
         ++$this->publicationRevision;
 
         $this->record(new ImagePublished(

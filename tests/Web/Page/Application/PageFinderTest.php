@@ -11,7 +11,7 @@ use Web\Page\Application\PageNotFound;
 use Web\Page\Application\PageResponse;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
-use Web\Page\Domain\Robots;
+use Web\Shared\Domain\Robots;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 

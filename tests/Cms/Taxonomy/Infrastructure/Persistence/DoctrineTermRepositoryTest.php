@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Cms\Tests\Taxonomy\Infrastructure\Persistence;
 
 use Cms\Shared\Domain\Robots;
+use Cms\Taxonomy\Domain\NameFilter;
 use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\TaxonomyFilter;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermSlugAlreadyTaken;
@@ -16,6 +18,8 @@ use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Domain\Criteria\Criteria;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -116,6 +120,26 @@ final class DoctrineTermRepositoryTest extends KernelTestCase
         self::assertCount(4, $this->repository()->matching(new Criteria(limit: 10, filters: [], order: null, offset: 0)));
     }
 
+    /**
+     * Newest first, of a taxonomy, and narrowed down to those whose name has
+     * the text, as short as an acronym, in any case.
+     */
+    public function testItFindsTheTermsMatchingTheCriteria(): void
+    {
+        $older = TermIdMother::random()->value();
+        $newer = TermIdMother::random()->value();
+        $tea = TermIdMother::random()->value();
+        $this->repository()->save(TermMother::create(id: $older, name: 'Vida diaria', slug: 'vida-diaria'));
+        $this->repository()->save(TermMother::create(id: $newer, name: 'Trabajo', slug: 'trabajo'));
+        $this->repository()->save(TermMother::create(id: $tea, taxonomy: Taxonomy::Tag, name: 'TEA', slug: 'tea'));
+        $this->entityManager()->clear();
+        $newestFirst = new Order('id', OrderDirection::Descending);
+
+        self::assertSame([$newer, $older], self::ids($this->repository()->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [TaxonomyFilter::equalTo(Taxonomy::Section)], order: $newestFirst, offset: 0))));
+        self::assertSame([$tea], self::ids($this->repository()->matching(new Criteria(limit: Criteria::MAX_LIMIT, filters: [TaxonomyFilter::equalTo(Taxonomy::Tag), NameFilter::contains('te')], order: $newestFirst, offset: 0))));
+        self::assertSame([$older], self::ids($this->repository()->matching(new Criteria(limit: 1, filters: [TaxonomyFilter::equalTo(Taxonomy::Section)], order: $newestFirst, offset: 1))));
+    }
+
     public function testItDeletesOnlyTheGivenTerm(): void
     {
         $kept = TermMother::create(id: TermIdMother::random()->value(), slug: 'otra');
@@ -163,6 +187,16 @@ final class DoctrineTermRepositoryTest extends KernelTestCase
     public function testItsTableIsTheOneMapped(): void
     {
         self::assertTablesAreMapped('cms_term');
+    }
+
+    /**
+     * @param list<Term> $terms
+     *
+     * @return list<string>
+     */
+    private static function ids(array $terms): array
+    {
+        return array_map(static fn (Term $term): string => $term->id()->value(), $terms);
     }
 
     private function repository(): TermRepository

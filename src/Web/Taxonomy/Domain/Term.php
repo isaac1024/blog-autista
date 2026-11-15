@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Taxonomy\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
+use Web\Shared\Domain\Robots;
 
 /**
  * A term of a taxonomy on the site, as the CMS last published it: only

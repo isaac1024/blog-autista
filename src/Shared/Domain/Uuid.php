@@ -9,6 +9,12 @@ use Symfony\Component\Uid\Uuid as SymfonyUuid;
 /**
  * Base value object for identifiers expressed as an RFC 4122 UUID, kept in
  * lowercase as the database gives them back, however they were written.
+ *
+ * Every aggregate, and every module that refers to one, has an identifier of
+ * its own, so they grow in number with the domain rather than with how it is
+ * designed.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract readonly class Uuid implements \Stringable
 {

@@ -16,6 +16,12 @@ final class WebLayout
 {
     public const string TEMPLATE = 'shared/web_layout.html.twig';
 
+    /**
+     * The one language of the public site, whatever the browser asks for:
+     * its routes, its error pages and their static copies all speak it.
+     */
+    public const string LOCALE = 'es';
+
     public const string MAIN_CLASS = 'mx-auto flex w-full max-w-[46rem] flex-col gap-8 px-[clamp(1rem,4vw,2rem)] py-[clamp(2rem,6vw,4rem)]';
 
     public static function page(string $title, SiteChrome $chrome): Page

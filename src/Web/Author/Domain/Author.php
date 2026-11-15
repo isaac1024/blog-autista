@@ -7,6 +7,7 @@ namespace Web\Author\Domain;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AvatarCopy;
 use Shared\Domain\RichText\RichText;
+use Web\Shared\Domain\Robots;
 
 /**
  * An author on the site, as the CMS last published it: only published

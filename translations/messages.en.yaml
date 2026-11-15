@@ -62,6 +62,7 @@ cms:
         sections: 'Sections'
         tags: 'Tags'
         authors: 'Authors'
+        externals: 'External resources'
         redirects: 'Redirects'
         settings: 'Settings'
         logout: 'Sign out'
@@ -996,6 +997,9 @@ cms:
             slug_label: 'Web address (slug)'
             slug_hint: 'Only lowercase letters without accents, numbers and hyphens. It goes after the section and the date of the first publication, which never changes. You can leave it blank until you publish the post.'
             no_section: 'section'
+            opening_image_label: 'Opening image'
+            opening_image_hint: 'It opens the post, and Google and Discover show it when they link or share it. It is needed to publish, and must be published.'
+            opening_image_off_site: 'The post can’t be published until you publish it.'
             content_title: 'Content'
             content_placeholder: 'Write the post here…'
             meta_description_hint: 'The summary shown under the title in the results: one or two sentences that invite reading it.'
@@ -1124,6 +1128,9 @@ site:
     gone:
         title: 'This page no longer exists'
         message: 'It was taken off the blog and won’t be available again.'
+    server_error:
+        title: 'Something went wrong on the blog'
+        message: 'It isn’t your fault. Try again in a while.'
     post:
         published: 'Published on'
         updated: 'Updated on'
@@ -1553,10 +1560,12 @@ errors:
             without_slug: 'The post can’t be published without an address.'
             without_section: 'The post can’t be published without a section.'
             without_author: 'The post can’t be published without an author.'
+            without_opening_image: 'The post can’t be published without an opening image.'
             without_content: 'The post can’t be published without content.'
             without_meta_description: 'The post can’t be published without a meta description.'
             section_off_site: 'The section of the post isn’t published. Publish it first, or choose another.'
             author_off_site: 'The author of the post isn’t published. Publish it first, or choose another.'
+            opening_image_off_site: 'The opening image of the post isn’t published. Publish it first, or choose another.'
             nothing_to_publish: 'The post is published as it is: there is nothing to publish.'
             not_published: 'Only a published post can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
@@ -1578,6 +1587,7 @@ errors:
         publication:
             nothing_to_publish: 'The settings are published as they are: there is nothing to publish.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
+            incomplete_dates: 'The publication dates of the settings are incomplete.'
     image:
         alt:
             empty: 'The alternative text can’t be empty.'
@@ -1597,3 +1607,4 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_image: 'A published image can’t be deleted: unpublish it first.'
             in_use: 'This image is used in some page, post or author bio, or is the default image of the blog, so it can’t be deleted. Take it out of where it is used first.'
+            incomplete_dates: 'The publication dates of the image are incomplete.'
