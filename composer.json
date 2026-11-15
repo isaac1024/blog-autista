@@ -125,8 +125,14 @@
         "test": "paratest",
         "test:serial": "phpunit",
         "check:ui": "node tools/ui-check.mjs",
-        "infection": "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection --with-uncovered",
-        "infection:diff": "XDEBUG_MODE=coverage infection --with-uncovered --git-diff-lines --git-diff-base=master",
+        "infection": [
+            "Composer\\Config::disableProcessTimeout",
+            "XDEBUG_MODE=coverage php -d memory_limit=-1 vendor/bin/infection --with-uncovered"
+        ],
+        "infection:diff": [
+            "Composer\\Config::disableProcessTimeout",
+            "XDEBUG_MODE=coverage infection --with-uncovered --git-diff-lines --git-diff-base=master"
+        ],
         "check": [
             "@cs:check",
             "@twig:cs:check",
