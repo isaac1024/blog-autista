@@ -9,6 +9,7 @@ use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Caption;
 use Cms\Image\Domain\Image;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -39,6 +40,7 @@ final readonly class ImageEditor
         private TiptapRichText $tiptapRichText,
         private ImageState $imageState,
         private LastAddressPanel $lastAddressPanel,
+        private LinkTargets $linkTargets,
     ) {}
 
     /**
@@ -109,8 +111,7 @@ final readonly class ImageEditor
                     'features' => Caption::features()->toArray(),
                     'singleParagraph' => true,
                     'maxLength' => Caption::MAX_LENGTH,
-                    'pageSearchUrl' => $this->urlGenerator->generate('cms_pages_search'),
-                    'pageLookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+                    'linkTargets' => ($this->linkTargets)(null),
                 ]),
                 new PageComponent('Shared:ActionBar', [
                     'status' => $this->imageState->description($image),

@@ -67,12 +67,14 @@ final class RichTextEditor
     public ?string $imageLookupUrl = null;
 
     /**
-     * Where the editor searches pages to link, or to show in a widget, and
-     * looks up those already there, as JSON; null when it links none.
+     * What the editor links to, or shows in a widget, by kind: where each
+     * is searched and looked up as JSON, the parameter the search takes, the
+     * key the answers come under, and the kind of content it is kept as;
+     * none when it links nothing.
+     *
+     * @var list<array{kind: string, type: string, searchUrl: string, param: string, key: string, lookupUrl: string}>
      */
-    public ?string $pageSearchUrl = null;
-
-    public ?string $pageLookupUrl = null;
+    public array $linkTargets = [];
 
     /**
      * The Tiptap document, as JSON.
@@ -86,6 +88,7 @@ final class RichTextEditor
 
     /**
      * @param array{blocks: list<string>, headingLevels: list<int>, calloutVariants: list<string>, marks: list<string>} $features
+     * @param list<array{kind: string, type: string, searchUrl: string, param: string, key: string, lookupUrl: string}> $linkTargets
      */
     public function mount(
         string $name,
@@ -100,8 +103,7 @@ final class RichTextEditor
         ?string $hint = null,
         ?string $imageSearchUrl = null,
         ?string $imageLookupUrl = null,
-        ?string $pageSearchUrl = null,
-        ?string $pageLookupUrl = null,
+        array $linkTargets = [],
     ): void {
         $this->name = $name;
         $this->id = $id;
@@ -115,8 +117,7 @@ final class RichTextEditor
         $this->hint = $hint;
         $this->imageSearchUrl = $imageSearchUrl;
         $this->imageLookupUrl = $imageLookupUrl;
-        $this->pageSearchUrl = $pageSearchUrl;
-        $this->pageLookupUrl = $pageLookupUrl;
+        $this->linkTargets = $linkTargets;
     }
 
     /**
@@ -178,7 +179,7 @@ final class RichTextEditor
      */
     public function allowsLinks(): bool
     {
-        return \in_array('link', $this->features['marks'], true) && null !== $this->pageSearchUrl && null !== $this->pageLookupUrl;
+        return \in_array('link', $this->features['marks'], true) && [] !== $this->linkTargets;
     }
 
     /**
@@ -187,11 +188,11 @@ final class RichTextEditor
      */
     public function allowsWidgets(): bool
     {
-        return $this->allows('widget') && null !== $this->pageSearchUrl && null !== $this->pageLookupUrl;
+        return $this->allows('widget') && [] !== $this->linkTargets;
     }
 
     /**
-     * Whether the editor picks pages, to link text or to show in a widget.
+     * Whether the editor picks contents, to link text or to show in a widget.
      */
     public function picksPages(): bool
     {

@@ -38,10 +38,10 @@ final class PostSearcherTest extends TestCase
         // One more than a page tells whether another follows.
         $limit = $pageSize + 1;
 
-        yield 'every post, the first page' => [new PostSearcher('', 1), new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0)];
-        yield 'a blank title filters nothing' => [new PostSearcher('   ', 1), new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0)];
-        yield 'a title, trimmed, filters by its words' => [new PostSearcher('  ruido metro ', 1), new Criteria(limit: $limit, filters: [TitleFilter::matches('ruido metro')], order: $newestFirst, offset: 0)];
-        yield 'a later page skips every previous one' => [new PostSearcher('ruido', 3), new Criteria(limit: $limit, filters: [TitleFilter::matches('ruido')], order: $newestFirst, offset: 2 * $pageSize)];
+        yield 'every post, the first page' => [new PostSearcher('', 1, null), new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0)];
+        yield 'a blank title filters nothing' => [new PostSearcher('   ', 1, null), new Criteria(limit: $limit, filters: [], order: $newestFirst, offset: 0)];
+        yield 'a title, trimmed, filters by its words' => [new PostSearcher('  ruido metro ', 1, null), new Criteria(limit: $limit, filters: [TitleFilter::matches('ruido metro')], order: $newestFirst, offset: 0)];
+        yield 'a later page skips every previous one' => [new PostSearcher('ruido', 3, null), new Criteria(limit: $limit, filters: [TitleFilter::matches('ruido')], order: $newestFirst, offset: 2 * $pageSize)];
     }
 
     public function testItTellsWhetherMorePostsFollow(): void
@@ -50,7 +50,7 @@ final class PostSearcherTest extends TestCase
         $repository = self::createStub(PostRepository::class);
         $repository->method('matching')->willReturn($posts);
 
-        $found = new PostSearcher('', 1)($repository);
+        $found = new PostSearcher('', 1, null)($repository);
 
         self::assertTrue($found->hasMore);
         self::assertSame(
@@ -64,7 +64,7 @@ final class PostSearcherTest extends TestCase
         $repository = self::createStub(PostRepository::class);
         $repository->method('matching')->willReturn(array_map(static fn (): \Cms\Post\Domain\Post => PostMother::create(id: PostIdMother::random()->value()), range(1, PostSearcher::PAGE_SIZE)));
 
-        $found = new PostSearcher('', 1)($repository);
+        $found = new PostSearcher('', 1, null)($repository);
 
         self::assertFalse($found->hasMore);
         self::assertCount(PostSearcher::PAGE_SIZE, $found->posts);
@@ -74,6 +74,6 @@ final class PostSearcherTest extends TestCase
     {
         $this->expectExceptionObject(InvalidCriteria::nonPositivePage(0));
 
-        new PostSearcher('', 0)(self::createStub(PostRepository::class));
+        new PostSearcher('', 0, null)(self::createStub(PostRepository::class));
     }
 }

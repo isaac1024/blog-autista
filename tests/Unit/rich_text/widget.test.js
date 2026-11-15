@@ -15,12 +15,12 @@ const viewFor = (description, labels = { label: 'Related content', loading: 'Loa
     const views = new Set();
     const visited = [];
     const options = {
-        describe: (id) => { visited.push(id); return description; },
+        describe: (type, id) => { visited.push(`${type}:${id}`); return description; },
         views,
         labels,
     };
     const createView = Widget.config.addNodeView.call({ options });
-    const view = createView({ node: { attrs: { kind: 'related_page', id: 'a-page' } } });
+    const view = createView({ node: { attrs: { kind: 'related_page', type: 'page', id: 'a-page' } } });
 
     return { view, views, visited };
 };
@@ -36,7 +36,7 @@ test('a widget is an atomic block that can be selected but not dragged', () => {
 test('a widget is loading by default and starts with no views or labels', () => {
     const options = Widget.config.addOptions();
 
-    assert.equal(options.describe('a-page'), LOADING);
+    assert.equal(options.describe('page', 'a-page'), LOADING);
     assert.deepEqual(options.views, new Set());
     assert.deepEqual(options.labels, {});
 });
@@ -65,7 +65,7 @@ test('a widget without a page yet tells what is known of it', () => {
     for (const state of ['loading', 'missing', 'unknown']) {
         const { view, visited } = viewFor({ state });
 
-        assert.deepEqual(visited, ['a-page']);
+        assert.deepEqual(visited, ['page:a-page']);
         assert.equal(view.dom.className, 'rich-text-widget');
         assert.equal(view.dom.getAttribute('data-widget-kind'), 'related_page');
         assert.deepEqual(contentOf(view.dom), [
@@ -111,7 +111,7 @@ test('a registered view redraws its latest state and unregisters when destroyed'
         views,
         labels: { label: 'Related content', loading: 'Loading', offSite: 'Not on the site' },
     };
-    const view = Widget.config.addNodeView.call({ options })({ node: { attrs: { kind: 'related_page', id: 'a-page' } } });
+    const view = Widget.config.addNodeView.call({ options })({ node: { attrs: { kind: 'related_page', type: 'page', id: 'a-page' } } });
 
     assert.equal(views.size, 1);
     assert.deepEqual(contentOf(view.dom).map((child) => child.text), ['Related content', 'Loading']);

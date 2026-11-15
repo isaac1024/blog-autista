@@ -16,6 +16,7 @@ use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermStatus;
 use Cms\Taxonomy\Infrastructure\Controller\TermState;
@@ -62,6 +63,7 @@ final readonly class PostEditor
         private TermState $termState,
         private AuthorState $authorState,
         private LastAddressPanel $lastAddressPanel,
+        private LinkTargets $linkTargets,
     ) {}
 
     /**
@@ -113,8 +115,8 @@ final readonly class PostEditor
                     'features' => Post::contentFeatures()->toArray(),
                     'imageSearchUrl' => $this->urlGenerator->generate('cms_images_search'),
                     'imageLookupUrl' => $this->urlGenerator->generate('cms_images_lookup'),
-                    'pageSearchUrl' => $this->urlGenerator->generate('cms_pages_search'),
-                    'pageLookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+                    // A page or a post doesn't link itself, so the search leaves it out.
+                    'linkTargets' => ($this->linkTargets)($post->id),
                 ]),
                 $this->searchEngineSection($post, $address),
                 new PageComponent('Shared:ActionBar', [

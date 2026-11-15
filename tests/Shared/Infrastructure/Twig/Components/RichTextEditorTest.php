@@ -82,7 +82,9 @@ final class RichTextEditorTest extends TestCase
     public function testItEmbedsAndLinksOnlyWhatItCanFind(array $features, ?string $imageSearch, ?string $imageLookup, ?string $pageSearch, ?string $pageLookup, array $offered): void
     {
         $editor = new RichTextEditor();
-        $editor->mount('content', 'content', 'Contenido', '{}', $features, imageSearchUrl: $imageSearch, imageLookupUrl: $imageLookup, pageSearchUrl: $pageSearch, pageLookupUrl: $pageLookup);
+        // A link is offered with what to search and look up of each kind.
+        $linkTargets = null === $pageSearch || null === $pageLookup ? [] : [['kind' => 'page', 'type' => 'page', 'searchUrl' => $pageSearch, 'param' => 'title', 'key' => 'pages', 'lookupUrl' => $pageLookup]];
+        $editor->mount('content', 'content', 'Contenido', '{}', $features, imageSearchUrl: $imageSearch, imageLookupUrl: $imageLookup, linkTargets: $linkTargets);
 
         self::assertSame($offered, [
             'images' => $editor->allowsImages(),

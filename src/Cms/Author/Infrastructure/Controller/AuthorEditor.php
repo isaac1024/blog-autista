@@ -13,6 +13,7 @@ use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -42,6 +43,11 @@ final readonly class AuthorEditor
      */
     private const float AVATAR_QUALITY = 0.85;
 
+    /**
+     * It composes what the editor of an author shows from the services of each part of it, including what its bio links to.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private TranslatorInterface $translator,
@@ -49,6 +55,7 @@ final readonly class AuthorEditor
         private AuthorState $authorState,
         private AvatarUrl $avatarUrl,
         private LastAddressPanel $lastAddressPanel,
+        private LinkTargets $linkTargets,
     ) {}
 
     /**
@@ -88,8 +95,7 @@ final readonly class AuthorEditor
                     'features' => Author::bioFeatures()->toArray(),
                     'imageSearchUrl' => $this->urlGenerator->generate('cms_images_search'),
                     'imageLookupUrl' => $this->urlGenerator->generate('cms_images_lookup'),
-                    'pageSearchUrl' => $this->urlGenerator->generate('cms_pages_search'),
-                    'pageLookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+                    'linkTargets' => ($this->linkTargets)(null),
                 ]),
                 $this->searchEngineSection($author),
                 new PageComponent('Shared:ActionBar', [

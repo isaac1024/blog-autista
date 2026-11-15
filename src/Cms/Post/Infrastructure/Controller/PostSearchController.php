@@ -14,7 +14,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * The posts whose title has every word searched, newest first, a page of
- * them at a time, as JSON, to pick from, such as where a redirect leads.
+ * them at a time, as JSON, to pick from, such as where a redirect leads or
+ * a text links, but for the one given: a post doesn't link itself.
  */
 final class PostSearchController extends AbstractController
 {
@@ -27,11 +28,13 @@ final class PostSearchController extends AbstractController
         string $title = '',
         #[MapQueryParameter]
         int $page = 1,
+        #[MapQueryParameter]
+        ?string $except = null,
     ): JsonResponse {
         try {
-            $posts = new PostSearcher($title, $page)($postRepository);
+            $posts = new PostSearcher($title, $page, $except)($postRepository);
         } catch (DomainError $exception) {
-            // A page number that can't be: there is no such list.
+            // A page number or an id that can't be: there is no such list.
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 

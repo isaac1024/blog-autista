@@ -12,6 +12,7 @@ use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -42,6 +43,11 @@ final readonly class PageEditor
 
     private const string PREVIEW_MODAL = 'preview';
 
+    /**
+     * It composes what the editor of a page shows from the services of each part of it, including what its text links to.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private TranslatorInterface $translator,
@@ -49,6 +55,7 @@ final readonly class PageEditor
         private PageRole $pageRole,
         private PageState $pageState,
         private LastAddressPanel $lastAddressPanel,
+        private LinkTargets $linkTargets,
     ) {}
 
     /**
@@ -89,9 +96,8 @@ final readonly class PageEditor
                     'features' => PageAggregate::contentFeatures()->toArray(),
                     'imageSearchUrl' => $this->urlGenerator->generate('cms_images_search'),
                     'imageLookupUrl' => $this->urlGenerator->generate('cms_images_lookup'),
-                    // A page doesn't link itself, so the search leaves it out.
-                    'pageSearchUrl' => $this->urlGenerator->generate('cms_pages_search', ['except' => $page->id]),
-                    'pageLookupUrl' => $this->urlGenerator->generate('cms_pages_lookup'),
+                    // A page or a post doesn't link itself, so the search leaves it out.
+                    'linkTargets' => ($this->linkTargets)($page->id),
                 ]),
                 $this->searchEngineSection($page),
                 new PageComponent('Shared:ActionBar', [

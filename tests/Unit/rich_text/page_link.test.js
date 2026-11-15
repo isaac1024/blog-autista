@@ -11,7 +11,7 @@ const schema = new Schema({
         text: {},
     },
     marks: {
-        link: { attrs: { id: { default: null } } },
+        link: { attrs: { type: { default: 'page' }, id: { default: null } } },
         bold: {},
     },
 });
@@ -56,14 +56,15 @@ test('only links whose pages are not published are decorated over their whole te
     const states = { published: 'published', draft: 'offSite', missing: 'missing', unknown: 'unknown', loading: 'loading' };
     const visited = [];
     const [plugin] = PageLink.config.addProseMirrorPlugins.call({
-        options: { stateOf: (id) => { visited.push(id); return states[id]; } },
+        options: { stateOf: (type, id) => { visited.push(`${type}:${id}`); return states[id]; } },
     });
 
     const decorations = plugin.props.decorations(state);
 
     assert.equal(pageLinksKey.key, 'pageLinks$');
     assert.equal(plugin.spec.key, pageLinksKey);
-    assert.deepEqual(visited, ['published', 'draft', 'missing', 'unknown', 'loading']);
+    // A link of before it named a kind goes to a page.
+    assert.deepEqual(visited, ['page:published', 'page:draft', 'page:missing', 'page:unknown', 'page:loading']);
     assert.deepEqual(decorations.find().map(({ from, to, type }) => ({ from, to, class: type.attrs.class })), [
         { from: 19, to: 24, class: 'rich-text-link-offSite' },
         { from: 26, to: 33, class: 'rich-text-link-missing' },

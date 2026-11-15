@@ -33,7 +33,7 @@ final class PostListController extends AbstractController
         int $page = ListPagination::FIRST_PAGE,
     ): Response {
         try {
-            $posts = new PostSearcher($title, $page)($postRepository);
+            $posts = new PostSearcher($title, $page, null)($postRepository);
         } catch (InvalidCriteria $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

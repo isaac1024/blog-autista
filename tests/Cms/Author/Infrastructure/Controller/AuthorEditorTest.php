@@ -13,6 +13,7 @@ use Cms\Author\Infrastructure\Controller\AvatarUrl;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Redirect\Infrastructure\Controller\NamesResources;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -192,8 +193,7 @@ final class AuthorEditorTest extends TestCase
             'features' => Author::bioFeatures()->toArray(),
             'imageSearchUrl' => '/cms_images_search',
             'imageLookupUrl' => '/cms_images_lookup',
-            'pageSearchUrl' => '/cms_pages_search',
-            'pageLookupUrl' => '/cms_pages_lookup',
+            'linkTargets' => new LinkTargets(new RouteNameUrlGenerator())(null),
         ]);
     }
 
@@ -306,6 +306,7 @@ final class AuthorEditorTest extends TestCase
             new AuthorState($translator),
             new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secreto'))),
             $this->lastAddressPanelOnSite($translator, $urlGenerator),
+            new LinkTargets($urlGenerator),
         )(AuthorResponse::fromAuthor($author), self::PREVIEW, ClockMother::now());
         ComponentContracts::assertHonoured($editor);
 

@@ -202,7 +202,7 @@ test('a selected text is linked to the page picked in the dialog', async ({ page
     await page.locator('[data-rich-text-editor-target="pageResults"] button').click();
 
     const runs = (await inputDocument(page)).content[0].content;
-    expect(runs[0].marks).toContainEqual({ type: 'link', attrs: { id: PAGE.id } });
+    expect(runs[0].marks).toContainEqual({ type: 'link', attrs: { type: 'page', id: PAGE.id } });
     await expect(page.locator(`a[data-page-id="${PAGE.id}"]`)).toHaveText('Read this page');
     await expect(page.locator('[data-rich-text-editor-target="linkTarget"]')).toHaveText('Linked page: Target page. Published.');
 });
@@ -212,7 +212,7 @@ test('a link to a page outside the site gets its visible state after lookup', as
         type: 'doc',
         content: [{
             type: 'paragraph',
-            content: [{ type: 'text', text: 'Draft link', marks: [{ type: 'link', attrs: { id: PAGE.id } }] }],
+            content: [{ type: 'text', text: 'Draft link', marks: [{ type: 'link', attrs: { type: 'page', id: PAGE.id } }] }],
         }],
     };
     await page.route('**/api/pages/lookup*', (route) => route.fulfill({

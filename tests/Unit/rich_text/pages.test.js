@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LOADING, MISSING, UNKNOWN, found } from '../../../assets/shared/lookup.js';
-import { linkTarget, pageIdsIn, pageStateOf } from '../../../assets/rich_text/pages.js';
+import { linkTarget, pageStateOf, targetsIn } from '../../../assets/rich_text/pages.js';
 
-const node = (name, { id = null, links = [], marks = [] } = {}) => ({
+const node = (name, { id = null, type = undefined, links = [], marks = [] } = {}) => ({
     type: { name },
-    attrs: { id },
-    marks: [...links.map((link) => ({ type: { name: 'link' }, attrs: { id: link } })), ...marks],
+    attrs: { type, id },
+    marks: [...links.map((link) => ({ type: { name: 'link' }, attrs: typeof link === 'string' ? { id: link } : link })), ...marks],
 });
 
 const documentOf = (...nodes) => ({
@@ -19,11 +19,13 @@ const PUBLISHED = { title: 'First page', status: 'Published', published: true };
 const DRAFT = { title: 'A draft', status: 'Draft', published: false };
 const LABELS = { target: 'Goes to %title% (%status%)', offSite: 'Not on the site', loading: 'Looking it up', missing: 'No such page', unknown: 'Could not be checked' };
 
-test('a document cites the pages of its widgets and of its links, each once', () => {
+test('a document cites what its widgets and its links point to, each once by its kind, a page when they name none', () => {
     const doc = documentOf(
         node('paragraph'),
         node('text', { links: ['a'] }),
         node('widget', { id: 'b' }),
+        node('text', { links: [{ type: 'post', id: 'a' }, { type: 'page', id: 'a' }] }),
+        node('widget', { type: 'term', id: 'c' }),
         node('text', { links: ['a'], marks: [{ type: { name: 'bold' }, attrs: {} }] }),
         // Only a link points to a page, whatever other marks hold.
         node('text', { marks: [{ type: { name: 'comment' }, attrs: { id: 'not-a-page-either' } }] }),
@@ -32,7 +34,7 @@ test('a document cites the pages of its widgets and of its links, each once', ()
         node('text', { links: [''] }),
     );
 
-    assert.deepEqual(pageIdsIn(doc), ['a', 'b']);
+    assert.deepEqual(targetsIn(doc), [{ type: 'page', id: 'a' }, { type: 'page', id: 'b' }, { type: 'post', id: 'a' }, { type: 'term', id: 'c' }]);
 });
 
 test('a page found stands on the site or off it; one not found, as the lookup knows it', () => {

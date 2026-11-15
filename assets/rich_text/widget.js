@@ -6,7 +6,7 @@ import { LOADING } from '../shared/lookup.js';
 /** @typedef {Partial<Record<'loading'|'missing'|'unknown'|'label'|'offSite', string>>} WidgetLabels */
 
 /**
- * Draws a widget as the CMS knows its page now: its title and where it
+ * Draws a widget as the CMS knows what it shows now: its title and where it
  * stands for the site, after what kind of widget it is, all in words.
  *
  * @param {HTMLElement} element
@@ -50,9 +50,10 @@ const drawWidget = (element, lookup, labels) => {
 };
 
 /**
- * A widget: for now, a page of the blog shown as a card of related content.
- * Its page is kept by its id alone, as a link's is, so the editor shows its
- * latest title and status, and the site its current address.
+ * A widget: a content of the blog, such as a page or a post, shown as a card
+ * of related content. It is kept by its kind and its id alone, as a link's
+ * is, so the editor shows its latest title and status, and the site its
+ * current address.
  */
 export const Widget = Node.create({
     name: 'widget',
@@ -63,7 +64,7 @@ export const Widget = Node.create({
 
     addOptions() {
         return {
-            describe: /** @type {(id: string) => WidgetLookup} */ (() => LOADING),
+            describe: /** @type {(type: string, id: string) => WidgetLookup} */ (() => LOADING),
             views: /** @type {Set<() => void>} */ (new Set()),
             labels: /** @type {WidgetLabels} */ ({}),
         };
@@ -75,6 +76,12 @@ export const Widget = Node.create({
                 default: 'related_page',
                 parseHTML: (element) => element.getAttribute('data-widget-kind'),
                 renderHTML: (attributes) => ({ 'data-widget-kind': attributes.kind }),
+            },
+            // A widget of before it named a kind shows a page.
+            type: {
+                default: 'page',
+                parseHTML: (element) => element.getAttribute('data-widget-type') ?? 'page',
+                renderHTML: (attributes) => ({ 'data-widget-type': attributes.type }),
             },
             id: {
                 default: null,
@@ -97,7 +104,7 @@ export const Widget = Node.create({
             const element = document.createElement('div');
             element.className = 'rich-text-widget';
             element.setAttribute('data-widget-kind', node.attrs.kind);
-            const draw = () => drawWidget(element, this.options.describe(node.attrs.id), this.options.labels);
+            const draw = () => drawWidget(element, this.options.describe(node.attrs.type, node.attrs.id), this.options.labels);
 
             draw();
             this.options.views.add(draw);

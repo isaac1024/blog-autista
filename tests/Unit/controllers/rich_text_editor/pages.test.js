@@ -8,8 +8,8 @@ const FEATURES = { blocks: ['widget', 'table'], headingLevels: [], marks: ['link
 const TARGET = { id: 'page-1', title: 'Target page', status: 'Published', published: true };
 const DRAFT = { id: 'page-2', title: 'Draft page', status: 'Draft', published: false };
 const THIRD = { id: 'page-3', title: 'Third page', status: 'Published', published: true };
-const link = (text, id) => paragraph(text, [{ type: 'link', attrs: { id } }]);
-const widget = (id) => ({ type: 'widget', attrs: { kind: 'related_page', id } });
+const link = (text, id) => paragraph(text, [{ type: 'link', attrs: { type: 'page', id } }]);
+const widget = (id) => ({ type: 'widget', attrs: { kind: 'related_page', type: 'page', id } });
 
 /** The links of the text, as drawn: their pages and how they look. */
 const links = (editor) => [...editor.controller.editor.view.dom.querySelectorAll('a')].map((element) => [element.dataset.pageId, element.textContent, element.querySelector('span')?.className ?? null]);
@@ -128,7 +128,7 @@ test('the page picked for the selected text links it, and the tools of the link 
     await editor.frame();
 
     assert.equal(dialog.open, false);
-    assert.deepEqual(editor.posted(), doc({ type: 'paragraph', content: [{ type: 'text', text: 'Read', marks: [{ type: 'link', attrs: { id: 'page-2' } }] }, { type: 'text', text: ' this page' }] }));
+    assert.deepEqual(editor.posted(), doc({ type: 'paragraph', content: [{ type: 'text', text: 'Read', marks: [{ type: 'link', attrs: { type: 'page', id: 'page-2' } }] }, { type: 'text', text: ' this page' }] }));
     assert.deepEqual(links(editor), [['page-2', 'Read', 'rich-text-link-offSite']]);
     assert.equal(editor.target('linkTools').hidden, false);
     assert.equal(editor.target('linkTarget').textContent, `Linked page: Draft page. Draft. ${PAGE_LABELS.offSite}`);

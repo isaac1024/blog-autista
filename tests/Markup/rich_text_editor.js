@@ -21,6 +21,18 @@ export const IMAGE_LABELS = {
     embedded: 'Embedded image:',
 };
 
+/**
+ * What the editor links to, by kind, each where it is searched and looked
+ * up; sections and tags are both terms, looked up together.
+ */
+export const LINK_TARGETS = [
+    { kind: 'page', type: 'page', searchUrl: '/api/pages/search', param: 'title', key: 'pages', lookupUrl: '/api/pages/lookup' },
+    { kind: 'post', type: 'post', searchUrl: '/api/posts/search', param: 'title', key: 'posts', lookupUrl: '/api/posts/lookup' },
+    { kind: 'section', type: 'term', searchUrl: '/api/sections/search', param: 'name', key: 'terms', lookupUrl: '/api/terms/lookup' },
+    { kind: 'tag', type: 'term', searchUrl: '/api/tags/search', param: 'name', key: 'terms', lookupUrl: '/api/terms/lookup' },
+    { kind: 'author', type: 'author', searchUrl: '/api/authors/search', param: 'name', key: 'authors', lookupUrl: '/api/authors/lookup' },
+];
+
 export const PAGE_LABELS = {
     title: 'Link the selected text',
     loading: 'Loading page',
@@ -78,8 +90,7 @@ export const richTextEditor = ({
         images ? `data-rich-text-editor-image-search-url-value="/api/images/search"
             data-rich-text-editor-image-lookup-url-value="/api/images/lookup"
             data-rich-text-editor-image-labels-value='${JSON.stringify(IMAGE_LABELS)}'` : '',
-        links || widgets ? `data-rich-text-editor-page-search-url-value="/api/pages/search"
-            data-rich-text-editor-page-lookup-url-value="/api/pages/lookup"
+        links || widgets ? `data-rich-text-editor-link-targets-value='${JSON.stringify(LINK_TARGETS)}'
             data-rich-text-editor-page-labels-value='${JSON.stringify(PAGE_LABELS)}'` : '',
         widgets ? `data-rich-text-editor-widget-labels-value='${JSON.stringify(WIDGET_LABELS)}'` : '',
         maxLength === null ? '' : `data-rich-text-editor-max-length-value="${maxLength}"
@@ -177,6 +188,10 @@ export const richTextEditor = ({
             ${links || widgets ? `
                 <dialog id="content-page-dialog" data-rich-text-editor-target="pageDialog">
                     <h2 data-rich-text-editor-target="pageDialogTitle">${links ? PAGE_LABELS.title : WIDGET_LABELS.title}</h2>
+                    <fieldset data-rich-text-editor-target="pageKinds">
+                        <legend>What to link</legend>
+                        ${LINK_TARGETS.map(({ kind }, index) => `<label><input type="radio" name="content-page-kind" value="${kind}"${index === 0 ? ' checked' : ''} data-action="change->rich-text-editor#chooseKind"> ${kind}</label>`).join('')}
+                    </fieldset>
                     <div role="search">
                         <label for="content-page-search">Search pages</label>
                         <input id="content-page-search" type="search" data-rich-text-editor-target="pageSearch" data-action="keydown.enter->rich-text-editor#searchPages">

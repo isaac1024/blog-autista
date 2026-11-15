@@ -24,6 +24,7 @@ use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Page\Domain\PageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -310,7 +311,7 @@ final class PageEditorTest extends TestCase
     {
         $editor = $this->edit(PageMother::create(id: self::ID));
 
-        PageComponents::one($editor, 'Shared:RichTextEditor', ['pageSearchUrl' => '/cms_pages_search?except='.self::ID]);
+        PageComponents::one($editor, 'Shared:RichTextEditor', ['linkTargets' => new LinkTargets(new RouteNameUrlGenerator())(self::ID)]);
     }
 
     /**
@@ -390,6 +391,7 @@ final class PageEditorTest extends TestCase
                 $urlGenerator,
                 new ReplacedRedirectNotice($redirectNames, $translator),
             ),
+            new LinkTargets($urlGenerator),
         );
 
         $composed = $editor(PageResponse::fromPage($page), new SharedPreviewLink(self::PREVIEW, ClockMother::now()));

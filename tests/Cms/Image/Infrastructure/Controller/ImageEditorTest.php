@@ -19,6 +19,7 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Redirect\Infrastructure\Controller\RedirectNames;
 use Cms\Redirect\Infrastructure\Controller\ReplacedRedirectNotice;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -183,8 +184,7 @@ final class ImageEditorTest extends TestCase
             'features' => Caption::features()->toArray(),
             'singleParagraph' => true,
             'maxLength' => Caption::MAX_LENGTH,
-            'pageSearchUrl' => '/cms_pages_search',
-            'pageLookupUrl' => '/cms_pages_lookup',
+            'linkTargets' => new LinkTargets(new RouteNameUrlGenerator())(null),
         ]);
     }
 
@@ -249,6 +249,7 @@ final class ImageEditorTest extends TestCase
                 $urlGenerator,
                 new ReplacedRedirectNotice($redirectNames, $translator),
             ),
+            new LinkTargets($urlGenerator),
         );
 
         $composed = $editor(ImageResponse::fromImage($image));

@@ -126,7 +126,7 @@ test('an empty document says what goes in it, and an empty line how to pick a ki
 test('an editor removed from the page cancels what it was looking up and lets go of the text', async () => {
     const pending = later();
     const editor = await openEditor({
-        document: doc(paragraph('Linked', [{ type: 'link', attrs: { id: 'page-1' } }])),
+        document: doc(paragraph('Linked', [{ type: 'link', attrs: { type: 'page', id: 'page-1' } }])),
         features: { blocks: [], headingLevels: [], marks: ['link'] },
         links: true,
         respond: () => pending.promise,

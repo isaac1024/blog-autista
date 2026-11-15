@@ -15,6 +15,7 @@ use Cms\Post\Infrastructure\Controller\PostUrl;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Infrastructure\Controller\TermState;
@@ -270,8 +271,7 @@ final class PostEditorTest extends TestCase
             'features' => Post::contentFeatures()->toArray(),
             'imageSearchUrl' => '/cms_images_search',
             'imageLookupUrl' => '/cms_images_lookup',
-            'pageSearchUrl' => '/cms_pages_search',
-            'pageLookupUrl' => '/cms_pages_lookup',
+            'linkTargets' => new LinkTargets(new RouteNameUrlGenerator())(self::ID),
         ]);
     }
 
@@ -345,6 +345,7 @@ final class PostEditorTest extends TestCase
             new TermState($translator),
             new AuthorState($translator),
             $this->lastAddressPanelOnSite($translator, $urlGenerator),
+            new LinkTargets($urlGenerator),
         )(
             PostResponse::fromPost($post),
             [

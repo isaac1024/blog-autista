@@ -14,12 +14,13 @@ import { BlockMover } from '../rich_text/block_mover.js';
 import { ControlsShortcut } from '../rich_text/controls_shortcut.js';
 import { movedMessage, onHeading } from '../rich_text/block_movement.js';
 import { currentKind, matches, menuAction, menuPosition } from '../rich_text/block_menu.js';
-import { linkTarget, pageIdsIn, pageStateOf } from '../rich_text/pages.js';
+import { linkTarget, pageStateOf, targetsIn } from '../rich_text/pages.js';
 import { maxLengthMessage } from '../form/character_count.js';
 import { currentSection, sectionsOf } from '../rich_text/outline.js';
 import { EmbeddedImage } from '../rich_text/embedded_image.js';
 import { Widget } from '../rich_text/widget.js';
 import { PageLink } from '../rich_text/page_link.js';
+import { TargetLookups } from '../rich_text/targets.js';
 import { Callout } from '../rich_text/callout.js';
 import { QuoteSource } from '../rich_text/quote_source.js';
 import { SlashMenu } from '../rich_text/slash_menu.js';
@@ -50,6 +51,7 @@ import { Search } from '../shared/search.js';
 /** @typedef {import('@tiptap/suggestion').SuggestionProps<SlashItem, SlashItem>} SlashProps */
 /** @typedef {import('../rich_text/page_link.js').PageState} PageState */
 /** @typedef {import('./resource_field_controller.js').Resource} Page */
+/** @typedef {import('../rich_text/targets.js').LinkTarget} LinkTarget */
 
 /**
  * An image as the editor's endpoints describe it.
@@ -110,11 +112,12 @@ import { Search } from '../shared/search.js';
  * @property {Lookups<Image>} images
  * @property {Set<() => void>} imageViews
  * @property {Search<Image>} imageSearch
- * @property {Lookups<Page>} pages
+ * @property {TargetLookups<Page>} pages
  * @property {{from: number, to: number}} [linkRange]
  * @property {'link'|'widget'} pagePurpose
  * @property {Set<() => void>} widgetViews
  * @property {Search<Page>} pageSearch
+ * @property {LinkTarget} linkKind
  * @property {HTMLElement} frameTarget
  * @property {HTMLElement} canvasTarget
  * @property {HTMLElement} editorTarget
@@ -146,6 +149,7 @@ import { Search } from '../shared/search.js';
  * @property {HTMLElement} pageStatusTarget
  * @property {HTMLElement} pageResultsTarget
  * @property {HTMLElement} pageMoreTarget
+ * @property {HTMLFieldSetElement} pageKindsTarget
  * @property {HTMLElement} linkToolsTarget
  * @property {boolean} hasLinkToolsTarget
  * @property {HTMLElement} linkTargetTarget
@@ -169,9 +173,8 @@ import { Search } from '../shared/search.js';
  * @property {string} imageLookupUrlValue
  * @property {boolean} hasImageLookupUrlValue
  * @property {ImageLabels} imageLabelsValue
- * @property {string} pageSearchUrlValue
- * @property {string} pageLookupUrlValue
- * @property {boolean} hasPageLookupUrlValue
+ * @property {LinkTarget[]} linkTargetsValue
+ * @property {boolean} hasLinkTargetsValue
  * @property {PageLabels} pageLabelsValue
  * @property {WidgetLabels} widgetLabelsValue
  * @property {boolean} hasWidgetLabelsValue
@@ -231,7 +234,7 @@ export default class extends BaseController {
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
         'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
-        'pageDialog', 'pageDialogTitle', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
+        'pageDialog', 'pageDialogTitle', 'pageKinds', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
     ];
 
     static values = {
@@ -253,8 +256,7 @@ export default class extends BaseController {
         imageSearchUrl: String,
         imageLookupUrl: String,
         imageLabels: Object,
-        pageSearchUrl: String,
-        pageLookupUrl: String,
+        linkTargets: Array,
         pageLabels: Object,
         widgetLabels: Object,
     };
@@ -268,7 +270,7 @@ export default class extends BaseController {
         this.menuWatch = null;
         // What the CMS knows of each image and page the text cites or the editor picked.
         this.images = /** @type {Lookups<Image>} */ (new Lookups(endpoint(this.imageLookupUrlValue), 'images', owner, () => this.drawImages()));
-        this.pages = /** @type {Lookups<Page>} */ (new Lookups(endpoint(this.pageLookupUrlValue), 'pages', owner, () => this.redrawPageLinks()));
+        this.pages = /** @type {TargetLookups<Page>} */ (new TargetLookups(this.linkTargetsValue, owner, () => this.redrawPageLinks()));
         this.imageViews = new Set();
         this.widgetViews = new Set();
         this.imageSearch = new Search({
@@ -280,16 +282,26 @@ export default class extends BaseController {
             labels: () => this.imageLabelsValue,
             row: (image) => imageOption(image, () => this.embedImage(image)),
         });
-        this.pageSearch = new Search({
-            url: endpoint(this.pageSearchUrlValue),
-            param: 'title',
-            key: 'pages',
+        // One search, of the kind of content chosen when it goes out, so a
+        // search of another kind still on its way is outdated by it.
+        const kind = () => this.linkKind;
+        this.pageSearch = /** @type {Search<Page>} */ (new Search({
+            get url() {
+                return endpoint(kind().searchUrl);
+            },
+            get param() {
+                return kind().param;
+            },
+            get key() {
+                return kind().key;
+            },
             owner,
             view: () => ({ input: this.pageSearchTarget, results: this.pageResultsTarget, status: this.pageStatusTarget, more: this.pageMoreTarget }),
-            // Widgets have no words of their own for no pages found, nor for a failed search.
+            // Widgets have no words of their own for nothing found, nor for a failed search.
             labels: () => ({ ...this.pagePurposeLabels(), none: this.pageLabelsValue.none, error: this.pageLabelsValue.error }),
             row: (page) => pageOption(page, () => this.pickPage(page), this.pagePurposeLabels().offSite),
-        });
+        }));
+        this.linkKind = this.linkTargetsValue[0];
         this.editor = new Editor({
             element: this.editorTarget,
             // The base styles come from the stylesheets the CMS links and app.css: an injected <style> breaks the content security policy.
@@ -344,7 +356,7 @@ export default class extends BaseController {
         });
 
         this.images.ask(images);
-        this.pages.ask(pageIdsIn(this.editor.state.doc));
+        this.pages.ask(targetsIn(this.editor.state.doc));
     }
 
     /* Images: embedded by id, shown as the CMS knows them now. */
@@ -386,25 +398,27 @@ export default class extends BaseController {
         this.editor.chain().focus().insertContent({ type: 'image', attrs: { id: image.id } }).run();
     }
 
-    /* Page links: applied to the selected text, with their targets looked up by id. */
+    /* Links: applied to the selected text, with their targets looked up by kind and id. */
 
     /**
-     * How the page of a link stands, as far as the editor knows.
+     * How what a link goes to stands, as far as the editor knows.
      *
+     * @param {string} type
      * @param {string} id
      * @returns {PageState}
      */
-    pageState(id) {
-        return pageStateOf(this.pages.of(id));
+    pageState(type, id) {
+        return pageStateOf(this.pages.of(type, id));
     }
 
     /**
-     * The page a link goes to, in words: never by its look alone.
+     * What a link goes to, in words: never by its look alone.
      *
+     * @param {string} type
      * @param {string} id
      */
-    describePage(id) {
-        return linkTarget(this.pages.of(id), this.pageLabelsValue);
+    describePage(type, id) {
+        return linkTarget(this.pages.of(type, id), this.pageLabelsValue);
     }
 
     /** Redraws the widgets, the decorations of the links, and the tools of the one under the cursor. */
@@ -437,7 +451,18 @@ export default class extends BaseController {
     }
 
     /**
-     * Lists the first pages of results for the title written.
+     * Searches the kind of content chosen, from its first results.
+     *
+     * @param {Event} event
+     */
+    chooseKind(event) {
+        const { value } = /** @type {HTMLInputElement} */ (event.currentTarget);
+        this.linkKind = this.linkTargetsValue.find((target) => target.kind === value) ?? this.linkKind;
+        this.searchPages();
+    }
+
+    /**
+     * Lists the first pages of results for the name written.
      *
      * @param {Event} [event]
      */
@@ -453,12 +478,12 @@ export default class extends BaseController {
 
     /** @param {Page} page */
     linkPage(page) {
-        // Known now, the page stands as found wherever else it is cited.
-        this.pages.know(page);
+        // Known now, it stands as found wherever else it is cited.
+        this.pages.know(this.linkKind.type, page);
         this.pageDialogTarget.close();
         // The dialog was opened for the selected text, which it kept.
         const range = /** @type {{from: number, to: number}} */ (this.linkRange);
-        this.editor.chain().focus().setTextSelection(range).setMark('link', { id: page.id }).run();
+        this.editor.chain().focus().setTextSelection(range).setMark('link', { type: this.linkKind.type, id: page.id }).run();
         this.redrawPageLinks();
     }
 
@@ -482,9 +507,9 @@ export default class extends BaseController {
      * @param {Page} page
      */
     embedWidget(page) {
-        this.pages.know(page);
+        this.pages.know(this.linkKind.type, page);
         this.pageDialogTarget.close();
-        this.editor.chain().focus().insertContent({ type: 'widget', attrs: { kind: 'related_page', id: page.id } }).run();
+        this.editor.chain().focus().insertContent({ type: 'widget', attrs: { kind: 'related_page', type: this.linkKind.type, id: page.id } }).run();
         this.redrawPageLinks();
     }
 
@@ -632,7 +657,8 @@ export default class extends BaseController {
         if (this.hasLinkToolsTarget) {
             const inLink = this.editor.isActive('link');
             this.linkToolsTarget.hidden = !inLink;
-            this.linkTargetTarget.textContent = inLink ? this.describePage(this.editor.getAttributes('link').id) : '';
+            const link = this.editor.getAttributes('link');
+            this.linkTargetTarget.textContent = inLink ? this.describePage(link.type ?? 'page', link.id) : '';
         }
 
         this.markCurrentSection();
@@ -1144,8 +1170,8 @@ export default class extends BaseController {
                 extensions.push(Bold);
             }
 
-            if (marks.includes('link') && this.hasPageLookupUrlValue) {
-                extensions.push(PageLink.configure({ stateOf: (id) => this.pageState(id) }));
+            if (marks.includes('link') && this.hasLinkTargetsValue) {
+                extensions.push(PageLink.configure({ stateOf: (type, id) => this.pageState(type, id) }));
             }
 
             return extensions;
@@ -1176,8 +1202,8 @@ export default class extends BaseController {
             extensions.push(Bold);
         }
 
-        if (marks.includes('link') && this.hasPageLookupUrlValue) {
-            extensions.push(PageLink.configure({ stateOf: (id) => this.pageState(id) }));
+        if (marks.includes('link') && this.hasLinkTargetsValue) {
+            extensions.push(PageLink.configure({ stateOf: (type, id) => this.pageState(type, id) }));
         }
 
         if (blocks.includes('heading')) {
@@ -1205,9 +1231,9 @@ export default class extends BaseController {
             }));
         }
 
-        if (blocks.includes('widget') && this.hasWidgetLabelsValue && this.hasPageLookupUrlValue) {
+        if (blocks.includes('widget') && this.hasWidgetLabelsValue && this.hasLinkTargetsValue) {
             extensions.push(Widget.configure({
-                describe: (id) => this.pages.of(id),
+                describe: (type, id) => this.pages.of(type, id),
                 views: this.widgetViews,
                 labels: this.widgetLabelsValue,
             }));

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Post\Application;
 
+use Cms\Post\Domain\IdFilter;
+use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\TitleFilter;
 use Shared\Domain\Criteria\Criteria;
@@ -22,6 +24,7 @@ final readonly class PostSearcher
     public function __construct(
         private string $title,
         private int $page,
+        private ?string $except,
     ) {}
 
     public function __invoke(PostRepository $postRepository): PostsResponse
@@ -31,10 +34,15 @@ final readonly class PostSearcher
         }
 
         $title = trim($this->title);
+        $filters = '' === $title ? [] : [TitleFilter::matches($title)];
+
+        if (null !== $this->except) {
+            $filters[] = IdFilter::isNot(new PostId($this->except));
+        }
 
         // Post ids are time-ordered (UUID v7), so sorting by id lists the newest first.
         $criteria = new Criteria(
-            filters: '' === $title ? [] : [TitleFilter::matches($title)],
+            filters: $filters,
             order: new Order('id', OrderDirection::Descending),
             // One more than a page tells whether another follows.
             limit: self::PAGE_SIZE + 1,
