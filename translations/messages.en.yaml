@@ -366,33 +366,33 @@ cms:
                 title: 'Nothing uses this image'
                 message: 'No page or author bio shows it, and the settings don’t use it.'
         post:
-            subtitle: 'What leads to the post “%name%”.'
+            subtitle: 'What links to the post “%name%”.'
             back: 'Edit the post'
             list: 'What uses the post “%name%”'
             empty:
                 title: 'Nothing uses this post'
-                message: 'No content of the blog uses it.'
+                message: 'No page, post, caption or bio links to it.'
         section:
-            subtitle: 'The posts filed under the section “%name%”.'
+            subtitle: 'The posts filed under the section “%name%”, and what links to it.'
             back: 'Edit the section'
             list: 'What uses the section “%name%”'
             empty:
                 title: 'Nothing uses this section'
-                message: 'No post is filed under it.'
+                message: 'No post is filed under it and nothing links to it.'
         tag:
-            subtitle: 'The posts tagged “%name%”.'
+            subtitle: 'The posts tagged “%name%”, and what links to it.'
             back: 'Edit the tag'
             list: 'What uses the tag “%name%”'
             empty:
                 title: 'Nothing uses this tag'
-                message: 'No post has this tag.'
+                message: 'No post has this tag and nothing links to it.'
         author:
-            subtitle: 'The posts “%name%” signs.'
+            subtitle: 'The posts “%name%” signs, and what links to them.'
             back: 'Edit the author'
             list: 'What uses the author “%name%”'
             empty:
                 title: 'Nothing uses this author'
-                message: 'No post is signed by them.'
+                message: 'No post is signed by them and nothing links to them.'
     settings:
         title: 'Settings'
         dates: 'Created on %created% · Changed on %updated%'
@@ -1269,7 +1269,7 @@ errors:
             not_published: 'Only what is published can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_term: 'What is published can’t be deleted: unpublish it first.'
-            used_term: 'Posts are filed here, so it can’t be deleted. Take it out of those posts first.'
+            used_term: 'Posts are filed here or contents link to it, so it can’t be deleted. Take it out of where it is used first.'
             incomplete_dates: 'What was ever published has a first and a last publication date.'
             redirected: 'Redirects lead to this section or tag, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published section or tag keeps its address on the site.'
@@ -1292,7 +1292,7 @@ errors:
             not_published: 'Only a published author can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_author: 'A published author can’t be deleted: unpublish it first.'
-            used_author: 'This author signs some post, so it can’t be deleted. Change the author of those posts first.'
+            used_author: 'This author signs a post or contents link to them, so it can’t be deleted. Take it out of where it is used first.'
             incomplete_dates: 'The publication dates of the author are incomplete.'
             redirected: 'Redirects lead to this author, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published author keeps its address on the site.'
@@ -1321,6 +1321,7 @@ errors:
             incomplete_dates: 'The publication dates of the post are incomplete.'
             redirected: 'Redirects lead to this post, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published post keeps its address on the site.'
+            used_post: 'Other contents link to this post, so it can’t be deleted. Remove those links first.'
     settings:
         already_exist: 'The site already has its settings.'
         name:

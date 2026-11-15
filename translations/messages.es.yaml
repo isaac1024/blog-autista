@@ -366,33 +366,33 @@ cms:
                 title: 'Nada usa esta imagen'
                 message: 'Ninguna página ni biografía de autor la muestra, ni los ajustes la usan.'
         post:
-            subtitle: 'Lo que lleva al post «%name%».'
+            subtitle: 'Lo que enlaza al post «%name%».'
             back: 'Editar el post'
             list: 'Lo que usa el post «%name%»'
             empty:
                 title: 'Nada usa este post'
-                message: 'Ningún contenido del blog lo usa.'
+                message: 'Ninguna página, post, pie de foto ni biografía lo enlaza.'
         section:
-            subtitle: 'Los posts archivados en la sección «%name%».'
+            subtitle: 'Los posts archivados en la sección «%name%» y lo que la enlaza.'
             back: 'Editar la sección'
             list: 'Lo que usa la sección «%name%»'
             empty:
                 title: 'Nada usa esta sección'
-                message: 'Ningún post está archivado en ella.'
+                message: 'Ningún post está archivado en ella y nada la enlaza.'
         tag:
-            subtitle: 'Los posts etiquetados con «%name%».'
+            subtitle: 'Los posts etiquetados con «%name%» y lo que la enlaza.'
             back: 'Editar la etiqueta'
             list: 'Lo que usa la etiqueta «%name%»'
             empty:
                 title: 'Nada usa esta etiqueta'
-                message: 'Ningún post lleva esta etiqueta.'
+                message: 'Ningún post lleva esta etiqueta y nada la enlaza.'
         author:
-            subtitle: 'Los posts que firma «%name%».'
+            subtitle: 'Los posts que firma «%name%» y lo que lo enlaza.'
             back: 'Editar el autor'
             list: 'Lo que usa el autor «%name%»'
             empty:
                 title: 'Nada usa este autor'
-                message: 'Ningún post lo firma.'
+                message: 'Ningún post lo firma y nada lo enlaza.'
     settings:
         title: 'Ajustes'
         dates: 'Creados el %created% · Modificados el %updated%'
@@ -1269,7 +1269,7 @@ errors:
             not_published: 'Solo se puede despublicar lo que está publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
-            used_term: 'Hay posts clasificados aquí, así que no se puede borrar. Quítalo antes de esos posts.'
+            used_term: 'Hay posts clasificados aquí o contenidos que lo enlazan, así que no se puede borrar. Quítalo antes de donde se use.'
             incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
             redirected: 'Hay redirecciones que llevan aquí, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un término publicado conserva su dirección en la web.'
@@ -1292,7 +1292,7 @@ errors:
             not_published: 'Solo se puede despublicar un autor publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
-            used_author: 'Este autor firma algún post, así que no se puede borrar. Cambia antes el autor de esos posts.'
+            used_author: 'Este autor firma algún post o hay contenidos que lo enlazan, así que no se puede borrar. Quítalo antes de donde se use.'
             incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
             redirected: 'Hay redirecciones que llevan a este autor, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un autor publicado conserva su dirección en la web.'
@@ -1321,6 +1321,7 @@ errors:
             incomplete_dates: 'Las fechas de publicación del post están incompletas.'
             redirected: 'Hay redirecciones que llevan a este post, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un post publicado conserva su dirección en la web.'
+            used_post: 'Hay contenidos que enlazan a este post, así que no se puede borrar. Quita antes esos enlaces.'
     settings:
         already_exist: 'El sitio ya tiene sus ajustes.'
         name:

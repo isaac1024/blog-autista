@@ -15,9 +15,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  * or where it comes from, which the alternative text doesn't repeat. Search
  * engines take it as context of the image too.
  *
- * A single paragraph of text that may link to pages, such as the one the
- * image comes from: no bold, since emphasis isn't announced to everyone
- * alike. It stays within 200 characters, short enough to read as a caption.
+ * A single paragraph of text that may link to contents of the blog, such
+ * as the page the image comes from: no bold, since emphasis isn't announced
+ * to everyone alike. It stays within 200 characters, short enough to read as a caption.
  */
 final readonly class Caption
 {
@@ -59,7 +59,7 @@ final readonly class Caption
     }
 
     /**
-     * What a caption can use: paragraphs, and links to pages in them.
+     * What a caption can use: paragraphs, and links to contents in them.
      */
     public static function features(): RichTextFeatures
     {

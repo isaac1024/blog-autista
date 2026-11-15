@@ -8,6 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\RichText;
 
 /**
@@ -27,7 +28,8 @@ use Shared\Domain\RichText\RichText;
  * - A published image is unpublished before it is deleted, and an image in
  *   use is never deleted; it can be unpublished, and the site leaves it out.
  *   An image redirects lead to stays on the site while they do.
- * - Its caption may link to pages, which then aren't deleted while it does.
+ * - Its caption may link to pages, posts, sections, tags and authors,
+ *   which then aren't deleted while it does.
  *
  * Its rules reach every value object, error and event of the image, so its
  * coupling grows with what an image is rather than with how it is designed.
@@ -252,9 +254,13 @@ final class Image extends AggregateRoot
             throw InvalidImagePublication::inUse();
         }
 
-        // An image deleted links to no page any longer.
+        // An image deleted links to nothing any longer.
         if ([] !== $this->pagesLinked()) {
             $this->record(new ImagePagesLinked($this->id->value(), []));
+        }
+
+        if (!$this->contentsLinked()->isEmpty()) {
+            $this->record(new ImageContentsLinked($this->id->value(), LinkedContents::fromTexts()));
         }
 
         $events = $this->pullDomainEvents();
@@ -310,12 +316,27 @@ final class Image extends AggregateRoot
     private function changePagesLinked(\Closure $change): void
     {
         $before = $this->pagesLinked();
+        $linkedBefore = $this->contentsLinked();
         $change();
         $after = $this->pagesLinked();
+        $linkedAfter = $this->contentsLinked();
 
         if ($before !== $after) {
             $this->record(new ImagePagesLinked($this->id->value(), $after));
         }
+
+        if (!$linkedBefore->equals($linkedAfter)) {
+            $this->record(new ImageContentsLinked($this->id->value(), $linkedAfter));
+        }
+    }
+
+    /**
+     * The posts, sections and tags, and authors the caption being edited and
+     * the one last published link to.
+     */
+    private function contentsLinked(): LinkedContents
+    {
+        return LinkedContents::fromTexts($this->version->caption(), $this->published?->caption());
     }
 
     /**

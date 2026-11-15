@@ -14,6 +14,7 @@ use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
+use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
@@ -34,9 +35,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   the site while redirects lead to it.
  * - Once off the site, it keeps the last address it had there, until
  *   another author is published at it.
- * - The bio embeds images of the library and links to pages, which are told
- *   to whoever keeps track of what is in use, so neither is deleted while
- *   the bio uses it.
+ * - The bio embeds images of the library and links to pages, posts,
+ *   sections, tags and authors, which are told to whoever keeps track of
+ *   what is in use, so none is deleted while the bio uses it.
  * - Each avatar uploaded is a file of its own. The one being edited and the
  *   one on the site are kept while either version has it, and removed once
  *   neither does.
@@ -138,7 +139,8 @@ final class Author extends AggregateRoot
 
     /**
      * What a bio can use: everything the content of a page can, with two
-     * heading levels, bold and links to pages.
+     * heading levels, bold and links to pages, posts, sections, tags and
+     * authors.
      */
     public static function bioFeatures(): RichTextFeatures
     {
@@ -359,6 +361,10 @@ final class Author extends AggregateRoot
             $this->record(new AuthorPagesLinked($this->id->value(), []));
         }
 
+        if (!$this->contentsLinked()->isEmpty()) {
+            $this->record(new AuthorContentsLinked($this->id->value(), LinkedContents::fromTexts()));
+        }
+
         $events = $this->pullDomainEvents();
         $authorRepository->delete($this);
 
@@ -465,9 +471,15 @@ final class Author extends AggregateRoot
     private function change(\Closure $change): void
     {
         $before = $this->resourcesUsed();
+        $linkedBefore = $this->contentsLinked();
         $avatars = $this->avatars();
         $change();
         $after = $this->resourcesUsed();
+        $linkedAfter = $this->contentsLinked();
+
+        if (!$linkedBefore->equals($linkedAfter)) {
+            $this->record(new AuthorContentsLinked($this->id->value(), $linkedAfter));
+        }
 
         if ($before['images'] !== $after['images']) {
             $this->record(new AuthorImagesUsed($this->id->value(), $after['images']));
@@ -498,6 +510,15 @@ final class Author extends AggregateRoot
         sort($pages);
 
         return ['images' => array_values(array_unique($images)), 'pages' => array_values(array_unique($pages))];
+    }
+
+    /**
+     * The posts, sections and tags, and authors the bio being edited and the
+     * one last published link to or show in widgets.
+     */
+    private function contentsLinked(): LinkedContents
+    {
+        return LinkedContents::fromTexts($this->version->bio(), $this->published?->bio());
     }
 
     /**

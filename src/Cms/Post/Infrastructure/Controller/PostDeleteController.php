@@ -7,6 +7,7 @@ namespace Cms\Post\Infrastructure\Controller;
 use Cms\Post\Application\PostDeleter;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostUsage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Infrastructure\Http\CsrfRequestGuard;
@@ -22,12 +23,12 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PostDeleteController extends AbstractController
 {
     #[Route('/posts/{id}/delete', name: 'cms_posts_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, PostUsage $postUsage, CsrfRequestGuard $csrf): Response
     {
         $csrf->assertValid($request);
 
         try {
-            new PostDeleter($id)($postRepository, $eventBus);
+            new PostDeleter($id)($postRepository, $eventBus, $postUsage);
         } catch (PostNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

@@ -13,6 +13,7 @@ use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
+use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
@@ -35,9 +36,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  * - A published page is unpublished before it is deleted, and unique pages
  *   are never unpublished nor deleted. A page redirects lead to stays on
  *   the site while they do.
- * - A page links to other pages, never to itself, and one that others link
- *   to is never deleted; it can be unpublished, and the site leaves its
- *   links as plain text.
+ * - A page links to other pages, never to itself, and to posts, sections,
+ *   tags and authors; one that others link to is never deleted; it can be
+ *   unpublished, and the site leaves its links as plain text.
  *
  * The unique indexes on the slugs keep two pages from sharing an address,
  * the one being edited or the one on the site; pages without one share none.
@@ -166,7 +167,8 @@ final class Page extends AggregateRoot
 
     /**
      * What the content of a page can use: the blocks of fixed pages such as
-     * the legal ones, with two heading levels, bold and links to other pages.
+     * the legal ones, with two heading levels, bold and links to other pages
+     * and to posts, sections, tags and authors.
      */
     public static function contentFeatures(): RichTextFeatures
     {
@@ -380,6 +382,10 @@ final class Page extends AggregateRoot
             $this->record(new PagePagesLinked($this->id->value(), []));
         }
 
+        if (!$this->contentsLinked()->isEmpty()) {
+            $this->record(new PageContentsLinked($this->id->value(), LinkedContents::fromTexts()));
+        }
+
         $events = $this->pullDomainEvents();
         $pageRepository->delete($this);
         $eventBus->publish(...$events);
@@ -464,8 +470,14 @@ final class Page extends AggregateRoot
     private function changeResourcesUsed(\Closure $change): void
     {
         $before = $this->resourcesUsed();
+        $linkedBefore = $this->contentsLinked();
         $change();
         $after = $this->resourcesUsed();
+        $linkedAfter = $this->contentsLinked();
+
+        if (!$linkedBefore->equals($linkedAfter)) {
+            $this->record(new PageContentsLinked($this->id->value(), $linkedAfter));
+        }
 
         if ($before['images'] !== $after['images']) {
             $this->record(new PageImagesUsed($this->id->value(), $after['images']));
@@ -490,6 +502,15 @@ final class Page extends AggregateRoot
         sort($pages);
 
         return ['images' => array_values(array_unique($images)), 'pages' => array_values(array_unique($pages))];
+    }
+
+    /**
+     * The posts, sections and tags, and authors the version being edited
+     * and the one last published link to or show in widgets.
+     */
+    private function contentsLinked(): LinkedContents
+    {
+        return LinkedContents::fromTexts($this->version->content(), $this->published?->content());
     }
 
     private function replaceVersion(PageVersion $version): void

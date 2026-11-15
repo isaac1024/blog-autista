@@ -16,6 +16,7 @@ use Cms\Post\Domain\PostRedirects;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostTermsUsed;
 use Cms\Post\Domain\PostUnpublished;
+use Cms\Post\Domain\PostUsage;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
 use Cms\Tests\Post\Domain\PostIdMother;
@@ -281,7 +282,7 @@ final class PostPublicationTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof PostAuthorsUsed && ['author_ids' => []] === $event->toPrimitives()),
         );
 
-        new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, $eventBus);
+        new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(PostUsage::class));
     }
 
     public function testItNeverDeletesAPublishedPost(): void
@@ -289,7 +290,7 @@ final class PostPublicationTest extends TestCase
         $repository = $this->repository(PostMother::published());
         $repository->expects(self::never())->method('delete');
 
-        self::assertTells('errors.post.publication.published_post', [], static fn () => new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class)));
+        self::assertTells('errors.post.publication.published_post', [], static fn () => new PostDeleter(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(PostUsage::class)));
     }
 
     #[DataProvider('useCases')]
@@ -313,7 +314,7 @@ final class PostPublicationTest extends TestCase
         yield 'publishing' => [static fn (PostRepository $repository) => new PostPublisher($id)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new RecordingMutualExclusion())];
         yield 'unpublishing' => [static fn (PostRepository $repository) => new PostUnpublisher($id)($repository, self::createStub(EventBus::class), self::createStub(PostRedirects::class))];
         yield 'discarding' => [static fn (PostRepository $repository) => new PostChangesDiscarder($id)($repository, self::createStub(EventBus::class))];
-        yield 'deleting' => [static fn (PostRepository $repository) => new PostDeleter($id)($repository, self::createStub(EventBus::class))];
+        yield 'deleting' => [static fn (PostRepository $repository) => new PostDeleter($id)($repository, self::createStub(EventBus::class), self::createStub(PostUsage::class))];
     }
 
     /**

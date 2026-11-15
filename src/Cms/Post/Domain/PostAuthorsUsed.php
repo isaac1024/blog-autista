@@ -8,9 +8,10 @@ use Shared\Domain\Event\DeliveredImmediately;
 use Shared\Domain\Event\DomainEvent;
 
 /**
- * The authors a post is signed by changed: those of the version being edited and of the one last
- * published, together; none once the post is deleted. It is told at once,
- * so whoever keeps track of the authors in use is never behind the post.
+ * The authors a post is signed by or links to changed: those of the version
+ * being edited and of the one last published, together; none once the post
+ * is deleted. It is told at once, so whoever keeps track of the authors in
+ * use is never behind the post.
  */
 final readonly class PostAuthorsUsed extends DomainEvent implements DeliveredImmediately
 {

@@ -14,6 +14,7 @@ use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
+use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
@@ -35,6 +36,7 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   section has on the site then, the day it was first published, and its
  *   own slug. Two posts on the site never share one; drafts take none, so
  *   they are never checked against each other.
+ * - A post anything links to is never deleted.
  * - A published post is unpublished before it is deleted, and stays on
  *   the site while redirects lead to it.
  * - Once off the site, it keeps the last address it had there, until
@@ -153,7 +155,8 @@ final class Post extends AggregateRoot
 
     /**
      * What the content of a post can use: what the content of a page can,
-     * with two heading levels, bold and links to pages.
+     * with two heading levels, bold and links to pages, other posts,
+     * sections, tags and authors.
      */
     public static function contentFeatures(): RichTextFeatures
     {
@@ -357,16 +360,20 @@ final class Post extends AggregateRoot
     }
 
     /**
-     * Deletes a post off the site.
+     * Deletes a post off the site that nothing links to.
      */
-    public function delete(PostRepository $postRepository, EventBus $eventBus): void
+    public function delete(PostRepository $postRepository, EventBus $eventBus, PostUsage $postUsage): void
     {
         if (PostStatus::Published === $this->status) {
             throw InvalidPostPublication::publishedPost();
         }
 
+        if ($postUsage->isInUse($this->id)) {
+            throw InvalidPostPublication::usedPost();
+        }
+
         // A post deleted uses nothing any longer.
-        $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'terms' => [], 'authors' => []]);
+        $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'posts' => [], 'terms' => [], 'authors' => []]);
 
         $events = $this->pullDomainEvents();
         $postRepository->delete($this);
@@ -492,8 +499,8 @@ final class Post extends AggregateRoot
     }
 
     /**
-     * @param array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>} $before
-     * @param array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>} $after
+     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>} $before
+     * @param array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>} $after
      */
     private function recordResourcesUsed(array $before, array $after): void
     {
@@ -503,6 +510,10 @@ final class Post extends AggregateRoot
 
         if ($before['pages'] !== $after['pages']) {
             $this->record(new PostPagesLinked($this->id->value(), $after['pages']));
+        }
+
+        if ($before['posts'] !== $after['posts']) {
+            $this->record(new PostPostsLinked($this->id->value(), $after['posts']));
         }
 
         if ($before['terms'] !== $after['terms']) {
@@ -516,15 +527,17 @@ final class Post extends AggregateRoot
 
     /**
      * What the version being edited and the one last published use, each
-     * once and in order: the images embedded, the pages linked, the section
-     * and the tags filed under, and the author signed by.
+     * once and in order: the images embedded, the pages and posts linked,
+     * the section and the tags filed under or linked, and the author signed
+     * by or linked.
      *
-     * @return array{images: list<string>, pages: list<string>, terms: list<string>, authors: list<string>}
+     * @return array{images: list<string>, pages: list<string>, posts: list<string>, terms: list<string>, authors: list<string>}
      */
     private function resourcesUsed(): array
     {
         $images = [];
         $pages = [];
+        $posts = [];
         $terms = [];
         $authors = [];
 
@@ -536,7 +549,11 @@ final class Post extends AggregateRoot
             $classification = $version->classification();
             $images = [...$images, ...$version->content()->imageIds()];
             $pages = [...$pages, ...$version->content()->pageIds()];
-            $terms = [...$terms, ...$classification->tags()->values()];
+            $linked = LinkedContents::fromTexts($version->content());
+            $posts = [...$posts, ...$linked->posts()];
+            // What it is filed under and signed by, and what its content links to, alike.
+            $terms = [...$terms, ...$classification->tags()->values(), ...$linked->terms()];
+            $authors = [...$authors, ...$linked->authors()];
 
             if (null !== $classification->section()) {
                 $terms[] = $classification->section()->value();
@@ -550,6 +567,7 @@ final class Post extends AggregateRoot
         return [
             'images' => self::eachOnce($images),
             'pages' => self::eachOnce($pages),
+            'posts' => self::eachOnce($posts),
             'terms' => self::eachOnce($terms),
             'authors' => self::eachOnce($authors),
         ];
