@@ -75,6 +75,6 @@ test('a single paragraph has no outline', async () => {
 
     editor.editor.chain().focus('end').insertContent(' more').run();
 
-    assert.equal(editor.target('outlineDialogList'), null);
-    assert.equal(editor.document.querySelector('.rich-text-outline-item'), null);
+    assert.equal(editor.target('outlineDialogList') === null, true);
+    assert.equal(editor.document.querySelector('.rich-text-outline-item') === null, true);
 });

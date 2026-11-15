@@ -400,7 +400,7 @@ test('a cropper outside a form still crops', async () => {
     cropper.document.querySelector('[data-controller]').remove();
     await settle();
 
-    assert.equal(cropper.target('editor'), null);
+    assert.equal(cropper.target('editor') === null, true);
 });
 
 test('the preview is drawn once a frame, however often the area changes in it, and not once the image is gone', async () => {

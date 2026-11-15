@@ -55,7 +55,7 @@ test('a single paragraph is one line of text, with only the marks the field allo
     editor.editor.commands.focus('end');
     editor.key('Enter');
     assert.deepEqual(editor.posted(), doc(paragraph('One line')));
-    assert.equal(editor.target('blockType'), null);
+    assert.equal(editor.target('blockType') === null, true);
 });
 
 test('a single paragraph without marks, or without where to look links up, takes none', async () => {

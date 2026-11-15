@@ -100,7 +100,10 @@ Stimulus application on the markup their templates write, kept in
 `tests/Markup/`, and the tests act through its events, as a person would, never
 by calling a controller's methods or reading its state. That helper fails a test
 whose controller threw, and `assertFocused` checks the focus by identity: never
-`assert.equal` two DOM nodes, whose diff walks the whole window. At the top,
+pass a DOM node to an assertion, not even against `null`. A failing one prints
+the whole window behind it, gigabytes per process, which under Stryker took the
+machine down; compare a boolean or what the node says (ESLint forbids the usual
+forms). At the top,
 Playwright under `tests/Browser/` loads the same markup and the real controllers
 and AssetMapper vendor modules in Chromium, without Symfony or a database, for
 the wiring only a real browser checks. Run `npm run test:js` for both suites, or
