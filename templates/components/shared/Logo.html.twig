@@ -1,4 +1,12 @@
-<picture class="block flex-none">
-    <source srcset="{{ asset('images/logo-dark.svg') }}" media="(prefers-color-scheme: dark)" type="image/svg+xml">
-    <img class="block h-auto w-6 flex-none" src="{{ asset('images/logo.svg') }}" width="24" height="24" alt="" aria-hidden="true">
-</picture>
+{#
+    The mark of the blog: a brain drawn in one line on a square of the accent.
+    It sits in the page, so it takes the colours of the theme the reader has,
+    picked by hand or by their system. The name beside it says what it is.
+#}
+<svg class="block size-7 flex-none" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <rect class="fill-accent forced-colors:fill-[CanvasText]" width="64" height="64"/>
+    <g class="stroke-bg forced-colors:stroke-[Canvas]" fill="none" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(1.3) translate(-32 -30.5)">
+        <path d="M32 17c-3.5-3-8.2-.6-7.8 4.1-4.7.8-6.1 6-2.7 9.1-3.7 3.3-2.2 8.8 2.7 9.2-.1 4 4.4 6 7.8 3.1 3.4 2.9 7.9.9 7.8-3.1 4.9-.4 6.4-5.9 2.7-9.2 3.4-3.1 2-8.3-2.7-9.1.4-4.7-4.3-7.1-7.8-4.1Z"/>
+        <path d="M32 17v27"/>
+    </g>
+</svg>
