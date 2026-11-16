@@ -8,83 +8,91 @@
 @source inline("w-[{0..100}%]");
 
 @font-face {
-    font-family: "Atkinson Hyperlegible";
+    font-family: "Atkinson Hyperlegible Next";
     font-style: normal;
-    font-weight: 400;
+    font-weight: 200 800;
     font-display: swap;
-    src: url("../fonts/atkinson-hyperlegible-400-latin.woff2") format("woff2");
+    src: url("../fonts/atkinson-hyperlegible-next-latin.woff2") format("woff2");
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: "Atkinson Hyperlegible";
+    font-family: "Atkinson Hyperlegible Next";
     font-style: normal;
-    font-weight: 400;
+    font-weight: 200 800;
     font-display: swap;
-    src: url("../fonts/atkinson-hyperlegible-400-latin-ext.woff2") format("woff2");
+    src: url("../fonts/atkinson-hyperlegible-next-latin-ext.woff2") format("woff2");
     unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @font-face {
-    font-family: "Atkinson Hyperlegible";
-    font-style: normal;
-    font-weight: 700;
+    font-family: "Atkinson Hyperlegible Next";
+    font-style: italic;
+    font-weight: 200 800;
     font-display: swap;
-    src: url("../fonts/atkinson-hyperlegible-700-latin.woff2") format("woff2");
+    src: url("../fonts/atkinson-hyperlegible-next-italic-latin.woff2") format("woff2");
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
-    font-family: "Atkinson Hyperlegible";
-    font-style: normal;
-    font-weight: 700;
+    font-family: "Atkinson Hyperlegible Next";
+    font-style: italic;
+    font-weight: 200 800;
     font-display: swap;
-    src: url("../fonts/atkinson-hyperlegible-700-latin-ext.woff2") format("woff2");
+    src: url("../fonts/atkinson-hyperlegible-next-italic-latin-ext.woff2") format("woff2");
     unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 @theme {
-    --color-bg: #f6f4ef;
-    --color-surface: #fffefa;
-    --color-text: #211b2b;
-    --color-muted: #514a62;
-    /* Outlines of form controls: 3:1 against the surface, as WCAG asks of them. */
-    --color-border: #6e675e;
+    /*
+     * The palette of the site and the CMS: a cool, faintly violet paper and
+     * a muted violet. Text, muted text and the accent keep 7:1 or more on every
+     * ground they sit on; what only separates or groups (dividers, the surface of panels)
+     * stays faint on purpose, so the page is calm and contrast goes to what
+     * is read or pressed.
+     */
+    --color-bg: #f6f5f9;
+    /* Panels and what comes from other sites. */
+    --color-surface: #ebe7f3;
+    --color-text: #2b2635;
+    --color-muted: #4e4859;
+    /* Outlines of form controls: 3:1 against the ground and the surface, as WCAG asks of them. */
+    --color-border: #837c93;
     /* Decorative lines that only separate regions, kept faint to calm the page. */
-    --color-divider: #dcd7cd;
+    --color-divider: #d9d4e3;
 
-    --color-accent: #614092;
+    --color-accent: #4e3f73;
     /* Tint of the current navigation item and of badges; accent text keeps 7:1 on it. */
-    --color-accent-soft: #f4f0fa;
-    --color-accent-strong: #4e3176;
+    --color-accent-soft: #e6e0f1;
+    --color-accent-strong: #3e3160;
     /* The one hue of a chart's marks, never of its text; checked for contrast and colour blindness against the surface. */
-    --color-chart: #614092;
+    --color-chart: #4e3f73;
     /*
      * Label and tint of each kind of callout; the label keeps 7:1 on its tint.
-     * The label colours its edge and its icon too.
+     * The label colours its icon too.
      */
     --color-note: #2c5080;
-    --color-note-soft: #edf2f8;
+    --color-note-soft: #e8eef6;
     --color-important: #863526;
-    --color-important-soft: #fbefeb;
+    --color-important-soft: #f7ebe8;
     --color-on-accent: #fff;
 
     --color-danger: #7f1d1d;
     --color-danger-strong: #5f1515;
-    --color-danger-bg: #fbe9e7;
+    --color-danger-bg: #f8e7e5;
     --color-on-danger: #fff;
 
-    --color-focus: #614092;
-    --color-selection-bg: #614092;
+    --color-focus: #4e3f73;
+    --color-selection-bg: #4e3f73;
     --color-selection-text: #fff;
 
     /* Square corners: shapes stay crisp and plain. */
     --radius-card: 0;
     --radius-control: 0;
-    --shadow-card: 0 24px 60px rgb(24 32 40 / 14%);
-    --shadow-panel: 0 1px 2px rgb(24 32 40 / 5%), 0 2px 8px rgb(24 32 40 / 4%);
+    --shadow-card: 0 24px 60px rgb(43 38 53 / 14%);
+    --shadow-panel: none;
 
-    --font-sans: "Atkinson Hyperlegible", verdana, tahoma, sans-serif;
+    --font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", verdana, tahoma, sans-serif;
     --text-base: 1.125rem;
     --leading-base: 1.7;
     --tracking-base: 0.01em;
@@ -101,8 +109,18 @@
         --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23863526' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
     }
 
+    /*
+     * The dark theme, which the reader gets from their system or picks by
+     * hand (data-theme on the root, set before the page paints). CSS can't
+     * share one block between a media query and a selector, so the two
+     * copies below are the same and change together.
+     */
+    :root[data-theme="light"] {
+        color-scheme: light;
+    }
+
     @media (prefers-color-scheme: dark) {
-        :root {
+        :root:not([data-theme="light"]) {
             --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9c6ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
             --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0b4a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
 
@@ -111,31 +129,67 @@
             --color-important: #f0b4a7;
             --color-important-soft: #2c1f1e;
 
-            --color-bg: #17151a;
-            --color-surface: #211f25;
-            --color-text: #eeeaf4;
-            --color-muted: #b3acbf;
-            --color-border: #8a8290;
-            --color-divider: #3a3640;
+            --color-bg: #1b1a20;
+            --color-surface: #26232e;
+            --color-text: #e8e5ee;
+            --color-muted: #b5afc1;
+            --color-border: #7d7789;
+            --color-divider: #38353f;
 
-            --color-accent: #c9b6ea;
-            --color-accent-soft: #28232f;
-            --color-accent-strong: #d8c8f0;
-            --color-chart: #9f7fe0;
-            --color-on-accent: #17151a;
+            --color-accent: #c4b8e6;
+            --color-accent-soft: #2f2a3a;
+            --color-accent-strong: #d6ccf0;
+            --color-chart: #9f86db;
+            --color-on-accent: #1b1a20;
 
             --color-danger: #ffb4ab;
             --color-danger-strong: #ffcdc6;
             --color-danger-bg: #3d1f1f;
-            --color-on-danger: #17151a;
+            --color-on-danger: #1b1a20;
 
-            --color-focus: #c9b6ea;
-            --color-selection-bg: #c9b6ea;
-            --color-selection-text: #17151a;
+            --color-focus: #c4b8e6;
+            --color-selection-bg: #c4b8e6;
+            --color-selection-text: #1b1a20;
 
             --shadow-card: 0 24px 60px rgb(5 8 12 / 50%);
             --shadow-panel: none;
         }
+    }
+
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --icon-note: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a9c6ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 11v5M12 7.5h.01'/%3E%3C/svg%3E");
+        --icon-important: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0b4a7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 4.2 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9.5v4M12 17h.01'/%3E%3C/svg%3E");
+
+        --color-note: #a9c6ea;
+        --color-note-soft: #1c232d;
+        --color-important: #f0b4a7;
+        --color-important-soft: #2c1f1e;
+
+        --color-bg: #1b1a20;
+        --color-surface: #26232e;
+        --color-text: #e8e5ee;
+        --color-muted: #b5afc1;
+        --color-border: #7d7789;
+        --color-divider: #38353f;
+
+        --color-accent: #c4b8e6;
+        --color-accent-soft: #2f2a3a;
+        --color-accent-strong: #d6ccf0;
+        --color-chart: #9f86db;
+        --color-on-accent: #1b1a20;
+
+        --color-danger: #ffb4ab;
+        --color-danger-strong: #ffcdc6;
+        --color-danger-bg: #3d1f1f;
+        --color-on-danger: #1b1a20;
+
+        --color-focus: #c4b8e6;
+        --color-selection-bg: #c4b8e6;
+        --color-selection-text: #1b1a20;
+
+        --shadow-card: 0 24px 60px rgb(5 8 12 / 50%);
+        --shadow-panel: none;
     }
 
     :focus-visible {

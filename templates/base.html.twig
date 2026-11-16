@@ -4,12 +4,12 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light dark">
-        <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
-        <meta name="theme-color" content="#17151a" media="(prefers-color-scheme: dark)">
+        <meta name="theme-color" content="#f6f5f9" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#1b1a20" media="(prefers-color-scheme: dark)">
         <title>{% block title %}Welcome!{% endblock %}</title>
 {% block meta %}{% endblock %}
         <link rel="icon" href="{{ asset('images/logo.svg') }}" type="image/svg+xml">
-        <link rel="preload" href="{{ asset('fonts/atkinson-hyperlegible-400-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="{{ asset('fonts/atkinson-hyperlegible-next-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
         {# Built by the Tailwind bundle and served by AssetMapper under a versioned URL, so browsers never keep a stale copy. #}
         <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
 {% block stylesheets %}{% endblock %}

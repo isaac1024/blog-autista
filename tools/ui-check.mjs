@@ -556,7 +556,12 @@ function parseDeclarations(block) {
 function parseCustomProperties(source) {
     const properties = {};
 
-    for (const match of source.matchAll(/(?::root|@theme)\s*\{/g)) {
+    /*
+     * The root as any theme selects it (`:root:not([data-theme="light"])` in
+     * the dark media query), except the copy of the dark theme a reader picks
+     * by hand, which repeats that media query and must not pass for the light one.
+     */
+    for (const match of source.matchAll(/(?::root(?![^{]*data-theme="dark")[^{]*|@theme\s*)\{/g)) {
         const block = findBracedBlock(source, match.index);
         if (!block) {
             continue;
