@@ -13,6 +13,7 @@ use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
+use Web\Post\Infrastructure\Ui\SiteMosaics;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
@@ -21,6 +22,10 @@ use Web\Settings\Infrastructure\Controller\SiteLayout;
  * Composes a page of the site, painted as SitePage paints it, in the chrome of
  * the site, presenting itself to search engines with its own address as its
  * canonical URL.
+ *
+ * It takes one collaborator for each part of the site the page shows.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class PublishedPage
 {
@@ -31,6 +36,7 @@ final readonly class PublishedPage
         private SiteLayout $siteLayout,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteLinkedContents $linkedContents,
+        private SiteMosaics $mosaics,
     ) {}
 
     public function __invoke(PageResponse $page): Page
@@ -59,6 +65,7 @@ final readonly class PublishedPage
             $page->content,
             $images,
             ($this->linkedContents)($page->content, $images, $page->id),
+            ($this->mosaics)($page->content),
         );
     }
 }

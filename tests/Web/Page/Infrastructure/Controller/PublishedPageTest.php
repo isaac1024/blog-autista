@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace Web\Tests\Page\Infrastructure\Controller;
 
 use PHPUnit\Framework\TestCase;
+use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SitePage;
+use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
+use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
+use Shared\Tests\Infrastructure\Ui\ComponentContracts;
+use Shared\Tests\Infrastructure\Ui\PageComponents;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Domain\AuthorRepository;
 use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
@@ -17,7 +22,12 @@ use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Page\Infrastructure\Controller\PublishedPage;
+use Web\Post\Domain\CmsPostPublished;
+use Web\Post\Domain\Post;
 use Web\Post\Domain\PostRepository;
+use Web\Post\Domain\PostSelection;
+use Web\Post\Infrastructure\Ui\SiteMosaics;
+use Web\Post\Infrastructure\Ui\SitePostCards;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
@@ -27,6 +37,8 @@ use Web\Shared\Domain\Robots;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostIdMother;
 
 final class PublishedPageTest extends TestCase
 {
@@ -75,7 +87,7 @@ final class PublishedPageTest extends TestCase
             ]))
             ->willReturn([$target, $home]);
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame([
             ['href' => '/destino.html', 'runs' => [['text' => 'Destino', 'bold' => false]]],
@@ -98,7 +110,7 @@ final class PublishedPageTest extends TestCase
         $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)));
         $page = Page::publish(CmsPagePublishedMother::create(robots: Robots::NoindexFollow));
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
     }
@@ -117,9 +129,50 @@ final class PublishedPageTest extends TestCase
         $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)));
         $page = Page::publish(CmsPagePublishedMother::create(id: self::TARGET));
 
-        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository))(PageResponse::fromPage($page));
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame(['type' => 'page', 'id' => self::TARGET], $result->countedContent);
+    }
+
+    /**
+     * A mosaic shows the latest posts it asks for as cards, their titles a
+     * level below the heading before it; mosaics asking for the same posts
+     * read them once, and one with no post isn't painted.
+     */
+    public function testItPaintsItsMosaicsWithTheLatestPostsTheyAskFor(): void
+    {
+        $tag = '01a1b801-ce58-723d-8234-b76d9105d010';
+        $mosaic = ['type' => 'mosaic', 'limit' => 2, 'section_id' => null, 'author_id' => null, 'tag_ids' => [$tag]];
+        $page = Page::publish(CmsPagePublishedMother::create(content: ['version' => 1, 'blocks' => [
+            $mosaic,
+            ['type' => 'heading', 'level' => 2, 'text' => [['text' => 'Lo último']]],
+            $mosaic,
+            ['type' => 'mosaic', 'limit' => 6, 'section_id' => CmsPostPublishedMother::SECTION, 'author_id' => null, 'tag_ids' => []],
+        ]]));
+        $posts = array_map(static fn (int $index): Post => Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::random()->value(), [
+            'title' => 'Entrada '.$index,
+            'slug' => 'entrada-'.$index,
+            'revision' => 1,
+        ] + CmsPostPublishedMother::body())), [1, 2]);
+        $postRepository = $this->createMock(PostRepository::class);
+        $postRepository->expects(self::exactly(2))->method('listed')->willReturnCallback(
+            static fn (PostSelection $selection, int $offset, int $limit): array => 0 === $offset && 2 === $limit && [$tag] === $selection->tagIds && null === $selection->sectionId && null === $selection->authorId ? $posts : [],
+        );
+        $urlGenerator = new RouteNameUrlGenerator();
+        $imageRepository = self::createStub(ImageRepository::class);
+        $imageRepository->method('findByIds')->willReturn([]);
+        $pageRepository = self::createStub(PageRepository::class);
+        $pageRepository->method('findByIds')->willReturn([]);
+        $siteLayout = new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository));
+
+        $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository, $postRepository))(PageResponse::fromPage($page));
+        ComponentContracts::assertHonoured($result);
+
+        $mosaics = PageComponents::find($result, 'Shared:PostCards', []);
+        self::assertSame([[2, false], [3, false]], array_map(static fn ($component): array => [$component->props['headingLevel'], $component->props['wide']], $mosaics));
+        $cards = $mosaics[0]->props['cards'];
+        self::assertIsArray($cards);
+        self::assertSame(['/vida-diaria/2026/11/07/entrada-1.html', '/vida-diaria/2026/11/07/entrada-2.html'], array_column($cards, 'url'));
     }
 
     private static function linkedContents(UrlGeneratorInterface $urlGenerator, PageRepository $pageRepository): SiteLinkedContents
@@ -132,6 +185,21 @@ final class PublishedPageTest extends TestCase
             self::createStub(AuthorRepository::class),
             new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)),
             new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator),
+        );
+    }
+
+    /**
+     * Mosaics of the posts given, none unless given.
+     */
+    private static function mosaics(UrlGeneratorInterface $urlGenerator, ImageRepository $imageRepository, ?PostRepository $postRepository = null): SiteMosaics
+    {
+        $translator = new CatalogueTranslator();
+        $translator->setLocale('es');
+
+        return new SiteMosaics(
+            $postRepository ?? self::createStub(PostRepository::class),
+            new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))),
+            new PostCardsComponent($translator),
         );
     }
 }

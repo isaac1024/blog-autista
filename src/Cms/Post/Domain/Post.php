@@ -164,12 +164,13 @@ final class Post extends AggregateRoot
     /**
      * What the content of a post can use: what the content of a page can,
      * with two heading levels, bold and links to pages, other posts,
-     * sections, tags and authors.
+     * sections, tags and authors, but mosaics of posts, which pages and the
+     * bios of authors show.
      */
     public static function contentFeatures(): RichTextFeatures
     {
         return new RichTextFeatures(
-            blocks: BlockType::cases(),
+            blocks: array_filter(BlockType::cases(), static fn (BlockType $type): bool => BlockType::Mosaic !== $type),
             headingLevels: [2, 3],
             calloutVariants: [CalloutVariant::Note, CalloutVariant::Important],
             marks: [Mark::Bold, Mark::Link],

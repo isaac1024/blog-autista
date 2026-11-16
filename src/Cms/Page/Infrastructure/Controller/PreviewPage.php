@@ -8,6 +8,7 @@ use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageResponse;
+use Cms\Post\Infrastructure\Ui\CmsMosaics;
 use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
@@ -27,6 +28,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * Search engines never index a preview nor follow its links, whatever the
  * page asks of them: its markup says so, and so does every response that
  * serves it, in the X-Robots-Tag header.
+ *
+ * It takes one collaborator for each part of the site the page shows.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class PreviewPage
 {
@@ -39,6 +44,7 @@ final readonly class PreviewPage
         private ImageRepository $imageRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private CmsLinkedContents $linkedContents,
+        private CmsMosaics $mosaics,
     ) {}
 
     public function __invoke(PageResponse $page): Page
@@ -63,6 +69,7 @@ final readonly class PreviewPage
             $content,
             $images,
             ($this->linkedContents)($content, $images, $page->id),
+            ($this->mosaics)($content),
         );
     }
 

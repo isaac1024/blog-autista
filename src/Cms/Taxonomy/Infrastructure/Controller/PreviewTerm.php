@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
+use Cms\Post\Domain\PostSelection;
+use Cms\Post\Infrastructure\Ui\CmsPostCards;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Cms\Taxonomy\Application\TermResponse;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -12,7 +14,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Composes the version of a term last saved as the site would serve it once
- * published, in the chrome the site shows now.
+ * published, in the chrome the site shows now, with the first page of its
+ * posts on the site.
  *
  * Search engines never index a preview nor follow its links, whatever the
  * term asks of them: its markup says so, and so does every response that
@@ -22,11 +25,17 @@ final readonly class PreviewTerm
 {
     public const string ROBOTS = 'noindex,nofollow';
 
+    /**
+     * As many posts as the first page of a term lists on the site.
+     */
+    private const int POSTS = 20;
+
     public function __construct(
         private PreviewLayout $previewLayout,
         private SiteTermPage $siteTermPage,
         private TermAddress $termAddress,
         private UrlGeneratorInterface $urlGenerator,
+        private CmsPostCards $postCards,
     ) {}
 
     public function __invoke(TaxonomySegment $taxonomy, TermResponse $term): Page
@@ -42,6 +51,11 @@ final readonly class PreviewTerm
                 $canonical,
             ),
             $term->name,
+            ($this->postCards)(
+                TaxonomySegment::Sections === $taxonomy ? new PostSelection($term->id, null, []) : new PostSelection(null, null, [$term->id]),
+                self::POSTS,
+            ),
+            null,
         );
     }
 }

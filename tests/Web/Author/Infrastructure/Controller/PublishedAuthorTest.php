@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Web\Tests\Author\Infrastructure\Controller;
 
 use PHPUnit\Framework\TestCase;
+use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteAuthorPage;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
+use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
 use Web\Author\Application\AuthorResponse;
 use Web\Author\Domain\Author;
@@ -19,6 +21,8 @@ use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Domain\PostRepository;
+use Web\Post\Infrastructure\Ui\SiteMosaics;
+use Web\Post\Infrastructure\Ui\SitePostCards;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
@@ -60,6 +64,7 @@ final class PublishedAuthorTest extends TestCase
             $imageRepository,
             $redirects,
             new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)),
+            new SiteMosaics(self::createStub(PostRepository::class), new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects), new PostCardsComponent(new CatalogueTranslator())),
         )(AuthorResponse::fromAuthor($author));
         ComponentContracts::assertHonoured($page);
 

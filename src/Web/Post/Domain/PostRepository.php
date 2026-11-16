@@ -20,4 +20,12 @@ interface PostRepository
      * published, by its slug.
      */
     public function findAt(string $section, \DateTimeImmutable $day, string $slug): ?Post;
+
+    /**
+     * The posts of the selection, newest first by the day they were first
+     * published, from the offset given, as many as the limit at most.
+     *
+     * @return list<Post>
+     */
+    public function listed(PostSelection $selection, int $offset, int $limit): array;
 }

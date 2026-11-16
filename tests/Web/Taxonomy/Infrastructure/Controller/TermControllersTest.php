@@ -8,10 +8,15 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Web\Post\Domain\CmsPostPublished;
+use Web\Post\Domain\Post;
+use Web\Post\Domain\PostId;
+use Web\Post\Domain\PostRepository;
 use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
 
 /**
  * Sections are served at the first level of the site, /{slug}/, and tags
@@ -100,10 +105,61 @@ final class TermControllersTest extends WebTestCase
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
 
-    private function publish(string $taxonomy, string $slug): void
+    /**
+     * A section or a tag lists its posts twenty at a time, the first page at
+     * its own address and the next ones numbered; a page that can't be, or
+     * past the last, isn't there. The page cache keeps each a few minutes.
+     */
+    #[DataProvider('publishedTerms')]
+    public function testItListsThePostsOfTheTermAPageAtATime(string $taxonomy, string $path, string $route): void
     {
+        $client = self::createClient();
+        $term = $this->publish($taxonomy, 'vida-diaria');
+
+        for ($post = 1; $post <= 21; ++$post) {
+            self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostId::random()->value(), [
+                'slug' => 'entrada-'.$post,
+                'section_id' => 'section' === $taxonomy ? $term : CmsPostPublishedMother::SECTION,
+                'tag_ids' => 'tag' === $taxonomy ? [$term] : [],
+                'revision' => 1,
+            ] + CmsPostPublishedMother::body())));
+        }
+
+        foreach (['', '?pagina=1', '?pagina=2'] as $page) {
+            $client->request('GET', self::HOST.$path.$page);
+
+            self::assertResponseIsSuccessful();
+            self::assertRouteSame($route);
+            self::assertSame('max-age=0, public, s-maxage=300', $client->getResponse()->headers->get('Cache-Control'));
+        }
+
+        foreach (['?pagina=3', '?pagina=0', '?pagina=-1', '?pagina=dos'] as $page) {
+            $client->request('GET', self::HOST.$path.$page);
+
+            self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    /**
+     * A term with no post yet still has its first page, and only that one.
+     */
+    public function testItServesTheFirstPageOfATermWithoutPosts(): void
+    {
+        $client = self::createClient();
+        $this->publish('tag', 'sueno');
+
+        $client->request('GET', self::HOST.'/tag/sueno.html');
+        self::assertResponseIsSuccessful();
+
+        $client->request('GET', self::HOST.'/tag/sueno.html?pagina=2');
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+    }
+
+    private function publish(string $taxonomy, string $slug): string
+    {
+        $id = TermId::random()->value();
         self::getContainer()->get(TermRepository::class)->save(Term::publish(CmsTermPublished::fromPrimitives(
-            TermId::random()->value(),
+            $id,
             [
                 'taxonomy' => $taxonomy,
                 'name' => 'Vida diaria',
@@ -115,5 +171,7 @@ final class TermControllersTest extends WebTestCase
                 'revision' => 1,
             ],
         )));
+
+        return $id;
     }
 }

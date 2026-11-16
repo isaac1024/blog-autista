@@ -17,6 +17,9 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PreviewPage;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostSelection;
+use Cms\Post\Infrastructure\Ui\CmsMosaics;
+use Cms\Post\Infrastructure\Ui\CmsPostCards;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
@@ -27,12 +30,19 @@ use Cms\Shared\Domain\Robots;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Post\Domain\PostIdMother;
+use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Settings\Domain\SettingsMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Http\SignedUrls;
+use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
+use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
+use Shared\Tests\Infrastructure\Ui\ComponentContracts;
+use Shared\Tests\Infrastructure\Ui\PageComponents;
 use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -195,6 +205,33 @@ final class PreviewPageTest extends TestCase
         self::assertSame('https://www.blogautista.localhost/', $result->canonical);
     }
 
+    /**
+     * A mosaic previews the latest posts the CMS has on the site, as the
+     * site would show them, each card leading to the site; the section of a
+     * card is named as the site has it.
+     */
+    public function testItPaintsItsMosaicsWithTheLatestPostsOnTheSite(): void
+    {
+        $postRepository = $this->createMock(PostRepository::class);
+        $postRepository->expects(self::once())->method('latestOnSite')->with(self::equalTo(new PostSelection(PostMother::SECTION, null, [PostMother::TAG])), 4)->willReturn([
+            PostMother::published(id: PostIdMother::random()->value(), title: 'Un día', slug: 'un-dia', tags: [PostMother::TAG]),
+            PostMother::published(id: PostIdMother::random()->value(), title: 'Otro día', slug: 'otro-dia'),
+        ]);
+        $termRepository = self::createStub(TermRepository::class);
+        $termRepository->method('find')->willReturn(TermMother::published(id: PostMother::SECTION, name: 'Vida diaria publicada'));
+        $page = PageMother::create(id: self::PAGE, content: ['version' => 1, 'blocks' => [
+            ['type' => 'mosaic', 'limit' => 4, 'section_id' => PostMother::SECTION, 'author_id' => null, 'tag_ids' => [PostMother::TAG]],
+        ]]);
+
+        $result = $this->preview(postRepository: $postRepository, termRepository: $termRepository)(PageResponse::fromPage($page));
+        ComponentContracts::assertHonoured($result);
+
+        /** @var list<array{url: string, title: string, section: string, excerpt: ?string}> $cards */
+        $cards = PageComponents::one($result, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => false])->props['cards'];
+        self::assertSame([['Un día', 'Vida diaria publicada', PostMother::META_DESCRIPTION], ['Otro día', 'Vida diaria publicada', PostMother::META_DESCRIPTION]], array_map(static fn (array $card): array => [$card['title'], $card['section'], $card['excerpt']], $cards));
+        self::assertSame('https://www.blogautista.localhost/un-dia.html', $cards[0]['url']);
+    }
+
     public function testItGivesTheHomePageTheRootOfTheSiteAsItsCanonicalUrl(): void
     {
         $result = $this->preview()(PageResponse::fromPage(PageMother::home(id: self::PAGE)));
@@ -207,7 +244,7 @@ final class PreviewPageTest extends TestCase
      * @param list<Page>           $pages
      * @param array<string, Image> $images keyed by id
      */
-    private function preview(array $pages = [], array $images = [], ?Settings $settings = null): PreviewPage
+    private function preview(array $pages = [], array $images = [], ?Settings $settings = null, ?PostRepository $postRepository = null, ?TermRepository $termRepository = null): PreviewPage
     {
         $urlGenerator = self::createStub(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')->willReturnCallback(
@@ -250,6 +287,7 @@ final class PreviewPageTest extends TestCase
             $imageRepository,
             $redirectsByOrigin,
             new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
+            new CmsMosaics(new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
         );
     }
 }

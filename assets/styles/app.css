@@ -542,6 +542,28 @@
         line-height: 1.25;
     }
 
+    /* The control that changes what a mosaic asks for, as a secondary button. */
+    .rich-text-mosaic-change {
+        justify-self: start;
+        min-height: 2.75rem;
+        cursor: pointer;
+        border: 2px solid var(--color-accent);
+        border-radius: var(--radius-control);
+        padding: 0.375rem 1rem;
+        background-color: var(--color-surface);
+        color: var(--color-accent);
+        font-weight: 700;
+
+        &:hover {
+            background-color: var(--color-accent);
+            color: var(--color-on-accent);
+        }
+
+        @media (forced-colors: active) {
+            border-color: ButtonText;
+        }
+    }
+
     .rich-text-image-note,
     .rich-text-page-note,
     .rich-text-term-note {

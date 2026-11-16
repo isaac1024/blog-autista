@@ -41,6 +41,10 @@ final class RouteNameUrlGenerator implements UrlGeneratorInterface
             default => '/'.$name.([] === $parameters ? '' : '?'.http_build_query($parameters)),
         };
 
+        // What the path of a route of the site doesn't take goes in its query, as the router does.
+        $query = str_starts_with($path, '/'.$name) ? [] : array_diff_key($parameters, array_flip(['slug', 'section', 'year', 'month', 'day']));
+        $path .= [] === $query ? '' : '?'.http_build_query($query);
+
         return self::ABSOLUTE_URL === $referenceType ? self::SITE.$path : $path;
     }
 

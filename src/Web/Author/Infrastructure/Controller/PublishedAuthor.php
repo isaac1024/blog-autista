@@ -13,6 +13,7 @@ use Web\Author\Application\AuthorResponse;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
+use Web\Post\Infrastructure\Ui\SiteMosaics;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
@@ -22,6 +23,10 @@ use Web\Settings\Infrastructure\Controller\SiteLayout;
  * paints it, in the chrome of the site, presenting itself to search engines
  * with its own address as its canonical URL. Its bio paints only the images
  * and the pages on the site, as the content of a page does.
+ *
+ * It takes one collaborator for each part of the site the page shows.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class PublishedAuthor
 {
@@ -32,6 +37,7 @@ final readonly class PublishedAuthor
         private ImageRepository $imageRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteLinkedContents $linkedContents,
+        private SiteMosaics $mosaics,
     ) {}
 
     public function __invoke(AuthorResponse $author): Page
@@ -57,6 +63,7 @@ final readonly class PublishedAuthor
             $author->bio,
             $images,
             ($this->linkedContents)($author->bio, $images, $author->id),
+            ($this->mosaics)($author->bio),
         );
     }
 }

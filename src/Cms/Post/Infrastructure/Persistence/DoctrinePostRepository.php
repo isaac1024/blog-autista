@@ -9,8 +9,10 @@ use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostAddressTaken;
 use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostSelection;
 use Cms\Post\Domain\PostStatus;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Shared\Domain\Criteria\Criteria;
@@ -102,5 +104,55 @@ final readonly class DoctrinePostRepository implements PostRepository
             ->getQuery();
 
         return $query->getResult();
+    }
+
+    /**
+     * Read from the version on the site of each post, where a post keeps its
+     * section, its author and its tags: only previews list posts this way, so
+     * they go without an index of their own.
+     */
+    #[\Override]
+    public function latestOnSite(PostSelection $selection, int $limit): array
+    {
+        $conditions = ["p.status = 'published'"];
+        $parameters = ['limit' => $limit];
+        $types = ['limit' => ParameterType::INTEGER];
+
+        if (null !== $selection->sectionId) {
+            $conditions[] = "JSON_VALUE(p.published_version, '$.section_id') = :section";
+            $parameters['section'] = $selection->sectionId;
+        }
+
+        if (null !== $selection->authorId) {
+            $conditions[] = "JSON_VALUE(p.published_version, '$.author_id') = :author";
+            $parameters['author'] = $selection->authorId;
+        }
+
+        if ([] !== $selection->tagIds) {
+            $conditions[] = "JSON_OVERLAPS(JSON_EXTRACT(p.published_version, '$.tag_ids'), :tags)";
+            $parameters['tags'] = json_encode($selection->tagIds, \JSON_THROW_ON_ERROR);
+        }
+
+        $ids = array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
+            'SELECT p.id FROM cms_post p WHERE '.implode(' AND ', $conditions).' ORDER BY p.first_published_at DESC, p.id DESC LIMIT :limit',
+            $parameters,
+            $types,
+        ));
+        $posts = [];
+
+        foreach ($ids as $id) {
+            $post = $this->find(new PostId($id));
+
+            if (null !== $post) {
+                $posts[] = $post;
+            }
+        }
+
+        return $posts;
+    }
+
+    private static function id(mixed $value): string
+    {
+        return \is_string($value) ? $value : throw new \UnexpectedValueException('A listed post has no id.');
     }
 }

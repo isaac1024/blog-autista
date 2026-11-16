@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
 use Shared\Tests\Domain\RichText\RichTextMother;
@@ -185,6 +186,21 @@ final class PostUpdaterTest extends TestCase
     {
         yield 'a link' => [RichTextMother::stored(['type' => 'paragraph', 'text' => [['text' => 'este post', 'marks' => ['link'], 'post_id' => PostIdMother::DEFAULT_VALUE]]])];
         yield 'a widget' => [RichTextMother::stored(['type' => 'widget', 'kind' => 'related_page', 'post_id' => PostIdMother::DEFAULT_VALUE])];
+    }
+
+    /**
+     * Mosaics of posts are for pages and the bios of authors: a post shows
+     * none.
+     */
+    public function testItNeverSavesAPostShowingAMosaic(): void
+    {
+        $repository = $this->createMock(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $repository->expects(self::never())->method('save');
+
+        $this->expectExceptionObject(InvalidRichText::notAllowed('A "mosaic" block'));
+
+        self::update($repository, self::createStub(EventBus::class), content: RichTextMother::stored(['type' => 'mosaic', 'limit' => 6, 'section_id' => null, 'author_id' => null, 'tag_ids' => []]));
     }
 
     public function testItNeverSavesAPostOpeningWithAnImageTheLibraryHasNot(): void

@@ -62,6 +62,14 @@ final readonly class TiptapDocumentReader
             'image' => ['type' => 'image', 'id' => $attrs['id'] ?? null],
             // So is what a widget shows, under the key of its kind.
             'widget' => ['type' => 'widget', 'kind' => $attrs['kind'] ?? null, self::linkKey($attrs, $path) => $attrs['id'] ?? null],
+            // A mosaic by what it asks for alone; the site shows the posts.
+            'mosaic' => [
+                'type' => 'mosaic',
+                'limit' => $attrs['limit'] ?? null,
+                'section_id' => $attrs['sectionId'] ?? null,
+                'author_id' => $attrs['authorId'] ?? null,
+                'tag_ids' => $attrs['tagIds'] ?? [],
+            ],
             default => throw InvalidRichText::malformed($path.'.type', 'a block the editor offers'),
         };
     }

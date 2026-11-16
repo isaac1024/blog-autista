@@ -141,8 +141,8 @@ final class Author extends AggregateRoot
 
     /**
      * What a bio can use: everything the content of a page can, with two
-     * heading levels, bold and links to pages, posts, sections, tags and
-     * authors.
+     * heading levels, bold, links to pages, posts, sections, tags and
+     * authors, and mosaics of posts, such as the author's own.
      */
     public static function bioFeatures(): RichTextFeatures
     {
@@ -523,11 +523,12 @@ final class Author extends AggregateRoot
 
     /**
      * The posts, sections and tags, and authors the bio being edited and the
-     * one on the site link to or show in widgets.
+     * one on the site link to, show in widgets or narrow mosaics down to;
+     * not the author itself, whose bio may show its own posts.
      */
     private function contentsLinked(): LinkedContents
     {
-        return LinkedContents::fromTexts($this->version->bio(), $this->onSite()?->bio());
+        return LinkedContents::fromTexts($this->version->bio(), $this->onSite()?->bio())->withoutAuthor($this->id->value());
     }
 
     /**

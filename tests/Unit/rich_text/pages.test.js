@@ -37,6 +37,19 @@ test('a document cites what its widgets and its links point to, each once by its
     assert.deepEqual(targetsIn(doc), [{ type: 'page', id: 'a' }, { type: 'page', id: 'b' }, { type: 'post', id: 'a' }, { type: 'term', id: 'c' }]);
 });
 
+test('a mosaic cites what it narrows its posts down to: its section and its tags as terms, its author', () => {
+    const mosaic = (attrs) => ({ type: { name: 'mosaic' }, attrs, marks: [] });
+    const doc = documentOf(
+        mosaic({ sectionId: 's', authorId: 'a', tagIds: ['t1', 's'] }),
+        mosaic({ sectionId: null, authorId: null, tagIds: [] }),
+        mosaic({ sectionId: null, authorId: 'a' }),
+        // Any other node narrows nothing down.
+        { type: { name: 'paragraph' }, attrs: {}, marks: [] },
+    );
+
+    assert.deepEqual(targetsIn(doc), [{ type: 'term', id: 's' }, { type: 'author', id: 'a' }, { type: 'term', id: 't1' }]);
+});
+
 test('a page found stands on the site or off it; one not found, as the lookup knows it', () => {
     assert.equal(pageStateOf(found(PUBLISHED)), 'published');
     assert.equal(pageStateOf(found(DRAFT)), 'offSite');

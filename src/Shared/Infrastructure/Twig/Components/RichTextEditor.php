@@ -192,11 +192,22 @@ final class RichTextEditor
     }
 
     /**
-     * Whether the editor picks contents, to link text or to show in a widget.
+     * Whether mosaics can show posts: the module allows them, and the editor
+     * knows where to find the sections, tags and authors they narrow their
+     * posts down to.
+     */
+    public function allowsMosaics(): bool
+    {
+        return $this->allows('mosaic') && [] !== $this->linkTargets;
+    }
+
+    /**
+     * Whether the editor picks contents, to link text, to show in a widget,
+     * or to narrow a mosaic down to.
      */
     public function picksPages(): bool
     {
-        return $this->allowsLinks() || $this->allowsWidgets();
+        return $this->allowsLinks() || $this->allowsWidgets() || $this->allowsMosaics();
     }
 
     public function allowsQuotes(): bool

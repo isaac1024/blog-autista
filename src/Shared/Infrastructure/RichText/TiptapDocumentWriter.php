@@ -12,6 +12,7 @@ use Shared\Domain\RichText\InlineText;
 use Shared\Domain\RichText\ItemList;
 use Shared\Domain\RichText\ListStyle;
 use Shared\Domain\RichText\Mark;
+use Shared\Domain\RichText\Mosaic;
 use Shared\Domain\RichText\Paragraph;
 use Shared\Domain\RichText\Quote;
 use Shared\Domain\RichText\RichText;
@@ -57,6 +58,12 @@ final readonly class TiptapDocumentWriter
             ],
             $block instanceof EmbeddedImage => ['type' => 'image', 'attrs' => ['id' => $block->imageId()]],
             $block instanceof Widget => ['type' => 'widget', 'attrs' => ['kind' => $block->kind()->value, 'type' => $block->target()->type()->value, 'id' => $block->target()->id()]],
+            $block instanceof Mosaic => ['type' => 'mosaic', 'attrs' => [
+                'limit' => $block->limit(),
+                'sectionId' => $block->sectionId(),
+                'authorId' => $block->authorId(),
+                'tagIds' => $block->tagIds(),
+            ]],
             $block instanceof Table => ['type' => 'table', 'content' => [
                 self::tiptapRow('tableHeader', $block->header()),
                 ...array_map(static fn (array $row): array => self::tiptapRow('tableCell', $row), $block->rows()),

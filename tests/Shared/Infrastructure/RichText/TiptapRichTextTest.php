@@ -123,6 +123,16 @@ final class TiptapRichTextTest extends TestCase
             [['type' => 'image', 'attrs' => ['id' => '01a1b801-ce58-723d-8234-b76d9105d001']]],
             [['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001']],
         ];
+        yield 'mosaic, by what it asks for alone' => [
+            [
+                ['type' => 'mosaic', 'attrs' => ['limit' => 6, 'sectionId' => '01a1da61-824f-7f60-a053-370de84f406e', 'authorId' => '01a1da61-8572-750e-a300-8b60efc50fc1', 'tagIds' => ['01a1da61-83f9-798f-a8bd-f08f43bdbca8']]],
+                ['type' => 'mosaic', 'attrs' => ['limit' => 20, 'sectionId' => null, 'authorId' => null, 'tagIds' => []]],
+            ],
+            [
+                ['type' => 'mosaic', 'limit' => 6, 'section_id' => '01a1da61-824f-7f60-a053-370de84f406e', 'author_id' => '01a1da61-8572-750e-a300-8b60efc50fc1', 'tag_ids' => ['01a1da61-83f9-798f-a8bd-f08f43bdbca8']],
+                ['type' => 'mosaic', 'limit' => 20, 'section_id' => null, 'author_id' => null, 'tag_ids' => []],
+            ],
+        ];
         yield 'empty blocks the editor leaves behind are dropped' => [
             [
                 ['type' => 'paragraph'],

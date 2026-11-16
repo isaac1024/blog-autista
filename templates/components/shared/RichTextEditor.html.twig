@@ -20,6 +20,8 @@
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.75" /><path d="M20.5 15.5l-5-5-9 9" />
 {% elseif name == 'insertWidget' %}
     <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" /><path d="M7 10h4M7 14h10" />
+{% elseif name == 'insertMosaic' %}
+    <rect x="3.5" y="3.5" width="7.5" height="7.5" /><rect x="13" y="3.5" width="7.5" height="7.5" /><rect x="3.5" y="13" width="7.5" height="7.5" /><rect x="13" y="13" width="7.5" height="7.5" />
 {% elseif name == 'insertTable' %}
     <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" /><path d="M3.5 9.5h17M3.5 14.5h17M10 9.5v10" />
 {% elseif name == 'undo' %}
@@ -74,7 +76,7 @@
 {% macro separator() %}
 <span class="mx-0.5 h-7 w-0.5 flex-none bg-divider" aria-hidden="true"></span>
 {% endmacro %}
-<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-quote-source-hint-value="{{ 'ui.editor.quote_source_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}"{% if singleParagraph %} data-rich-text-editor-single-paragraph-value="true"{% endif %}{% if this.allowsImages %} data-rich-text-editor-image-search-url-value="{{ imageSearchUrl }}" data-rich-text-editor-image-lookup-url-value="{{ imageLookupUrl }}" data-rich-text-editor-image-labels-value="{{ {loading: 'ui.editor.image.loading'|trans, missing: 'ui.editor.image.missing'|trans, unknown: 'ui.editor.image.unknown'|trans, error: 'ui.editor.image.error'|trans, offSite: 'ui.editor.image.off_site'|trans, result: 'ui.editor.image.result'|trans, results: 'ui.editor.image.results'|trans, none: 'ui.editor.image.none'|trans, embedded: 'ui.editor.image.embedded'|trans}|json_encode }}"{% endif %}{% if this.picksPages %} data-rich-text-editor-link-targets-value="{{ linkTargets|json_encode }}" data-rich-text-editor-page-labels-value="{{ {title: 'ui.editor.link.title'|trans, loading: 'ui.editor.link.loading'|trans, missing: 'ui.editor.link.missing'|trans, unknown: 'ui.editor.link.unknown'|trans, target: 'ui.editor.link.target'|trans, offSite: 'ui.editor.link.off_site'|trans, result: 'ui.editor.link.result'|trans, results: 'ui.editor.link.results'|trans, none: 'ui.editor.link.none'|trans, error: 'ui.editor.link.error'|trans, removed: 'ui.editor.link.removed'|trans}|json_encode }}"{% endif %}{% if this.allowsWidgets %} data-rich-text-editor-widget-labels-value="{{ {title: 'ui.editor.widget.title'|trans, label: 'ui.editor.widget.label'|trans, loading: 'ui.editor.widget.loading'|trans, missing: 'ui.editor.widget.missing'|trans, unknown: 'ui.editor.widget.unknown'|trans, offSite: 'ui.editor.widget.off_site'|trans, result: 'ui.editor.widget.result'|trans, results: 'ui.editor.widget.results'|trans}|json_encode }}"{% endif %}{% if maxLength %} data-rich-text-editor-max-length-value="{{ maxLength }}" data-rich-text-editor-count-value="{{ 'ui.editor.count'|trans }}" data-rich-text-editor-count-over-value="{{ 'ui.editor.count_over'|trans }}"{% endif %}>
+<div class="grid gap-3" data-controller="rich-text-editor" data-rich-text-editor-id-value="{{ id }}" data-rich-text-editor-placeholder-value="{{ placeholder }}" data-rich-text-editor-slash-hint-value="{{ 'ui.editor.slash_hint'|trans }}" data-rich-text-editor-quote-source-hint-value="{{ 'ui.editor.quote_source_hint'|trans }}" data-rich-text-editor-block-type-label-value="{{ 'ui.editor.block_type'|trans }}" data-rich-text-editor-block-options-value="{{ this.blockOptions|map(option => {value: option.value, label: option.label|trans(option.labelParameters)})|json_encode }}" data-rich-text-editor-moved-up-value="{{ 'ui.editor.moved_up'|trans }}" data-rich-text-editor-moved-down-value="{{ 'ui.editor.moved_down'|trans }}" data-rich-text-editor-section-moved-up-value="{{ 'ui.editor.section_moved_up'|trans }}" data-rich-text-editor-section-moved-down-value="{{ 'ui.editor.section_moved_down'|trans }}" data-rich-text-editor-features-value="{{ features|json_encode }}" data-rich-text-editor-callout-labels-value="{{ this.calloutLabels|map(key => key|trans)|json_encode }}"{% if singleParagraph %} data-rich-text-editor-single-paragraph-value="true"{% endif %}{% if this.allowsImages %} data-rich-text-editor-image-search-url-value="{{ imageSearchUrl }}" data-rich-text-editor-image-lookup-url-value="{{ imageLookupUrl }}" data-rich-text-editor-image-labels-value="{{ {loading: 'ui.editor.image.loading'|trans, missing: 'ui.editor.image.missing'|trans, unknown: 'ui.editor.image.unknown'|trans, error: 'ui.editor.image.error'|trans, offSite: 'ui.editor.image.off_site'|trans, result: 'ui.editor.image.result'|trans, results: 'ui.editor.image.results'|trans, none: 'ui.editor.image.none'|trans, embedded: 'ui.editor.image.embedded'|trans}|json_encode }}"{% endif %}{% if this.picksPages %} data-rich-text-editor-link-targets-value="{{ linkTargets|json_encode }}" data-rich-text-editor-page-labels-value="{{ {title: 'ui.editor.link.title'|trans, loading: 'ui.editor.link.loading'|trans, missing: 'ui.editor.link.missing'|trans, unknown: 'ui.editor.link.unknown'|trans, target: 'ui.editor.link.target'|trans, offSite: 'ui.editor.link.off_site'|trans, result: 'ui.editor.link.result'|trans, results: 'ui.editor.link.results'|trans, none: 'ui.editor.link.none'|trans, error: 'ui.editor.link.error'|trans, removed: 'ui.editor.link.removed'|trans}|json_encode }}"{% endif %}{% if this.allowsWidgets %} data-rich-text-editor-widget-labels-value="{{ {title: 'ui.editor.widget.title'|trans, label: 'ui.editor.widget.label'|trans, loading: 'ui.editor.widget.loading'|trans, missing: 'ui.editor.widget.missing'|trans, unknown: 'ui.editor.widget.unknown'|trans, offSite: 'ui.editor.widget.off_site'|trans, result: 'ui.editor.widget.result'|trans, results: 'ui.editor.widget.results'|trans}|json_encode }}"{% endif %}{% if this.allowsMosaics %} data-rich-text-editor-mosaic-labels-value="{{ {label: 'ui.editor.mosaic.label'|trans, change: 'ui.editor.mosaic.change'|trans, limit: 'ui.editor.mosaic.summary_limit'|trans, section: 'ui.editor.mosaic.section'|trans, author: 'ui.editor.mosaic.author'|trans, tags: 'ui.editor.mosaic.tags'|trans, loading: 'ui.editor.widget.loading'|trans, missing: 'ui.editor.widget.missing'|trans, unknown: 'ui.editor.widget.unknown'|trans, anySection: 'ui.editor.mosaic.any_section'|trans, anyAuthor: 'ui.editor.mosaic.any_author'|trans, noTags: 'ui.editor.mosaic.no_tags'|trans, removeTag: 'ui.editor.mosaic.remove_tag'|trans, insert: 'ui.editor.mosaic.insert_submit'|trans, save: 'ui.editor.mosaic.save'|trans, pick: {section: {title: 'ui.editor.mosaic.pick.section'|trans, offSite: 'ui.editor.mosaic.pick.off_site'|trans, result: 'ui.editor.link.result'|trans, results: 'ui.editor.link.results'|trans}, author: {title: 'ui.editor.mosaic.pick.author'|trans, offSite: 'ui.editor.mosaic.pick.off_site'|trans, result: 'ui.editor.link.result'|trans, results: 'ui.editor.link.results'|trans}, tag: {title: 'ui.editor.mosaic.pick.tag'|trans, offSite: 'ui.editor.mosaic.pick.off_site'|trans, result: 'ui.editor.link.result'|trans, results: 'ui.editor.link.results'|trans}}}|json_encode }}"{% endif %}{% if maxLength %} data-rich-text-editor-max-length-value="{{ maxLength }}" data-rich-text-editor-count-value="{{ 'ui.editor.count'|trans }}" data-rich-text-editor-count-over-value="{{ 'ui.editor.count_over'|trans }}"{% endif %}>
     <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span class="{{ hideLabel ? 'sr-only' : 'text-[1rem] font-bold' }}" id="{{ id }}-label">{{ label }}</span>
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint" data-rich-text-editor-target="hint" hidden>{{ hint ?? 'ui.editor.hint'|trans }}</p>
@@ -110,7 +112,10 @@
 {% if this.allowsWidgets %}
                     {{ _self.button('insertWidget', 'ui.editor.widget.insert'|trans) }}
 {% endif %}
-{% if this.allowsBold or this.allowsLinks or this.allowsTables or this.allowsImages or this.allowsWidgets %}
+{% if this.allowsMosaics %}
+                    {{ _self.button('insertMosaic', 'ui.editor.mosaic.insert'|trans) }}
+{% endif %}
+{% if this.allowsBold or this.allowsLinks or this.allowsTables or this.allowsImages or this.allowsWidgets or this.allowsMosaics %}
                     {{ _self.separator() }}
 {% endif %}
                     {{ _self.button('undo', 'ui.editor.undo'|trans) }}
@@ -230,7 +235,7 @@
                 </button>
             </div>
             {# Not a form: the editor already sits in the form of its page. #}
-            <fieldset class="m-0 flex min-w-0 flex-wrap gap-x-4 gap-y-2 border-0 p-0">
+            <fieldset class="m-0 flex min-w-0 flex-wrap gap-x-4 gap-y-2 border-0 p-0" data-rich-text-editor-target="pageKinds">
                 <legend class="mb-2 p-0 text-[1rem] font-bold">{{ 'ui.editor.link.kind'|trans }}</legend>
 {% for target in linkTargets %}
                 <label class="flex min-h-11 cursor-pointer items-center gap-2 text-[1rem]">
@@ -249,6 +254,55 @@
             <p class="m-0 text-[1rem] text-muted" role="status" data-rich-text-editor-target="pageStatus"></p>
             <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.editor.link.list'|trans }}" data-rich-text-editor-target="pageResults"></ul>
             <button class="min-h-12 cursor-pointer self-start rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="pageMore" data-action="rich-text-editor#morePages" hidden>{{ 'ui.editor.link.more'|trans }}</button>
+        </div>
+    </dialog>
+{% endif %}
+{% if this.allowsMosaics %}
+    {#
+        What a mosaic shows: how many of the latest posts, and what it narrows
+        them down to, each picked in the dialog of contents. Not a form: the
+        editor sits in the form of what it edits.
+    #}
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-mosaic-dialog" aria-labelledby="{{ id }}-mosaic-title" closedby="any" data-rich-text-editor-target="mosaicDialog">
+        <div class="flex flex-col gap-5 p-[clamp(1.25rem,4vw,2rem)]">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="m-0 text-xl font-bold" id="{{ id }}-mosaic-title">{{ 'ui.editor.mosaic.title'|trans }}</h2>
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">
+                    <span class="sr-only">{{ 'ui.close'|trans }}</span>
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-[1rem] font-bold" for="{{ id }}-mosaic-limit">{{ 'ui.editor.mosaic.limit'|trans }}</label>
+                <p class="m-0 text-[1rem] text-muted" id="{{ id }}-mosaic-limit-hint">{{ 'ui.editor.mosaic.limit_hint'|trans }}</p>
+                <input class="min-h-12 w-32 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="number" min="1" max="20" step="1" inputmode="numeric" id="{{ id }}-mosaic-limit" aria-describedby="{{ id }}-mosaic-limit-hint" data-rich-text-editor-target="mosaicLimit">
+            </div>
+            <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-section-label">
+                <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-section-label">{{ 'ui.editor.mosaic.section'|trans }}</p>
+                <p class="m-0 text-[1rem]" data-rich-text-editor-target="mosaicSection"></p>
+                <div class="flex flex-wrap gap-2">
+                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionChoose" data-action="rich-text-editor#chooseMosaicSection">{{ 'ui.editor.mosaic.choose_section'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionRemove" data-action="rich-text-editor#removeMosaicSection" hidden>{{ 'ui.editor.mosaic.remove_section'|trans }}</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-author-label">
+                <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-author-label">{{ 'ui.editor.mosaic.author'|trans }}</p>
+                <p class="m-0 text-[1rem]" data-rich-text-editor-target="mosaicAuthor"></p>
+                <div class="flex flex-wrap gap-2">
+                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorChoose" data-action="rich-text-editor#chooseMosaicAuthor">{{ 'ui.editor.mosaic.choose_author'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorRemove" data-action="rich-text-editor#removeMosaicAuthor" hidden>{{ 'ui.editor.mosaic.remove_author'|trans }}</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-tags-label" aria-describedby="{{ id }}-mosaic-tags-hint">
+                <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-tags-label">{{ 'ui.editor.mosaic.tags'|trans }}</p>
+                <p class="m-0 text-[1rem] text-muted" id="{{ id }}-mosaic-tags-hint">{{ 'ui.editor.mosaic.tags_hint'|trans }}</p>
+                <ul class="m-0 grid list-none gap-2 p-0 text-[1rem]" data-rich-text-editor-target="mosaicTags"></ul>
+                <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText] self-start" type="button" data-rich-text-editor-target="mosaicTagChoose" data-action="rich-text-editor#chooseMosaicTag">{{ 'ui.editor.mosaic.choose_tag'|trans }}</button>
+            </div>
+            <div class="flex flex-wrap gap-3 border-t border-divider pt-4">
+                <button class="min-h-12 cursor-pointer rounded-control border-2 border-transparent bg-accent px-5 py-3 text-base font-bold text-on-accent hover:bg-accent-strong forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSubmit" data-action="rich-text-editor#applyMosaic"></button>
+                <button class="min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-5 py-3 text-base font-bold text-text hover:border-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">{{ 'ui.editor.mosaic.cancel'|trans }}</button>
+            </div>
         </div>
     </dialog>
 {% endif %}

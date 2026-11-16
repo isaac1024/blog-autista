@@ -9,6 +9,7 @@ use Cms\Author\Domain\AvatarFile;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Post\Infrastructure\Ui\CmsMosaics;
 use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Infrastructure\Controller\PreviewLayout;
@@ -57,6 +58,7 @@ final readonly class PreviewAuthor
         private ImageRepository $imageRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private CmsLinkedContents $linkedContents,
+        private CmsMosaics $mosaics,
     ) {}
 
     public function __invoke(AuthorResponse $author): Page
@@ -90,6 +92,7 @@ final readonly class PreviewAuthor
             $bio,
             $images,
             ($this->linkedContents)($bio, $images, $author->id),
+            ($this->mosaics)($bio),
         );
     }
 }

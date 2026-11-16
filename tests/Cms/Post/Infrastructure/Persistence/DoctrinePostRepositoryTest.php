@@ -8,7 +8,10 @@ use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostAddressTaken;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostSelection;
 use Cms\Post\Domain\TitleFilter;
+use Cms\Tests\Post\Domain\InMemoryClassifiers;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Shared\Domain\SlugMother;
@@ -145,6 +148,38 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     public function testItsTableIsTheOneMapped(): void
     {
         self::assertTablesAreMapped('cms_post');
+    }
+
+    /**
+     * A preview lists the posts on the site as their version there files
+     * them, newest first by first publication: a draft, a post off the site
+     * and what a post on the site only has in its draft count for nothing.
+     */
+    public function testItListsTheLatestPostsOnTheSiteOfASelection(): void
+    {
+        $otherSection = '01a1e100-0000-7000-8000-000000000002';
+        $otherAuthor = '01a1e200-0000-7000-8000-000000000002';
+        $oldest = PostMother::published(id: '01a1e000-0000-7000-8000-000000000001', slug: 'primera', tags: [PostMother::TAG], firstPublishedAt: '2026-11-01 10:00:00');
+        $middle = PostMother::published(id: '01a1e000-0000-7000-8000-000000000002', slug: 'segunda', section: $otherSection, tags: [PostMother::OTHER_TAG, PostMother::TAG], firstPublishedAt: '2026-11-03 10:00:00');
+        $newest = PostMother::published(id: '01a1e000-0000-7000-8000-000000000003', slug: 'tercera', author: $otherAuthor, firstPublishedAt: '2026-11-05 10:00:00');
+        // On the site with no tag: the one its draft has doesn't count.
+        $edited = PostMother::published(id: '01a1e000-0000-7000-8000-000000000004', slug: 'cuarta', firstPublishedAt: '2026-11-02 10:00:00');
+        $edited->edit(PostMother::TITLE, 'cuarta', PostMother::SECTION, PostMother::AUTHOR, [PostMother::OTHER_TAG], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(tags: [PostMother::TAG, PostMother::OTHER_TAG]), new InMemoryPostImages());
+
+        foreach ([$oldest, $middle, $newest, $edited, PostMother::publishable(id: PostIdMother::random()->value(), slug: 'borrador', tags: [PostMother::TAG]), PostMother::unpublished(id: PostIdMother::random()->value())] as $post) {
+            $this->repository()->save($post);
+        }
+
+        $this->entityManager()->clear();
+        $listed = fn (PostSelection $selection, int $limit): array => array_map(static fn (Post $post): string => $post->id()->value(), $this->repository()->latestOnSite($selection, $limit));
+
+        self::assertSame([$newest->id()->value(), $middle->id()->value(), $edited->id()->value(), $oldest->id()->value()], $listed(new PostSelection(null, null, []), 10));
+        self::assertSame([$newest->id()->value(), $middle->id()->value()], $listed(new PostSelection(null, null, []), 2));
+        self::assertSame([$middle->id()->value()], $listed(new PostSelection($otherSection, null, []), 10));
+        self::assertSame([$newest->id()->value()], $listed(new PostSelection(null, $otherAuthor, []), 10));
+        self::assertSame([$middle->id()->value()], $listed(new PostSelection(null, null, [PostMother::OTHER_TAG]), 10));
+        self::assertSame([$middle->id()->value(), $oldest->id()->value()], $listed(new PostSelection(null, null, [PostMother::OTHER_TAG, PostMother::TAG]), 10));
+        self::assertSame([$oldest->id()->value()], $listed(new PostSelection(PostMother::SECTION, PostMother::AUTHOR, [PostMother::TAG]), 10));
     }
 
     private static function address(string $section, string $firstPublishedAt, string $slug): PostAddress

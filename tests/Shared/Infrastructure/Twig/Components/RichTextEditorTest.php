@@ -18,7 +18,7 @@ use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 final class RichTextEditorTest extends TestCase
 {
     private const array EVERYTHING = [
-        'blocks' => ['paragraph', 'heading', 'quote', 'list', 'callout', 'table', 'image', 'widget'],
+        'blocks' => ['paragraph', 'heading', 'quote', 'list', 'callout', 'table', 'image', 'widget', 'mosaic'],
         'headingLevels' => [2, 3],
         'calloutVariants' => ['note', 'important'],
         'marks' => ['bold', 'link'],
@@ -76,7 +76,7 @@ final class RichTextEditorTest extends TestCase
      * to know where to find what they show: either missing, there are none.
      *
      * @param array{blocks: list<string>, headingLevels: list<int>, calloutVariants: list<string>, marks: list<string>} $features
-     * @param array{images: bool, links: bool, widgets: bool, pages: bool}                                              $offered
+     * @param array{images: bool, links: bool, widgets: bool, mosaics: bool, pages: bool}                               $offered
      */
     #[DataProvider('pickers')]
     public function testItEmbedsAndLinksOnlyWhatItCanFind(array $features, ?string $imageSearch, ?string $imageLookup, ?string $pageSearch, ?string $pageLookup, array $offered): void
@@ -90,24 +90,27 @@ final class RichTextEditorTest extends TestCase
             'images' => $editor->allowsImages(),
             'links' => $editor->allowsLinks(),
             'widgets' => $editor->allowsWidgets(),
+            'mosaics' => $editor->allowsMosaics(),
             'pages' => $editor->picksPages(),
         ]);
     }
 
     /**
-     * @return iterable<string, array{array{blocks: list<string>, headingLevels: list<int>, calloutVariants: list<string>, marks: list<string>}, ?string, ?string, ?string, ?string, array{images: bool, links: bool, widgets: bool, pages: bool}}>
+     * @return iterable<string, array{array{blocks: list<string>, headingLevels: list<int>, calloutVariants: list<string>, marks: list<string>}, ?string, ?string, ?string, ?string, array{images: bool, links: bool, widgets: bool, mosaics: bool, pages: bool}}>
      */
     public static function pickers(): iterable
     {
-        $none = ['images' => false, 'links' => false, 'widgets' => false, 'pages' => false];
+        $none = ['images' => false, 'links' => false, 'widgets' => false, 'mosaics' => false, 'pages' => false];
 
-        yield 'allowed, and found' => [self::EVERYTHING, '/i', '/i', '/p', '/p', ['images' => true, 'links' => true, 'widgets' => true, 'pages' => true]];
+        yield 'allowed, and found' => [self::EVERYTHING, '/i', '/i', '/p', '/p', ['images' => true, 'links' => true, 'widgets' => true, 'mosaics' => true, 'pages' => true]];
         yield 'allowed, and found nowhere' => [self::EVERYTHING, null, null, null, null, $none];
         yield 'allowed, without a search' => [self::EVERYTHING, null, '/i', null, '/p', $none];
         yield 'allowed, without a lookup' => [self::EVERYTHING, '/i', null, '/p', null, $none];
         yield 'not allowed, and found' => [self::NOTHING, '/i', '/i', '/p', '/p', $none];
-        yield 'links only' => [['blocks' => ['paragraph'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => ['link']], null, null, '/p', '/p', ['images' => false, 'links' => true, 'widgets' => false, 'pages' => true]];
-        yield 'widgets only' => [['blocks' => ['paragraph', 'widget'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => []], null, null, '/p', '/p', ['images' => false, 'links' => false, 'widgets' => true, 'pages' => true]];
+        yield 'links only' => [['blocks' => ['paragraph'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => ['link']], null, null, '/p', '/p', ['images' => false, 'links' => true, 'widgets' => false, 'mosaics' => false, 'pages' => true]];
+        yield 'widgets only' => [['blocks' => ['paragraph', 'widget'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => []], null, null, '/p', '/p', ['images' => false, 'links' => false, 'widgets' => true, 'mosaics' => false, 'pages' => true]];
+        yield 'mosaics only' => [['blocks' => ['paragraph', 'mosaic'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => []], null, null, '/p', '/p', ['images' => false, 'links' => false, 'widgets' => false, 'mosaics' => true, 'pages' => true]];
+        yield 'mosaics, with nothing to narrow them down to' => [['blocks' => ['paragraph', 'mosaic'], 'headingLevels' => [], 'calloutVariants' => [], 'marks' => []], null, null, null, null, $none];
     }
 
     /**

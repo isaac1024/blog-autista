@@ -63,7 +63,8 @@ final readonly class SitePostPage
         $last = $lastPublishedAt->setTimezone($zone);
         $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, self::TIME_ZONE);
 
-        $prose = ($this->richTextComponents)($content, $images, $pages);
+        // A post shows no mosaic of posts.
+        $prose = ($this->richTextComponents)($content, $images, $pages, []);
 
         if (null !== $opening) {
             array_unshift($prose, $this->richTextComponents->opening($opening, $pages));

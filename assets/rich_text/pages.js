@@ -8,13 +8,28 @@
 /**
  * @typedef {object} PageNode
  * @property {{name: string}} type
- * @property {{type?: string|null, id?: string|null}} attrs
+ * @property {{type?: string|null, id?: string|null, sectionId?: string|null, authorId?: string|null, tagIds?: string[]}} attrs
  * @property {ReadonlyArray<{type: {name: string}, attrs: {type?: string|null, id?: string|null}}>} marks
  */
 
 /**
- * What a document links to or shows in widgets, each once, by its kind and
- * id; a page when it names no kind, as links did before they named one.
+ * What a mosaic may narrow its posts down to, by kind and id, none for an
+ * id it doesn't have: sections and tags are terms. Only a mosaic has these
+ * attributes, so any other node narrows nothing down.
+ *
+ * @param {PageNode['attrs']} attrs
+ * @returns {{type: string, id?: string|null}[]}
+ */
+const mosaicFilters = (attrs) => [
+    { type: 'term', id: attrs.sectionId },
+    { type: 'author', id: attrs.authorId },
+    ...(attrs.tagIds ?? []).map((id) => ({ type: 'term', id })),
+];
+
+/**
+ * What a document links to, shows in widgets or narrows mosaics down to,
+ * each once, by its kind and id; a page when it names no kind, as links did
+ * before they named one.
  *
  * @param {{descendants: (callback: (node: PageNode) => void) => void}} doc
  * @returns {{type: string, id: string}[]}
@@ -26,6 +41,7 @@ export const targetsIn = (doc) => {
     doc.descendants((node) => {
         const targets = [
             node.type.name === 'widget' ? node.attrs : null,
+            ...mosaicFilters(node.attrs),
             ...node.marks.filter((mark) => mark.type.name === 'link').map((mark) => mark.attrs),
         ];
 

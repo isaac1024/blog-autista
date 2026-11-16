@@ -6,8 +6,9 @@ namespace Shared\Domain\RichText;
 
 /**
  * The posts, the sections and tags, the authors and the external resources
- * some rich texts link to or show in widgets, such as a version being edited and the one on the
- * site, each once and in order.
+ * some rich texts link to, show in widgets or narrow their mosaics down to,
+ * such as a version being edited and the one on the site, each once and in
+ * order.
  */
 final readonly class LinkedContents
 {
@@ -30,7 +31,7 @@ final readonly class LinkedContents
             $ids = [];
 
             foreach ($texts as $text) {
-                array_push($ids, ...($text?->linkedIds($type) ?? []));
+                array_push($ids, ...($text?->linkedIds($type) ?? []), ...($text?->filterIds($type) ?? []));
             }
 
             sort($ids);
@@ -71,6 +72,15 @@ final readonly class LinkedContents
     public function externals(): array
     {
         return $this->externals;
+    }
+
+    /**
+     * The same, but the author given, such as the one whose bio narrows a
+     * mosaic down to its own posts: nothing uses itself.
+     */
+    public function withoutAuthor(string $id): self
+    {
+        return new self($this->posts, $this->terms, array_values(array_filter($this->authors, static fn (string $author): bool => $author !== $id)), $this->externals);
     }
 
     public function isEmpty(): bool

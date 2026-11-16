@@ -22,10 +22,13 @@ use Web\Shared\Domain\Robots;
 #[ORM\Entity]
 #[ORM\Table(name: 'web_post')]
 #[ORM\UniqueConstraint(name: 'uniq_web_post_address', columns: ['section_slug', 'day', 'slug'])]
+#[ORM\Index(name: 'idx_web_post_listing', columns: ['first_published_at', 'id'])]
+#[ORM\Index(name: 'idx_web_post_section_listing', columns: ['section_id', 'first_published_at', 'id'])]
+#[ORM\Index(name: 'idx_web_post_author_listing', columns: ['author_id', 'first_published_at', 'id'])]
 final class Post
 {
     /**
-     * @param list<string> $tagIds
+     * @param list<string> $tagIds in the order the editor gave them
      */
     public function __construct(
         #[ORM\Id]

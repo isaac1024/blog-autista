@@ -7,6 +7,7 @@ namespace Shared\Infrastructure\Ui;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\Widget;
+use Shared\Infrastructure\Twig\Components\PostCards;
 use Shared\Infrastructure\Ui\Page\Page;
 
 /**
@@ -16,6 +17,7 @@ use Shared\Infrastructure\Ui\Page\Page;
  * previews it the same.
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type PostCard from PostCards
  */
 final readonly class SitePage
 {
@@ -26,8 +28,9 @@ final readonly class SitePage
      * knows of them, keyed by id; one it doesn't give, such as one off the
      * site, isn't painted, and text linking it stays plain.
      *
-     * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images as SiteMedia::image() paints them
+     * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
      * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
+     * @param array<string, list<PostCard>>                                                                              $mosaics the cards of each mosaic, keyed by Mosaic::key()
      */
     public function __invoke(
         Page $layout,
@@ -35,10 +38,11 @@ final readonly class SitePage
         RichText $content,
         array $images,
         array $pages,
+        array $mosaics,
     ): Page {
         return $layout
             ->withMain('Shared:PageTitle', ['title' => $title])
-            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages))
+            ->withMain('Shared:Prose', [], ($this->richTextComponents)($content, $images, $pages, $mosaics))
             ->withFrames(self::frames($content, $pages));
     }
 

@@ -34,4 +34,13 @@ interface PostRepository
      * @return list<Post>
      */
     public function matching(Criteria $criteria): array;
+
+    /**
+     * The latest posts on the site of the selection, newest first by the day
+     * they were first published, as many as the limit at most, as a preview
+     * lists them.
+     *
+     * @return list<Post>
+     */
+    public function latestOnSite(PostSelection $selection, int $limit): array;
 }

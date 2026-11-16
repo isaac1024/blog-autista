@@ -128,6 +128,34 @@ final readonly class RichText
     }
 
     /**
+     * Ids of what of the kind its mosaics narrow their posts down to, in
+     * order, as often as they do. A mosaic links nothing: what it narrows
+     * down to is still used, so it is kept while the text keeps it.
+     *
+     * @return list<string>
+     */
+    public function filterIds(LinkType $type): array
+    {
+        $ids = [];
+
+        foreach ($this->mosaics() as $mosaic) {
+            array_push($ids, ...$mosaic->filterIds($type));
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Its mosaics, in order.
+     *
+     * @return list<Mosaic>
+     */
+    public function mosaics(): array
+    {
+        return array_values(array_filter($this->blocks, static fn (Block $block): bool => $block instanceof Mosaic));
+    }
+
+    /**
      * @return array{version: int, blocks: list<array<string, mixed>>}
      */
     public function toArray(): array
@@ -150,6 +178,7 @@ final readonly class RichText
             BlockType::Table => Table::fromArray($data, $path),
             BlockType::Image => EmbeddedImage::fromArray($data, $path),
             BlockType::Widget => Widget::fromArray($data, $path),
+            BlockType::Mosaic => Mosaic::fromArray($data, $path),
         };
     }
 }

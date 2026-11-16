@@ -31,7 +31,7 @@ final class RichTextComponentsTest extends TestCase
             ]],
         ]);
 
-        $components = new RichTextComponents()($content, [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']]);
+        $components = new RichTextComponents()($content, [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']], []);
 
         self::assertSame([self::PUBLISHED, self::MISSING], $content->pageIds());
         self::assertSame('Shared:ContentParagraph', $components[0]->name);
@@ -57,6 +57,7 @@ final class RichTextComponentsTest extends TestCase
             RichText::fromArray(['version' => 1, 'blocks' => [$block]]),
             [],
             [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']],
+            [],
         );
 
         $runs = $components[0]->props;
@@ -139,6 +140,7 @@ final class RichTextComponentsTest extends TestCase
             RichText::fromArray(['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => $text]]]),
             [],
             [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí'], self::OTHER_PUBLISHED => ['url' => '/contacto.html', 'title' => 'Contacto']],
+            [],
         );
 
         self::assertSame($expected, $components[0]->props['text']);
@@ -197,7 +199,7 @@ final class RichTextComponentsTest extends TestCase
             ['type' => 'list', 'style' => 'ordered', 'items' => [[['text' => 'Uno']]]],
             ['type' => 'list', 'style' => 'unordered', 'items' => [[['text' => 'Dos']]]],
             ['type' => 'callout', 'variant' => 'important', 'paragraphs' => [[['text' => 'Ojo']]]],
-        ]]), [], []);
+        ]]), [], [], []);
         ComponentContracts::assertHonoured(Page::create('Contenido')->withMain('Shared:Prose', [], $components));
 
         self::assertSame(
@@ -226,7 +228,7 @@ final class RichTextComponentsTest extends TestCase
             ['type' => 'paragraph', 'text' => [['text' => 'Después']]],
             ['type' => 'widget', 'kind' => 'related_page', 'page_id' => self::PUBLISHED],
             ['type' => 'paragraph', 'text' => [['text' => 'Al final']]],
-        ]]), [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']]);
+        ]]), [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']], []);
 
         self::assertSame(
             ['Shared:ContentParagraph', 'Shared:ContentRelatedPage', 'Shared:ContentParagraph'],
@@ -253,7 +255,7 @@ final class RichTextComponentsTest extends TestCase
         $components = new RichTextComponents()($content, [], [
             self::PUBLISHED => ['url' => '/vida-diaria/2026/11/07/un-post.html', 'title' => 'Un post'],
             self::OTHER_PUBLISHED => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
-        ]);
+        ], []);
 
         self::assertSame([
             ['href' => '/vida-diaria/2026/11/07/un-post.html', 'runs' => [['text' => 'un post', 'bold' => false]]],

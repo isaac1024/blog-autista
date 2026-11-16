@@ -58,6 +58,29 @@ export const WIDGET_LABELS = {
     results: '%count% related pages',
 };
 
+export const MOSAIC_LABELS = {
+    label: 'Content mosaic',
+    change: 'Change mosaic',
+    limit: 'Up to %limit% posts',
+    section: 'Section',
+    author: 'Author',
+    tags: 'Tags',
+    loading: 'Loading',
+    missing: 'Not found',
+    unknown: 'Could not be checked',
+    anySection: 'From every section',
+    anyAuthor: 'By every author',
+    noTags: 'With any tag',
+    removeTag: 'Remove %name%',
+    insert: 'Insert mosaic',
+    save: 'Save mosaic',
+    pick: {
+        section: { title: 'Choose the section', offSite: 'Not published', result: '1 result', results: '%count% results' },
+        author: { title: 'Choose the author', offSite: 'Not published', result: '1 result', results: '%count% results' },
+        tag: { title: 'Add a tag', offSite: 'Not published', result: '1 result', results: '%count% results' },
+    },
+};
+
 /** A control of the dock, named by its label, which its icon's tooltip repeats. */
 const button = (command, label, { sectionLabel = null, toggle = false, icon = true } = {}) => `
     <button type="button" data-rich-text-editor-target="button" data-action="mousedown->rich-text-editor#keepFocus rich-text-editor#run"
@@ -77,6 +100,7 @@ export const richTextEditor = ({
     images = false,
     links = false,
     widgets = false,
+    mosaics = false,
     maxLength = null,
 } = {}) => {
     const blocks = features.blocks ?? [];
@@ -90,14 +114,15 @@ export const richTextEditor = ({
         images ? `data-rich-text-editor-image-search-url-value="/api/images/search"
             data-rich-text-editor-image-lookup-url-value="/api/images/lookup"
             data-rich-text-editor-image-labels-value='${JSON.stringify(IMAGE_LABELS)}'` : '',
-        links || widgets ? `data-rich-text-editor-link-targets-value='${JSON.stringify(LINK_TARGETS)}'
+        links || widgets || mosaics ? `data-rich-text-editor-link-targets-value='${JSON.stringify(LINK_TARGETS)}'
             data-rich-text-editor-page-labels-value='${JSON.stringify(PAGE_LABELS)}'` : '',
         widgets ? `data-rich-text-editor-widget-labels-value='${JSON.stringify(WIDGET_LABELS)}'` : '',
+        mosaics ? `data-rich-text-editor-mosaic-labels-value='${JSON.stringify(MOSAIC_LABELS)}'` : '',
         maxLength === null ? '' : `data-rich-text-editor-max-length-value="${maxLength}"
             data-rich-text-editor-count-value="Count %count%/%max%"
             data-rich-text-editor-count-over-value="Over by %over%"`,
     ].join(' ');
-    const inserts = blocks.includes('table') || images || widgets || marks.includes('bold') || links;
+    const inserts = blocks.includes('table') || images || widgets || mosaics || marks.includes('bold') || links;
 
     return `
         <div data-controller="rich-text-editor"
@@ -133,6 +158,7 @@ export const richTextEditor = ({
                             ${blocks.includes('table') ? button('insertTable', 'Insert table') : ''}
                             ${images ? button('insertImage', 'Insert image') : ''}
                             ${widgets ? button('insertWidget', 'Related page') : ''}
+                            ${mosaics ? button('insertMosaic', 'Content mosaic') : ''}
                             ${inserts ? '<span aria-hidden="true"></span>' : ''}
                             ${button('undo', 'Undo')}
                             ${button('redo', 'Redo')}
@@ -185,10 +211,10 @@ export const richTextEditor = ({
                     <ul data-rich-text-editor-target="imageResults"></ul>
                 </dialog>
             ` : ''}
-            ${links || widgets ? `
+            ${links || widgets || mosaics ? `
                 <dialog id="content-page-dialog" data-rich-text-editor-target="pageDialog">
                     <h2 data-rich-text-editor-target="pageDialogTitle">${links ? PAGE_LABELS.title : WIDGET_LABELS.title}</h2>
-                    <fieldset>
+                    <fieldset data-rich-text-editor-target="pageKinds">
                         <legend>What to link</legend>
                         ${LINK_TARGETS.map(({ kind }, index) => `<label><input type="radio" name="content-page-kind" value="${kind}"${index === 0 ? ' checked' : ''} data-action="change->rich-text-editor#chooseKind"> ${kind}</label>`).join('')}
                     </fieldset>
@@ -200,6 +226,32 @@ export const richTextEditor = ({
                     <p role="status" data-rich-text-editor-target="pageStatus"></p>
                     <ul data-rich-text-editor-target="pageResults"></ul>
                     <button type="button" data-rich-text-editor-target="pageMore" data-action="rich-text-editor#morePages" hidden>More pages</button>
+                </dialog>
+            ` : ''}
+            ${mosaics ? `
+                <dialog id="content-mosaic-dialog" aria-labelledby="content-mosaic-title" data-rich-text-editor-target="mosaicDialog">
+                    <h2 id="content-mosaic-title">Content mosaic</h2>
+                    <label for="content-mosaic-limit">Number of posts</label>
+                    <input id="content-mosaic-limit" type="number" min="1" max="20" step="1" data-rich-text-editor-target="mosaicLimit">
+                    <div role="group" aria-labelledby="content-mosaic-section-label">
+                        <p id="content-mosaic-section-label">Section</p>
+                        <p data-rich-text-editor-target="mosaicSection"></p>
+                        <button type="button" data-rich-text-editor-target="mosaicSectionChoose" data-action="rich-text-editor#chooseMosaicSection">Choose section</button>
+                        <button type="button" data-rich-text-editor-target="mosaicSectionRemove" data-action="rich-text-editor#removeMosaicSection" hidden>Remove section</button>
+                    </div>
+                    <div role="group" aria-labelledby="content-mosaic-author-label">
+                        <p id="content-mosaic-author-label">Author</p>
+                        <p data-rich-text-editor-target="mosaicAuthor"></p>
+                        <button type="button" data-rich-text-editor-target="mosaicAuthorChoose" data-action="rich-text-editor#chooseMosaicAuthor">Choose author</button>
+                        <button type="button" data-rich-text-editor-target="mosaicAuthorRemove" data-action="rich-text-editor#removeMosaicAuthor" hidden>Remove author</button>
+                    </div>
+                    <div role="group" aria-labelledby="content-mosaic-tags-label">
+                        <p id="content-mosaic-tags-label">Tags</p>
+                        <ul data-rich-text-editor-target="mosaicTags"></ul>
+                        <button type="button" data-rich-text-editor-target="mosaicTagChoose" data-action="rich-text-editor#chooseMosaicTag">Add tag</button>
+                    </div>
+                    <button type="button" data-rich-text-editor-target="mosaicSubmit" data-action="rich-text-editor#applyMosaic"></button>
+                    <button type="button" commandfor="content-mosaic-dialog" command="close">Cancel</button>
                 </dialog>
             ` : ''}
             <p aria-live="polite" data-rich-text-editor-target="status"></p>

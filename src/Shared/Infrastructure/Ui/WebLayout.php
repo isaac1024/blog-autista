@@ -24,6 +24,12 @@ final class WebLayout
 
     public const string MAIN_CLASS = 'mx-auto flex w-full max-w-[46rem] flex-col gap-8 px-[clamp(1rem,4vw,2rem)] py-[clamp(2rem,6vw,4rem)]';
 
+    /**
+     * The column of a page that lists rather than reads, such as the posts of
+     * a section: wide enough for three cards side by side.
+     */
+    public const string WIDE_MAIN_CLASS = 'mx-auto flex w-full max-w-[72rem] flex-col gap-8 px-[clamp(1rem,4vw,2rem)] py-[clamp(2rem,6vw,4rem)]';
+
     public static function page(string $title, SiteChrome $chrome): Page
     {
         $page = Page::create($title)

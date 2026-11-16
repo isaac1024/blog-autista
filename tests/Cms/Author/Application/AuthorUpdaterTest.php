@@ -258,6 +258,27 @@ final class AuthorUpdaterTest extends TestCase
         ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
     }
 
+    /**
+     * A bio may show a mosaic of the author's own posts, which uses no other
+     * author: nothing uses itself, and the author can still be deleted once
+     * off the site. Its sections and tags are used.
+     */
+    public function testItTellsTheTermsAndAuthorsItsMosaicsNarrowDownToButTheAuthorItself(): void
+    {
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create());
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof AuthorContentsLinked
+                && ['post_ids' => [], 'term_ids' => [self::PAGE], 'author_ids' => [self::OTHER_AUTHOR], 'external_ids' => []] === $event->toPrimitives(),
+        ));
+
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
+            ['type' => 'mosaic', 'limit' => 6, 'section_id' => null, 'author_id' => AuthorIdMother::DEFAULT_VALUE, 'tag_ids' => [self::PAGE]],
+            ['type' => 'mosaic', 'limit' => 6, 'section_id' => null, 'author_id' => self::OTHER_AUTHOR, 'tag_ids' => []],
+        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+    }
+
     public function testItThrowsWhenTheAuthorDoesNotExist(): void
     {
         $repository = self::createStub(AuthorRepository::class);

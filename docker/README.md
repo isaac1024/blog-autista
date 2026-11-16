@@ -259,7 +259,13 @@ images, from `public/media/`, under `/media/`.
   and "Strip URL Parameter" `utm_[a-z]+`, `fbclid` and `gclid`, so links shared
   with a campaign don't split the cache (the page still reads them). Leave it
   off for the CMS host: Varnish strips the cookies it isn't told to keep, the
-  CMS session among them.
+  CMS session among them. Nothing purges it: each page tells how long to keep
+  it with `s-maxage`, 5 minutes for the home, pages, authors, sections and
+  tags (so a new post soon shows in their lists and mosaics), an hour for a
+  post, and a day for an image file (browsers keep that one a year). Check
+  once contracted that Varnish honours `s-maxage` rather than its own TTL for
+  dynamic content (`curl -sI` a section twice, five minutes apart, and read
+  `Age`); if it doesn't, set its dynamic TTL to 5 minutes, for the whole site.
 - **TLS/HTTP/3 are not reproduced.** HTTPS is terminated by Hetzner; local
   traffic is plain HTTP on port 80.
 - **The document root differs.** On the account, the web root is `public_html`.

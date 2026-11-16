@@ -19,6 +19,8 @@ import { maxLengthMessage } from '../form/character_count.js';
 import { currentSection, sectionsOf } from '../rich_text/outline.js';
 import { EmbeddedImage } from '../rich_text/embedded_image.js';
 import { Widget } from '../rich_text/widget.js';
+import { Mosaic } from '../rich_text/mosaic.js';
+import { limitFrom, nameOf, newMosaic, withTag, withoutTag } from '../rich_text/mosaic_summary.js';
 import { PageLink } from '../rich_text/page_link.js';
 import { TargetLookups } from '../rich_text/targets.js';
 import { Callout } from '../rich_text/callout.js';
@@ -86,6 +88,25 @@ import { Search } from '../shared/search.js';
  */
 
 /**
+ * The words of a mosaic, in the editor and in its dialog, and of the page
+ * dialog when it picks what a mosaic narrows its posts down to.
+ *
+ * @typedef {import('../rich_text/mosaic.js').MosaicViewLabels & {
+ *     anySection: string, anyAuthor: string, noTags: string, removeTag: string,
+ *     insert: string, save: string, pick: Record<'section'|'author'|'tag', PickLabels>
+ * }} MosaicLabels
+ */
+
+/** @typedef {import('../rich_text/mosaic_summary.js').MosaicFilters} MosaicFilters */
+
+/**
+ * What the page dialog picks a content for: to link text, to show in a
+ * widget, or to narrow a mosaic down to.
+ *
+ * @typedef {'link'|'widget'|'section'|'author'|'tag'} PagePurpose
+ */
+
+/**
  * @typedef {object} Features
  * @property {string[]} blocks
  * @property {Level[]} headingLevels
@@ -114,7 +135,9 @@ import { Search } from '../shared/search.js';
  * @property {Search<Image>} imageSearch
  * @property {TargetLookups<Page>} pages
  * @property {{from: number, to: number}} [linkRange]
- * @property {'link'|'widget'} pagePurpose
+ * @property {PagePurpose} pagePurpose
+ * @property {MosaicFilters} mosaicDraft
+ * @property {number|null} mosaicPosition
  * @property {Set<() => void>} widgetViews
  * @property {Search<Page>} pageSearch
  * @property {LinkTarget} linkKind
@@ -149,6 +172,18 @@ import { Search } from '../shared/search.js';
  * @property {HTMLElement} pageStatusTarget
  * @property {HTMLElement} pageResultsTarget
  * @property {HTMLElement} pageMoreTarget
+ * @property {HTMLElement} pageKindsTarget
+ * @property {HTMLDialogElement} mosaicDialogTarget
+ * @property {HTMLInputElement} mosaicLimitTarget
+ * @property {HTMLElement} mosaicSectionTarget
+ * @property {HTMLElement} mosaicSectionRemoveTarget
+ * @property {HTMLElement} mosaicAuthorTarget
+ * @property {HTMLElement} mosaicAuthorRemoveTarget
+ * @property {HTMLElement} mosaicTagsTarget
+ * @property {HTMLElement} mosaicSubmitTarget
+ * @property {HTMLElement} mosaicSectionChooseTarget
+ * @property {HTMLElement} mosaicAuthorChooseTarget
+ * @property {HTMLElement} mosaicTagChooseTarget
  * @property {HTMLElement} linkToolsTarget
  * @property {boolean} hasLinkToolsTarget
  * @property {HTMLElement} linkTargetTarget
@@ -177,6 +212,8 @@ import { Search } from '../shared/search.js';
  * @property {PageLabels} pageLabelsValue
  * @property {WidgetLabels} widgetLabelsValue
  * @property {boolean} hasWidgetLabelsValue
+ * @property {MosaicLabels} mosaicLabelsValue
+ * @property {boolean} hasMosaicLabelsValue
  */
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
@@ -233,7 +270,9 @@ export default class extends BaseController {
         'frame', 'canvas', 'editor', 'dock', 'input', 'button', 'blockType', 'tableTools', 'quoteTools', 'menu', 'status',
         'hint', 'outlineButton', 'outlineDialog', 'outlineDialogList', 'count',
         'imageDialog', 'imageSearch', 'imageStatus', 'imageResults',
-        'pageDialog', 'pageDialogTitle', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'linkTools', 'linkTarget',
+        'pageDialog', 'pageDialogTitle', 'pageSearch', 'pageStatus', 'pageResults', 'pageMore', 'pageKinds', 'linkTools', 'linkTarget',
+        'mosaicDialog', 'mosaicLimit', 'mosaicSection', 'mosaicSectionChoose', 'mosaicSectionRemove', 'mosaicAuthor', 'mosaicAuthorChoose',
+        'mosaicAuthorRemove', 'mosaicTags', 'mosaicTagChoose', 'mosaicSubmit',
     ];
 
     static values = {
@@ -258,6 +297,7 @@ export default class extends BaseController {
         linkTargets: Array,
         pageLabels: Object,
         widgetLabels: Object,
+        mosaicLabels: Object,
     };
 
     connect() {
@@ -301,6 +341,8 @@ export default class extends BaseController {
             row: (page) => pageOption(page, () => this.pickPage(page), this.pagePurposeLabels().offSite),
         }));
         this.linkKind = this.linkTargetsValue[0];
+        this.mosaicDraft = newMosaic();
+        this.mosaicPosition = null;
         this.editor = new Editor({
             element: this.editorTarget,
             // The base styles come from the stylesheets the CMS links and app.css: an injected <style> breaks the content security policy.
@@ -432,15 +474,24 @@ export default class extends BaseController {
     }
 
     /**
-     * Picks a page to link the selected text to, or, for 'widget', to show in a new widget.
+     * Picks a page to link the selected text to, or, for 'widget', to show in
+     * a new widget. What a mosaic narrows its posts down to is of one kind
+     * only, so the dialog offers no other.
      *
-     * @param {'link'|'widget'} purpose
+     * @param {PagePurpose} purpose
      */
     openPageDialog(purpose) {
         // The dialog takes the focus; the range keeps the selected text intact.
         // A link is only offered with text selected.
         const { from, to } = this.editor.state.selection;
         this.linkRange = { from, to };
+
+        // One kind is always checked: the first, until another is chosen.
+        const forMosaic = purpose === 'section' || purpose === 'author' || purpose === 'tag';
+        const chosen = /** @type {HTMLInputElement} */ (this.pageKindsTarget.querySelector('input:checked'));
+        const kind = forMosaic ? purpose : chosen.value;
+        this.linkKind = this.linkTargetsValue.find((target) => target.kind === kind) ?? this.linkKind;
+        this.pageKindsTarget.hidden = forMosaic;
 
         this.pagePurpose = purpose;
         this.pageDialogTitleTarget.textContent = this.pagePurposeLabels().title;
@@ -488,7 +539,11 @@ export default class extends BaseController {
 
     /** The labels of the dialog that depend on what it picks a page for. */
     pagePurposeLabels() {
-        return { link: this.pageLabelsValue, widget: this.widgetLabelsValue }[this.pagePurpose];
+        if (this.pagePurpose === 'link' || this.pagePurpose === 'widget') {
+            return { link: this.pageLabelsValue, widget: this.widgetLabelsValue }[this.pagePurpose];
+        }
+
+        return this.mosaicLabelsValue.pick[this.pagePurpose];
     }
 
     /**
@@ -497,7 +552,13 @@ export default class extends BaseController {
      * @param {Page} page
      */
     pickPage(page) {
-        ({ link: () => this.linkPage(page), widget: () => this.embedWidget(page) })[this.pagePurpose]();
+        if (this.pagePurpose === 'link' || this.pagePurpose === 'widget') {
+            ({ link: () => this.linkPage(page), widget: () => this.embedWidget(page) })[this.pagePurpose]();
+
+            return;
+        }
+
+        this.pickFilter(this.pagePurpose, page);
     }
 
     /**
@@ -510,6 +571,138 @@ export default class extends BaseController {
         this.pageDialogTarget.close();
         this.editor.chain().focus().insertContent({ type: 'widget', attrs: { kind: 'related_page', type: this.linkKind.type, id: page.id } }).run();
         this.redrawPageLinks();
+    }
+
+    /* Mosaics: the latest posts, as many as asked for, of what they are narrowed down to. */
+
+    /**
+     * Opens the dialog of a mosaic: a new one where the cursor is, or the one
+     * at a position, to change what it asks for.
+     *
+     * @param {number|null} position
+     * @param {MosaicFilters} mosaic
+     */
+    openMosaicDialog(position, mosaic) {
+        this.mosaicPosition = position;
+        this.mosaicDraft = { ...mosaic, tagIds: [...mosaic.tagIds] };
+        this.mosaicLimitTarget.value = String(mosaic.limit);
+        this.mosaicSubmitTarget.textContent = position === null ? this.mosaicLabelsValue.insert : this.mosaicLabelsValue.save;
+        this.drawMosaicDialog();
+        this.mosaicDialogTarget.showModal();
+        this.mosaicLimitTarget.focus();
+    }
+
+    /** What the mosaic being edited is narrowed down to, each with a way to take it out. */
+    drawMosaicDialog() {
+        const labels = this.mosaicLabelsValue;
+        const { sectionId, authorId, tagIds } = this.mosaicDraft;
+
+        this.mosaicSectionTarget.textContent = sectionId ? this.filterName('term', sectionId) : labels.anySection;
+        this.mosaicSectionRemoveTarget.hidden = !sectionId;
+        this.mosaicAuthorTarget.textContent = authorId ? this.filterName('author', authorId) : labels.anyAuthor;
+        this.mosaicAuthorRemoveTarget.hidden = !authorId;
+
+        if (tagIds.length === 0) {
+            const none = document.createElement('li');
+            none.className = 'text-muted';
+            none.textContent = labels.noTags;
+            this.mosaicTagsTarget.replaceChildren(none);
+
+            return;
+        }
+
+        this.mosaicTagsTarget.replaceChildren(...tagIds.map((id) => {
+            const item = document.createElement('li');
+            const name = document.createElement('span');
+            const remove = document.createElement('button');
+            const tag = this.filterName('term', id);
+
+            item.className = 'flex flex-wrap items-center justify-between gap-2';
+            name.textContent = tag;
+            remove.type = 'button';
+            remove.className = 'rich-text-mosaic-change';
+            remove.textContent = labels.removeTag.replace('%name%', tag);
+            remove.addEventListener('click', () => this.removeMosaicTag(id));
+            item.append(name, remove);
+
+            return item;
+        }));
+    }
+
+    /**
+     * The name of what a mosaic is narrowed down to, as the CMS knows it now.
+     *
+     * @param {string} type
+     * @param {string} id
+     */
+    filterName(type, id) {
+        return nameOf(this.pages.of(type, id), this.mosaicLabelsValue);
+    }
+
+    chooseMosaicSection() {
+        this.openPageDialog('section');
+    }
+
+    chooseMosaicAuthor() {
+        this.openPageDialog('author');
+    }
+
+    chooseMosaicTag() {
+        this.openPageDialog('tag');
+    }
+
+    removeMosaicSection() {
+        this.mosaicDraft = { ...this.mosaicDraft, sectionId: null };
+        this.drawMosaicDialog();
+        this.mosaicSectionChooseTarget.focus();
+    }
+
+    removeMosaicAuthor() {
+        this.mosaicDraft = { ...this.mosaicDraft, authorId: null };
+        this.drawMosaicDialog();
+        this.mosaicAuthorChooseTarget.focus();
+    }
+
+    /** @param {string} id */
+    removeMosaicTag(id) {
+        this.mosaicDraft = { ...this.mosaicDraft, tagIds: withoutTag(this.mosaicDraft.tagIds, id) };
+        this.drawMosaicDialog();
+        this.mosaicTagChooseTarget.focus();
+    }
+
+    /**
+     * Narrows the mosaic being edited down to what was picked, back in its dialog.
+     *
+     * @param {'section'|'author'|'tag'} purpose
+     * @param {Page} page
+     */
+    pickFilter(purpose, page) {
+        this.pages.know(this.linkKind.type, page);
+        this.pageDialogTarget.close();
+
+        const draft = this.mosaicDraft;
+        this.mosaicDraft = {
+            section: () => ({ ...draft, sectionId: page.id }),
+            author: () => ({ ...draft, authorId: page.id }),
+            tag: () => ({ ...draft, tagIds: withTag(draft.tagIds, page.id) }),
+        }[purpose]();
+
+        this.drawMosaicDialog();
+        ({ section: this.mosaicSectionChooseTarget, author: this.mosaicAuthorChooseTarget, tag: this.mosaicTagChooseTarget })[purpose].focus();
+    }
+
+    /** Puts the mosaic as the dialog leaves it in the text: a new one, or in place of the one changed. */
+    applyMosaic() {
+        const attrs = { ...this.mosaicDraft, limit: limitFrom(this.mosaicLimitTarget.value, this.mosaicDraft.limit) };
+
+        this.mosaicDialogTarget.close();
+
+        // What it is narrowed down to is known already: it was picked, or the text cited it.
+        if (this.mosaicPosition === null) {
+            this.editor.chain().focus().insertContent({ type: 'mosaic', attrs }).run();
+        } else {
+            this.editor.chain().focus().setNodeSelection(this.mosaicPosition).updateAttributes('mosaic', attrs).run();
+        }
     }
 
     /** Takes the link under the cursor out, keeping its text, and says so. */
@@ -572,6 +765,13 @@ export default class extends BaseController {
         // A widget starts by picking the page it shows.
         if (command === 'insertWidget') {
             this.openPageDialog('widget');
+
+            return;
+        }
+
+        // A mosaic starts by saying what it shows.
+        if (command === 'insertMosaic') {
+            this.openMosaicDialog(null, newMosaic());
 
             return;
         }
@@ -727,8 +927,8 @@ export default class extends BaseController {
                 && this.editor.can().setMark('link');
         }
 
-        // Images and widgets go between blocks, never inside a table.
-        if (command === 'insertImage' || command === 'insertWidget') {
+        // Images, widgets and mosaics go between blocks, never inside a table.
+        if (command === 'insertImage' || command === 'insertWidget' || command === 'insertMosaic') {
             return !this.editor.isActive('table');
         }
 
@@ -798,6 +998,12 @@ export default class extends BaseController {
 
         if (block === 'widget') {
             this.openPageDialog('widget');
+
+            return;
+        }
+
+        if (block === 'mosaic') {
+            this.openMosaicDialog(null, newMosaic());
 
             return;
         }
@@ -929,6 +1135,7 @@ export default class extends BaseController {
             { block: 'table', command: 'insertTable', allowed: blocks.includes('table') },
             { block: 'image', command: 'insertImage', allowed: this.hasImageSearchUrlValue && blocks.includes('image') },
             { block: 'widget', command: 'insertWidget', allowed: this.hasWidgetLabelsValue && blocks.includes('widget') },
+            { block: 'mosaic', command: 'insertMosaic', allowed: this.allowsMosaics() },
         ];
 
         for (const { block, command, allowed } of inserted) {
@@ -1149,6 +1356,11 @@ export default class extends BaseController {
         heading.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
     }
 
+    /** Whether the text may show mosaics: the module allows them, and the editor knows where to find what they are narrowed down to. */
+    allowsMosaics() {
+        return this.featuresValue.blocks.includes('mosaic') && this.hasMosaicLabelsValue && this.hasLinkTargetsValue;
+    }
+
     /** @returns {import('@tiptap/core').AnyExtension[]} */
     extensions() {
         const { blocks, headingLevels, marks } = this.featuresValue;
@@ -1235,6 +1447,15 @@ export default class extends BaseController {
                 describe: (type, id) => this.pages.of(type, id),
                 views: this.widgetViews,
                 labels: this.widgetLabelsValue,
+            }));
+        }
+
+        if (this.allowsMosaics()) {
+            extensions.push(Mosaic.configure({
+                name: (type, id) => this.filterName(type, id),
+                change: (position, mosaic) => this.openMosaicDialog(position, mosaic),
+                views: this.widgetViews,
+                labels: this.mosaicLabelsValue,
             }));
         }
 

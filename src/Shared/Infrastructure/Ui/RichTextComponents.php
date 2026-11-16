@@ -12,12 +12,14 @@ use Shared\Domain\RichText\InlineText;
 use Shared\Domain\RichText\ItemList;
 use Shared\Domain\RichText\ListStyle;
 use Shared\Domain\RichText\Mark;
+use Shared\Domain\RichText\Mosaic;
 use Shared\Domain\RichText\Paragraph;
 use Shared\Domain\RichText\Quote;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\Table;
 use Shared\Domain\RichText\Widget;
 use Shared\Domain\RichText\WidgetKind;
+use Shared\Infrastructure\Twig\Components\PostCards;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 
 /**
@@ -26,6 +28,7 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
  * leaves how it is painted to this adapter.
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type PostCard from PostCards
  */
 final readonly class RichTextComponents
 {
@@ -36,16 +39,34 @@ final readonly class RichTextComponents
      * shared, so pages, posts, terms and authors share one map.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages  the contents linked on the site, pages or posts, sections, tags, authors or external resources, with their current address and name, and all a widget paints of an external resource, keyed by id
+     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages   the contents linked on the site, pages or posts, sections, tags, authors or external resources, with their current address and name, and all a widget paints of an external resource, keyed by id
+     * @param array<string, list<PostCard>>                                                                              $mosaics the cards of the posts each mosaic shows, keyed by Mosaic::key(); a mosaic with none isn't painted
      *
      * @return list<PageComponent>
      */
-    public function __invoke(RichText $content, array $images, array $pages): array
+    public function __invoke(RichText $content, array $images, array $pages, array $mosaics): array
     {
         $links = array_map(static fn (array $page): string => $page['url'], $pages);
         $components = [];
+        // The titles of the cards of a mosaic are headings one level below
+        // the last one before it, as the outline of the page goes.
+        $headingLevel = 1;
 
         foreach ($content->blocks() as $block) {
+            if ($block instanceof Heading) {
+                $headingLevel = $block->level();
+            }
+
+            if ($block instanceof Mosaic) {
+                $cards = $mosaics[$block->key()] ?? [];
+
+                if ([] !== $cards) {
+                    $components[] = new PageComponent('Shared:PostCards', ['cards' => $cards, 'headingLevel' => $headingLevel + 1, 'wide' => false]);
+                }
+
+                continue;
+            }
+
             if ($block instanceof EmbeddedImage) {
                 $image = $images[$block->imageId()] ?? null;
 

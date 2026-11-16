@@ -79,14 +79,16 @@ ErrorDocument 504 /error/504.html
 </IfModule>
 
 # Copies of the published images: a file never changes, since a new crop is a
-# new image with addresses of its own, so browsers keep them for a year.
+# new image with addresses of its own, so browsers keep them for a year. The
+# page cache keeps them a day, so an image taken off the site stops being
+# served within one, as nothing purges the cache.
 # Only the files Apache serves itself: an address under /media/ without a file
 # goes to the front controller, whose answer, such as a redirect to another
 # image, may change and sets its own caching.
 <IfModule mod_headers.c>
     <FilesMatch "\.webp$">
         <If "%{REQUEST_URI} =~ m#^/media/#">
-            Header set Cache-Control "public, max-age=31536000, immutable"
+            Header set Cache-Control "public, max-age=31536000, s-maxage=86400, immutable"
             Header set X-Content-Type-Options "nosniff"
         </If>
     </FilesMatch>

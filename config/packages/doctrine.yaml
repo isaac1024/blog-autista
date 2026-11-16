@@ -135,6 +135,13 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Post/Domain'
                 prefix: 'Web\Post\Domain'
+            # The index of the posts of each tag, which the repository of the
+            # posts keeps; the domain never sees it.
+            WebPostIndex:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Post/Infrastructure/Persistence/Index'
+                prefix: 'Web\Post\Infrastructure\Persistence\Index'
             WebSettings:
                 type: attribute
                 is_bundle: false

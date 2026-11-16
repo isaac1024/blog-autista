@@ -161,6 +161,13 @@ final class PageUpdaterTest extends TestCase
         yield 'note' => [Text::stored(Text::callout('note', 'Puedes borrarlas.'))];
         yield 'important callout' => [Text::stored(Text::callout('important', 'Ojo.'))];
         yield 'table, with an empty body cell' => [Text::stored(Text::table(['Nombre', 'Finalidad'], [['PHPSESSID', ''], ['Idioma', 'Recordar el idioma']]))];
+        yield 'mosaic of the latest posts of anything' => [Text::stored(self::mosaic(['limit' => 1]))];
+        yield 'mosaic narrowed down to a section, an author and tags, each tag once' => [Text::stored(self::mosaic([
+            'limit' => 20,
+            'section_id' => '01a1b801-ce58-723d-8234-b76d9105e001',
+            'author_id' => '01a1b801-ce58-723d-8234-b76d9105e002',
+            'tag_ids' => ['01a1b801-ce58-723d-8234-b76d9105e003', '01a1b801-ce58-723d-8234-b76d9105e004'],
+        ]))];
     }
 
     /**
@@ -249,6 +256,33 @@ final class PageUpdaterTest extends TestCase
         yield 'link to anything but the id of a page' => [
             Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => '/contacto.html']]]),
             InvalidRichText::malformed('blocks[0].text[0].page_id', 'the id of a page'),
+        ];
+        yield 'mosaic of no post' => [Text::stored(self::mosaic(['limit' => 0])), InvalidRichText::malformed('blocks[0].limit', 'between 1 and 20 posts')];
+        yield 'mosaic of more posts than it shows' => [Text::stored(self::mosaic(['limit' => 21])), InvalidRichText::malformed('blocks[0].limit', 'between 1 and 20 posts')];
+        yield 'mosaic without a limit' => [Text::stored(['type' => 'mosaic']), InvalidRichText::malformed('blocks[0].limit', 'an integer')];
+        yield 'mosaic of a section that is no id' => [
+            Text::stored(self::mosaic(['limit' => 3, 'section_id' => 'vida-diaria'])),
+            InvalidRichText::malformed('blocks[0].section_id.term_id', 'the id of a term'),
+        ];
+        yield 'mosaic of an author that is no id' => [
+            Text::stored(self::mosaic(['limit' => 3, 'author_id' => 'isaac'])),
+            InvalidRichText::malformed('blocks[0].author_id.author_id', 'the id of a author'),
+        ];
+        yield 'mosaic of a tag that is no id' => [
+            Text::stored(self::mosaic(['limit' => 3, 'tag_ids' => ['sueno']])),
+            InvalidRichText::malformed('blocks[0].tag_ids.term_id', 'the id of a term'),
+        ];
+        yield 'mosaic of tags that are no list' => [
+            Text::stored(self::mosaic(['limit' => 3, 'tag_ids' => 'sueno'])),
+            InvalidRichText::malformed('blocks[0].tag_ids', 'a list'),
+        ];
+        yield 'mosaic of a tag that is no string' => [
+            Text::stored(self::mosaic(['limit' => 3, 'tag_ids' => [3]])),
+            InvalidRichText::malformed('blocks[0].tag_ids[0]', 'a string'),
+        ];
+        yield 'mosaic of a section that is no string' => [
+            Text::stored(self::mosaic(['limit' => 3, 'section_id' => 3])),
+            InvalidRichText::malformed('blocks[0].section_id', 'a string'),
         ];
         yield 'widget of no kind the blog has' => [
             Text::stored(['type' => 'widget', 'kind' => 'map', 'page_id' => '01a1b801-ce58-723d-8234-b76d9105e001']),
@@ -692,6 +726,32 @@ final class PageUpdaterTest extends TestCase
         ), PageMother::META_DESCRIPTION)($repository, $eventBus);
     }
 
+    /**
+     * What a mosaic narrows its posts down to is used too: no section, tag
+     * or author is deleted while a mosaic shows its posts.
+     */
+    public function testItTellsTheTermsAndAuthorsItsMosaicsNarrowDownTo(): void
+    {
+        $id = PageIdMother::DEFAULT_VALUE;
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi'));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageContentsLinked
+                && [
+                    'post_ids' => [],
+                    'term_ids' => ['01a1b801-ce58-723d-8234-b76d9105e021', '01a1b801-ce58-723d-8234-b76d9105e022', '01a1b801-ce58-723d-8234-b76d9105e023'],
+                    'author_ids' => ['01a1b801-ce58-723d-8234-b76d9105e031'],
+                    'external_ids' => [],
+                ] === $event->toPrimitives(),
+        ));
+
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(
+            self::mosaic(['limit' => 6, 'section_id' => '01a1b801-ce58-723d-8234-b76d9105e023', 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e031', 'tag_ids' => ['01a1b801-ce58-723d-8234-b76d9105e022']]),
+            self::mosaic(['limit' => 3, 'tag_ids' => ['01a1b801-ce58-723d-8234-b76d9105e021', '01a1b801-ce58-723d-8234-b76d9105e022']]),
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+    }
+
     public function testItTellsNothingWhenThePageLinksToTheSamePages(): void
     {
         $id = PageIdMother::DEFAULT_VALUE;
@@ -702,6 +762,18 @@ final class PageUpdaterTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with();
 
         self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+    }
+
+    /**
+     * A mosaic with no filter, unless given.
+     *
+     * @param array<string, mixed> $block
+     *
+     * @return array<string, mixed>
+     */
+    private static function mosaic(array $block): array
+    {
+        return $block + ['type' => 'mosaic', 'section_id' => null, 'author_id' => null, 'tag_ids' => []];
     }
 
     /**
