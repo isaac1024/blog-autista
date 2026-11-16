@@ -1146,6 +1146,11 @@ site:
             current: 'Página %page%'
             previous: 'Entradas más recientes'
             next: 'Entradas anteriores'
+    search:
+        label: 'Buscar en el blog'
+        submit: 'Buscar'
+        too_short: 'Escribe alguna palabra de al menos %min% letras.'
+        none: 'No hay entradas con «%text%».'
 ui:
     close: 'Cerrar'
     cropper:

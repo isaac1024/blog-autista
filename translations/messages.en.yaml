@@ -1146,6 +1146,11 @@ site:
             current: 'Page %page%'
             previous: 'Newer posts'
             next: 'Older posts'
+    search:
+        label: 'Search the blog'
+        submit: 'Search'
+        too_short: 'Write a word of at least %min% letters.'
+        none: 'No posts with “%text%”.'
 ui:
     close: 'Close'
     cropper:

@@ -108,6 +108,11 @@ final class Page
         return $this->id;
     }
 
+    public function type(): PageType
+    {
+        return $this->type;
+    }
+
     public function title(): string
     {
         return $this->title;

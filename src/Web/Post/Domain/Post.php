@@ -25,6 +25,7 @@ use Web\Shared\Domain\Robots;
 #[ORM\Index(name: 'idx_web_post_listing', columns: ['first_published_at', 'id'])]
 #[ORM\Index(name: 'idx_web_post_section_listing', columns: ['section_id', 'first_published_at', 'id'])]
 #[ORM\Index(name: 'idx_web_post_author_listing', columns: ['author_id', 'first_published_at', 'id'])]
+#[ORM\Index(name: 'ft_web_post_search', columns: ['title', 'meta_description', 'search_text'], flags: ['fulltext'])]
 final class Post
 {
     /**
@@ -59,6 +60,12 @@ final class Post
         private RichText $content,
         #[ORM\Column(length: 200, nullable: true)]
         private ?string $metaDescription,
+        /*
+         * What its content says, as plain text, which the site searches with
+         * its title and its summary.
+         */
+        #[ORM\Column(type: 'text', length: 16777215)]
+        private string $searchText,
         #[ORM\Column(length: 20, enumType: Robots::class)]
         private Robots $robots,
         #[ORM\Column(type: 'date_immutable')]
@@ -84,6 +91,7 @@ final class Post
             $event->openingImageId(),
             $event->content(),
             $event->metaDescription(),
+            $event->content()->plainText(),
             $event->robots(),
             $event->day(),
             $event->firstPublishedAt(),
@@ -112,6 +120,7 @@ final class Post
         $this->openingImageId = $event->openingImageId();
         $this->content = $event->content();
         $this->metaDescription = $event->metaDescription();
+        $this->searchText = $event->content()->plainText();
         $this->robots = $event->robots();
         $this->day = $event->day();
         $this->firstPublishedAt = $event->firstPublishedAt();

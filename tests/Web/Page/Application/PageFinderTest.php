@@ -33,6 +33,7 @@ final class PageFinderTest extends TestCase
                 RichText::fromArray(CmsPagePublishedMother::CONTENT),
                 'Quién escribe este blog sobre autismo y por qué.',
                 'noindex,follow',
+                false,
             ),
             (new PageFinder('sobre-mi'))($repository),
         );

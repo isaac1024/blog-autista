@@ -146,6 +146,23 @@ final readonly class RichText
     }
 
     /**
+     * Everything it says, as plain text, a line per piece of text, such as
+     * what a search reads: no marks, no links, no images.
+     */
+    public function plainText(): string
+    {
+        $lines = [];
+
+        foreach ($this->blocks as $block) {
+            foreach ($block->texts() as $text) {
+                $lines[] = implode('', array_map(static fn (TextRun $run): string => $run->text(), $text->runs()));
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
      * Its mosaics, in order.
      *
      * @return list<Mosaic>

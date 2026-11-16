@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Tests\Post\Infrastructure\Persistence;
 
+use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -12,10 +13,16 @@ use Web\Post\Domain\Post;
 use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
+use Web\Post\Domain\SearchTerms;
 use Web\Shared\Domain\Robots;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
 
+/**
+ * Every test runs in a transaction rolled back after it, but the one that
+ * searches: full-text search only sees what is committed. tearDown()
+ * empties the tables instead.
+ */
 final class DoctrinePostRepositoryTest extends KernelTestCase
 {
     use MappedTables;
@@ -41,6 +48,16 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     private const string SOUND = '01a1e300-0000-7000-8000-000000000002';
 
     private const string UNUSED = '01a1e300-0000-7000-8000-000000000003';
+
+    #[\Override]
+    protected function tearDown(): void
+    {
+        $connection = $this->entityManager()->getConnection();
+        $connection->executeStatement('DELETE FROM web_post_tag');
+        $connection->executeStatement('DELETE FROM web_post');
+
+        parent::tearDown();
+    }
 
     public function testItSavesThePostSoItCanBeReadBack(): void
     {
@@ -138,6 +155,34 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     }
 
     /**
+     * Every word searched must be in the title, the summary or the text of
+     * the content, as the start of a word, whatever its accents; the most
+     * relevant come first, the newest first among equals.
+     */
+    #[SkipDatabaseRollback]
+    public function testItSearchesThePostsByTheirWords(): void
+    {
+        $this->publishText(self::OLDEST, '2026-11-01T10:00:00+00:00', 'El ruido del metro', 'Cómo viví la hora punta.', 'Hoy probé los tapones en el metro: cuánto ruido.');
+        $this->publishText(self::MIDDLE, '2026-11-03T10:00:00+00:00', 'Dormir con ruido', 'Sobre el sueño.', 'Los tapones me ayudan a dormir.');
+        $this->publishText(self::NEWEST, '2026-11-05T10:00:00+00:00', 'Luces fuertes', 'La luz del súper.', 'Nada de ruido aquí, solo sensorialidad visual.');
+        $this->publishText(self::TIED, '2026-11-05T10:00:00+00:00', 'Una cita', 'Sin nada que ver.', 'Otra cosa.');
+        $this->entityManager()->clear();
+
+        $searched = fn (string $text, int $offset = 0, int $limit = 10): array => array_map(static fn (Post $post): string => $post->id()->value(), $this->repository()->searched(SearchTerms::fromText($text), $offset, $limit));
+
+        // Said twice, it ranks above those that say it once, which go newest first.
+        self::assertSame([self::OLDEST, self::NEWEST, self::MIDDLE], $searched('ruido'));
+        self::assertSame([self::MIDDLE, self::OLDEST], $searched('tapones'));
+        self::assertSame([self::OLDEST], $searched('tapones metro'));
+        self::assertSame([self::MIDDLE], $searched('sueno'));
+        self::assertSame([self::NEWEST], $searched('sensorial'));
+        self::assertSame([self::NEWEST], $searched('SÚPER'));
+        self::assertSame([self::NEWEST, self::MIDDLE], $searched('ruido', 1, 2));
+        self::assertSame([], $searched('elefante'));
+        self::assertSame([], $searched('no y'));
+    }
+
+    /**
      * What the entities map is what the migrations built.
      */
     public function testItsTablesAreTheOnesMapped(): void
@@ -162,6 +207,18 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->repository()->save($post);
 
         return $post;
+    }
+
+    private function publishText(string $id, string $firstPublishedAt, string $title, string $summary, string $text): void
+    {
+        $this->repository()->save(Post::publish(CmsPostPublished::fromPrimitives($id, [
+            'title' => $title,
+            'slug' => 'entrada-'.substr($id, -4),
+            'meta_description' => $summary,
+            'content' => ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [['text' => $text]]]]],
+            'first_published_at' => $firstPublishedAt,
+            'revision' => 1,
+        ] + CmsPostPublishedMother::body())));
     }
 
     /**

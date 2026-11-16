@@ -13,6 +13,7 @@ use Web\Post\Domain\Post;
 use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
+use Web\Post\Domain\SearchTerms;
 
 /**
  * Outbound adapter that persists and reads the posts on the site through
@@ -62,8 +63,38 @@ final readonly class DoctrinePostRepository implements PostRepository
     #[\Override]
     public function listed(PostSelection $selection, int $offset, int $limit): array
     {
-        $ids = $this->listedIds($selection, $offset, $limit);
+        return $this->postsOf($this->listedIds($selection, $offset, $limit));
+    }
 
+    /**
+     * Read through the full-text index of the posts, in boolean mode: every
+     * word required, each as a prefix, so "sensor" finds "sensorial".
+     */
+    #[\Override]
+    public function searched(SearchTerms $terms, int $offset, int $limit): array
+    {
+        if ($terms->isEmpty()) {
+            return [];
+        }
+
+        $match = 'MATCH (p.title, p.meta_description, p.search_text) AGAINST (:words IN BOOLEAN MODE)';
+
+        return $this->postsOf(array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
+            \sprintf('SELECT p.id FROM web_post p WHERE %1$s ORDER BY %1$s DESC, p.first_published_at DESC, p.id DESC LIMIT :limit OFFSET :offset', $match),
+            ['words' => implode(' ', array_map(static fn (string $word): string => '+'.$word.'*', $terms->words)), 'limit' => $limit, 'offset' => $offset],
+            ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
+        )));
+    }
+
+    /**
+     * The posts of the ids, in their order.
+     *
+     * @param list<string> $ids
+     *
+     * @return list<Post>
+     */
+    private function postsOf(array $ids): array
+    {
         if ([] === $ids) {
             return [];
         }
