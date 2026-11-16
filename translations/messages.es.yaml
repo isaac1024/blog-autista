@@ -1427,6 +1427,8 @@ ui:
                 author: 'Elegir el autor del mosaico'
                 tag: 'Añadir una etiqueta al mosaico'
                 off_site: 'No está publicada: el mosaico muestra igualmente sus entradas.'
+                result: 'Un resultado. Elígelo para el mosaico.'
+                results: '%count% resultados. Elige uno para el mosaico.'
         widget:
             insert: 'Contenido relacionado'
             title: 'Insertar contenido relacionado'

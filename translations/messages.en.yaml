@@ -1427,6 +1427,8 @@ ui:
                 author: 'Choose the author of the mosaic'
                 tag: 'Add a tag to the mosaic'
                 off_site: 'Not published: the mosaic still shows its posts.'
+                result: 'One result. Pick it for the mosaic.'
+                results: '%count% results. Pick one for the mosaic.'
         widget:
             insert: 'Related content'
             title: 'Insert related content'
