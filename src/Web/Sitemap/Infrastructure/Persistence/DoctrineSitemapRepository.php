@@ -39,6 +39,12 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
     }
 
     #[\Override]
+    public function entriesWithImage(string $imageId): array
+    {
+        return $this->entityManager->getRepository(SitemapEntry::class)->findBy(['imageId' => $imageId]);
+    }
+
+    #[\Override]
     public function saveEntry(SitemapEntry $entry): void
     {
         $this->entityManager->persist($entry);
@@ -87,7 +93,7 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             default => '',
         };
         $rows = $this->entityManager->getConnection()->iterateAssociative(
-            'SELECT e.path, e.lastmod, i.path AS image_path FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file'.$listing.' ORDER BY e.path',
+            'SELECT e.path, e.lastmod, e.image_id, i.path AS image_path FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file'.$listing.' ORDER BY e.path',
             ['file' => $file],
         );
 
@@ -95,9 +101,19 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             yield new SitemapLine(
                 self::text($row['path']),
                 new \DateTimeImmutable(self::text($row['lastmod'])),
+                null === $row['image_id'] ? null : self::text($row['image_id']),
                 null === $row['image_path'] ? null : self::text($row['image_path']),
             );
         }
+    }
+
+    #[\Override]
+    public function imagesOffSite(string $file): array
+    {
+        return array_map(self::text(...), $this->entityManager->getConnection()->fetchFirstColumn(
+            'SELECT DISTINCT e.image_id FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file AND e.image_id IS NOT NULL AND i.id IS NULL',
+            ['file' => $file],
+        ));
     }
 
     private static function text(mixed $value): string

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Tests\Sitemap;
 
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Shared\Tests\Domain\ClockMother;
@@ -12,11 +13,13 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
 use Web\Image\Domain\Image;
+use Web\Image\Domain\ImageId;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Infrastructure\Event\CmsPostPublishedSubscriber;
 use Web\Post\Infrastructure\Event\CmsPostUnpublishedSubscriber;
 use Web\Sitemap\Infrastructure\Controller\SitemapXml;
 use Web\Sitemap\Infrastructure\Event\SitemapAuthorsSubscriber;
+use Web\Sitemap\Infrastructure\Event\SitemapImagesSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapPagesSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapPostsSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapTermsSubscriber;
@@ -61,6 +64,8 @@ final class SitemapTest extends WebTestCase
 
     private const string MISSING_IMAGE = '01a1e800-0000-7000-8000-000000000002';
 
+    private const string OTHER_IMAGE = '01a1e800-0000-7000-8000-000000000003';
+
     /**
      * What may be indexed goes in its file, the home page at the root; what
      * asks not to be, and sections and tags listing no post, never shows.
@@ -98,13 +103,57 @@ final class SitemapTest extends WebTestCase
         $client = self::createClient();
         $this->publishSite();
 
-        $client->request('GET', self::SITE.'/sitemap-posts-2026.xml');
-        $xml = new \SimpleXMLElement($client->getInternalResponse()->getContent());
-        $images = $xml->xpath('//*[local-name()="image"]/*[local-name()="loc"]');
-        self::assertSame([self::SITE.'/media/2026/11/'.self::IMAGE.'-1200w.webp'], array_map(strval(...), $images ?? []));
+        self::assertSame([self::SITE.'/media/2026/11/'.self::IMAGE.'-1200w.webp'], $this->images($client, 'posts-2026'));
+        self::assertSame([], $this->images($client, 'posts-2025'));
+    }
 
-        $client->request('GET', self::SITE.'/sitemap-posts-2025.xml');
-        self::assertSame([], new \SimpleXMLElement($client->getInternalResponse()->getContent())->xpath('//*[local-name()="image"]'));
+    /**
+     * Taken off the site, an image is named no longer, and the posts that
+     * open with it, and their file, changed then; put on it again, it is
+     * named again.
+     */
+    public function testAnImageOffTheSiteIsNamedNoLonger(): void
+    {
+        $client = self::createClient();
+        $this->publishSite();
+        $image = self::getContainer()->get(ImageRepository::class)->find(new ImageId(self::IMAGE)) ?? self::fail('No image.');
+
+        self::mockTime(ClockMother::now('2026-11-10 08:00:00'));
+        self::getContainer()->get(ImageRepository::class)->delete($image);
+        $this->dispatch('cms.image.unpublished', self::IMAGE, ['revision' => 2]);
+
+        self::assertSame([], $this->images($client, 'posts-2026'));
+        self::assertSame(['/vida-diaria/2026/11/07/mi-primer-dia.html' => '2026-11-10T08:00:00+00:00'], $this->file($client, 'posts-2026'));
+        self::assertSame('2026-11-10T08:00:00+00:00', $this->index($client)['/sitemap-posts-2026.xml']);
+        // A post that opens with another image doesn't change.
+        self::assertSame('2026-11-07T10:00:00+00:00', $this->index($client)['/sitemap-posts-2025.xml']);
+
+        self::mockTime(ClockMother::now('2026-11-11 08:00:00'));
+        self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/'.self::IMAGE.'.webp')));
+        $this->dispatch('cms.image.published', self::IMAGE, ['revision' => 3] + CmsImagePublishedMother::body());
+
+        self::assertSame([self::SITE.'/media/2026/11/'.self::IMAGE.'-1200w.webp'], $this->images($client, 'posts-2026'));
+        self::assertSame('2026-11-11T08:00:00+00:00', $this->index($client)['/sitemap-posts-2026.xml']);
+    }
+
+    /**
+     * An image taken off the site whose address now leads to another is named
+     * as that one, as the post shows it.
+     */
+    public function testAnImageOffTheSiteIsNamedAsTheOneItsAddressLeadsTo(): void
+    {
+        $client = self::createClient();
+        $this->publishSite();
+        $images = self::getContainer()->get(ImageRepository::class);
+        $images->delete($images->find(new ImageId(self::IMAGE)) ?? self::fail('No image.'));
+        $images->save(Image::publish(CmsImagePublishedMother::create(id: self::OTHER_IMAGE, path: '2026/11/'.self::OTHER_IMAGE.'.webp')));
+        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+            'id' => '01a1e900-0000-7000-8000-000000000001', 'source' => '/media/2026/11/'.self::IMAGE, 'target_type' => 'image', 'target_id' => self::OTHER_IMAGE,
+            'origin_type' => 'image', 'origin_id' => self::IMAGE,
+            'created_at' => '2026-11-09 09:00:00', 'updated_at' => '2026-11-09 09:00:00', 'version' => 1,
+        ]);
+
+        self::assertSame([self::SITE.'/media/2026/11/'.self::OTHER_IMAGE.'-1200w.webp'], $this->images($client, 'posts-2026'));
     }
 
     /**
@@ -227,7 +276,7 @@ final class SitemapTest extends WebTestCase
 
         // The subscribers of the sitemap, and those that put posts on the site, which a section
         // or a tag lists: none of them needs the file of an image or an avatar.
-        foreach ([CmsPostPublishedSubscriber::class, CmsPostUnpublishedSubscriber::class, SitemapPagesSubscriber::class, SitemapTermsSubscriber::class, SitemapAuthorsSubscriber::class, SitemapPostsSubscriber::class] as $class) {
+        foreach ([CmsPostPublishedSubscriber::class, CmsPostUnpublishedSubscriber::class, SitemapPagesSubscriber::class, SitemapTermsSubscriber::class, SitemapAuthorsSubscriber::class, SitemapPostsSubscriber::class, SitemapImagesSubscriber::class] as $class) {
             $subscriber = self::getContainer()->get($class);
             self::assertInstanceOf(DomainEventSubscriber::class, $subscriber);
 
@@ -263,6 +312,20 @@ final class SitemapTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         return self::locations($client->getInternalResponse()->getContent(), 'url');
+    }
+
+    /**
+     * The images a file names.
+     *
+     * @return list<string>
+     */
+    private function images(KernelBrowser $client, string $name): array
+    {
+        $client->request('GET', self::SITE.'/sitemap-'.$name.'.xml');
+        self::assertResponseIsSuccessful();
+        $images = new \SimpleXMLElement($client->getInternalResponse()->getContent())->xpath('//*[local-name()="image"]/*[local-name()="loc"]');
+
+        return array_values(array_map(strval(...), \is_array($images) ? $images : []));
     }
 
     /**

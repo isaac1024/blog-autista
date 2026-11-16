@@ -19,6 +19,13 @@ interface SitemapRepository
      */
     public function entries(array $resourceIds): array;
 
+    /**
+     * The entries of the posts that open with the image.
+     *
+     * @return list<SitemapEntry>
+     */
+    public function entriesWithImage(string $imageId): array;
+
     public function saveEntry(SitemapEntry $entry): void;
 
     public function deleteEntry(SitemapEntry $entry): void;
@@ -38,10 +45,18 @@ interface SitemapRepository
 
     /**
      * The lines of a file, by path, read one at a time: a section or a tag
-     * only while it lists some post, and the image of a post only while it
-     * is on the site.
+     * only while it lists some post, and the image of a post, by its id, and
+     * where its copies are while it is on the site.
      *
      * @return iterable<SitemapLine>
      */
     public function lines(string $file): iterable;
+
+    /**
+     * The images the posts of a file open with that are off the site, each
+     * once, which the file names as the ones their addresses lead to.
+     *
+     * @return list<string>
+     */
+    public function imagesOffSite(string $file): array;
 }

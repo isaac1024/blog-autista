@@ -20,6 +20,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'web_sitemap_entry')]
 #[ORM\Index(name: 'idx_web_sitemap_entry_file', columns: ['file', 'path'])]
+#[ORM\Index(name: 'idx_web_sitemap_entry_image', columns: ['image_id'])]
 final class SitemapEntry
 {
     /**

@@ -6,13 +6,15 @@ namespace Web\Sitemap\Domain;
 
 /**
  * An address as a file of the sitemap tells it: where, when it last changed,
- * and the image of a post, where its copies are kept, if any.
+ * and the image a post opens with, by its id, and where its copies are
+ * kept while it is on the site.
  */
 final readonly class SitemapLine
 {
     public function __construct(
         public string $path,
         public \DateTimeImmutable $lastmod,
+        public ?string $imageId,
         public ?string $imagePath,
     ) {}
 }
