@@ -9,11 +9,11 @@ use Shared\Domain\RichText\LinkType;
 
 /**
  * What an editor writes in the settings: the name of the blog, its default
- * image and its two menus. The one being edited and the one on the site are
+ * image, its author and its two menus. The one being edited and the one on the site are
  * both versions, so the site keeps its version while the settings are edited.
  *
- * The default image and the pages of the menus are optional, and needn't be
- * on the site: the site paints only what is.
+ * The default image, the author and the pages of the menus are optional,
+ * and needn't be on the site: the site paints only what is.
  */
 #[ORM\Embeddable]
 final readonly class SettingsVersion
@@ -26,6 +26,11 @@ final readonly class SettingsVersion
          */
         #[ORM\Column(name: 'default_image_id', type: 'cms_settings_image_id', nullable: true)]
         private ?ImageId $defaultImage,
+        /*
+         * Who writes the blog, which the site tells search engines publishes it.
+         */
+        #[ORM\Column(name: 'author_id', type: 'cms_settings_author_id', nullable: true)]
+        private ?AuthorId $author,
         #[ORM\Column(name: 'main_menu', type: 'cms_settings_menu')]
         private Menu $mainMenu,
         #[ORM\Column(name: 'footer_menu', type: 'cms_settings_menu')]
@@ -33,16 +38,17 @@ final readonly class SettingsVersion
     ) {}
 
     /**
-     * A version from what an editor writes; a blank image means none.
+     * A version from what an editor writes; a blank image or author means none.
      *
      * @param array<array-key, mixed> $mainMenu
      * @param array<array-key, mixed> $footerMenu
      */
-    public static function fromPrimitives(string $name, string $defaultImage, array $mainMenu, array $footerMenu): self
+    public static function fromPrimitives(string $name, string $defaultImage, string $author, array $mainMenu, array $footerMenu): self
     {
         return new self(
             new SiteName($name),
             '' === $defaultImage ? null : new ImageId($defaultImage),
+            '' === $author ? null : new AuthorId($author),
             Menu::fromArray($mainMenu),
             Menu::fromArray($footerMenu),
         );
@@ -52,6 +58,7 @@ final readonly class SettingsVersion
     {
         return $this->name->value() === $other->name->value()
             && $this->defaultImage?->value() === $other->defaultImage?->value()
+            && $this->author?->value() === $other->author?->value()
             && $this->mainMenu->equals($other->mainMenu)
             && $this->footerMenu->equals($other->footerMenu);
     }
@@ -64,6 +71,11 @@ final readonly class SettingsVersion
     public function defaultImage(): ?ImageId
     {
         return $this->defaultImage;
+    }
+
+    public function author(): ?AuthorId
+    {
+        return $this->author;
     }
 
     public function mainMenu(): Menu
@@ -87,12 +99,14 @@ final readonly class SettingsVersion
     }
 
     /**
-     * What its menus lead to of the kind.
+     * What its menus lead to of the kind, and its author, which it uses too.
      *
      * @return list<string>
      */
     public function linkedIds(LinkType $type): array
     {
-        return [...$this->mainMenu->linkedIds($type), ...$this->footerMenu->linkedIds($type)];
+        $author = LinkType::Author === $type && null !== $this->author ? [$this->author->value()] : [];
+
+        return [...$this->mainMenu->linkedIds($type), ...$this->footerMenu->linkedIds($type), ...$author];
     }
 }

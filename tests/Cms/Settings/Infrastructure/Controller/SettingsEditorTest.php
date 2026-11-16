@@ -29,6 +29,8 @@ use Shared\Tests\Infrastructure\Ui\PageComponents;
  */
 final class SettingsEditorTest extends TestCase
 {
+    private const string AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
+
     /**
      * When the settings were created and last changed, in the language of
      * the editor.
@@ -125,7 +127,7 @@ final class SettingsEditorTest extends TestCase
     {
         $mainMenu = [Mother::item(Mother::PAGE, 'Sobre mí'), Mother::item(Mother::OTHER_PAGE)];
         $footerMenu = [Mother::item(Mother::THIRD_PAGE)];
-        $editor = $this->edit(Mother::create(Mother::version(name: 'Blog autista', defaultImage: Mother::IMAGE, mainMenu: $mainMenu, footerMenu: $footerMenu)));
+        $editor = $this->edit(Mother::create(Mother::version(name: 'Blog autista', defaultImage: Mother::IMAGE, mainMenu: $mainMenu, footerMenu: $footerMenu, author: self::AUTHOR)));
 
         $form = PageComponents::one($editor, 'Shared:Form', ['action' => '/cms_settings_update', 'id' => 'settings-form']);
         $name = PageComponents::one($form, 'Shared:FormInput', ['name' => 'name', 'value' => 'Blog autista']);
@@ -135,6 +137,14 @@ final class SettingsEditorTest extends TestCase
             'value' => Mother::IMAGE,
             'searchUrl' => '/cms_images_search',
             'lookupUrl' => '/cms_images_lookup',
+        ]);
+        PageComponents::one($form, 'Shared:ResourceField', [
+            'name' => 'author',
+            'value' => self::AUTHOR,
+            'searchUrl' => '/cms_authors_search',
+            'lookupUrl' => '/cms_authors_lookup',
+            'key' => 'authors',
+            'param' => 'name',
         ]);
         foreach (['main_menu' => $mainMenu, 'footer_menu' => $footerMenu] as $menu => $items) {
             PageComponents::one($form, 'Shared:MenuField', [
@@ -156,6 +166,7 @@ final class SettingsEditorTest extends TestCase
         $editor = $this->edit(Mother::create());
 
         PageComponents::one($editor, 'Shared:ImageField', ['name' => 'default_image', 'value' => '']);
+        PageComponents::one($editor, 'Shared:ResourceField', ['name' => 'author', 'value' => '']);
     }
 
     private function edit(Settings $settings): Page

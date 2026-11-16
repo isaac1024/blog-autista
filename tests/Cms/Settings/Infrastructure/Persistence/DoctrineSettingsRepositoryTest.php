@@ -34,7 +34,7 @@ final class DoctrineSettingsRepositoryTest extends KernelTestCase
             range(1, 8),
         );
         $settings = Mother::create(
-            Mother::version(str_repeat('á', 60), Mother::IMAGE, $menu, array_reverse($menu)),
+            Mother::version(str_repeat('á', 60), Mother::IMAGE, $menu, array_reverse($menu), '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02'),
             createdAt: '2027-01-31 23:59:59',
             updatedAt: '2027-02-01 08:00:00',
         );

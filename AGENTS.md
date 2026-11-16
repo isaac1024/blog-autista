@@ -130,7 +130,9 @@ Endpoint responses are `unknown` until cast to the shape the endpoint documents.
 
 A Content-Security-Policy (`config/packages/nelmio_security.yaml`) lets only the
 site's own files run and style the pages. No inline `<script>`, `<style>` or
-`style="…"`: a dynamic size is a class (see the `@source inline()` ranges in
+`style="…"` (the one exception is the JSON-LD block of `page.html.twig`, a
+`<script type="application/ld+json">` the browser never runs, which search
+engines only read inside the page): a dynamic size is a class (see the `@source inline()` ranges in
 `app.css`), and a stylesheet is linked from a layout, never imported from
 JavaScript, which AssetMapper would turn into a `data:` module. The CMS import
 map is the one inline script, with `csp_nonce('script')`; the public site uses

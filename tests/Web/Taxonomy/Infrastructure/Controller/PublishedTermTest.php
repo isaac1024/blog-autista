@@ -66,7 +66,7 @@ final class PublishedTermTest extends TestCase
         $postRepository->method('listed')->willReturn([]);
 
         $page = new PublishedTerm(
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), self::createStub(AuthorRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             $postRepository,
             new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects),
@@ -120,6 +120,16 @@ final class PublishedTermTest extends TestCase
         $secondCards = PageComponents::one($second, 'Shared:PostCards', [])->props['cards'];
         self::assertCount(1, $secondCards);
         PageComponents::one($second, 'Shared:Pagination', ['previousUrl' => '/tag/sueno.html', 'nextUrl' => null]);
+        // Each page of the list is a collection of its own.
+        self::assertSame([[
+            '@type' => 'CollectionPage',
+            '@id' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2#webpage',
+            'url' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2',
+            'name' => 'site.posts.page_title(%name%=Sueño, %page%=2)',
+            'description' => 'Sobre el sueño.',
+            'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
+            'inLanguage' => 'es',
+        ]], $second->structuredData);
     }
 
     public function testItTellsATermWithoutPostsHasNoneYet(): void
@@ -156,7 +166,7 @@ final class PublishedTermTest extends TestCase
         $redirects = new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class));
 
         return new PublishedTerm(
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), self::createStub(AuthorRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             $postRepository,
             new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects),

@@ -7,6 +7,7 @@ namespace Web\Taxonomy\Infrastructure\Controller;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteTermPage;
+use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Web\Post\Application\PostLister;
@@ -43,11 +44,20 @@ final readonly class PublishedTerm
         $posts = new PostLister($selection, $page)($this->postRepository);
         $parameters = ['slug' => $term->slug];
         $title = ListPagination::FIRST_PAGE === $page ? $term->name : $this->translator->trans('site.posts.page_title', ['%name%' => $term->name, '%page%' => $page]);
+        $canonical = $this->pagination->siteUrl($route, $parameters, $page, UrlGeneratorInterface::ABSOLUTE_URL);
 
         return ($this->siteTermPage)(
             $this->siteLayout->page($title)
-                ->withSearchEngineMetadata($term->metaDescription, $term->robots, $this->pagination->siteUrl($route, $parameters, $page, UrlGeneratorInterface::ABSOLUTE_URL))
-                ->withCountedVisits('term', $term->id),
+                ->withSearchEngineMetadata($term->metaDescription, $term->robots, $canonical)
+                ->withCountedVisits('term', $term->id)
+                ->withStructuredData(StructuredData::webPage(
+                    'CollectionPage',
+                    $this->pagination->siteUrl('web_home', [], ListPagination::FIRST_PAGE, UrlGeneratorInterface::ABSOLUTE_URL),
+                    $canonical,
+                    $title,
+                    $term->metaDescription,
+                    [],
+                )),
             $term->name,
             ($this->postCards)($posts->posts),
             $this->pagination->site($route, $parameters, $page, $posts->hasMore),

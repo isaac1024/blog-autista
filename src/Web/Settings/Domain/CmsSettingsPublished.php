@@ -9,7 +9,8 @@ use Shared\Domain\Event\RevisedReceivedEvent;
 
 /**
  * The CMS put its settings on the site, or replaced their version there, with
- * all the site needs: the name of the blog, its default image and its menus.
+ * all the site needs: the name of the blog, its default image, its author
+ * and its menus.
  * The site declares it on its own, by the name the CMS publishes it under.
  *
  * It carries what the site shows, one parameter each.
@@ -20,6 +21,7 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
 {
     /**
      * @param ?string                                               $defaultImageId null for none
+     * @param ?string                                               $authorId       null for none
      * @param list<array{type: string, id: string, label: ?string}> $mainMenu
      * @param list<array{type: string, id: string, label: ?string}> $footerMenu
      */
@@ -27,6 +29,7 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
         string $aggregateId,
         private string $name,
         private ?string $defaultImageId,
+        private ?string $authorId,
         private array $mainMenu,
         private array $footerMenu,
         int $revision,
@@ -49,6 +52,8 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
             $aggregateId,
             $body->string('name'),
             $body->nullableString('default_image_id'),
+            // Settings published before they had an author name none.
+            $body->nullableString('author_id'),
             MenuEntries::read($body->array('main_menu')),
             MenuEntries::read($body->array('footer_menu')),
             $body->integer('revision'),
@@ -63,6 +68,11 @@ final readonly class CmsSettingsPublished extends RevisedReceivedEvent
     public function defaultImageId(): ?string
     {
         return $this->defaultImageId;
+    }
+
+    public function authorId(): ?string
+    {
+        return $this->authorId;
     }
 
     /**

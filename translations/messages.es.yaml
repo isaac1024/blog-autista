@@ -429,6 +429,9 @@ cms:
             name_label: 'Nombre del blog'
             image_label: 'Imagen por defecto'
             image_hint: 'La que muestran Google y Discover de una página que no tiene imagen propia. Es opcional; si no está publicada, no se usa.'
+            author_label: 'Autor del blog'
+            author_hint: 'Quién lo escribe. Google lo toma por quien publica el blog. Es opcional; si no está publicado, no se usa.'
+            author_off_site: 'No está publicado: no se usa hasta que lo esté.'
         menus:
             title: 'Menús'
             description: 'Lo que enlazan los menús de la web: páginas, posts, secciones, etiquetas, autores o recursos externos, como mucho %max% en cada uno. Lo que no esté publicado, o no esté disponible, no se muestra.'

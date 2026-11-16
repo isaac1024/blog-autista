@@ -24,7 +24,7 @@ final class SettingsSaverTest extends TestCase
 
     public function testItReplacesTheSettingsOnTheSite(): void
     {
-        $later = Event::create(name: 'Otro nombre', defaultImageId: null, mainMenu: [], footerMenu: Event::MAIN_MENU);
+        $later = Event::create(name: 'Otro nombre', defaultImageId: null, mainMenu: [], footerMenu: Event::MAIN_MENU, authorId: '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02');
         $repository = $this->createMock(SettingsRepository::class);
         $repository->method('find')->willReturn(Settings::publish(Event::create()));
         $repository->expects(self::once())->method('save')->with(self::equalTo(Settings::publish($later)));

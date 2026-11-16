@@ -8,6 +8,7 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
+use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Application\AuthorResponse;
@@ -80,10 +81,27 @@ final readonly class PublishedPost
             $this->redirectsByOrigin,
         )[$post->authorId] ?? null;
 
+        $tags = $this->tags($post->tagIds);
+        $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
+        $opening = $images[$post->openingImageId] ?? null;
+
         return ($this->sitePostPage)(
             $this->siteLayout->page($post->title)
                 ->withSearchEngineMetadata($post->metaDescription, $post->robots.',max-image-preview:large', $canonical)
-                ->withCountedVisits('post', $post->id),
+                ->withCountedVisits('post', $post->id)
+                ->withStructuredData(StructuredData::webPage('WebPage', $home, $canonical, $post->title, $post->metaDescription, []))
+                ->withStructuredData(StructuredData::blogPosting(
+                    $canonical,
+                    $post->title,
+                    $post->metaDescription,
+                    null === $opening ? null : StructuredData::absolute($home, $opening['src']),
+                    $post->firstPublishedAt,
+                    $post->lastPublishedAt,
+                    ['name' => $author->name ?? $post->authorName, 'url' => null === $author ? null : $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL)],
+                    $section->name ?? $post->sectionName,
+                    array_column($tags, 'name'),
+                    $this->siteLayout->publisherUrl(),
+                )),
             $post->title,
             $post->firstPublishedAt,
             $post->lastPublishedAt,
@@ -93,8 +111,8 @@ final readonly class PublishedPost
             null === $author
                 ? ['name' => $post->authorName, 'url' => null]
                 : ['name' => $author->name, 'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug])],
-            $this->tags($post->tagIds),
-            $images[$post->openingImageId] ?? null,
+            $tags,
+            $opening,
             $post->content,
             $images,
             ($this->linkedContents)($post->content, $images, $post->id),

@@ -7,7 +7,10 @@ namespace Web\Tests\Settings\Infrastructure\Controller;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Uuid;
 use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\SiteMedia;
+use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Author\Domain\Author;
 use Web\Author\Domain\AuthorRepository;
 use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
 use Web\External\Infrastructure\Ui\SiteExternalViews;
@@ -25,6 +28,8 @@ use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\Tests\Author\Domain\AuthorIdMother;
+use Web\Tests\Author\Domain\CmsAuthorPublishedMother;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Settings\Domain\CmsSettingsPublishedMother as Event;
@@ -139,7 +144,66 @@ final class SiteLayoutTest extends TestCase
         self::assertNull(self::layout($settings, $pages, $images)->page('Sobre mí')->image);
     }
 
-    private static function layout(?Settings $settings, PageRepository $pages, ImageRepository $images): SiteLayout
+    /**
+     * Every page is part of the site, named after the blog, published by the
+     * author of the blog while that author is on the site: one person, by
+     * the address of their page.
+     */
+    public function testItTellsSearchEnginesTheSiteAndWhoPublishesIt(): void
+    {
+        $pages = self::createStub(PageRepository::class);
+        $pages->method('findByIds')->willReturn([]);
+        $images = self::createStub(ImageRepository::class);
+        $author = Author::publish(CmsAuthorPublishedMother::create());
+        $authors = self::createStub(AuthorRepository::class);
+        $authors->method('find')->willReturn($author);
+        $layout = self::layout(Settings::publish(Event::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: AuthorIdMother::DEFAULT_VALUE)), $pages, $images, $authors);
+
+        self::assertSame([
+            ['@type' => 'WebSite', '@id' => '/#website', 'url' => '/', 'name' => Event::NAME, 'inLanguage' => 'es', 'publisher' => ['@id' => '/isaac.html#person']],
+            [
+                '@type' => 'Person',
+                '@id' => '/isaac.html#person',
+                'url' => '/isaac.html',
+                'name' => 'Isaac Abreu',
+                'image' => SiteMedia::avatar($author->avatarName(), 'Isaac Abreu')['src'],
+                'description' => 'Quién escribe este blog.',
+            ],
+        ], $layout->page('Sobre mí')->structuredData);
+        self::assertSame('/isaac.html', $layout->publisherUrl());
+
+        // On the page of that author, the person is told once, as the page tells it.
+        $profile = StructuredData::person('/isaac.html', 'Isaac Abreu', null, 'Otra descripción.');
+        $graph = $layout->page('Isaac Abreu')->withStructuredData(['@type' => 'ProfilePage'])->withStructuredData($profile)->structuredData;
+        self::assertSame(['WebSite', 'ProfilePage', 'Person'], array_column($graph, '@type'));
+        self::assertSame($profile, $graph[2]);
+    }
+
+    /**
+     * An author of the blog off the site, or none, publishes nothing; until
+     * the settings are published, the site tells nothing.
+     */
+    public function testItTellsOfNoPublisherOffTheSite(): void
+    {
+        $pages = self::createStub(PageRepository::class);
+        $pages->method('findByIds')->willReturn([]);
+        $images = self::createStub(ImageRepository::class);
+        $authors = self::createStub(AuthorRepository::class);
+        $authors->method('find')->willReturn(null);
+
+        foreach ([AuthorIdMother::DEFAULT_VALUE, null] as $authorId) {
+            $layout = self::layout(Settings::publish(Event::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: $authorId)), $pages, $images, $authors);
+
+            self::assertSame([['@type' => 'WebSite', '@id' => '/#website', 'url' => '/', 'name' => Event::NAME, 'inLanguage' => 'es']], $layout->page('Sobre mí')->structuredData);
+            self::assertNull($layout->publisherUrl());
+        }
+
+        $unpublished = self::layout(null, $pages, $images, $authors);
+        self::assertSame([], $unpublished->page('Sobre mí')->structuredData);
+        self::assertNull($unpublished->publisherUrl());
+    }
+
+    private static function layout(?Settings $settings, PageRepository $pages, ImageRepository $images, ?AuthorRepository $authors = null): SiteLayout
     {
         $urlGenerator = self::createStub(UrlGeneratorInterface::class);
         $urlGenerator->method('generate')->willReturnCallback(
@@ -152,7 +216,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator)));
+        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator)), $authors ?? self::createStub(AuthorRepository::class));
     }
 
     /**

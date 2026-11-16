@@ -14,6 +14,7 @@ use Cms\Tests\Settings\Domain\SettingsIdMother;
 use Cms\Tests\Settings\Domain\SettingsMother as Mother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
@@ -57,7 +58,7 @@ final class SettingsUpdaterTest extends TestCase
             Mother::create($expected, createdAt: self::BEFORE, updatedAt: ClockMother::NOW),
         ));
 
-        (new SettingsUpdater($name, $image, $mainMenu, $footerMenu))($repository, self::createStub(EventBus::class));
+        (new SettingsUpdater($name, $image, '', $mainMenu, $footerMenu))($repository, self::createStub(EventBus::class));
     }
 
     /**
@@ -108,7 +109,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository->method('find')->willReturn($settings());
         $repository->expects(self::once())->method('save')->with(self::equalTo($settings()));
 
-        (new SettingsUpdater(' '.Mother::NAME.' ', Mother::IMAGE, [['page_id' => Mother::PAGE, 'label' => ' Sobre mí ']], []))(
+        (new SettingsUpdater(' '.Mother::NAME.' ', Mother::IMAGE, '', [['page_id' => Mother::PAGE, 'label' => ' Sobre mí ']], []))(
             $repository,
             self::createStub(EventBus::class),
         );
@@ -126,6 +127,7 @@ final class SettingsUpdaterTest extends TestCase
         (new SettingsUpdater(
             Mother::NAME,
             Mother::IMAGE,
+            '',
             [Mother::item(Mother::OTHER_PAGE), Mother::item(Mother::PAGE)],
             [Mother::item(Mother::PAGE)],
         ))($repository, $this->eventBusCollecting($told));
@@ -146,7 +148,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::create());
 
-        (new SettingsUpdater(Mother::NAME, '', [
+        (new SettingsUpdater(Mother::NAME, '', '', [
             ['external_id' => self::EXTERNAL, 'label' => 'Un vídeo'],
             ['post_id' => self::POST, 'label' => null],
         ], [
@@ -159,13 +161,42 @@ final class SettingsUpdaterTest extends TestCase
         ], $told);
     }
 
+    /**
+     * The author of the blog is used too: no author is deleted while the
+     * settings name them.
+     */
+    public function testItTellsTheAuthorOfTheBlogIsUsed(): void
+    {
+        $told = [];
+        $repository = $this->createMock(SettingsRepository::class);
+        $repository->method('find')->willReturn(Mother::create());
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (Settings $settings): bool => self::AUTHOR === $settings->author()?->value()));
+
+        (new SettingsUpdater(Mother::NAME, '', self::AUTHOR, [], []))($repository, $this->eventBusCollecting($told));
+
+        self::assertSame([
+            ['cms.settings.contents_linked', SettingsIdMother::DEFAULT_VALUE, ['post_ids' => [], 'term_ids' => [], 'author_ids' => [self::AUTHOR], 'external_ids' => []]],
+        ], $told);
+    }
+
+    public function testItSavesNothingForAnAuthorThatIsNoId(): void
+    {
+        $repository = $this->createMock(SettingsRepository::class);
+        $repository->method('find')->willReturn(Mother::create());
+        $repository->expects(self::never())->method('save');
+
+        $this->expectException(DomainError::class);
+
+        (new SettingsUpdater(Mother::NAME, '', 'isaac', [], []))($repository, self::createStub(EventBus::class));
+    }
+
     public function testItTellsItUsesNoImageNorPageOnceTheyAreRemoved(): void
     {
         $told = [];
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::create(Mother::version(defaultImage: Mother::IMAGE, footerMenu: [Mother::item()])));
 
-        (new SettingsUpdater(Mother::NAME, '', [], []))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, $this->eventBusCollecting($told));
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
@@ -185,7 +216,7 @@ final class SettingsUpdaterTest extends TestCase
             mainMenu: [Mother::item(Mother::PAGE), Mother::item(Mother::OTHER_PAGE)],
         )));
 
-        (new SettingsUpdater('Otro nombre', Mother::IMAGE, [Mother::item(Mother::OTHER_PAGE, 'Otra'), Mother::item(Mother::PAGE)], []))(
+        (new SettingsUpdater('Otro nombre', Mother::IMAGE, '', [Mother::item(Mother::OTHER_PAGE, 'Otra'), Mother::item(Mother::PAGE)], []))(
             $repository,
             $this->eventBusCollecting($told),
         );
@@ -204,7 +235,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::published($published));
 
-        (new SettingsUpdater(Mother::NAME, Mother::OTHER_IMAGE, [], [Mother::item(Mother::PAGE)]))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, Mother::OTHER_IMAGE, '', [], [Mother::item(Mother::PAGE)]))($repository, $this->eventBusCollecting($told));
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => [Mother::IMAGE, Mother::OTHER_IMAGE]]],
@@ -221,7 +252,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::published(Mother::version(), $published));
 
-        (new SettingsUpdater(Mother::NAME, Mother::IMAGE, [Mother::item()], []))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, Mother::IMAGE, '', [Mother::item()], []))($repository, $this->eventBusCollecting($told));
 
         self::assertSame([], $told);
     }
@@ -242,7 +273,7 @@ final class SettingsUpdaterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells($key, $parameters, static fn () => (new SettingsUpdater($name, $image, $mainMenu, []))($repository, $eventBus));
+        self::assertTells($key, $parameters, static fn () => (new SettingsUpdater($name, $image, '', $mainMenu, []))($repository, $eventBus));
     }
 
     /**
@@ -280,6 +311,6 @@ final class SettingsUpdaterTest extends TestCase
 
         $this->expectExceptionObject(SettingsNotFound::create());
 
-        (new SettingsUpdater(Mother::NAME, '', [], []))($repository, self::createStub(EventBus::class));
+        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, self::createStub(EventBus::class));
     }
 }

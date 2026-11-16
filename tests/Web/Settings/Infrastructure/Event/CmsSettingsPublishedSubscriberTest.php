@@ -51,6 +51,28 @@ final class CmsSettingsPublishedSubscriberTest extends KernelTestCase
         yield 'with a label that is not text' => [['page_id' => Event::OTHER_PAGE, 'label' => ['Sobre mí']]];
     }
 
+    /**
+     * Settings name the author of the blog; those published before they did
+     * name none.
+     */
+    public function testItPutsOnTheSiteTheAuthorOfTheBlog(): void
+    {
+        $author = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
+
+        $this->handle(['author_id' => $author] + Event::body());
+        self::assertEquals(Settings::publish(Event::create(authorId: $author)), $this->storedSettings());
+    }
+
+    public function testItTakesSettingsPublishedBeforeTheyNamedAnAuthor(): void
+    {
+        $body = Event::body();
+        unset($body['author_id']);
+
+        $this->handle($body);
+
+        self::assertEquals(Settings::publish(Event::create()), $this->storedSettings());
+    }
+
     public function testItTakesSettingsWithoutImageNorMenus(): void
     {
         $this->handle(Event::body(defaultImageId: null, mainMenu: [], footerMenu: []));

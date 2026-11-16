@@ -24,6 +24,7 @@ doctrine:
             cms_post_version: Cms\Post\Infrastructure\Persistence\Doctrine\PostVersionType
             cms_redirect_id: Cms\Redirect\Infrastructure\Persistence\Doctrine\RedirectIdType
             cms_relation_id: Cms\Relation\Infrastructure\Persistence\Doctrine\RelationIdType
+            cms_settings_author_id: Cms\Settings\Infrastructure\Persistence\Doctrine\AuthorIdType
             cms_settings_id: Cms\Settings\Infrastructure\Persistence\Doctrine\SettingsIdType
             cms_settings_image_id: Cms\Settings\Infrastructure\Persistence\Doctrine\ImageIdType
             cms_settings_menu: Cms\Settings\Infrastructure\Persistence\Doctrine\MenuType

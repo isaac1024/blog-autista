@@ -23,6 +23,7 @@ final class SettingsPublisherTest extends TestCase
     use ClockSensitiveTrait;
     use DomainErrorAssertions;
     use PublishedEvents;
+    private const string AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
 
     private const string BEFORE = '2026-10-01 09:00:00';
 
@@ -66,7 +67,7 @@ final class SettingsPublisherTest extends TestCase
         $footer = [Mother::item(Mother::THIRD_PAGE)];
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::published(
-            Mother::version('Otro nombre', Mother::IMAGE, $main, $footer),
+            Mother::version('Otro nombre', Mother::IMAGE, $main, $footer, self::AUTHOR),
             Mother::version(defaultImage: Mother::IMAGE, mainMenu: $main, footerMenu: $footer),
         ));
 
@@ -76,6 +77,7 @@ final class SettingsPublisherTest extends TestCase
             ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, [
                 'name' => 'Otro nombre',
                 'default_image_id' => Mother::IMAGE,
+                'author_id' => self::AUTHOR,
                 'main_menu' => $main,
                 'footer_menu' => $footer,
                 'revision' => 2,
@@ -101,7 +103,7 @@ final class SettingsPublisherTest extends TestCase
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
             ['cms.settings.pages_linked', SettingsIdMother::DEFAULT_VALUE, ['page_ids' => []]],
-            ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, ['name' => Mother::NAME, 'default_image_id' => null, 'main_menu' => [], 'footer_menu' => [], 'revision' => 2]],
+            ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, ['name' => Mother::NAME, 'default_image_id' => null, 'author_id' => null, 'main_menu' => [], 'footer_menu' => [], 'revision' => 2]],
         ], $told);
     }
 

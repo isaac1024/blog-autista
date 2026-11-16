@@ -20,12 +20,13 @@ final readonly class SettingsResponse
     public function __construct(
         public string $name,
         public ?string $defaultImageId,
+        public ?string $authorId,
         public array $mainMenu,
         public array $footerMenu,
     ) {}
 
     public static function fromSettings(Settings $settings): self
     {
-        return new self($settings->name(), $settings->defaultImageId(), $settings->mainMenu(), $settings->footerMenu());
+        return new self($settings->name(), $settings->defaultImageId(), $settings->authorId(), $settings->mainMenu(), $settings->footerMenu());
     }
 }

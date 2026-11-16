@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Settings\Domain;
 
+use Cms\Settings\Domain\AuthorId;
 use Cms\Settings\Domain\ImageId;
 use Cms\Settings\Domain\Menu;
 use Cms\Settings\Domain\Settings;
@@ -52,10 +53,12 @@ final class SettingsMother
         ?string $defaultImage = null,
         array $mainMenu = [],
         array $footerMenu = [],
+        ?string $author = null,
     ): SettingsVersion {
         return new SettingsVersion(
             new SiteName($name),
             null === $defaultImage ? null : new ImageId($defaultImage),
+            null === $author ? null : new AuthorId($author),
             Menu::fromArray($mainMenu),
             Menu::fromArray($footerMenu),
         );

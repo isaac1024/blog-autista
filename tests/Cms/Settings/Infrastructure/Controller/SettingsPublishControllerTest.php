@@ -75,6 +75,7 @@ final class SettingsPublishControllerTest extends CmsWebTestCase
         self::assertSame([
             'name' => Mother::NAME,
             'default_image_id' => Mother::IMAGE,
+            'author_id' => null,
             'main_menu' => [Mother::item(label: 'Sobre mí')],
             'footer_menu' => [Mother::item(Mother::OTHER_PAGE)],
             'revision' => 1,

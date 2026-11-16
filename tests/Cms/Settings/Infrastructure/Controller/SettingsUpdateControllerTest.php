@@ -57,6 +57,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         $this->post($client, 'cms_settings_update', self::URL, [
             'name' => 'Otro nombre',
             'default_image' => Mother::IMAGE,
+            'author' => '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02',
             'main_menu' => [
                 ['page_id' => Mother::PAGE, 'label' => 'Sobre mí'],
                 ['page_id' => Mother::OTHER_PAGE, 'label' => ''],
@@ -74,6 +75,7 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
                     Mother::IMAGE,
                     [Mother::item(Mother::PAGE, 'Sobre mí'), Mother::item(Mother::OTHER_PAGE)],
                     [Mother::item(Mother::THIRD_PAGE)],
+                    '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02',
                 ),
                 createdAt: self::BEFORE,
                 updatedAt: ClockMother::NOW,

@@ -44,12 +44,15 @@ final class SettingsVersionType extends Type
         }
 
         $defaultImage = $data['default_image_id'] ?? null;
+        // Settings published before they had an author have none.
+        $author = $data['author_id'] ?? null;
         $mainMenu = $data['main_menu'] ?? null;
         $footerMenu = $data['footer_menu'] ?? null;
 
         return SettingsVersion::fromPrimitives(
             $data['name'],
             \is_string($defaultImage) ? $defaultImage : '',
+            \is_string($author) ? $author : '',
             \is_array($mainMenu) ? $mainMenu : [],
             \is_array($footerMenu) ? $footerMenu : [],
         );
@@ -69,6 +72,7 @@ final class SettingsVersionType extends Type
         return json_encode([
             'name' => $value->name()->value(),
             'default_image_id' => $value->defaultImage()?->value(),
+            'author_id' => $value->author()?->value(),
             'main_menu' => $value->mainMenu()->toArray(),
             'footer_menu' => $value->footerMenu()->toArray(),
         ], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);

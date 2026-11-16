@@ -17,10 +17,10 @@ final class SettingsOnSiteFinderTest extends TestCase
     public function testItFindsTheSettingsOnTheSite(): void
     {
         $repository = self::createStub(SettingsRepository::class);
-        $repository->method('find')->willReturn(Settings::publish(Event::create()));
+        $repository->method('find')->willReturn(Settings::publish(Event::create(authorId: '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02')));
 
         self::assertEquals(
-            new SettingsResponse(Event::NAME, Event::IMAGE, MenuEntries::read(Event::MAIN_MENU), MenuEntries::read(Event::FOOTER_MENU)),
+            new SettingsResponse(Event::NAME, Event::IMAGE, '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02', MenuEntries::read(Event::MAIN_MENU), MenuEntries::read(Event::FOOTER_MENU)),
             (new SettingsOnSiteFinder())($repository),
         );
     }

@@ -34,6 +34,7 @@ use Web\Redirect\Domain\Redirect;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
+use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
 use Web\Taxonomy\Domain\CmsTermPublished;
@@ -43,6 +44,7 @@ use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Settings\Domain\CmsSettingsPublishedMother;
 
 final class PublishedPostTest extends TestCase
 {
@@ -230,14 +232,92 @@ final class PublishedPostTest extends TestCase
     }
 
     /**
+     * The page tells search engines it holds a post: its title, summary and
+     * image, when it was first and last published, its section, its tags,
+     * and who signs it, by the page of that author while on the site.
+     */
+    public function testItTellsSearchEnginesItIsAPost(): void
+    {
+        $page = $this->compose(
+            [self::TAG, self::OTHER_TAG],
+            terms: [
+                self::SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
+                self::OTHER_TAG => self::term('tag', 'Ruido', 'ruido'),
+            ],
+            authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
+            images: [self::image(CmsPostPublishedMother::OPENING_IMAGE, 'Andén del metro vacío')],
+        );
+        $canonical = RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html';
+
+        self::assertSame([
+            [
+                '@type' => 'WebPage',
+                '@id' => $canonical.'#webpage',
+                'url' => $canonical,
+                'name' => 'Mi primer día sin ruido',
+                'description' => 'Qué cambió el primer día con tapones.',
+                'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
+                'inLanguage' => 'es',
+            ],
+            [
+                '@type' => 'BlogPosting',
+                '@id' => $canonical.'#article',
+                'mainEntityOfPage' => ['@id' => $canonical.'#webpage'],
+                'headline' => 'Mi primer día sin ruido',
+                'description' => 'Qué cambió el primer día con tapones.',
+                'image' => RouteNameUrlGenerator::SITE.self::OPENING_SRC,
+                'datePublished' => ClockMother::now()->format(\DATE_ATOM),
+                'dateModified' => ClockMother::now()->format(\DATE_ATOM),
+                'author' => ['@id' => RouteNameUrlGenerator::SITE.'/autor/isaac.html#person'],
+                'articleSection' => 'Día a día',
+                'keywords' => 'Ruido',
+                'inLanguage' => 'es',
+            ],
+        ], $page->structuredData);
+    }
+
+    /**
+     * An author off the site is named as the post kept them, with no page;
+     * a post with no image nor tags on the site tells none.
+     */
+    public function testItTellsSearchEnginesOfWhatIsOffTheSiteByWhatThePostKept(): void
+    {
+        $page = $this->compose([self::TAG]);
+
+        $posting = $page->structuredData[1] ?? self::fail('No post was told.');
+        self::assertSame(['@type' => 'Person', 'name' => 'Isaac Abreu'], $posting['author']);
+        self::assertSame('Vida diaria', $posting['articleSection']);
+        self::assertArrayNotHasKey('image', $posting);
+        self::assertArrayNotHasKey('keywords', $posting);
+        self::assertArrayNotHasKey('publisher', $posting);
+    }
+
+    /**
+     * The author of the blog publishes every post, whoever signs it.
+     */
+    public function testItTellsSearchEnginesTheAuthorOfTheBlogPublishesThePost(): void
+    {
+        $page = $this->compose(
+            [],
+            authors: [self::NEW_AUTHOR => self::author('Ana', 'ana')],
+            settings: Settings::publish(CmsSettingsPublishedMother::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: self::NEW_AUTHOR)),
+        );
+
+        $posting = array_values(array_filter($page->structuredData, static fn (array $node): bool => 'BlogPosting' === $node['@type']))[0] ?? self::fail('No post was told.');
+        self::assertSame(['@id' => RouteNameUrlGenerator::SITE.'/autor/ana.html#person'], $posting['publisher']);
+        self::assertSame(['@type' => 'Person', 'name' => 'Isaac Abreu'], $posting['author']);
+    }
+
+    /**
      * @param list<string>          $tags
      * @param array<string, Term>   $terms     by id
      * @param array<string, Author> $authors   by id
      * @param array<string, mixed>  $changes
      * @param list<Redirect>        $redirects of the last addresses of what is off the site
      * @param list<Image>           $images    on the site
+     * @param ?Settings             $settings  on the site, none by default
      */
-    private function compose(array $tags, array $terms = [], array $authors = [], array $changes = [], array $redirects = [], array $images = []): SitePage
+    private function compose(array $tags, array $terms = [], array $authors = [], array $changes = [], array $redirects = [], array $images = [], ?Settings $settings = null): SitePage
     {
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
@@ -265,10 +345,13 @@ final class PublishedPostTest extends TestCase
             $changes + CmsPostPublishedMother::body(tagIds: $tags) + ['revision' => 1],
         ));
 
+        $settingsRepository = self::createStub(SettingsRepository::class);
+        $settingsRepository->method('find')->willReturn($settings);
+
         $page = new PublishedPost(
             $urlGenerator,
             new SitePostPage(new RichTextComponents(), $translator),
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
+            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), $authorRepository),
             $imageRepository,
             $termRepository,
             $authorRepository,

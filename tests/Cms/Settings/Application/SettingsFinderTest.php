@@ -38,15 +38,15 @@ final class SettingsFinderTest extends TestCase
 
         yield 'a draft' => [
             SettingsMother::create($version, createdAt: '2026-10-01 09:00:00'),
-            new SettingsResponse(SettingsMother::NAME, SettingsMother::IMAGE, Menu::fromArray($menu)->view(), Menu::fromArray($footer)->view(), $created, $created, 'draft', false, true),
+            new SettingsResponse(SettingsMother::NAME, SettingsMother::IMAGE, null, Menu::fromArray($menu)->view(), Menu::fromArray($footer)->view(), $created, $created, 'draft', false, true),
         ];
         yield 'published settings as they are on the site' => [
             SettingsMother::published(SettingsMother::version(), createdAt: '2026-10-01 09:00:00', updatedAt: ClockMother::NOW),
-            new SettingsResponse(SettingsMother::NAME, null, [], [], $created, ClockMother::now(), 'published', false, false),
+            new SettingsResponse(SettingsMother::NAME, null, null, [], [], $created, ClockMother::now(), 'published', false, false),
         ];
         yield 'published settings with changes' => [
             SettingsMother::published(SettingsMother::version(name: 'Otro nombre'), SettingsMother::version(), createdAt: '2026-10-01 09:00:00'),
-            new SettingsResponse('Otro nombre', null, [], [], $created, $created, 'published', true, true),
+            new SettingsResponse('Otro nombre', null, null, [], [], $created, $created, 'published', true, true),
         ];
     }
 

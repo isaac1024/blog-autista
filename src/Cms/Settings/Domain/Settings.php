@@ -73,7 +73,7 @@ final class Settings extends AggregateRoot
     {
         return new self(
             new SettingsId($id),
-            new SettingsVersion(new SiteName($name), null, Menu::empty(), Menu::empty()),
+            new SettingsVersion(new SiteName($name), null, null, Menu::empty(), Menu::empty()),
             SettingsStatus::Draft,
             null,
             Timeline::start(Clock::now()),
@@ -82,8 +82,8 @@ final class Settings extends AggregateRoot
     }
 
     /**
-     * Replaces everything an editor writes: the name, the default image, a
-     * blank one for none, and both menus.
+     * Replaces everything an editor writes: the name, the default image and
+     * the author, blank for none, and both menus.
      *
      * On published settings, it only changes the version being edited: the
      * site keeps its version until they are published again.
@@ -91,9 +91,9 @@ final class Settings extends AggregateRoot
      * @param array<array-key, mixed> $mainMenu   entries with a page_id and an optional label
      * @param array<array-key, mixed> $footerMenu entries with a page_id and an optional label
      */
-    public function edit(string $name, string $defaultImage, array $mainMenu, array $footerMenu): void
+    public function edit(string $name, string $defaultImage, string $author, array $mainMenu, array $footerMenu): void
     {
-        $version = SettingsVersion::fromPrimitives($name, $defaultImage, $mainMenu, $footerMenu);
+        $version = SettingsVersion::fromPrimitives($name, $defaultImage, $author, $mainMenu, $footerMenu);
 
         $this->changeResourcesUsed(fn () => $this->replaceVersion($version));
     }
@@ -119,6 +119,7 @@ final class Settings extends AggregateRoot
             $this->id->value(),
             $this->version->name()->value(),
             $this->version->defaultImage()?->value(),
+            $this->version->author()?->value(),
             $this->version->mainMenu()->toArray(),
             $this->version->footerMenu()->toArray(),
             $this->publicationRevision,
@@ -177,6 +178,11 @@ final class Settings extends AggregateRoot
     public function defaultImage(): ?ImageId
     {
         return $this->version->defaultImage();
+    }
+
+    public function author(): ?AuthorId
+    {
+        return $this->version->author();
     }
 
     public function mainMenu(): Menu

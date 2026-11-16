@@ -20,6 +20,14 @@
         <meta property="og:image:height" content="{{ page.image.height }}">
         <meta property="og:image:alt" content="{{ page.image.alt }}">
 {% endif %}
+{#
+    What the page is, for search engines, as one JSON-LD graph. A block of
+    data, never run, so the content security policy has nothing to allow;
+    "<" is escaped, so no text in it can close the element.
+#}
+{% if page.structuredData is not empty %}
+        <script type="application/ld+json">{{ {'@context': 'https://schema.org', '@graph': page.structuredData}|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+{% endif %}
 {% endblock %}
 
 {% block body %}

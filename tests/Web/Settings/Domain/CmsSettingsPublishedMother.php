@@ -47,7 +47,7 @@ final class CmsSettingsPublishedMother
         array $mainMenu = self::MAIN_MENU,
         array $footerMenu = self::FOOTER_MENU,
     ): array {
-        return ['name' => $name, 'default_image_id' => $defaultImageId, 'main_menu' => $mainMenu, 'footer_menu' => $footerMenu];
+        return ['name' => $name, 'default_image_id' => $defaultImageId, 'author_id' => null, 'main_menu' => $mainMenu, 'footer_menu' => $footerMenu];
     }
 
     /**
@@ -61,8 +61,9 @@ final class CmsSettingsPublishedMother
         array $footerMenu = self::FOOTER_MENU,
         string $id = self::ID,
         int $revision = 1,
+        ?string $authorId = null,
     ): CmsSettingsPublished {
         // As the site reads them from the body of the event.
-        return new CmsSettingsPublished($id, $name, $defaultImageId, MenuEntries::read($mainMenu), MenuEntries::read($footerMenu), $revision);
+        return new CmsSettingsPublished($id, $name, $defaultImageId, $authorId, MenuEntries::read($mainMenu), MenuEntries::read($footerMenu), $revision);
     }
 }

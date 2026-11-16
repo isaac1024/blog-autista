@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Web\Page\Application\PageFinder;
 use Web\Page\Application\PageNotFound;
 use Web\Page\Domain\PageRepository;
+use Web\Page\Domain\PageType;
 use Web\Post\Application\PostsPageNotFound;
 use Web\Post\Infrastructure\Ui\SiteSearch;
 
@@ -40,7 +41,7 @@ final class PageController extends AbstractController
 
         $composed = ($this->publishedPage)($page);
 
-        if (!$page->search) {
+        if (PageType::Search->value !== $page->type) {
             return $this->pageRenderer->render($composed);
         }
 

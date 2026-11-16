@@ -8,6 +8,7 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteAuthorPage;
 use Shared\Infrastructure\Ui\SiteMedia;
+use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
 use Web\Image\Application\ImageResponse;
@@ -54,12 +55,20 @@ final readonly class PublishedAuthor
             ),
         );
 
+        $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
+        $avatar = SiteMedia::avatar($author->avatarName, $author->name);
+
+        // The page of a person: the person, who may be the one who publishes the blog too, is one node.
         return ($this->siteAuthorPage)(
             $this->siteLayout->page($author->name)
                 ->withSearchEngineMetadata($author->metaDescription, $author->robots.',max-image-preview:large', $canonical)
-                ->withCountedVisits('author', $author->id),
+                ->withCountedVisits('author', $author->id)
+                ->withStructuredData(StructuredData::webPage('ProfilePage', $home, $canonical, $author->name, $author->metaDescription, [
+                    'mainEntity' => ['@id' => StructuredData::personId($canonical)],
+                ]))
+                ->withStructuredData(StructuredData::person($canonical, $author->name, StructuredData::absolute($home, $avatar['src']), $author->metaDescription)),
             $author->name,
-            SiteMedia::avatar($author->avatarName, $author->name),
+            $avatar,
             $author->bio,
             $images,
             ($this->linkedContents)($author->bio, $images, $author->id),

@@ -26,6 +26,7 @@ final class SettingsUpdateController extends AbstractController
             new SettingsUpdater(
                 $request->request->getString('name'),
                 $request->request->getString('default_image'),
+                $request->request->getString('author'),
                 // Each entry posts its fields under its position, in order.
                 $request->request->all('main_menu'),
                 $request->request->all('footer_menu'),

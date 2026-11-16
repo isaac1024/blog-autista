@@ -8,8 +8,11 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteChrome;
 use Shared\Infrastructure\Ui\SiteMedia;
+use Shared\Infrastructure\Ui\StructuredData;
 use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Author\Application\AuthorOnSiteFinder;
+use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
@@ -26,6 +29,9 @@ use Web\Settings\Domain\SettingsRepository;
  * site, and an image off it is never shared, unless the address of either
  * now leads to one on it, which is painted instead. Until the settings are
  * published, pages go without chrome.
+ *
+ * Every page tells search engines it is part of the site, published by the
+ * author of the blog while that author is on the site.
  */
 final readonly class SiteLayout
 {
@@ -35,6 +41,7 @@ final readonly class SiteLayout
         private ImageRepository $imageRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteLinkedContents $linkedContents,
+        private AuthorRepository $authorRepository,
     ) {}
 
     public function page(string $title): Page
@@ -47,14 +54,59 @@ final readonly class SiteLayout
         }
 
         $targets = $this->linkedContents->menuTargets([...$settings->mainMenu, ...$settings->footerMenu]);
-
-        return WebLayout::page($title, new SiteChrome(
+        $page = WebLayout::page($title, new SiteChrome(
             $settings->name,
             $homeUrl,
             self::links($settings->mainMenu, $targets),
             self::links($settings->footerMenu, $targets),
             $this->shareImage($settings),
         ));
+        $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
+        $publisher = $this->publisher($settings, $home);
+        $page = $page->withStructuredData(StructuredData::website($home, $settings->name, $publisher['url'] ?? null));
+
+        return null === $publisher ? $page : $page->withStructuredData($publisher['node']);
+    }
+
+    /**
+     * The address of the page of the author of the blog, the one search
+     * engines take as who publishes it, while they are on the site.
+     */
+    public function publisherUrl(): ?string
+    {
+        $settings = new SettingsOnSiteFinder()($this->settingsRepository);
+
+        if (null === $settings) {
+            return null;
+        }
+
+        $publisher = $this->publisher($settings, $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL));
+
+        return null === $publisher ? null : $publisher['url'];
+    }
+
+    /**
+     * The author of the blog, by the address of their page and as a person
+     * of schema.org, while on the site.
+     *
+     * @return ?array{url: string, node: array<string, mixed>}
+     */
+    private function publisher(SettingsResponse $settings, string $home): ?array
+    {
+        $author = null === $settings->authorId ? null : new AuthorOnSiteFinder($settings->authorId)($this->authorRepository);
+
+        if (null === $author) {
+            return null;
+        }
+
+        $url = $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return ['url' => $url, 'node' => StructuredData::person(
+            $url,
+            $author->name,
+            StructuredData::absolute($home, SiteMedia::avatar($author->avatarName, $author->name)['src']),
+            $author->metaDescription,
+        )];
     }
 
     /**

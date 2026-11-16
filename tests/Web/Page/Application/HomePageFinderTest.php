@@ -33,7 +33,7 @@ final class HomePageFinderTest extends TestCase
                 RichText::fromArray(CmsPagePublishedMother::CONTENT),
                 'Quién escribe este blog sobre autismo y por qué.',
                 'index,follow',
-                false,
+                'home',
             ),
             (new HomePageFinder())($repository),
         );

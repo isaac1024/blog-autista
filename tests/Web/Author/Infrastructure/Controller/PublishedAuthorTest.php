@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteAuthorPage;
+use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
 use Shared\Tests\Infrastructure\Ui\ComponentContracts;
@@ -60,7 +61,7 @@ final class PublishedAuthorTest extends TestCase
         $page = new PublishedAuthor(
             $urlGenerator,
             new SiteAuthorPage(new RichTextComponents()),
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator))),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), self::createStub(AuthorRepository::class)),
             $imageRepository,
             $redirects,
             new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)),
@@ -69,5 +70,27 @@ final class PublishedAuthorTest extends TestCase
         ComponentContracts::assertHonoured($page);
 
         self::assertSame(['type' => 'author', 'id' => self::AUTHOR], $page->countedContent);
+        // The page of a person, who is one node wherever else the site names them.
+        $canonical = RouteNameUrlGenerator::SITE.'/autor/isaac.html';
+        self::assertSame([
+            [
+                '@type' => 'ProfilePage',
+                '@id' => $canonical.'#webpage',
+                'url' => $canonical,
+                'name' => 'Isaac',
+                'description' => 'Quién escribe.',
+                'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
+                'inLanguage' => 'es',
+                'mainEntity' => ['@id' => $canonical.'#person'],
+            ],
+            [
+                '@type' => 'Person',
+                '@id' => $canonical.'#person',
+                'url' => $canonical,
+                'name' => 'Isaac',
+                'image' => RouteNameUrlGenerator::SITE.SiteMedia::avatar($author->avatarName(), 'Isaac')['src'],
+                'description' => 'Quién escribe.',
+            ],
+        ], $page->structuredData);
     }
 }

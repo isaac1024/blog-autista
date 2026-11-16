@@ -26,6 +26,7 @@ final readonly class SettingsResponse
     public function __construct(
         public string $name,
         public ?string $defaultImage,
+        public ?string $author,
         public array $mainMenu,
         public array $footerMenu,
         public \DateTimeImmutable $createdAt,
@@ -40,6 +41,7 @@ final readonly class SettingsResponse
         return new self(
             $settings->name()->value(),
             $settings->defaultImage()?->value(),
+            $settings->author()?->value(),
             $settings->mainMenu()->view(),
             $settings->footerMenu()->view(),
             $settings->timeline()->createdAt(),

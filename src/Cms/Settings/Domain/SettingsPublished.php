@@ -8,7 +8,8 @@ use Shared\Domain\Event\RevisedDomainEvent;
 
 /**
  * The settings were put on the site, or their version there replaced, with
- * all the site needs: the name of the blog, its default image and its menus.
+ * all the site needs: the name of the blog, its default image, its author
+ * and its menus.
  *
  * It carries what the site shows, one parameter each.
  *
@@ -24,6 +25,7 @@ final readonly class SettingsPublished extends RevisedDomainEvent
         string $aggregateId,
         private string $name,
         private ?string $defaultImageId,
+        private ?string $authorId,
         private array $mainMenu,
         private array $footerMenu,
         int $revision,
@@ -43,6 +45,7 @@ final readonly class SettingsPublished extends RevisedDomainEvent
         return [
             'name' => $this->name,
             'default_image_id' => $this->defaultImageId,
+            'author_id' => $this->authorId,
             'main_menu' => $this->mainMenu,
             'footer_menu' => $this->footerMenu,
             'revision' => $this->revision(),

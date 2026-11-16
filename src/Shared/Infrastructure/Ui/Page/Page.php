@@ -28,6 +28,7 @@ final readonly class Page
      * @param ?array{src: string, width: int, height: int, alt: string} $image          the image it is shared with, null for none
      * @param ?array{type: string, id: string}                          $countedContent what its visits are counted by, its kind and its id, null for a page whose visits aren't
      * @param list<string>                                              $frames         the origins of the resources it embeds behind facades, which it lets frame them
+     * @param list<array<string, mixed>>                                $structuredData the nodes of schema.org it tells search engines it is, as JSON-LD
      */
     private function __construct(
         public string $title,
@@ -42,11 +43,12 @@ final readonly class Page
         public ?array $image,
         public ?array $countedContent,
         public array $frames,
+        public array $structuredData,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, []);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, [], []);
     }
 
     /**
@@ -106,6 +108,7 @@ final readonly class Page
             $this->image,
             $this->countedContent,
             $this->frames,
+            $this->structuredData,
         );
     }
 
@@ -128,6 +131,7 @@ final readonly class Page
             ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt],
             $this->countedContent,
             $this->frames,
+            $this->structuredData,
         );
     }
 
@@ -151,6 +155,7 @@ final readonly class Page
             $this->image,
             ['type' => $type, 'id' => $id],
             $this->frames,
+            $this->structuredData,
         );
     }
 
@@ -175,6 +180,39 @@ final readonly class Page
             $this->image,
             $this->countedContent,
             array_values(array_unique([...$this->frames, ...$origins])),
+            $this->structuredData,
+        );
+    }
+
+    /**
+     * Tells search engines one more thing it is, as a node of schema.org,
+     * such as the post it shows: all of them go in one JSON-LD graph. A node
+     * with the @id of one it has already takes its place, so the same thing,
+     * such as the author of the blog on their own page, is told once.
+     *
+     * @param array<string, mixed> $node
+     */
+    public function withStructuredData(array $node): self
+    {
+        $others = array_values(array_filter(
+            $this->structuredData,
+            static fn (array $other): bool => !isset($node['@id']) || ($other['@id'] ?? null) !== $node['@id'],
+        ));
+
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $this->countedContent,
+            $this->frames,
+            [...$others, $node],
         );
     }
 
@@ -203,6 +241,7 @@ final readonly class Page
             $this->image,
             $this->countedContent,
             $this->frames,
+            $this->structuredData,
         );
     }
 }

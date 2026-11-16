@@ -20,6 +20,7 @@ final class Settings
 {
     /**
      * @param ?string                 $defaultImageId null for none
+     * @param ?string                 $authorId       the author of the blog, null for none
      * @param array<array-key, mixed> $mainMenu       its entries, as kept, which MenuEntries reads
      * @param array<array-key, mixed> $footerMenu
      */
@@ -31,6 +32,8 @@ final class Settings
         private string $name,
         #[ORM\Column(length: 36, nullable: true)]
         private ?string $defaultImageId,
+        #[ORM\Column(length: 36, nullable: true)]
+        private ?string $authorId,
         #[ORM\Column(type: 'json')]
         private array $mainMenu,
         #[ORM\Column(type: 'json')]
@@ -43,6 +46,7 @@ final class Settings
             new SettingsId($event->aggregateId()),
             $event->name(),
             $event->defaultImageId(),
+            $event->authorId(),
             $event->mainMenu(),
             $event->footerMenu(),
         );
@@ -55,6 +59,7 @@ final class Settings
     {
         $this->name = $event->name();
         $this->defaultImageId = $event->defaultImageId();
+        $this->authorId = $event->authorId();
         $this->mainMenu = $event->mainMenu();
         $this->footerMenu = $event->footerMenu();
     }
@@ -72,6 +77,11 @@ final class Settings
     public function defaultImageId(): ?string
     {
         return $this->defaultImageId;
+    }
+
+    public function authorId(): ?string
+    {
+        return $this->authorId;
     }
 
     /**

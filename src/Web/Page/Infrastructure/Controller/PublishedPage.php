@@ -8,11 +8,13 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
+use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
+use Web\Page\Domain\PageType;
 use Web\Post\Infrastructure\Ui\SiteMosaics;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
@@ -60,7 +62,19 @@ final readonly class PublishedPage
         return ($this->sitePage)(
             $this->siteLayout->page($page->title)
                 ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
-                ->withCountedVisits('page', $page->id),
+                ->withCountedVisits('page', $page->id)
+                ->withStructuredData(StructuredData::webPage(
+                    match (PageType::from($page->type)) {
+                        PageType::Contact => 'ContactPage',
+                        PageType::Search => 'SearchResultsPage',
+                        default => 'WebPage',
+                    },
+                    $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL),
+                    $canonical,
+                    $page->title,
+                    $page->metaDescription,
+                    [],
+                )),
             $page->title,
             $page->content,
             $images,
