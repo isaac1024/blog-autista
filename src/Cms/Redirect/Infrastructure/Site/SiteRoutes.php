@@ -6,8 +6,9 @@ namespace Cms\Redirect\Infrastructure\Site;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Exception\ExceptionInterface;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Generator\UrlGenerator;
-use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\Matcher\RedirectableUrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -39,10 +40,25 @@ final readonly class SiteRoutes
 
     public function match(string $path): ?SiteRoute
     {
-        $matcher = new UrlMatcher($this->router->getRouteCollection(), $this->context());
+        // As the site matches: an address that only lacks or has one slash
+        // too many at its end is sent by the router to the one it serves.
+        $matcher = new class($this->router->getRouteCollection(), $this->context()) extends RedirectableUrlMatcher {
+            /**
+             * @return array{_route: string}
+             */
+            #[\Override]
+            public function redirect(string $path, string $route, ?string $scheme = null): array
+            {
+                return ['_route' => ''];
+            }
+        };
 
         try {
             $parameters = $matcher->match($path);
+        } catch (MethodNotAllowedException) {
+            // A route of the site answers it, though not to a browser: what it
+            // answers is never a "not found" a redirect could take.
+            return new SiteRoute(null, []);
         } catch (ExceptionInterface) {
             return null;
         }

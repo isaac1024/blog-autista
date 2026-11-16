@@ -7,6 +7,7 @@ namespace Cms\Post\Infrastructure\Controller;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostUpdater;
 use Cms\Post\Domain\Classifiers;
+use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
@@ -23,10 +24,14 @@ use Symfony\Component\Routing\Requirement\Requirement;
  */
 final class PostUpdateController extends AbstractController
 {
-    public function __construct(private readonly TiptapRichText $tiptapRichText) {}
+    public function __construct(
+        private readonly TiptapRichText $tiptapRichText,
+        private readonly Classifiers $classifiers,
+        private readonly PostImages $postImages,
+    ) {}
 
     #[Route('/posts/{id}', name: 'cms_posts_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, Classifiers $classifiers, CsrfRequestGuard $csrf): Response
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
     {
         $csrf->assertValid($request);
 
@@ -43,7 +48,7 @@ final class PostUpdateController extends AbstractController
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($postRepository, $eventBus, $classifiers);
+            )($postRepository, $eventBus, $this->classifiers, $this->postImages);
         } catch (PostNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

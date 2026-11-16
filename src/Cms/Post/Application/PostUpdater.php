@@ -6,6 +6,7 @@ namespace Cms\Post\Application;
 
 use Cms\Post\Domain\Classifiers;
 use Cms\Post\Domain\PostId;
+use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\Event\EventBus;
 
@@ -40,7 +41,7 @@ final readonly class PostUpdater
         private string $robots,
     ) {}
 
-    public function __invoke(PostRepository $postRepository, EventBus $eventBus, Classifiers $classifiers): void
+    public function __invoke(PostRepository $postRepository, EventBus $eventBus, Classifiers $classifiers, PostImages $postImages): void
     {
         $post = $postRepository->find(new PostId($this->id)) ?? throw PostNotFound::withId($this->id);
 
@@ -55,6 +56,7 @@ final readonly class PostUpdater
             $this->metaDescription,
             $this->robots,
             $classifiers,
+            $postImages,
         );
 
         $post->save($postRepository, $eventBus);

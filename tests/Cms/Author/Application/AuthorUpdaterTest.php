@@ -37,6 +37,8 @@ final class AuthorUpdaterTest extends TestCase
 
     private const string PAGE = '01a1b801-ce58-723d-8234-b76d9105e001';
 
+    private const string OTHER_AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b03';
+
     #[\Override]
     protected function setUp(): void
     {
@@ -192,6 +194,12 @@ final class AuthorUpdaterTest extends TestCase
             ['type' => 'heading', 'level' => 4, 'text' => [['text' => 'Colegio']]],
         ), 'index,follow', 'errors.rich_text.not_allowed', []];
         yield 'unknown robots directive' => [AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::EMPTY, 'noindex', 'errors.seo.unknown_robots', ['%robots%' => 'noindex']];
+        yield 'a link to the author itself' => [AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
+            ['type' => 'paragraph', 'text' => [['text' => 'mi página', 'marks' => ['link'], 'author_id' => AuthorIdMother::DEFAULT_VALUE]]],
+        ), 'index,follow', 'errors.author.bio.links_itself', []];
+        yield 'a widget of the author itself' => [AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
+            ['type' => 'widget', 'kind' => 'related_page', 'author_id' => AuthorIdMother::DEFAULT_VALUE],
+        ), 'index,follow', 'errors.author.bio.links_itself', []];
     }
 
     public function testItRefusesTheSlugOfAnotherAuthor(): void
@@ -238,13 +246,13 @@ final class AuthorUpdaterTest extends TestCase
         $eventBus->expects(self::once())->method('publish')->with(self::callback(
             static fn (DomainEvent $event): bool => $event instanceof AuthorContentsLinked
                 && 'cms.author.contents_linked' === $event::eventName()
-                && ['post_ids' => [self::PAGE], 'term_ids' => [], 'author_ids' => [AuthorIdMother::DEFAULT_VALUE], 'external_ids' => [self::PAGE]] === $event->toPrimitives(),
+                && ['post_ids' => [self::PAGE], 'term_ids' => [], 'author_ids' => [self::OTHER_AUTHOR], 'external_ids' => [self::PAGE]] === $event->toPrimitives(),
         ));
 
         new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
             ['type' => 'paragraph', 'text' => [
                 ['text' => 'Mi post', 'marks' => ['link'], 'post_id' => self::PAGE],
-                ['text' => ' y yo', 'marks' => ['link'], 'author_id' => AuthorIdMother::DEFAULT_VALUE],
+                ['text' => ' y Ana', 'marks' => ['link'], 'author_id' => self::OTHER_AUTHOR],
                 ['text' => ' y un vídeo', 'marks' => ['link'], 'external_id' => self::PAGE],
             ]],
         ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));

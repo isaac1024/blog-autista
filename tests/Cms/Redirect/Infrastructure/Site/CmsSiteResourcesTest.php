@@ -17,6 +17,7 @@ use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -87,7 +88,7 @@ final class CmsSiteResourcesTest extends KernelTestCase
         $authors->save(AuthorMother::unpublished(id: self::AUTHOR_OFF_SITE, slug: 'ana'));
         $posts = self::getContainer()->get(PostRepository::class);
         $post = PostMother::published(id: self::POST, slug: 'otro-dia', section: self::SECTION, author: self::AUTHOR);
-        $post->edit(PostMother::TITLE, 'otro-dia-mas', self::SECTION, self::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
+        $post->edit(PostMother::TITLE, 'otro-dia-mas', self::SECTION, self::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class), new InMemoryPostImages());
         $posts->save($post);
         $posts->save(PostMother::unpublished(id: self::POST_OFF_SITE));
         $posts->save(PostMother::publishable(id: self::POST_DRAFT, slug: 'borrador', section: self::SECTION, author: self::AUTHOR));
@@ -133,11 +134,17 @@ final class CmsSiteResourcesTest extends KernelTestCase
         yield 'the address a page will move to' => [Source::fromPath('/quien-soy.html'), false];
         yield 'the last address of a page off the site' => [Source::fromPath('/retirada.html'), false];
         yield 'the home page' => [Source::fromPath('/'), true];
-        yield 'an address only sent to' => [Source::fromPath('/v'), false];
+        // A browser asking for it gets no "not found" a redirect could take.
+        yield 'an address only sent to' => [Source::fromPath('/v'), true];
         yield 'an address no route answers' => [Source::fromPath('/blog/vieja'), false];
         yield 'a section on the site' => [Source::fromPath('/vida-diaria/'), true];
         yield 'the address a section will move to' => [Source::fromPath('/dia-a-dia/'), false];
         yield 'a section there is none of' => [Source::fromPath('/otra-seccion/'), false];
+        // The router sends these to the address with, or without, the slash.
+        yield 'a section on the site, without its final slash' => [Source::fromPath('/vida-diaria'), true];
+        yield 'any address a section could have, without its final slash' => [Source::fromPath('/otra-seccion'), true];
+        yield 'a page on the site, with a final slash' => [Source::fromPath('/sobre-mi.html/'), true];
+        yield 'a post on the site, with a final slash' => [Source::fromPath(self::POST_PATH.'/'), true];
         yield 'the last address of a tag off the site' => [Source::fromPath('/tag/sueno.html'), false];
         yield 'a tag at the slug of a section' => [Source::fromPath('/tag/vida-diaria.html'), false];
         yield 'an author on the site' => [Source::fromPath('/autor/isaac.html'), true];

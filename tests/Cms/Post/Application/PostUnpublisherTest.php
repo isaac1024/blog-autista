@@ -6,10 +6,16 @@ namespace Cms\Tests\Post\Application;
 
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostUnpublisher;
+use Cms\Post\Application\PostUpdater;
 use Cms\Post\Domain\Post;
+use Cms\Post\Domain\PostAuthorsUsed;
+use Cms\Post\Domain\PostImagesUsed;
 use Cms\Post\Domain\PostRedirects;
 use Cms\Post\Domain\PostRepository;
+use Cms\Post\Domain\PostTermsUsed;
 use Cms\Post\Domain\PostUnpublished;
+use Cms\Tests\Post\Domain\InMemoryClassifiers;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use PHPUnit\Framework\TestCase;
@@ -43,6 +49,36 @@ final class PostUnpublisherTest extends TestCase
         new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(PostRedirects::class));
 
         self::assertNull($post->publishedAddress());
+    }
+
+    /**
+     * Off the site, what only the version once there used is free: the
+     * section, the tags, the author and the image a draft no longer uses can
+     * be deleted.
+     */
+    public function testItStopsUsingWhatOnlyTheVersionOnTheSiteUsed(): void
+    {
+        $post = PostMother::published(tags: [PostMother::TAG]);
+        new PostUpdater(PostIdMother::DEFAULT_VALUE, PostMother::TITLE, PostMother::SLUG, '', '', [PostMother::OTHER_TAG], '', PostMother::CONTENT, '', 'index,follow')(
+            self::stub($post),
+            self::createStub(EventBus::class),
+            new InMemoryClassifiers(),
+            new InMemoryPostImages(),
+        );
+        $told = [];
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->willReturnCallback(static function (DomainEvent ...$events) use (&$told): void {
+            $told = array_map(static fn (DomainEvent $event): array => [$event::eventName(), $event->toPrimitives()], $events);
+        });
+
+        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), $eventBus, self::createStub(PostRedirects::class));
+
+        self::assertSame([
+            [PostImagesUsed::eventName(), ['image_ids' => []]],
+            [PostTermsUsed::eventName(), ['term_ids' => [PostMother::OTHER_TAG]]],
+            [PostAuthorsUsed::eventName(), ['author_ids' => []]],
+            [PostUnpublished::eventName(), ['revision' => 2]],
+        ], $told);
     }
 
     /**

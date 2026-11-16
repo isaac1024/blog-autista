@@ -14,9 +14,11 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\Target;
 use Cms\Tests\Page\Domain\PageMother;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Redirect\Domain\RedirectMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,6 +57,31 @@ final class PostRedirectsTest extends PostControllerTestCase
         self::assertResponseRedirects(self::HOST.'/posts/'.$id.'/publish', Response::HTTP_SEE_OTHER);
         $client->request('GET', self::HOST.'/posts/'.$id.'/publish');
         self::assertResponseIsSuccessful();
+        self::assertSame(self::PATH, $this->publishedPath($id));
+    }
+
+    /**
+     * Nothing is asked about the address it leaves when another post on the
+     * site has the one it would take: that is told on its editor first.
+     */
+    public function testItTellsOnTheEditorThatAnotherPostHasTheAddressBeforeAskingAnything(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $id = $this->saveMovedPost();
+        $this->savePost(PostMother::published(id: PostIdMother::random()->value(), slug: 'otro-dia'));
+        $taken = [['key' => 'errors.post.address.taken', 'parameters' => ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => 'otro-dia']]];
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        self::assertSame($taken, self::errorNotices($client));
+
+        $client->request('GET', self::HOST.'/posts/'.$id.'/publish');
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
+        // Told once more, as nothing has shown the first yet.
+        self::assertSame([...$taken, ...$taken], self::errorNotices($client));
         self::assertSame(self::PATH, $this->publishedPath($id));
     }
 
@@ -157,7 +184,7 @@ final class PostRedirectsTest extends PostControllerTestCase
     {
         $id = PostIdMother::random()->value();
         $post = PostMother::published(id: $id);
-        $post->edit(PostMother::TITLE, 'otro-dia', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class));
+        $post->edit(PostMother::TITLE, 'otro-dia', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', self::getContainer()->get(Classifiers::class), new InMemoryPostImages());
         $this->savePost($post);
 
         return $id;

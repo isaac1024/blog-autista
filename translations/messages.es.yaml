@@ -574,7 +574,7 @@ cms:
             submit: 'Crear sección'
         edit:
             title: 'Editar sección'
-            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: vida-diaria. No puede ser «autor», «tag» ni «media». Puedes dejarla vacía hasta publicar la sección.'
+            slug_hint: 'Solo minúsculas sin tildes, números y guiones. Por ejemplo: vida-diaria. No puede ser «assets», «autor», «tag» ni «media». Puedes dejarla vacía hasta publicar la sección.'
         notices:
             created: 'Sección creada.'
             saved: 'Cambios guardados.'
@@ -1407,7 +1407,7 @@ errors:
         too_long: 'La dirección no puede tener más de %max% caracteres.'
     redirect:
         not_an_image_copy: '«%url%» está entre las imágenes, pero no es la dirección de ninguna.'
-        live_source: 'La dirección %source% ya muestra algo en la web, así que una redirección allí no se usaría nunca.'
+        live_source: 'La web ya responde por sí misma en %source%, mostrando algo o llevando a la misma dirección con o sin barra final, así que una redirección allí no se usaría nunca.'
         source_taken: 'La dirección %source% ya tiene una redirección.'
         unknown_target_type: 'Una redirección no puede llevar a «%type%».'
         missing_target: 'Elige a dónde lleva la redirección.'
@@ -1494,6 +1494,8 @@ errors:
             address_on_site: 'Un término publicado conserva su dirección en la web.'
     author:
         not_found: 'No hay ningún autor en «%slug%».'
+        bio:
+            links_itself: 'La bio de un autor no puede enlazar a su propia página. Quita ese enlace.'
         name:
             too_short: 'El nombre debe tener al menos %min% caracteres.'
             too_long: 'El nombre no puede pasar de %max% caracteres.'
@@ -1550,12 +1552,16 @@ errors:
         title:
             too_short: 'El título debe tener al menos %min% caracteres.'
             too_long: 'El título no puede pasar de %max% caracteres.'
+        content:
+            links_itself: 'Un post no puede enlazarse a sí mismo. Quita ese enlace.'
+        opening_image:
+            unknown: 'La imagen de apertura elegida ya no existe. Elige otra.'
         classification:
             unknown_section: 'La sección elegida ya no existe. Elige otra.'
             unknown_author: 'El autor elegido ya no existe. Elige otro.'
             unknown_tag: 'Alguna de las etiquetas elegidas ya no existe. Quítala.'
         address:
-            taken: 'Ya hay otro post publicado en esa sección el mismo día con la dirección «%slug%». Cambia la dirección del post.'
+            taken: 'Otro post de la web ya tiene la dirección /%section%/%date%/%slug%.html. Cambia la dirección del post.'
         publication:
             without_slug: 'El post no se puede publicar sin dirección.'
             without_section: 'El post no se puede publicar sin sección.'

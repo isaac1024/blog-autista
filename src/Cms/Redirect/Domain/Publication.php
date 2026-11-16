@@ -10,7 +10,9 @@ namespace Cms\Redirect\Domain;
  * editor says what to do with.
  *
  * - The redirect of its own former address goes without a word: it is back
- *   where it was.
+ *   where it was. So does one that leads to it already, such as the one
+ *   left when its slug changed and it comes back to the old one: whoever
+ *   comes by finds it there all the same.
  * - Publishing goes ahead only on what the editor was shown, by its
  *   fingerprint, and only with the address it leaves decided, if any.
  */
@@ -32,7 +34,7 @@ final readonly class Publication
         $current = $siteResources->addressOf($resource);
         $replaced = null === $next ? null : $redirectRepository->findBySource($next);
 
-        if (true === $replaced?->origin()->resource()?->equals($resource)) {
+        if (true === $replaced?->origin()->resource()?->equals($resource) || true === $replaced?->target()->resource()?->equals($resource)) {
             $replaced = null;
         }
 
@@ -51,7 +53,7 @@ final readonly class Publication
 
     /**
      * The redirect at that address, which publishing deletes; null for none,
-     * or one of its own former address.
+     * one of its own former address, or one that leads to it already.
      */
     public function replaced(): ?Redirect
     {

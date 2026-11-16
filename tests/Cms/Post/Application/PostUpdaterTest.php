@@ -14,6 +14,7 @@ use Cms\Post\Domain\PostPostsLinked;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostTermsUsed;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -164,6 +165,46 @@ final class PostUpdaterTest extends TestCase
         yield 'a tag that is not' => [new InMemoryClassifiers(tags: []), 'errors.post.classification.unknown_tag'];
     }
 
+    /**
+     * @param array<array-key, mixed> $content
+     */
+    #[DataProvider('selfLinks')]
+    public function testItNeverSavesAPostThatLinksToItself(array $content): void
+    {
+        $repository = $this->createMock(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $repository->expects(self::never())->method('save');
+
+        self::assertTells('errors.post.content.links_itself', [], static fn () => self::update($repository, self::createStub(EventBus::class), content: $content));
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>}>
+     */
+    public static function selfLinks(): iterable
+    {
+        yield 'a link' => [RichTextMother::stored(['type' => 'paragraph', 'text' => [['text' => 'este post', 'marks' => ['link'], 'post_id' => PostIdMother::DEFAULT_VALUE]]])];
+        yield 'a widget' => [RichTextMother::stored(['type' => 'widget', 'kind' => 'related_page', 'post_id' => PostIdMother::DEFAULT_VALUE])];
+    }
+
+    public function testItNeverSavesAPostOpeningWithAnImageTheLibraryHasNot(): void
+    {
+        $repository = $this->createMock(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $repository->expects(self::never())->method('save');
+
+        self::assertTells('errors.post.opening_image.unknown', [], static fn () => self::update($repository, self::createStub(EventBus::class), openingImage: self::IMAGE, images: new InMemoryPostImages()));
+    }
+
+    public function testItSavesAPostOpeningWithAnImageOffTheSite(): void
+    {
+        $repository = $this->createMock(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (Post $saved): bool => self::IMAGE === $saved->openingImage()?->value()));
+
+        self::update($repository, self::createStub(EventBus::class), openingImage: self::IMAGE, images: new InMemoryPostImages(onSite: [], drafts: [self::IMAGE]));
+    }
+
     public function testItThrowsWhenThePostDoesNotExist(): void
     {
         $repository = self::createStub(PostRepository::class);
@@ -192,11 +233,13 @@ final class PostUpdaterTest extends TestCase
         string $metaDescription = '',
         ?InMemoryClassifiers $classifiers = null,
         string $openingImage = '',
+        ?InMemoryPostImages $images = null,
     ): void {
         new PostUpdater(PostIdMother::DEFAULT_VALUE, $title, $slug, $section, $author, $tags, $openingImage, $content, $metaDescription, 'index,follow')(
             $repository,
             $eventBus,
             $classifiers ?? new InMemoryClassifiers(),
+            $images ?? new InMemoryPostImages(drafts: [self::IMAGE]),
         );
     }
 }

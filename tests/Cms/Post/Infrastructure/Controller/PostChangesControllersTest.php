@@ -166,7 +166,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
 
         $post = PostMother::publishable(id: $id);
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
-        self::assertSame([['key' => 'errors.post.address.taken', 'parameters' => ['%slug%' => PostMother::SLUG, '%day%' => '2026-11-07']]], self::errorNotices($client));
+        self::assertSame([['key' => 'errors.post.address.taken', 'parameters' => ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => PostMother::SLUG]]], self::errorNotices($client));
         self::assertEquals($post, $this->storedPost($post));
     }
 

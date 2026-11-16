@@ -8,6 +8,8 @@ use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUnpublisher;
 use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageContentsLinked;
+use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRedirects;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
@@ -26,6 +28,10 @@ use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 final class PageUnpublisherTest extends TestCase
 {
     use ClockSensitiveTrait;
+
+    private const string LINKED_PAGE = '01a1b801-ce58-723d-8234-b76d9105e001';
+
+    private const string LINKED_POST = '01a1b801-ce58-723d-8234-b76d9105f001';
 
     #[\Override]
     protected function setUp(): void
@@ -125,5 +131,32 @@ final class PageUnpublisherTest extends TestCase
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
         (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class), self::createStub(PageRedirects::class));
+    }
+
+    /**
+     * Off the site, what only the version once there linked to is free: the
+     * pages and posts a draft no longer links to can be deleted.
+     */
+    public function testItStopsUsingWhatOnlyTheVersionOnTheSiteLinkedTo(): void
+    {
+        $subject = PageMother::published(publishedContent: ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [
+            ['text' => 'una página', 'marks' => ['link'], 'page_id' => self::LINKED_PAGE],
+            ['text' => ' y un post', 'marks' => ['link'], 'post_id' => self::LINKED_POST],
+        ]]]]);
+        $told = [];
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->willReturnCallback(static function (DomainEvent ...$events) use (&$told): void {
+            $told = array_map(static fn (DomainEvent $event): array => [$event::eventName(), $event->toPrimitives()], $events);
+        });
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn($subject);
+
+        (new PageUnpublisher(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(PageRedirects::class));
+
+        self::assertSame([
+            [PageContentsLinked::eventName(), ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]],
+            [PagePagesLinked::eventName(), ['page_ids' => []]],
+            [PageUnpublished::eventName(), ['revision' => 2]],
+        ], $told);
     }
 }

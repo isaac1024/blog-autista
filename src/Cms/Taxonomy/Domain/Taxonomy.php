@@ -21,9 +21,9 @@ enum Taxonomy: string
 
     /**
      * The first segments of the site that other things are served under: the
-     * authors, the tags and the copies of the images.
+     * authors, the tags, the copies of the images and the assets.
      */
-    private const array RESERVED_SECTION_SLUGS = ['autor', 'media', 'tag'];
+    private const array RESERVED_SECTION_SLUGS = ['assets', 'autor', 'media', 'tag'];
 
     public static function fromValue(string $value): self
     {

@@ -21,6 +21,7 @@ use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Infrastructure\Controller\TermState;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Redirect\Infrastructure\Controller\NamesResources;
@@ -97,7 +98,7 @@ final class PostEditorTest extends TestCase
     public static function addressesOnTheSite(): iterable
     {
         $moved = PostMother::published(firstPublishedAt: '2026-10-01 10:00:00');
-        $moved->edit(PostMother::TITLE, 'otro-slug', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers());
+        $moved->edit(PostMother::TITLE, 'otro-slug', PostMother::SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(), new InMemoryPostImages());
 
         yield 'a published post, at its address there' => [$moved, self::SITE.'/vida-diaria/2026/10/01/'.PostMother::SLUG.'.html'];
         yield 'a draft' => [PostMother::publishable(), null];
@@ -222,7 +223,7 @@ final class PostEditorTest extends TestCase
     public static function prefixes(): iterable
     {
         $moved = PostMother::published(sectionSlug: 'antes', firstPublishedAt: '2026-10-01 10:00:00');
-        $moved->edit(PostMother::TITLE, PostMother::SLUG, self::OTHER_SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(sections: [self::OTHER_SECTION => null]));
+        $moved->edit(PostMother::TITLE, PostMother::SLUG, self::OTHER_SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(sections: [self::OTHER_SECTION => null]), new InMemoryPostImages());
 
         yield 'a draft, under its section, today' => [PostMother::publishable(), '/vida-diaria/2026/11/07/'];
         yield 'an unfiled draft' => [PostMother::create(), '/cms.posts.edit.no_section/2026/11/07/'];

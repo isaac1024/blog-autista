@@ -15,6 +15,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
 use Shared\Domain\RichText\LinkedContents;
+use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
@@ -28,7 +29,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  * copy of it, which only changes when the post is published again.
  *
  * - Editing saves whatever valid fields an editor writes, complete or not,
- *   as long as its section, author and tags are ones the CMS has.
+ *   as long as its section, author, tags and opening image are ones the
+ *   CMS has.
+ * - Its content never links to the post itself, nor shows it in a widget.
  * - A post is published only with everything the site shows: a slug, a
  *   section, an author and an opening image, all three on the site,
  *   content and a meta description. Its tags needn't be: the site only
@@ -44,7 +47,8 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   another post is published at it.
  * - The sections, tags and author it uses, the images it opens with and
  *   embeds, and the pages it links to are told to whoever keeps track of what is in use, so
- *   none is deleted while the post uses it.
+ *   none is deleted while the post uses it: those of the version being
+ *   edited, and those of the one on the site while it is there.
  *
  * Its rules reach every value object, error and event of the post, so its
  * coupling, its methods and its length grow with what a post is.
@@ -197,6 +201,7 @@ final class Post extends AggregateRoot
         string $metaDescription,
         string $robots,
         Classifiers $classifiers,
+        PostImages $postImages,
     ): void {
         // Everything is validated before anything is assigned, so an invalid
         // field doesn't leave the post with only part of the edit.
@@ -209,7 +214,17 @@ final class Post extends AggregateRoot
             Seo::fromPrimitives($metaDescription, $robots),
         );
         self::contentFeatures()->assertAllows($version->content());
+
+        if (\in_array($this->id->value(), $version->content()->linkedIds(LinkType::Post), true)) {
+            throw InvalidPostContent::linksItself();
+        }
+
         $version->classification()->assertKnownTo($classifiers);
+        $openingImageId = $version->openingImage();
+
+        if (null !== $openingImageId && !$postImages->exists($openingImageId)) {
+            throw InvalidOpeningImage::unknown($openingImageId);
+        }
 
         $this->changeResourcesUsed(fn () => $this->replaceVersion($version));
     }
@@ -220,7 +235,7 @@ final class Post extends AggregateRoot
      * section, author and opening image are on the site. It takes its address there then;
      * whether another post has it is checked apart, by PostAddressAvailability.
      */
-    public function publish(Classifiers $classifiers, ImagesOnSite $imagesOnSite): void
+    public function publish(Classifiers $classifiers, PostImages $postImages): void
     {
         $now = Clock::now();
         $this->version->assertPublishable();
@@ -236,7 +251,7 @@ final class Post extends AggregateRoot
         $author = $classifiers->authorOnSite($authorId) ?? throw InvalidPostPublication::authorOffSite();
         $openingImage = $this->version->openingImage() ?? throw InvalidPostPublication::withoutOpeningImage();
 
-        if (!$imagesOnSite->isOnSite($openingImage)) {
+        if (!$postImages->isOnSite($openingImage)) {
             throw InvalidPostPublication::openingImageOffSite();
         }
 
@@ -245,8 +260,8 @@ final class Post extends AggregateRoot
         $timeline = $this->timeline->published($now);
         $address = new PostAddress($section->slug(), $timeline->firstPublishedAt() ?? $now, $slug);
 
-        $this->status = PostStatus::Published;
         $this->changeResourcesUsed(function (): void {
+            $this->status = PostStatus::Published;
             $this->published = $this->version;
         });
         $this->publishedSectionSlug = $address->section();
@@ -293,7 +308,10 @@ final class Post extends AggregateRoot
             throw InvalidPostPublication::redirected();
         }
 
-        $this->status = PostStatus::Unpublished;
+        // What it showed on the site is used no longer.
+        $this->changeResourcesUsed(function (): void {
+            $this->status = PostStatus::Unpublished;
+        });
         $this->publishedSectionSlug = null;
         $this->publishedDay = null;
         $this->publishedSlug = null;
@@ -551,7 +569,7 @@ final class Post extends AggregateRoot
     }
 
     /**
-     * What the version being edited and the one last published use, each
+     * What the version being edited and the one on the site use, each
      * once and in order: the images it opens with and embeds, the pages and posts linked,
      * the section and the tags filed under or linked, the author signed by
      * or linked, and the external resources linked.
@@ -567,7 +585,7 @@ final class Post extends AggregateRoot
         $authors = [];
         $externals = [];
 
-        foreach ([$this->version, $this->published] as $version) {
+        foreach ([$this->version, $this->onSite()] as $version) {
             if (null === $version) {
                 continue;
             }

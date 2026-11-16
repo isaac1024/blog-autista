@@ -76,6 +76,7 @@ final class TermCreatorTest extends TestCase
         yield 'section at the address of the authors' => ['section', 'Autor', 'errors.term.slug.reserved', ['%slug%' => 'autor']];
         yield 'section at the address of the tags' => ['section', 'Tag', 'errors.term.slug.reserved', ['%slug%' => 'tag']];
         yield 'section at the address of the images' => ['section', 'Media', 'errors.term.slug.reserved', ['%slug%' => 'media']];
+        yield 'section at the address of the assets' => ['section', 'Assets', 'errors.term.slug.reserved', ['%slug%' => 'assets']];
         yield 'name without sluggable characters' => ['tag', '¡¡!!', 'errors.slug.malformed', ['%slug%' => '']];
     }
 

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Cms\Post\Application;
 
 use Cms\Post\Domain\Classifiers;
-use Cms\Post\Domain\ImagesOnSite;
 use Cms\Post\Domain\PostAddressAvailability;
 use Cms\Post\Domain\PostId;
+use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
@@ -30,17 +30,17 @@ final readonly class PostPublisher
         PostRepository $postRepository,
         EventBus $eventBus,
         Classifiers $classifiers,
-        ImagesOnSite $imagesOnSite,
+        PostImages $postImages,
         MutualExclusion $mutualExclusion,
     ): void {
         $post = $postRepository->find(new PostId($this->id)) ?? throw PostNotFound::withId($this->id);
 
-        $post->publish($classifiers, $imagesOnSite);
+        $post->publish($classifiers, $postImages);
         $address = $post->publishedAddress();
         $keys = null === $address ? [] : ['post-address:'.$address->key()];
 
         $mutualExclusion->run($keys, static function () use ($post, $address, $postRepository, $eventBus): void {
-            new PostAddressAvailability($post)($postRepository);
+            new PostAddressAvailability($post, $address)($postRepository);
             $post->save($postRepository, $eventBus);
 
             // Its address is its last from now on, not that of a post off

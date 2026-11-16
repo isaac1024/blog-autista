@@ -29,7 +29,8 @@ use Shared\Domain\RichText\RichText;
  *   use is never deleted; it can be unpublished, and the site leaves it out.
  *   An image redirects lead to stays on the site while they do.
  * - Its caption may link to pages, posts, sections, tags and authors,
- *   which then aren't deleted while it does.
+ *   which then aren't deleted while it does: the caption being edited, and
+ *   the one on the site while it is there.
  *
  * Its rules reach every value object, error and event of the image, so its
  * coupling grows with what an image is rather than with how it is designed.
@@ -123,8 +124,8 @@ final class Image extends AggregateRoot
             throw InvalidImagePublication::nothingToPublish();
         }
 
-        $this->status = ImageStatus::Published;
         $this->changePagesLinked(function (): void {
+            $this->status = ImageStatus::Published;
             $this->published = $this->version;
         });
         $this->timeline = $this->timeline->published(Clock::now());
@@ -154,7 +155,10 @@ final class Image extends AggregateRoot
             throw InvalidImagePublication::redirected();
         }
 
-        $this->status = ImageStatus::Unpublished;
+        // What its caption showed on the site is linked no longer.
+        $this->changePagesLinked(function (): void {
+            $this->status = ImageStatus::Unpublished;
+        });
         ++$this->publicationRevision;
 
         $this->record(new ImageUnpublished($this->id->value(), $this->publicationRevision));
@@ -333,22 +337,27 @@ final class Image extends AggregateRoot
 
     /**
      * The posts, sections and tags, and authors the caption being edited and
-     * the one last published link to.
+     * the one on the site link to.
      */
     private function contentsLinked(): LinkedContents
     {
-        return LinkedContents::fromTexts($this->version->caption(), $this->published?->caption());
+        return LinkedContents::fromTexts($this->version->caption(), $this->onSite()?->caption());
     }
 
     /**
-     * The pages linked from the caption being edited and the one last
-     * published, each once and in order.
+     * The pages linked from the caption being edited and the one on the
+     * site, each once and in order.
      *
      * @return list<string>
      */
     private function pagesLinked(): array
     {
-        $pages = [...($this->version->caption()?->pageIds() ?? []), ...($this->published?->caption()?->pageIds() ?? [])];
+        $pages = [];
+
+        foreach ([$this->version->caption(), $this->onSite()?->caption()] as $caption) {
+            array_push($pages, ...($caption?->pageIds() ?? []));
+        }
+
         sort($pages);
 
         return array_values(array_unique($pages));

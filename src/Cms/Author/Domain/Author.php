@@ -15,6 +15,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\BlockType;
 use Shared\Domain\RichText\CalloutVariant;
 use Shared\Domain\RichText\LinkedContents;
+use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
@@ -36,8 +37,9 @@ use Shared\Domain\RichText\RichTextFeatures;
  * - Once off the site, it keeps the last address it had there, until
  *   another author is published at it.
  * - The bio embeds images of the library and links to pages, posts,
- *   sections, tags and authors, which are told to whoever keeps track of
- *   what is in use, so none is deleted while the bio uses it.
+ *   sections, tags and other authors, never to its own, which are told to
+ *   whoever keeps track of what is in use, so none is deleted while the bio
+ *   being edited, or the one on the site while it is there, uses it.
  * - Each avatar uploaded is a file of its own. The one being edited and the
  *   one on the site are kept while either version has it, and removed once
  *   neither does.
@@ -175,6 +177,10 @@ final class Author extends AggregateRoot
         );
         self::bioFeatures()->assertAllows($version->bio());
 
+        if (\in_array($this->id->value(), $version->bio()->linkedIds(LinkType::Author), true)) {
+            throw InvalidAuthorBio::linksItself();
+        }
+
         $this->change(fn () => $this->replaceVersion($version));
     }
 
@@ -205,8 +211,8 @@ final class Author extends AggregateRoot
             throw InvalidAuthorPublication::nothingToPublish();
         }
 
-        $this->status = AuthorStatus::Published;
         $this->change(function (): void {
+            $this->status = AuthorStatus::Published;
             $this->published = $this->version;
         });
         $this->publishedSlug = $this->version->slug();
@@ -242,7 +248,10 @@ final class Author extends AggregateRoot
             throw InvalidAuthorPublication::redirected();
         }
 
-        $this->status = AuthorStatus::Unpublished;
+        // What its bio showed on the site is used no longer.
+        $this->change(function (): void {
+            $this->status = AuthorStatus::Unpublished;
+        });
         $this->publishedSlug = null;
         ++$this->publicationRevision;
 
@@ -498,14 +507,14 @@ final class Author extends AggregateRoot
 
     /**
      * The images embedded in, and the pages linked from, the bio being
-     * edited and the one last published, each once and in order.
+     * edited and the one on the site, each once and in order.
      *
      * @return array{images: list<string>, pages: list<string>}
      */
     private function resourcesUsed(): array
     {
-        $images = [...$this->version->bio()->imageIds(), ...($this->published?->bio()->imageIds() ?? [])];
-        $pages = [...$this->version->bio()->pageIds(), ...($this->published?->bio()->pageIds() ?? [])];
+        $images = [...$this->version->bio()->imageIds(), ...($this->onSite()?->bio()->imageIds() ?? [])];
+        $pages = [...$this->version->bio()->pageIds(), ...($this->onSite()?->bio()->pageIds() ?? [])];
         sort($images);
         sort($pages);
 
@@ -514,11 +523,11 @@ final class Author extends AggregateRoot
 
     /**
      * The posts, sections and tags, and authors the bio being edited and the
-     * one last published link to or show in widgets.
+     * one on the site link to or show in widgets.
      */
     private function contentsLinked(): LinkedContents
     {
-        return LinkedContents::fromTexts($this->version->bio(), $this->published?->bio());
+        return LinkedContents::fromTexts($this->version->bio(), $this->onSite()?->bio());
     }
 
     /**

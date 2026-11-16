@@ -38,7 +38,8 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   the site while they do.
  * - A page links to other pages, never to itself, and to posts, sections,
  *   tags and authors; one that others link to is never deleted; it can be
- *   unpublished, and the site leaves its links as plain text.
+ *   unpublished, and the site leaves its links as plain text. What the
+ *   version on the site uses counts as used only while it is there.
  *
  * The unique indexes on the slugs keep two pages from sharing an address,
  * the one being edited or the one on the site; pages without one share none.
@@ -229,8 +230,8 @@ final class Page extends AggregateRoot
             throw InvalidPagePublication::nothingToPublish();
         }
 
-        $this->status = PageStatus::Published;
         $this->changeResourcesUsed(function (): void {
+            $this->status = PageStatus::Published;
             $this->published = $this->version;
         });
         $this->publishedSlug = $this->version->slug();
@@ -271,7 +272,10 @@ final class Page extends AggregateRoot
             throw InvalidPagePublication::redirected();
         }
 
-        $this->status = PageStatus::Unpublished;
+        // What it showed on the site is used no longer.
+        $this->changeResourcesUsed(function (): void {
+            $this->status = PageStatus::Unpublished;
+        });
         $this->publishedSlug = null;
         ++$this->publicationRevision;
 
@@ -490,14 +494,14 @@ final class Page extends AggregateRoot
 
     /**
      * The images embedded in, and the pages linked from, the version being
-     * edited and the one last published, each once and in order.
+     * edited and the one on the site, each once and in order.
      *
      * @return array{images: list<string>, pages: list<string>}
      */
     private function resourcesUsed(): array
     {
-        $images = [...$this->version->content()->imageIds(), ...($this->published?->content()->imageIds() ?? [])];
-        $pages = [...$this->version->content()->pageIds(), ...($this->published?->content()->pageIds() ?? [])];
+        $images = [...$this->version->content()->imageIds(), ...($this->onSite()?->content()->imageIds() ?? [])];
+        $pages = [...$this->version->content()->pageIds(), ...($this->onSite()?->content()->pageIds() ?? [])];
         sort($images);
         sort($pages);
 
@@ -506,11 +510,11 @@ final class Page extends AggregateRoot
 
     /**
      * The posts, sections and tags, and authors the version being edited
-     * and the one last published link to or show in widgets.
+     * and the one on the site link to or show in widgets.
      */
     private function contentsLinked(): LinkedContents
     {
-        return LinkedContents::fromTexts($this->version->content(), $this->published?->content());
+        return LinkedContents::fromTexts($this->version->content(), $this->onSite()?->content());
     }
 
     private function replaceVersion(PageVersion $version): void

@@ -13,7 +13,7 @@ final class PostAddressTaken extends DomainError
         return new self(
             \sprintf('Another post on the site is addressed by "%s".', $address->key()),
             'errors.post.address.taken',
-            ['%slug%' => $address->slug()->value(), '%day%' => $address->day()],
+            ['%section%' => $address->section()->value(), '%date%' => str_replace('-', '/', $address->day()), '%slug%' => $address->slug()->value()],
             $previous,
         );
     }

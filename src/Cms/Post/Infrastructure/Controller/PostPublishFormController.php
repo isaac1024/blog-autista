@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Cms\Post\Infrastructure\Controller;
 
+use Cms\Post\Application\PostAddressChecker;
 use Cms\Post\Application\PostFinder;
 use Cms\Post\Application\PostNotFound;
+use Cms\Post\Domain\Classifiers;
+use Cms\Post\Domain\PostAddressTaken;
 use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Domain\RedirectRepository;
@@ -36,6 +39,7 @@ final class PostPublishFormController extends AbstractController
         private readonly PostPublishForm $postPublishForm,
         private readonly RedirectRepository $redirectRepository,
         private readonly SiteResources $siteResources,
+        private readonly Classifiers $classifiers,
     ) {}
 
     #[Route('/posts/{id}/publish', name: 'cms_posts_publish_form', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
@@ -50,6 +54,15 @@ final class PostPublishFormController extends AbstractController
         $outlook = new PublicationOutlookFinder(Resource::post($id))($this->redirectRepository, $this->siteResources);
 
         if (!$post->hasSomethingToPublish || !$outlook->asksFirst) {
+            return $this->redirectToRoute('cms_posts_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
+        }
+
+        try {
+            new PostAddressChecker($id)($postRepository, $this->classifiers);
+        } catch (PostAddressTaken $error) {
+            // Nothing to ask while another post has the address: told on the editor.
+            $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
+
             return $this->redirectToRoute('cms_posts_edit', ['id' => $id], Response::HTTP_SEE_OTHER);
         }
 

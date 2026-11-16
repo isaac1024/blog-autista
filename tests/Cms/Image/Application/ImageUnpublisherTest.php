@@ -7,6 +7,8 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUnpublisher;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageContentsLinked;
+use Cms\Image\Domain\ImagePagesLinked;
 use Cms\Image\Domain\ImageRedirects;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageUnpublished;
@@ -24,6 +26,10 @@ final class ImageUnpublisherTest extends TestCase
 {
     use ClockSensitiveTrait;
     use DomainErrorAssertions;
+
+    private const string LINKED_PAGE = '01a1b801-ce58-723d-8234-b76d9105e001';
+
+    private const string LINKED_POST = '01a1b801-ce58-723d-8234-b76d9105f001';
 
     #[\Override]
     protected function setUp(): void
@@ -100,5 +106,32 @@ final class ImageUnpublisherTest extends TestCase
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
         (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), self::createStub(ImageRedirects::class));
+    }
+
+    /**
+     * Off the site, what only the caption once there linked to is free: the
+     * pages and posts a draft no longer links to can be deleted.
+     */
+    public function testItStopsUsingWhatOnlyTheVersionOnTheSiteLinkedTo(): void
+    {
+        $subject = ImageMother::published(publishedCaption: ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [
+            ['text' => 'una página', 'marks' => ['link'], 'page_id' => self::LINKED_PAGE],
+            ['text' => ' y un post', 'marks' => ['link'], 'post_id' => self::LINKED_POST],
+        ]]]]);
+        $told = [];
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->willReturnCallback(static function (DomainEvent ...$events) use (&$told): void {
+            $told = array_map(static fn (DomainEvent $event): array => [$event::eventName(), $event->toPrimitives()], $events);
+        });
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn($subject);
+
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(ImageRedirects::class));
+
+        self::assertSame([
+            [ImagePagesLinked::eventName(), ['page_ids' => []]],
+            [ImageContentsLinked::eventName(), ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]],
+            [ImageUnpublished::eventName(), ['revision' => 2]],
+        ], $told);
     }
 }

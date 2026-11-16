@@ -574,7 +574,7 @@ cms:
             submit: 'Create section'
         edit:
             title: 'Edit section'
-            slug_hint: 'Only lowercase letters without accents, digits and hyphens. For example: daily-life. It can’t be “autor”, “tag” or “media”. You can leave it empty until you publish the section.'
+            slug_hint: 'Only lowercase letters without accents, digits and hyphens. For example: daily-life. It can’t be “assets”, “autor”, “tag” or “media”. You can leave it empty until you publish the section.'
         notices:
             created: 'Section created.'
             saved: 'Changes saved.'
@@ -1407,7 +1407,7 @@ errors:
         too_long: 'The address can’t be longer than %max% characters.'
     redirect:
         not_an_image_copy: '“%url%” is among the images, but is the address of none.'
-        live_source: 'The address %source% already shows something on the site, so a redirect there would never be used.'
+        live_source: 'The site already answers %source% itself, showing something or leading to the same address with or without its final slash, so a redirect there would never be used.'
         source_taken: 'The address %source% already has a redirect.'
         unknown_target_type: 'A redirect can’t lead to “%type%”.'
         missing_target: 'Choose where the redirect leads.'
@@ -1494,6 +1494,8 @@ errors:
             address_on_site: 'A published section or tag keeps its address on the site.'
     author:
         not_found: 'There is no author at “%slug%”.'
+        bio:
+            links_itself: 'An author’s bio can’t link to their own page. Take that link out.'
         name:
             too_short: 'The name must have at least %min% characters.'
             too_long: 'The name can’t be longer than %max% characters.'
@@ -1550,12 +1552,16 @@ errors:
         title:
             too_short: 'The title must have at least %min% characters.'
             too_long: 'The title can’t be longer than %max% characters.'
+        content:
+            links_itself: 'A post can’t link to itself. Take that link out.'
+        opening_image:
+            unknown: 'The opening image chosen no longer exists. Choose another.'
         classification:
             unknown_section: 'The section chosen no longer exists. Choose another.'
             unknown_author: 'The author chosen no longer exists. Choose another.'
             unknown_tag: 'One of the tags chosen no longer exists. Remove it.'
         address:
-            taken: 'Another post published in that section on the same day already has the address “%slug%”. Change the address of the post.'
+            taken: 'Another post on the site already has the address /%section%/%date%/%slug%.html. Change the address of the post.'
         publication:
             without_slug: 'The post can’t be published without an address.'
             without_section: 'The post can’t be published without a section.'

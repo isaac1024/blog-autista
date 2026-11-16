@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Cms\Post\Infrastructure\Controller;
 
+use Cms\Post\Application\PostAddressChecker;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostPublisher;
 use Cms\Post\Domain\Classifiers;
-use Cms\Post\Domain\ImagesOnSite;
+use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Application\ResourcePublication;
@@ -52,7 +53,7 @@ final class PostPublishController extends AbstractController
     ) {}
 
     #[Route('/posts/{id}/publish', name: 'cms_posts_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, ImagesOnSite $imagesOnSite): Response
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, PostImages $postImages): Response
     {
         $this->csrf->assertValid($request);
 
@@ -63,6 +64,10 @@ final class PostPublishController extends AbstractController
 
         try {
             if (null === $outlook && new PublicationOutlookFinder($resource)($this->redirectRepository, $this->siteResources)->asksFirst) {
+                // Nothing is asked of a publication another post's address
+                // refuses: that is told on the editor.
+                new PostAddressChecker($id)($postRepository, $classifiers);
+
                 return $this->redirectToRoute('cms_posts_publish_form', ['id' => $id], Response::HTTP_SEE_OTHER);
             }
 
@@ -73,8 +78,8 @@ final class PostPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($id, $postRepository, $eventBus, $classifiers, $imagesOnSite, $mutualExclusion): void {
-                    new PostPublisher($id)($postRepository, $eventBus, $classifiers, $imagesOnSite, $mutualExclusion);
+                static function () use ($id, $postRepository, $eventBus, $classifiers, $postImages, $mutualExclusion): void {
+                    new PostPublisher($id)($postRepository, $eventBus, $classifiers, $postImages, $mutualExclusion);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PostNotFound $exception) {

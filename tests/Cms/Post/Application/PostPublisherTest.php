@@ -11,7 +11,7 @@ use Cms\Post\Domain\PostPublished;
 use Cms\Post\Domain\PostRepository;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
-use Cms\Tests\Post\Domain\InMemoryImagesOnSite;
+use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
@@ -46,7 +46,7 @@ final class PostPublisherTest extends TestCase
         });
         $locks = new RecordingMutualExclusion();
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, new InMemoryClassifiers(), new InMemoryImagesOnSite(), $locks);
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, new InMemoryClassifiers(), new InMemoryPostImages(), $locks);
 
         self::assertIsArray($published);
         self::assertCount(1, $published);
@@ -78,7 +78,7 @@ final class PostPublisherTest extends TestCase
         self::mockTime('2026-11-14 23:30:00 UTC');
         $locks = new RecordingMutualExclusion();
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::publishable()), self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), $locks);
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::publishable()), self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), $locks);
 
         self::assertSame(['post-address:vida-diaria/2026-11-15/'.PostMother::SLUG], $locks->lastHeld());
     }
@@ -89,7 +89,7 @@ final class PostPublisherTest extends TestCase
         $locks = new RecordingMutualExclusion();
         $classifiers = new InMemoryClassifiers(sections: [PostMother::SECTION => ['name' => 'Día a día', 'slug' => 'dia-a-dia']]);
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), self::createStub(EventBus::class), $classifiers, new InMemoryImagesOnSite(), $locks);
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), self::createStub(EventBus::class), $classifiers, new InMemoryPostImages(), $locks);
 
         self::assertSame(['post-address:dia-a-dia/2026-10-01/'.PostMother::SLUG], $locks->lastHeld());
         self::assertEquals(PostMother::published(sectionSlug: 'dia-a-dia', firstPublishedAt: '2026-10-01 10:00:00', publicationRevision: 2), $post);
@@ -101,7 +101,7 @@ final class PostPublisherTest extends TestCase
         $repository = $this->repository($post);
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), new RecordingMutualExclusion()));
+        self::assertTells($key, [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), new RecordingMutualExclusion()));
     }
 
     /**
@@ -124,7 +124,7 @@ final class PostPublisherTest extends TestCase
         $repository = $this->repository(PostMother::publishable());
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $classifiers, new InMemoryImagesOnSite(), new RecordingMutualExclusion()));
+        self::assertTells($key, [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $classifiers, new InMemoryPostImages(), new RecordingMutualExclusion()));
     }
 
     /**
@@ -141,7 +141,7 @@ final class PostPublisherTest extends TestCase
         $repository = $this->repository(PostMother::publishable());
         $repository->expects(self::never())->method('save');
 
-        self::assertTells('errors.post.publication.opening_image_off_site', [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite([]), new RecordingMutualExclusion()));
+        self::assertTells('errors.post.publication.opening_image_off_site', [], static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages([]), new RecordingMutualExclusion()));
     }
 
     public function testItPublishesWithTagsOffTheSite(): void
@@ -149,7 +149,7 @@ final class PostPublisherTest extends TestCase
         $repository = $this->repository(PostMother::publishable(tags: [PostMother::TAG]));
         $repository->expects(self::once())->method('save');
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(tags: []), new InMemoryImagesOnSite(), new RecordingMutualExclusion());
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(tags: []), new InMemoryPostImages(), new RecordingMutualExclusion());
     }
 
     public function testItNeverPublishesAtTheAddressOfAnotherPostOnTheSite(): void
@@ -161,8 +161,8 @@ final class PostPublisherTest extends TestCase
 
         self::assertTells(
             'errors.post.address.taken',
-            ['%slug%' => PostMother::SLUG, '%day%' => '2026-11-07'],
-            static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), $locks),
+            ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => PostMother::SLUG],
+            static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), $locks),
         );
     }
 
@@ -179,7 +179,7 @@ final class PostPublisherTest extends TestCase
             self::assertTrue($locks->isHolding());
         });
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), $locks);
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), $locks);
     }
 
     public function testItRepublishesAtItsOwnAddress(): void
@@ -189,7 +189,7 @@ final class PostPublisherTest extends TestCase
         $repository->method('findOnSiteAt')->willReturn($post);
         $repository->expects(self::once())->method('save');
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), new RecordingMutualExclusion());
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), new RecordingMutualExclusion());
     }
 
     /**
@@ -207,7 +207,7 @@ final class PostPublisherTest extends TestCase
         });
         $lock = new RecordingMutualExclusion();
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), $lock);
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), $lock);
 
         self::assertNull($former->lastAddress());
         self::assertSame([PostIdMother::DEFAULT_VALUE, '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0bff'], $saved);
@@ -223,7 +223,7 @@ final class PostPublisherTest extends TestCase
         $repository->method('findOffSiteByLastAddress')->willReturn($post);
         $repository->expects(self::once())->method('save');
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), new RecordingMutualExclusion());
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), new RecordingMutualExclusion());
 
         self::assertEquals($post->publishedAddress(), $post->lastAddress());
     }
@@ -235,7 +235,7 @@ final class PostPublisherTest extends TestCase
 
         $this->expectExceptionObject(PostNotFound::withId(PostIdMother::DEFAULT_VALUE));
 
-        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryImagesOnSite(), new RecordingMutualExclusion());
+        new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new InMemoryClassifiers(), new InMemoryPostImages(), new RecordingMutualExclusion());
     }
 
     /**

@@ -58,6 +58,19 @@ final class PublicationOutlookFinderTest extends TestCase
         self::assertEquals(new PublicationOutlook('/sobre-mi.html', null, null, null, false, ''), $outlook);
     }
 
+    /**
+     * Nor does one that leads to it already, such as the one its slug left
+     * when it changed and comes back now: whoever comes by finds it there.
+     */
+    public function testItTellsNothingOfARedirectThatLeadsToItAlready(): void
+    {
+        $toItself = RedirectMother::create(source: '/sobre-mi.html', target: Resource::page(self::PAGE));
+
+        $outlook = self::outlook(current: '/quien-soy.html', next: '/sobre-mi.html', redirects: ['/sobre-mi.html' => $toItself]);
+
+        self::assertSame(['/sobre-mi.html', null, '/quien-soy.html'], [$outlook->next, $outlook->replaced, $outlook->previous]);
+    }
+
     public function testItAsksAboutTheAddressItLeavesWithItsRedirectIfAny(): void
     {
         $previous = RedirectMother::gone(source: '/sobre-mi.html');
