@@ -1125,6 +1125,8 @@ content:
     table:
         label: 'Table'
 site:
+    footer:
+        privacy: 'No trackers from other sites. What comes from them loads only if you agree.'
     home: 'Go to the home page'
     not_found:
         title: 'We can’t find this page'
@@ -1155,6 +1157,8 @@ site:
         too_short: 'Write a word of at least %min% letters.'
         none: 'No posts with “%text%”.'
 ui:
+    skip_to_content: 'Skip to content'
+    menu: 'Menu'
     reading:
         toggle: 'Reading settings'
         short: 'Reading'

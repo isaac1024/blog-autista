@@ -1,11 +1,44 @@
+{#
+    The bar on top of every page of the site, on the ground of the page and
+    set apart by a faint line. Small screens fold the menu under a button
+    that works without scripts, as a disclosure; wider ones show it in line.
+    The reading settings come last, at the end of the bar.
+#}
 {% if brand or links is not empty %}
-<header class="flex flex-wrap items-center justify-between gap-4 border-b-2 border-border bg-surface px-[clamp(1rem,4vw,2rem)] py-4">
+<header class="relative border-b border-divider bg-bg">
+    <a class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-30 focus:bg-accent focus:px-4 focus:py-3 focus:font-bold focus:text-on-accent" href="#main">{{ 'ui.skip_to_content'|trans }}</a>
+    <div class="mx-auto flex min-h-[4.5rem] w-full max-w-[72rem] items-center gap-x-10 gap-y-2 py-2 pr-[clamp(0.5rem,3vw,2rem)] pl-[clamp(1rem,4vw,2rem)]">
 {% if brand %}
-    <twig:Shared:Brand :brand="brand" :homeUrl="homeUrl" class="text-text" />
+        <twig:Shared:Brand :brand="brand" :homeUrl="homeUrl" class="text-text" />
 {% endif %}
 {% if links is not empty %}
-    <twig:Shared:Nav :label="'ui.primary_navigation'|trans" :links="links" />
+        <nav class="hidden grow md:block" aria-label="{{ 'ui.primary_navigation'|trans }}">
+            <ul class="m-0 flex list-none flex-wrap gap-x-7 gap-y-1 p-0">
+{% for link in links %}
+                <li><a class="inline-flex min-h-11 items-center text-text no-underline hover:text-accent hover:underline hover:decoration-[0.08em] hover:underline-offset-[0.25em]" href="{{ link.url }}">{{ link.label }}</a></li>
+{% endfor %}
+            </ul>
+        </nav>
 {% endif %}
-    <twig:Shared:ReadingSettings />
+        <div class="ml-auto flex items-center gap-1">
+            <twig:Shared:ReadingSettings />
+{% if links is not empty %}
+            <details class="group md:hidden">
+                <summary class="flex size-11 cursor-pointer list-none items-center justify-center text-text hover:text-accent group-open:bg-surface [&::-webkit-details-marker]:hidden">
+                    <span class="sr-only">{{ 'ui.menu'|trans }}</span>
+                    <svg class="size-6 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    <svg class="hidden size-6 group-open:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                </summary>
+                <nav class="absolute inset-x-0 top-full z-20 border-b border-divider bg-surface px-[clamp(1rem,4vw,2rem)] py-2 shadow-card" aria-label="{{ 'ui.primary_navigation'|trans }}">
+                    <ul class="m-0 flex list-none flex-col p-0">
+{% for link in links %}
+                        <li class="border-b border-divider last:border-b-0"><a class="flex min-h-12 items-center text-lg text-text no-underline hover:text-accent hover:underline" href="{{ link.url }}">{{ link.label }}</a></li>
+{% endfor %}
+                    </ul>
+                </nav>
+            </details>
+{% endif %}
+        </div>
+    </div>
 </header>
 {% endif %}

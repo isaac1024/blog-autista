@@ -1,10 +1,29 @@
+{#
+    The bar under every page of the site: the name of the blog and what it
+    promises about privacy, the footer menu, and the copyright. Side by side
+    from md up, one under the other below.
+#}
 {% if brand or links is not empty %}
-<footer class="flex flex-col gap-4 border-t-2 border-border bg-surface px-[clamp(1rem,4vw,2rem)] py-6 text-muted">
+<footer class="border-t border-divider bg-bg">
+    <div class="mx-auto grid w-full max-w-[72rem] gap-6 px-[clamp(1rem,4vw,2rem)] pt-10 pb-12 text-base md:grid-cols-[minmax(0,28rem)_1fr] md:gap-x-16">
+        <div class="grid content-start gap-2">
+{% if brand %}
+            <p class="m-0 text-lg font-bold">{{ brand }}</p>
+{% endif %}
+            <p class="m-0 text-muted">{{ 'site.footer.privacy'|trans }}</p>
+        </div>
 {% if links is not empty %}
-    <twig:Shared:Nav :label="'ui.footer_navigation'|trans" :links="links" />
+        <nav class="md:justify-self-end" aria-label="{{ 'ui.footer_navigation'|trans }}">
+            <ul class="m-0 flex list-none flex-wrap gap-x-6 gap-y-1 p-0">
+{% for link in links %}
+                <li><a class="inline-flex min-h-11 items-center text-text underline decoration-divider decoration-[0.08em] underline-offset-[0.25em] hover:text-accent hover:decoration-current" href="{{ link.url }}">{{ link.label }}</a></li>
+{% endfor %}
+            </ul>
+        </nav>
 {% endif %}
 {% if brand %}
-    <p class="m-0">© {{ year ?: 'now'|date('Y') }} {{ brand }}</p>
+        <p class="m-0 text-muted md:col-span-2">© {{ year ?: 'now'|date('Y') }} {{ brand }}</p>
 {% endif %}
+    </div>
 </footer>
 {% endif %}

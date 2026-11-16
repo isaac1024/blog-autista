@@ -1125,6 +1125,8 @@ content:
     table:
         label: 'Tabla'
 site:
+    footer:
+        privacy: 'Sin rastreadores de otras webs. Lo que viene de ellas solo se carga si lo aceptas.'
     home: 'Ir a la portada'
     not_found:
         title: 'No encontramos esta página'
@@ -1155,6 +1157,8 @@ site:
         too_short: 'Escribe alguna palabra de al menos %min% letras.'
         none: 'No hay entradas con «%text%».'
 ui:
+    skip_to_content: 'Saltar al contenido'
+    menu: 'Menú'
     reading:
         toggle: 'Ajustes de lectura'
         short: 'Lectura'
