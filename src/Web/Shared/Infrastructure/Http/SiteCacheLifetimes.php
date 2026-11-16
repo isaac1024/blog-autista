@@ -12,7 +12,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Tells the page cache in front of the site, Varnish, how long to keep each
  * page it serves, since nothing purges it: a page, an author, a section or a
  * tag a few minutes, so a post just published soon shows in their lists and
- * mosaics; a post an hour, as only republishing it changes it. Browsers ask
+ * mosaics; a post, the sitemap and robots.txt an hour. Browsers ask
  * again every time, so they never show a page older than the cache's.
  *
  * Only the pages the site serves as they are; errors and redirects set their
@@ -32,6 +32,9 @@ final readonly class SiteCacheLifetimes
         'web_section' => self::LISTS,
         'web_tag' => self::LISTS,
         'web_post' => self::POSTS,
+        'web_sitemap_index' => self::POSTS,
+        'web_sitemap_file' => self::POSTS,
+        'web_robots' => self::POSTS,
     ];
 
     public function __invoke(ResponseEvent $event): void

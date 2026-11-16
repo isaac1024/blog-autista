@@ -143,6 +143,11 @@ doctrine:
                 is_bundle: false
                 dir: '%kernel.project_dir%/src/Web/Post/Infrastructure/Persistence/Index'
                 prefix: 'Web\Post\Infrastructure\Persistence\Index'
+            WebSitemap:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Web/Sitemap/Domain'
+                prefix: 'Web\Sitemap\Domain'
             WebSettings:
                 type: attribute
                 is_bundle: false

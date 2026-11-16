@@ -38,6 +38,8 @@ security:
     access_control:
         # The login form has to stay reachable without a session.
         - { host: '^%env(CMS_HOST)%$', path: '^/login', roles: PUBLIC_ACCESS }
+        # Search engines read that they may not crawl anything.
+        - { host: '^%env(CMS_HOST)%$', path: '^/robots\.txt$', roles: PUBLIC_ACCESS }
         # Previews carry their own permission, a signed link that expires.
         - { host: '^%env(CMS_HOST)%$', path: '^/preview/', roles: PUBLIC_ACCESS }
         # Everything served by the CMS context requires an authenticated admin.
