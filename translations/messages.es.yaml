@@ -808,6 +808,7 @@ cms:
         subtitle: 'Vídeos, publicaciones de redes sociales, audios, noticias, estudios y PDFs de otros sitios. Se enlazan desde los textos y los menús como el recurso que son: al despublicarlos o cambiar su dirección, cambian en todas partes.'
         add: 'Añadir recurso'
         url_label: 'Dirección'
+        picked: '%title% (%kind%) · %address%'
         kind_by: '%kind% de %provider%'
         kind:
             video: 'Vídeo'
@@ -883,16 +884,16 @@ cms:
         details:
             author:
                 label: 'Autor'
-                hint: 'Quién escribió la publicación, como aparece en la red.'
+                hint: 'Quién escribió la publicación, como aparece en la red. Hace falta para publicar el recurso.'
             handle:
                 label: 'Cuenta'
-                hint: 'La cuenta desde la que se publicó, por ejemplo @usuario.'
+                hint: 'La cuenta desde la que se publicó, por ejemplo @usuario. Hace falta para publicar el recurso.'
             posted_on:
                 label: 'Fecha de la publicación'
-                hint: 'El día en que se publicó.'
+                hint: 'El día en que se publicó. Hace falta para publicar el recurso.'
             text:
                 label: 'Texto'
-                hint: 'Lo que dice la publicación. Se muestra antes de cargarla, y sigue ahí aunque la borren.'
+                hint: 'Lo que dice la publicación. Se muestra antes de cargarla, y sigue ahí aunque la borren. Hace falta para publicar el recurso.'
             with_media:
                 label: '¿Incluye fotos o vídeos?'
                 hint: ''
@@ -909,13 +910,13 @@ cms:
                 hint: 'El día en que se publicó, si se sabe.'
             authors:
                 label: 'Autores'
-                hint: 'Quiénes firman el estudio, separados por comas.'
+                hint: 'Quiénes firman el estudio, separados por comas. Hace falta para publicar el recurso.'
             journal:
                 label: 'Revista'
-                hint: 'Dónde se publicó el estudio.'
+                hint: 'Dónde se publicó el estudio. Hace falta para publicar el recurso.'
             year:
                 label: 'Año'
-                hint: 'El año en que se publicó.'
+                hint: 'El año en que se publicó. Hace falta para publicar el recurso.'
             bytes:
                 label: 'Tamaño (bytes)'
                 hint: 'Lo que pesa el PDF. Se rellena solo al leer la dirección.'

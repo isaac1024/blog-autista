@@ -56,6 +56,8 @@ final class ImageFileControllerTest extends CmsWebTestCase
         // A file never changes: a new crop is a new image, with an id of its own.
         self::assertSame('31536000', $response->headers->getCacheControlDirective('max-age'));
         self::assertTrue($response->headers->getCacheControlDirective('immutable'));
+        // Only the pages of the CMS are kept out of the browser's stores.
+        self::assertFalse($response->headers->hasCacheControlDirective('no-store'));
         self::assertStringStartsWith('inline', (string) $response->headers->get('Content-Disposition'));
         self::assertFileEquals(ImageFileMother::path(), $response->getFile()->getPathname());
     }

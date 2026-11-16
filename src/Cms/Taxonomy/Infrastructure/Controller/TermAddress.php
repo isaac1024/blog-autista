@@ -44,13 +44,15 @@ final readonly class TermAddress
 
     /**
      * What the path of a term has before and after its slug, such as "/tag/"
-     * and ".html", for the field the slug is written in.
+     * and ".html", for the field the slug is written in: the path alone, as
+     * pages and authors show it, which leaves the slug room on a phone.
      *
      * @return array{prefix: string, suffix: string}
      */
     public function affixes(TaxonomySegment $taxonomy): array
     {
-        [$prefix, $suffix] = explode(self::PLACEHOLDER, $this->address($taxonomy, self::PLACEHOLDER), 2);
+        $path = (string) parse_url($this->address($taxonomy, self::PLACEHOLDER, UrlGeneratorInterface::ABSOLUTE_URL), \PHP_URL_PATH);
+        [$prefix, $suffix] = explode(self::PLACEHOLDER, $path, 2);
 
         return ['prefix' => $prefix, 'suffix' => $suffix];
     }

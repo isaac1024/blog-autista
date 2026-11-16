@@ -318,10 +318,10 @@ final class ExternalResourceEditingControllersTest extends ExternalResourceContr
         $this->saveResource(ExternalResourceMother::article(id: self::OTHER, status: ResourceStatus::Published, availability: Availability::Unavailable));
 
         $client->request('GET', self::HOST.'/externals/search?title=vídeo');
-        self::assertSame(['externals' => [['id' => ExternalResourceMother::ID, 'title' => 'Un vídeo (Video of YouTube)', 'status' => 'Published', 'published' => true]], 'more' => false], $this->json($client));
+        self::assertSame(['externals' => [['id' => ExternalResourceMother::ID, 'title' => 'Un vídeo (Video of YouTube) · youtube.com/watch?v=dQw4w9WgXcQ', 'status' => 'Published', 'published' => true]], 'more' => false], $this->json($client));
 
         $client->request('GET', self::HOST.'/externals/lookup?ids='.self::OTHER.',no-es-un-id');
-        self::assertSame(['externals' => [['id' => self::OTHER, 'title' => 'Una noticia (Article)', 'status' => 'Unavailable', 'published' => false]]], $this->json($client));
+        self::assertSame(['externals' => [['id' => self::OTHER, 'title' => 'Una noticia (Article) · example.org/noticia.html', 'status' => 'Unavailable', 'published' => false]]], $this->json($client));
 
         $client->request('GET', self::HOST.'/externals/search?page=0');
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);

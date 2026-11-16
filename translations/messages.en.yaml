@@ -808,6 +808,7 @@ cms:
         subtitle: 'Videos, posts of social networks, audios, news, studies and PDFs of other sites. Texts and menus link them as the resource they are: unpublishing them, or changing their address, changes them everywhere.'
         add: 'Add resource'
         url_label: 'Address'
+        picked: '%title% (%kind%) · %address%'
         kind_by: '%kind% of %provider%'
         kind:
             video: 'Video'
@@ -883,16 +884,16 @@ cms:
         details:
             author:
                 label: 'Author'
-                hint: 'Who wrote the post, as the network shows it.'
+                hint: 'Who wrote the post, as the network shows it. Needed to publish the resource.'
             handle:
                 label: 'Account'
-                hint: 'The account it was posted from, such as @user.'
+                hint: 'The account it was posted from, such as @user. Needed to publish the resource.'
             posted_on:
                 label: 'Date of the post'
-                hint: 'The day it was posted.'
+                hint: 'The day it was posted. Needed to publish the resource.'
             text:
                 label: 'Text'
-                hint: 'What the post says. It shows before the post loads, and stays if it is deleted.'
+                hint: 'What the post says. It shows before the post loads, and stays if it is deleted. Needed to publish the resource.'
             with_media:
                 label: 'Does it show photos or videos?'
                 hint: ''
@@ -909,13 +910,13 @@ cms:
                 hint: 'The day it was published, if known.'
             authors:
                 label: 'Authors'
-                hint: 'Who signs the study, separated by commas.'
+                hint: 'Who signs the study, separated by commas. Needed to publish the resource.'
             journal:
                 label: 'Journal'
-                hint: 'Where the study was published.'
+                hint: 'Where the study was published. Needed to publish the resource.'
             year:
                 label: 'Year'
-                hint: 'The year it was published.'
+                hint: 'The year it was published. Needed to publish the resource.'
             bytes:
                 label: 'Size (bytes)'
                 hint: 'How heavy the PDF is. It is filled in when its address is read.'

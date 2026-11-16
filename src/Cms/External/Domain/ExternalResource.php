@@ -179,6 +179,12 @@ final class ExternalResource extends AggregateRoot
             $this->version->image(),
         );
 
+        // A resource never published keeps the availability of the address
+        // being edited; once published, that of the one on the site.
+        if (null === $this->published) {
+            $this->forgetCheckOf($url);
+        }
+
         $this->change(fn () => $this->replaceVersion($version));
     }
 
@@ -205,7 +211,8 @@ final class ExternalResource extends AggregateRoot
     /**
      * Puts the version last saved on the site, for the first time or in place
      * of the one there, once it has everything the site shows. A new address
-     * on the site is available until it is checked.
+     * on the site is available until it is checked; the one last checked, even
+     * as a draft, keeps what the check found.
      */
     public function publish(): void
     {
@@ -216,11 +223,7 @@ final class ExternalResource extends AggregateRoot
             throw InvalidResourcePublication::nothingToPublish();
         }
 
-        if (null === $this->published || !$this->published->url()->equals($this->version->url())) {
-            $this->availability = Availability::Available;
-            $this->checkedAt = null;
-        }
-
+        $this->forgetCheckOf($this->version->url());
         $this->status = ResourceStatus::Published;
         $this->change(function (): void {
             $this->published = $this->version;
@@ -534,6 +537,18 @@ final class ExternalResource extends AggregateRoot
     private function providerOf(): ?Provider
     {
         return null === $this->provider ? null : new Providers()->named($this->provider);
+    }
+
+    /**
+     * Takes an address that isn't the one checked as available until it is,
+     * since what was found of the other tells nothing of it.
+     */
+    private function forgetCheckOf(ResourceUrl $url): void
+    {
+        if (!$url->equals($this->checked()->url())) {
+            $this->availability = Availability::Available;
+            $this->checkedAt = null;
+        }
     }
 
     private function replaceVersion(ResourceVersion $version): void

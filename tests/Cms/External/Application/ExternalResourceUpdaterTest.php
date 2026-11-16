@@ -6,6 +6,7 @@ namespace Cms\Tests\External\Application;
 
 use Cms\External\Application\ExternalResourceNotFound;
 use Cms\External\Application\ExternalResourceUpdater;
+use Cms\External\Domain\Availability;
 use Cms\External\Domain\ExternalResource;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\InvalidResourceUrl;
@@ -50,6 +51,33 @@ final class ExternalResourceUpdaterTest extends TestCase
             && ClockMother::now(self::SAVED_AT)->format(\DATE_ATOM) === $resource->timeline()->updatedAt()->format(\DATE_ATOM)));
 
         new ExternalResourceUpdater(ExternalResourceMother::ID, self::OTHER_VIDEO_URL, 'Otro título', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * What was found of the address of a draft tells nothing of another one,
+     * which is available until it is checked; a resource on the site keeps
+     * the availability of the address there, whatever the draft says.
+     */
+    #[DataProvider('checkedAddresses')]
+    public function testItKeepsTheAvailabilityOfTheAddressChecked(ResourceStatus $status, string $url, Availability $availability): void
+    {
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->method('find')->willReturn(ExternalResourceMother::video(status: $status, availability: Availability::Unavailable));
+        $repository->method('findByUrl')->willReturn(null);
+        $repository->expects(self::once())->method('save')->with(self::callback(static fn (ExternalResource $resource): bool => $availability === $resource->availability()));
+
+        new ExternalResourceUpdater(ExternalResourceMother::ID, $url, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * @return iterable<string, array{ResourceStatus, string, Availability}>
+     */
+    public static function checkedAddresses(): iterable
+    {
+        yield 'a draft at another address' => [ResourceStatus::Draft, self::OTHER_VIDEO_URL, Availability::Available];
+        yield 'a draft at the address checked' => [ResourceStatus::Draft, ExternalResourceMother::VIDEO_URL, Availability::Unavailable];
+        yield 'a resource on the site, edited at another address' => [ResourceStatus::Published, self::OTHER_VIDEO_URL, Availability::Unavailable];
+        yield 'a resource off the site, edited at another address' => [ResourceStatus::Unpublished, self::OTHER_VIDEO_URL, Availability::Unavailable];
     }
 
     public function testItKeepsTheAddressItHasAlready(): void

@@ -77,6 +77,23 @@ final class ExternalResourcePublisherTest extends TestCase
     }
 
     /**
+     * A draft checked gone is published as it was found: its address is the
+     * one checked, so the site isn't told to paint it.
+     */
+    public function testItKeepsWhatTheCheckOfADraftFoundWhenItPublishesTheAddressChecked(): void
+    {
+        $repository = $this->createMock(ExternalResourceRepository::class);
+        $repository->method('find')->willReturn(ExternalResourceMother::video(availability: Availability::Unavailable));
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static fn (ExternalResource $resource): bool => Availability::Unavailable === $resource->availability()));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(static fn (ExternalResourcePublished $event): bool => false === $event->toPrimitives()['available']));
+
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
      * The site takes the version saved, and the image only the version it
      * had used is removed once the resource is saved.
      */
