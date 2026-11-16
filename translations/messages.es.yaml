@@ -1155,6 +1155,17 @@ site:
         too_short: 'Escribe alguna palabra de al menos %min% letras.'
         none: 'No hay entradas con «%text%».'
 ui:
+    reading:
+        toggle: 'Ajustes de lectura'
+        short: 'Lectura'
+        size: 'Tamaño del texto'
+        smaller: 'Texto más pequeño'
+        bigger: 'Texto más grande'
+        theme: 'Tema'
+        theme_system: 'Sistema'
+        theme_light: 'Claro'
+        theme_dark: 'Oscuro'
+        kept: 'Se guarda solo en este navegador.'
     close: 'Cerrar'
     cropper:
         hint: 'Cualquier formato y proporción, de al menos %width% × %height% píxeles. Se guarda en WebP a %width% × %height%.'

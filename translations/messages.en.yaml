@@ -1155,6 +1155,17 @@ site:
         too_short: 'Write a word of at least %min% letters.'
         none: 'No posts with “%text%”.'
 ui:
+    reading:
+        toggle: 'Reading settings'
+        short: 'Reading'
+        size: 'Text size'
+        smaller: 'Smaller text'
+        bigger: 'Bigger text'
+        theme: 'Theme'
+        theme_system: 'System'
+        theme_light: 'Light'
+        theme_dark: 'Dark'
+        kept: 'Kept in this browser only.'
     close: 'Close'
     cropper:
         hint: 'Any format and aspect ratio, at least %width% × %height% pixels. It is saved as WebP at %width% × %height%.'

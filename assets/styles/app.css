@@ -192,6 +192,31 @@
         --shadow-panel: none;
     }
 
+    /*
+     * The size of the text the reader picked, set on the root by
+     * reading_apply.js. Every size is in rem, so the whole page follows,
+     * up to the double of the browser's own.
+     */
+    :root[data-text-size="115"] {
+        font-size: 115%;
+    }
+
+    :root[data-text-size="130"] {
+        font-size: 130%;
+    }
+
+    :root[data-text-size="150"] {
+        font-size: 150%;
+    }
+
+    :root[data-text-size="175"] {
+        font-size: 175%;
+    }
+
+    :root[data-text-size="200"] {
+        font-size: 200%;
+    }
+
     :focus-visible {
         outline: 3px solid var(--color-focus);
         outline-offset: 3px;

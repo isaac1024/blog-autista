@@ -82,6 +82,9 @@
         <aside class="relative flex items-center justify-between gap-4 border-b border-divider bg-surface px-[clamp(1rem,4vw,1.5rem)] py-3 md:sticky md:top-0 md:h-dvh md:w-72 md:flex-none md:flex-col md:items-stretch md:justify-start md:gap-8 md:border-b-0 md:border-r md:px-4 md:py-6">
             <twig:Shared:Brand brand="CMS" :homeUrl="path('cms_pages')" class="px-1 text-lg md:px-3" />
 
+            <div class="flex items-center gap-2 md:px-1">
+            <twig:Shared:ReadingSettings align="start" />
+
             <details class="group md:hidden">
                 <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent group-open:border-accent group-open:text-accent [&::-webkit-details-marker]:hidden">
                     <span class="sr-only">{{ 'cms.nav.menu'|trans }}</span>
@@ -102,6 +105,7 @@
                     </div>
                 </div>
             </details>
+            </div>
 
             <nav class="hidden md:block" aria-label="{{ 'cms.nav.administration'|trans }}">
                 {{ _self.navigation(currentRoute) }}

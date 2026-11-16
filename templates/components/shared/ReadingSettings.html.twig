@@ -1,0 +1,35 @@
+{#
+    Hidden until reading.js runs, since only it can change the settings. The
+    "Aa" is an icon: the button is named by its words, and on wider screens
+    the short one shows beside it. The panel opens under the button and
+    closes with Escape or a click elsewhere.
+#}
+<div{{ attributes.defaults({class: 'relative'}) }} data-reading hidden>
+    <button class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-0 bg-transparent px-2 font-bold text-text hover:text-accent aria-expanded:bg-surface" type="button" aria-expanded="false" aria-controls="reading-settings" aria-label="{{ 'ui.reading.toggle'|trans }}" data-reading-toggle>
+        <span aria-hidden="true">Aa</span>
+        <span class="hidden font-normal md:inline" aria-hidden="true">{{ 'ui.reading.short'|trans }}</span>
+    </button>
+    <div class="absolute top-full right-0 z-20{{ align == 'start' ? ' md:right-auto md:left-0' }} grid w-[min(21rem,calc(100vw-2rem))] gap-5 bg-surface p-6 text-[1.0625rem] leading-snug shadow-card forced-colors:border forced-colors:border-[CanvasText]" id="reading-settings" role="group" aria-labelledby="reading-settings-title" data-reading-panel hidden>
+        <p class="m-0 text-lg font-bold" id="reading-settings-title">{{ 'ui.reading.toggle'|trans }}</p>
+        <div class="grid gap-2">
+            <p class="m-0" id="reading-settings-size">{{ 'ui.reading.size'|trans }}</p>
+            <div class="grid grid-cols-[3rem_1fr_3rem] items-center gap-2" role="group" aria-labelledby="reading-settings-size">
+                <button class="size-12 cursor-pointer border border-border bg-bg text-[1.375rem] text-text hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50" type="button" aria-label="{{ 'ui.reading.smaller'|trans }}" data-reading-size="smaller">−</button>
+                <output class="text-center font-bold" aria-live="polite" data-reading-size-value>100 %</output>
+                <button class="size-12 cursor-pointer border border-border bg-bg text-[1.375rem] text-text hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50" type="button" aria-label="{{ 'ui.reading.bigger'|trans }}" data-reading-size="bigger">+</button>
+            </div>
+        </div>
+        <fieldset class="m-0 grid gap-2 border-0 p-0">
+            <legend class="mb-2 p-0">{{ 'ui.reading.theme'|trans }}</legend>
+            <div class="grid grid-cols-3 gap-1.5">
+{% for theme in ['system', 'light', 'dark'] %}
+                <label class="relative grid min-h-12 cursor-pointer place-items-center border border-border bg-bg px-1 text-center text-text has-checked:border-accent has-checked:bg-accent has-checked:font-bold has-checked:text-on-accent forced-colors:has-checked:border-4 has-focus-visible:outline-3 has-focus-visible:outline-offset-3 has-focus-visible:outline-focus">
+                    <input class="sr-only" type="radio" name="reading-theme" value="{{ theme }}"{% if theme == 'system' %} checked{% endif %}>
+                    {{ ('ui.reading.theme_' ~ theme)|trans }}
+                </label>
+{% endfor %}
+            </div>
+        </fieldset>
+        <p class="m-0 text-base text-muted">{{ 'ui.reading.kept'|trans }}</p>
+    </div>
+</div>
