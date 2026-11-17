@@ -114,10 +114,29 @@ final class PreviewPostTest extends TestCase
 
     public function testItNamesNoSectionNorAuthorOfAnUnfiledPost(): void
     {
-        PageComponents::one($this->preview(PostMother::create(), onSite: true), 'Shared:PostHeader', [
+        $page = $this->preview(PostMother::create(), onSite: true);
+
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => '', 'url' => null],
             'author' => ['name' => '', 'url' => null, 'avatar' => null],
         ]);
+        self::assertNull($page->article['section'] ?? null);
+    }
+
+    /**
+     * Previewed, a post is shared as the site would share it published now,
+     * with its section and its tags on the site.
+     */
+    public function testItIsSharedAsAPostPublishedNow(): void
+    {
+        $page = $this->preview(PostMother::publishable(tags: [PostMother::OTHER_TAG, PostMother::TAG]), onSite: true);
+
+        self::assertSame([
+            'publishedTime' => '2026-11-20T10:00:00+00:00',
+            'modifiedTime' => '2026-11-20T10:00:00+00:00',
+            'section' => 'Publicada',
+            'tags' => ['Sensorialidad'],
+        ], $page->article);
     }
 
     /**

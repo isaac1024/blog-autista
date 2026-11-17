@@ -46,6 +46,10 @@ final class WebLayout
                 'links' => $chrome->footerLinks,
             ]);
 
+        if (null !== $chrome->brand) {
+            $page = $page->withSiteName($chrome->brand);
+        }
+
         return null === $chrome->shareImage ? $page : $page->withShareImage(
             $chrome->shareImage['src'],
             $chrome->shareImage['width'],

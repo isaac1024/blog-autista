@@ -279,6 +279,28 @@ final class PublishedPostTest extends TestCase
     }
 
     /**
+     * Shared, the page is a post: when it was first and last published, its
+     * section and its tags on the site, by their names there.
+     */
+    public function testItIsSharedAsAPost(): void
+    {
+        $page = $this->compose(
+            [self::TAG, self::OTHER_TAG],
+            terms: [
+                self::SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
+                self::OTHER_TAG => self::term('tag', 'Ruido', 'ruido'),
+            ],
+        );
+
+        self::assertSame([
+            'publishedTime' => ClockMother::now()->format(\DATE_ATOM),
+            'modifiedTime' => ClockMother::now()->format(\DATE_ATOM),
+            'section' => 'Día a día',
+            'tags' => ['Ruido'],
+        ], $page->article);
+    }
+
+    /**
      * An author off the site is named as the post kept them, with no page;
      * a post with no image nor tags on the site tells none.
      */

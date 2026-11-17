@@ -11,8 +11,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Composes a post as the site serves it, and as the CMS previews it: its
  * section, its title, who signs it, when it was published and how long it
- * takes to read, the image it opens with, its content, and its tags. The opening image is also
- * the one the page is shared with.
+ * takes to read, the image it opens with, its content, and its tags. It is
+ * shared as a post, with its opening image.
  *
  * It always dates the post by when it was last published, the day of Madrid
  * the site keeps, and says it was updated when that day isn't the one it
@@ -75,6 +75,7 @@ final readonly class SitePostPage
         }
 
         $page = $layout
+            ->withArticle($firstPublishedAt, $lastPublishedAt, '' === $section['name'] ? null : $section['name'], array_column($tags, 'name'))
             ->withMain('Shared:PostHeader', [
                 'title' => $title,
                 'updated' => $last->format('Y-m-d') !== $firstPublishedAt->setTimezone($zone)->format('Y-m-d'),

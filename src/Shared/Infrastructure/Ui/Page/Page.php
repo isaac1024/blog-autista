@@ -13,6 +13,8 @@ namespace Shared\Infrastructure\Ui\Page;
  * Its private constructor takes all of its state, one parameter each, for
  * the methods that copy it with one part changed.
  *
+ * @phpstan-type Article array{publishedTime: string, modifiedTime: string, section: ?string, tags: list<string>}
+ *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class Page
@@ -29,6 +31,8 @@ final readonly class Page
      * @param ?array{type: string, id: string}                          $countedContent what its visits are counted by, its kind and its id, null for a page whose visits aren't
      * @param list<string>                                              $frames         the origins of the resources it embeds behind facades, which it lets frame them
      * @param list<array<string, mixed>>                                $structuredData the nodes of schema.org it tells search engines it is, as JSON-LD
+     * @param ?string                                                   $siteName       the name of the site it is part of, which it is shared as part of, null for none
+     * @param ?Article                                                  $article        the post it shows, which it is shared as, null for a page that shows none
      */
     private function __construct(
         public string $title,
@@ -44,11 +48,13 @@ final readonly class Page
         public ?array $countedContent,
         public array $frames,
         public array $structuredData,
+        public ?string $siteName,
+        public ?array $article,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, [], []);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, [], [], null, null);
     }
 
     /**
@@ -109,6 +115,8 @@ final readonly class Page
             $this->countedContent,
             $this->frames,
             $this->structuredData,
+            $this->siteName,
+            $this->article,
         );
     }
 
@@ -132,6 +140,8 @@ final readonly class Page
             $this->countedContent,
             $this->frames,
             $this->structuredData,
+            $this->siteName,
+            $this->article,
         );
     }
 
@@ -156,6 +166,8 @@ final readonly class Page
             ['type' => $type, 'id' => $id],
             $this->frames,
             $this->structuredData,
+            $this->siteName,
+            $this->article,
         );
     }
 
@@ -181,6 +193,8 @@ final readonly class Page
             $this->countedContent,
             array_values(array_unique([...$this->frames, ...$origins])),
             $this->structuredData,
+            $this->siteName,
+            $this->article,
         );
     }
 
@@ -213,6 +227,66 @@ final readonly class Page
             $this->countedContent,
             $this->frames,
             [...$others, $node],
+            $this->siteName,
+            $this->article,
+        );
+    }
+
+    /**
+     * The name of the site the page is part of, which readers see beside it
+     * when it is shared.
+     */
+    public function withSiteName(string $siteName): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $this->countedContent,
+            $this->frames,
+            $this->structuredData,
+            $siteName,
+            $this->article,
+        );
+    }
+
+    /**
+     * Shares the page as a post, rather than as a page of the site: when it
+     * was first and last published, its section, none while unfiled, and the
+     * names of its tags.
+     *
+     * @param list<string> $tags
+     */
+    public function withArticle(\DateTimeImmutable $publishedAt, \DateTimeImmutable $modifiedAt, ?string $section, array $tags): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $this->countedContent,
+            $this->frames,
+            $this->structuredData,
+            $this->siteName,
+            [
+                'publishedTime' => $publishedAt->format(\DATE_ATOM),
+                'modifiedTime' => $modifiedAt->format(\DATE_ATOM),
+                'section' => $section,
+                'tags' => $tags,
+            ],
         );
     }
 
@@ -242,6 +316,8 @@ final readonly class Page
             $this->countedContent,
             $this->frames,
             $this->structuredData,
+            $this->siteName,
+            $this->article,
         );
     }
 }

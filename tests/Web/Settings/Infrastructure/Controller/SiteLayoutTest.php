@@ -54,6 +54,7 @@ final class SiteLayoutTest extends TestCase
         $page = self::layout(null, $pages, $images)->page('Sobre mí');
 
         self::assertSame('Sobre mí', $page->title);
+        self::assertNull($page->siteName);
         self::assertSame([
             'header' => ['brand' => null, 'homeUrl' => '/', 'links' => [], 'searchUrl' => null],
             'footer' => ['brand' => null, 'links' => []],
@@ -91,6 +92,7 @@ final class SiteLayoutTest extends TestCase
 
         $page = self::layout($settings, $pages, $images)->page('Sobre mí');
 
+        self::assertSame(Event::NAME, $page->siteName);
         self::assertSame([
             'header' => ['brand' => Event::NAME, 'homeUrl' => '/', 'links' => [
                 ['label' => 'Contacto', 'url' => '/contacto.html'],

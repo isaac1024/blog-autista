@@ -114,6 +114,8 @@ final class PublishedPageTest extends TestCase
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
         self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
+        // Shared, it is a page of the site, not a post.
+        self::assertNull($result->article);
     }
 
     /**
