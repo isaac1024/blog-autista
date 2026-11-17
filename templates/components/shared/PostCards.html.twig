@@ -12,14 +12,14 @@
 {% if card.image %}
                 <img class="block aspect-video h-auto w-full bg-surface object-cover" src="{{ card.image.src }}" srcset="{{ card.image.srcset }}" sizes="{{ wide ? '(min-width: 64rem) 22rem, (min-width: 40rem) 45vw, 100vw' : '(min-width: 40rem) 21rem, 100vw' }}" width="{{ card.image.width }}" height="{{ card.image.height }}" alt="" loading="lazy" decoding="async">
 {% endif %}
-                <span class="grid gap-1.5">
+                <div class="grid gap-1.5">
                     <span class="text-base text-accent">{{ card.section }}</span>
                     <h{{ headingLevel }} class="m-0 text-[1.375rem] leading-snug font-semibold text-balance decoration-[0.06em] underline-offset-[0.2em] group-hover:underline">{{ card.title }}</h{{ headingLevel }}>
 {% if card.excerpt %}
                     <span class="leading-normal">{{ card.excerpt }}</span>
 {% endif %}
                     <time class="text-base text-muted" datetime="{{ card.datetime }}">{{ card.date }}</time>
-                </span>
+                </div>
             </a>
         </article>
     </li>

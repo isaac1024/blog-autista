@@ -51,7 +51,7 @@
             </blockquote>
 {% elseif audio %}
             {# An audio: its cover beside its title, and the button that plays it. #}
-            <div class="col-start-1 row-start-1 grid min-h-0 grid-cols-[auto_1fr] content-start items-center gap-4 px-[clamp(1rem,4vw,1.25rem)] pb-4">
+            <div class="col-start-1 row-start-1 grid min-h-0 grid-cols-[auto_1fr] content-center items-center gap-4 px-[clamp(1rem,4vw,1.25rem)] pb-4">
 {% if image %}
                 <img class="block size-24 bg-bg object-cover" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="6rem" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
 {% endif %}
@@ -66,7 +66,8 @@
 {% if image %}
             <img class="col-start-1 row-start-1 block h-full min-h-0 w-full bg-bg object-cover" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
 {% else %}
-            <p class="col-start-1 row-start-1 m-0 self-center p-5 text-xl font-bold text-balance" lang="{{ language }}">{{ title }}</p>
+            {# Without a picture of its own, a calm ground; its title is under it, as for any video. #}
+            <div class="col-start-1 row-start-1 bg-accent-soft"></div>
 {% endif %}
             {# The whole facade plays it, once the script can: without one, the link on top leads to the original. #}
             <button class="group col-start-1 row-start-1 grid cursor-pointer place-items-center border-0 bg-transparent p-0" type="button" aria-controls="{{ id }}" aria-label="{{ 'content.external.play'|trans({'%title%': title, '%provider%': providerLabel}) }}" data-external-play hidden>
@@ -92,7 +93,7 @@
         </div>
     </div>
     <figcaption class="grid gap-1.5 px-[clamp(1rem,4vw,1.25rem)] pt-3 pb-4 text-base">
-{% if image and not audio and not post %}
+{% if not audio and not post %}
         <p class="m-0 leading-snug font-bold text-balance text-text" lang="{{ language }}">{{ title }}</p>
 {% endif %}
         {# Two lines are kept for the button whichever it says, so changing it moves nothing. #}
