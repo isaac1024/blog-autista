@@ -16,10 +16,13 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Web\Post\Domain\Post;
+use Web\Post\Domain\PostRepository;
 use Web\Settings\Domain\Settings;
 use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteErrorListener;
 use Web\Settings\Infrastructure\Controller\SiteErrorResponse;
+use Web\Tests\Post\Domain\CmsPostPublishedMother;
 
 /**
  * Which errors the site answers with a page of its own: every one, only on
@@ -33,11 +36,12 @@ final class SiteErrorListenerTest extends KernelTestCase
 
     /**
      * An address that answers nothing, no longer does, or not as asked, gets
-     * a page of the site; one gone may be kept a while by browsers and
-     * proxies, and a failure by none of them.
+     * a page of the site; one with nothing at it may be kept a minute by the
+     * page cache, one gone a while by browsers and proxies, and a failure by
+     * none of them.
      */
     #[DataProvider('answered')]
-    public function testItAnswersEveryErrorOfTheSite(\Throwable $exception, ?string $maxAge, bool $stored): void
+    public function testItAnswersEveryErrorOfTheSite(\Throwable $exception, ?string $maxAge, ?string $sharedMaxAge, bool $stored): void
     {
         $event = $this->dispatch(self::SITE.'/vieja.html', $exception, debug: false);
 
@@ -46,20 +50,36 @@ final class SiteErrorListenerTest extends KernelTestCase
         self::assertNotSame('', $response->getContent());
         self::assertSame(null !== $maxAge, $response->headers->hasCacheControlDirective('public'));
         self::assertSame($maxAge, $response->headers->getCacheControlDirective('max-age'));
+        self::assertSame($sharedMaxAge, $response->headers->getCacheControlDirective('s-maxage'));
         self::assertSame(!$stored, $response->headers->hasCacheControlDirective('no-store'));
     }
 
     /**
-     * @return iterable<string, array{\Throwable, ?string, bool}>
+     * @return iterable<string, array{\Throwable, ?string, ?string, bool}>
      */
     public static function answered(): iterable
     {
-        yield 'never answered' => [new NotFoundHttpException(), null, true];
-        yield 'no longer answered' => [new GoneHttpException(), '3600', true];
-        yield 'forbidden' => [new AccessDeniedHttpException(), null, true];
-        yield 'asked the wrong way' => [new MethodNotAllowedHttpException(['GET']), null, true];
-        yield 'a failure of the site' => [new \RuntimeException(), null, false];
-        yield 'the site unavailable' => [new ServiceUnavailableHttpException(), null, false];
+        yield 'never answered, kept a minute by the page cache' => [new NotFoundHttpException(), '0', '60', true];
+        yield 'no longer answered' => [new GoneHttpException(), '3600', null, true];
+        yield 'forbidden' => [new AccessDeniedHttpException(), null, null, true];
+        yield 'asked the wrong way' => [new MethodNotAllowedHttpException(['GET']), null, null, true];
+        yield 'a failure of the site' => [new \RuntimeException(), null, null, false];
+        yield 'the site unavailable' => [new ServiceUnavailableHttpException(), null, null, false];
+    }
+
+    /**
+     * Where nothing is, the page offers the latest posts of the site, which
+     * it paints as cards.
+     */
+    public function testItAnswersWithTheLatestPostsOfTheSite(): void
+    {
+        self::bootKernel();
+        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublishedMother::create()));
+
+        $event = $this->dispatch(self::SITE.'/vieja.html', new NotFoundHttpException(), debug: false);
+
+        // A page of the site, not the error template left when it can't be painted.
+        self::assertNotNull($event->getResponse());
     }
 
     /**

@@ -37,6 +37,14 @@ final readonly class SiteErrorListener
      */
     private const int GONE_MAX_AGE = 3600;
 
+    /**
+     * How long the page cache may keep an address with nothing at it, in
+     * seconds: the bots that sweep for /wp-login.php or /.env then reach PHP
+     * once a minute an address rather than on every request, and something
+     * published there shows within the minute its queue already takes.
+     */
+    private const int NOT_FOUND_SHARED_MAX_AGE = 60;
+
     public function __construct(
         private SiteErrorResponse $siteErrorResponse,
         private LoggerInterface $logger,
@@ -49,7 +57,8 @@ final readonly class SiteErrorListener
     public function __invoke(ExceptionEvent $event): void
     {
         $exception = $event->getThrowable();
-        $error = SiteError::fromStatusCode($exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR);
+        $status = $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR;
+        $error = SiteError::fromStatusCode($status);
 
         if ($event->getRequest()->getHost() !== $this->webHost || (SiteError::ServerError === $error && $this->debug)) {
             return;
@@ -69,7 +78,11 @@ final readonly class SiteErrorListener
             SiteError::Gone => $response->setPublic()->setMaxAge(self::GONE_MAX_AGE),
             // A failure may be gone the next moment: no proxy keeps it.
             SiteError::ServerError => $response->headers->addCacheControlDirective('no-store'),
-            SiteError::NotFound => null,
+            // Only what is read, and not there; what is forbidden or asked
+            // the wrong way stays out of the cache.
+            SiteError::NotFound => Response::HTTP_NOT_FOUND === $status && $event->getRequest()->isMethodCacheable()
+                ? $response->setPublic()->setMaxAge(0)->setSharedMaxAge(self::NOT_FOUND_SHARED_MAX_AGE)
+                : null,
         };
 
         $event->setResponse($response);

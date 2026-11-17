@@ -38,3 +38,18 @@ nelmio_security:
             base-uri: ["'none'"]
             form-action: ["'self'"]
             frame-ancestors: ["'none'"]
+
+# Behind the nginx of Hetzner, which ends TLS, a visit by http:// is sent to
+# https://, and browsers are told to come back by https:// alone for a year:
+# the first visit by a link of old, or an address typed by hand, can't be
+# read nor downgraded on the way, the session of the CMS above all. Only
+# the hosts of the site and the CMS, not every subdomain, and never
+# preloaded, which can't be undone. Symfony trusts the X-Forwarded-Proto of
+# the proxy, so the redirect never loops.
+when@prod:
+    nelmio_security:
+        forced_ssl:
+            enabled: true
+            hsts_max_age: 31536000
+            hsts_subdomains: false
+            hsts_preload: false

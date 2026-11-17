@@ -11,7 +11,7 @@
 {% if latest is not empty %}
     <section class="grid gap-6" aria-labelledby="site-error-latest">
         <h2 class="m-0 text-[1.5625rem] leading-snug font-semibold" id="site-error-latest">{{ 'site.error_help.latest'|trans }}</h2>
-        <twig:Shared:PostCards :cards="latest" :headingLevel="3" :wide="false" />
+        <twig:Shared:PostCards :cards="latest" :headingLevel="3" :wide="false" :lead="true" />
     </section>
 {% endif %}
     <twig:Shared:ButtonLink :url="homeUrl" :label="'site.home'|trans" />

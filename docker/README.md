@@ -248,6 +248,15 @@ images, from `public/media/`, under `/media/`.
   session. Changing `APP_SECRET` does too, and also invalidates every preview
   link already handed out: rotate it only when needed, and say so to whoever
   holds a preview link.
+- HSTS: `curl -sI https://<site>/` and `curl -sI https://<cms>/login` each
+  carry `Strict-Transport-Security: max-age=31536000` **once**. Nelmio sends it
+  in `prod`; if Hetzner's nginx adds its own too, turn one of them off. And
+  `curl -sI http://<site>/` answers with a redirect to `https://`, not a loop.
+- Varnish keeps an address of the site with nothing at it a minute
+  (`s-maxage=60`), so bots sweeping for `/wp-login.php` or `/.env` don't take
+  the 10 PHP processes: `curl -sI https://<site>/no-existe.html` twice in a
+  row, and the second answer carries an `Age` above 0. The CMS host never
+  does, and a failure (5xx) is never kept.
 
 ## Differences from production (on purpose)
 

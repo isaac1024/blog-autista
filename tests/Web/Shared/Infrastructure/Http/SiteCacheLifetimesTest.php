@@ -54,7 +54,8 @@ final class SiteCacheLifetimesTest extends WebTestCase
     }
 
     /**
-     * A page the site doesn't have keeps the lifetime of its error.
+     * A page the site doesn't have keeps the lifetime of its error, a
+     * minute, not that of the pages of its route.
      */
     public function testItLeavesErrorsToTheirOwnLifetimes(): void
     {
@@ -63,6 +64,6 @@ final class SiteCacheLifetimesTest extends WebTestCase
         $client->request('GET', self::HOST.'/no-existe.html');
 
         self::assertResponseStatusCodeSame(404);
-        self::assertFalse($client->getResponse()->headers->hasCacheControlDirective('s-maxage'));
+        self::assertSame('60', $client->getResponse()->headers->getCacheControlDirective('s-maxage'));
     }
 }
