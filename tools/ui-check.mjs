@@ -13,6 +13,7 @@
  *            (both appear in W3C WAI's evaluation tools list)
  *   - Perf : Lighthouse (W3C does not publish a performance validator;
  *            Lighthouse is the de facto standard)
+ *   - SEO  : Lighthouse, all but whether the page may be crawled
  *
  * Tailwind's generated CSS is not validated by the W3C CSS3 service, which
  * does not understand its modern at-rules; a successful
@@ -46,7 +47,17 @@ const CONFIG_FILE = process.env.UI_CHECK_CONFIG
 let PORT = Number(process.env.UI_CHECK_PORT ?? 8099);
 const VNU_JAR = path.join(ROOT, 'node_modules', 'vnu-jar', 'build', 'dist', 'vnu.jar');
 
-const LH_CATEGORIES = ['performance', 'accessibility', 'best-practices'];
+const LH_CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'];
+
+/*
+ * Audits left out of every score. `is-crawlable` fails wherever the app
+ * debugs: Symfony then sends `X-Robots-Tag: noindex` on every response
+ * (framework.disallow_search_engine_index), so a development copy that ever
+ * goes public is never indexed; production doesn't. The pages that ask not
+ * to be indexed, such as the search and the previews of the CMS, do so on
+ * purpose too, so whether a page may be crawled is no measure of it here.
+ */
+const LH_SKIPPED_AUDITS = ['is-crawlable'];
 
 const LIGHTHOUSE_FORM_FACTORS = {
     desktop: {
@@ -194,6 +205,7 @@ function resolveThresholds(config, page) {
         performance: process.env.UI_CHECK_PERFORMANCE,
         accessibility: process.env.UI_CHECK_ACCESSIBILITY,
         'best-practices': process.env.UI_CHECK_BEST_PRACTICES,
+        seo: process.env.UI_CHECK_SEO,
     };
 
     for (const [category, value] of Object.entries(overrides)) {
@@ -790,6 +802,7 @@ async function checkLighthouse(page, chrome, thresholds, formFactor) {
         output: 'json',
         logLevel: 'error',
         onlyCategories: LH_CATEGORIES,
+        skipAudits: LH_SKIPPED_AUDITS,
         ...emulation,
         extraHeaders: lighthouseHeaders(page),
         // Clearing the storage would take the cookies just set.

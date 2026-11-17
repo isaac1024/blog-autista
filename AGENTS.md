@@ -101,8 +101,10 @@ Don't test the interface with PHPUnit. No `assertSelector*` and no assertions on
 markup, CSS classes or UI copy. PHPUnit covers HTTP behavior (status codes,
 redirects, authentication, routes) and services; HTML, accessibility and visual
 checks belong to the `ui-check` harness (`npm run ui:check`). The harness runs
-Lighthouse at both desktop and mobile widths. Tailwind's build is the CSS syntax
-gate; the W3C CSS3 validator cannot parse its modern output.
+Lighthouse at both desktop and mobile widths, SEO included at 100; it leaves
+out `is-crawlable`, which the `X-Robots-Tag: noindex` of `dev` always fails.
+Tailwind's build is the CSS syntax gate; the W3C CSS3 validator cannot parse
+its modern output.
 
 The JavaScript tests are a pyramid. At its base, `node:test` under `tests/Unit/`
 covers the pure modules (`assets/form/`, `assets/image/`, `assets/rich_text/`,

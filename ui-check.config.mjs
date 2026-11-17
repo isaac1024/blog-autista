@@ -8,7 +8,7 @@
  * Tools:
  *   - HTML : W3C Nu HTML Checker (vnu-jar). Requires Java 11+; set JAVA_PATH
  *            or JAVA_HOME if the default `java` is older.
- *   - A11y / performance : Lighthouse (accessibility audits run axe-core),
+ *   - A11y / performance / SEO : Lighthouse (accessibility audits run axe-core),
  *            executed once per configured form factor (desktop and mobile).
  *            There is no W3C performance validator; Lighthouse is the de
  *            facto standard there.
@@ -56,15 +56,20 @@ const webHost = process.env.WEB_HOST ?? 'www.blogautista.localhost';
 const cmsSession = process.env.CMS_SESSION_COOKIE;
 const cmsHeaders = cmsSession ? { Cookie: `PHPSESSID=${cmsSession}` } : {};
 
+// The CMS is private and never indexed: its SEO score is shown, not held to
+// a minimum.
+const cmsThresholds = { seo: null };
+
 const pages = [
     {
         name: 'cms-login',
         host: cmsHost,
         path: '/login',
+        thresholds: cmsThresholds,
     },
 ];
 
-const cmsPage = (name, path) => ({ name, host: cmsHost, path, headers: cmsHeaders });
+const cmsPage = (name, path) => ({ name, host: cmsHost, path, headers: cmsHeaders, thresholds: cmsThresholds });
 
 if (cmsSession) {
     pages.push(
@@ -205,6 +210,10 @@ export default {
         performance: 0.9,
         accessibility: 1,
         'best-practices': 0.9,
+        // What search engines read of a page: its title, description,
+        // language, link texts, canonical and robots. Whether it may be
+        // crawled is left out, as tools/ui-check.mjs tells.
+        seo: 1,
     },
 
     pages,
