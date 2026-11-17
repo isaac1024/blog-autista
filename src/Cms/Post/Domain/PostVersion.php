@@ -41,25 +41,17 @@ final readonly class PostVersion
      * Whether it has everything the site shows of a post: a slug, a section
      * and an author, an opening image, content, and a meta description.
      * Whether the section, the author and the image are on the site is only
-     * known by publishing it.
+     * known by publishing it, so it hands them over, with its slug, as it
+     * guarantees them.
+     *
+     * @return array{slug: Slug, section: SectionId, author: AuthorId, openingImage: ImageId}
      */
-    public function assertPublishable(): void
+    public function assertPublishable(): array
     {
-        if (null === $this->slug) {
-            throw InvalidPostPublication::withoutSlug();
-        }
-
-        if (null === $this->classification->section()) {
-            throw InvalidPostPublication::withoutSection();
-        }
-
-        if (null === $this->classification->author()) {
-            throw InvalidPostPublication::withoutAuthor();
-        }
-
-        if (null === $this->openingImage) {
-            throw InvalidPostPublication::withoutOpeningImage();
-        }
+        $slug = $this->slug ?? throw InvalidPostPublication::withoutSlug();
+        $section = $this->classification->section() ?? throw InvalidPostPublication::withoutSection();
+        $author = $this->classification->author() ?? throw InvalidPostPublication::withoutAuthor();
+        $openingImage = $this->openingImage ?? throw InvalidPostPublication::withoutOpeningImage();
 
         if ([] === $this->content->blocks()) {
             throw InvalidPostPublication::withoutContent();
@@ -68,6 +60,8 @@ final readonly class PostVersion
         if (null === $this->seo->description()) {
             throw InvalidPostPublication::withoutMetaDescription();
         }
+
+        return ['slug' => $slug, 'section' => $section, 'author' => $author, 'openingImage' => $openingImage];
     }
 
     public function equals(self $other): bool

@@ -27,7 +27,12 @@ final readonly class WebAddress
      */
     public static function fromString(string $value): ?self
     {
-        $parts = 1 === preg_match('/^\S+$/u', trim($value)) ? parse_url(trim($value)) : false;
+        // No space within, of any script.
+        if (1 !== preg_match('/^\S+$/u', trim($value))) {
+            return null;
+        }
+
+        $parts = parse_url(trim($value));
 
         if (false === $parts || isset($parts['user']) || isset($parts['pass'])) {
             return null;

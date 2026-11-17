@@ -75,6 +75,41 @@ final class ExternalResourceCreatorTest extends TestCase
     }
 
     /**
+     * The address is read written in one way: its scheme and host in
+     * lowercase, without the default port of its scheme, its fragment, nor
+     * the parameters that only track who shared it.
+     */
+    #[DataProvider('writtenAddresses')]
+    public function testItReadsTheAddressWrittenInOneWay(string $written, string $read): void
+    {
+        $repository = self::createStub(ExternalResourceRepository::class);
+        $repository->method('findByUrl')->willReturn(null);
+        $asked = null;
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturnCallback(static function (ResourceUrl $url) use (&$asked): Reading {
+            $asked = $url->value();
+
+            return ReadingMother::video();
+        });
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, $written, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+
+        self::assertSame($read, $asked);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function writtenAddresses(): iterable
+    {
+        yield 'in capitals, on the port of HTTP' => ['HTTP://Example.ORG:80/Una-Noticia#arriba', 'http://example.org/Una-Noticia'];
+        yield 'on the port of HTTPS' => ['https://example.org:443/', 'https://example.org/'];
+        yield 'over HTTP on the port of HTTPS' => ['http://example.org:443/', 'http://example.org:443/'];
+        yield 'over HTTPS on the port of HTTP' => ['https://example.org:80/', 'https://example.org:80/'];
+        yield 'with what tracks who shared it' => ['https://example.org/?id=7&utm_source=red&fbclid=x', 'https://example.org/?id=7'];
+    }
+
+    /**
      * What the resource tells is kept as a title can be: cut with an
      * ellipsis when too long, the host of its address when it tells none
      * long enough; its summary cut to what one can hold, and its language
@@ -219,6 +254,8 @@ final class ExternalResourceCreatorTest extends TestCase
         yield 'one with spaces within' => ['https://example.org/una noticia', 'errors.external.url.not_an_address', []];
         yield 'one of a host without a domain' => ['https://localhost/', 'errors.external.url.not_an_address', []];
         yield 'one of a host no domain can be' => ['https://exa_mple.org/', 'errors.external.url.not_an_address', []];
+        yield 'one of a domain followed by what no host can have' => ['https://example.org_x/', 'errors.external.url.not_an_address', []];
+        yield 'one with a space of another script within' => ["https://example.org/una\u{00A0}noticia", 'errors.external.url.not_an_address', []];
     }
 
     public function testItRefusesAnAddressOfTheBlogItselfWithoutReadingIt(): void

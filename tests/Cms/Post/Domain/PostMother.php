@@ -106,7 +106,8 @@ final class PostMother
      * first published give. With another published title, it is published
      * with changes: the site has the post with that title, the rest as edited.
      *
-     * @param list<string> $tags
+     * @param list<string>            $tags
+     * @param array<array-key, mixed> $content in the stored rich text format, of both versions
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
@@ -123,12 +124,13 @@ final class PostMother
         string $firstPublishedAt = ClockMother::NOW,
         string $lastPublishedAt = ClockMother::NOW,
         int $publicationRevision = 1,
+        array $content = self::CONTENT,
     ): Post {
         return new Post(
             PostIdMother::create($id),
-            self::version($title, $slug, $section, $author, $tags, self::OPENING_IMAGE, self::CONTENT, self::META_DESCRIPTION),
+            self::version($title, $slug, $section, $author, $tags, self::OPENING_IMAGE, $content, self::META_DESCRIPTION),
             PostStatus::Published,
-            self::version($publishedTitle ?? $title, $slug, $section, $author, $tags, self::OPENING_IMAGE, self::CONTENT, self::META_DESCRIPTION),
+            self::version($publishedTitle ?? $title, $slug, $section, $author, $tags, self::OPENING_IMAGE, $content, self::META_DESCRIPTION),
             new Timeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),

@@ -56,16 +56,32 @@ final class TiptapRichTextTest extends TestCase
                 ['text' => 'la página', 'marks' => ['bold', 'link'], 'page_id' => '01a1b801-ce58-723d-8234-b76d9105d001'],
             ]]],
         ];
-        yield 'links to a post, a term and an author, each by its kind' => [
+        yield 'links to a post, a term, an author and an external resource, each by its kind' => [
             [['type' => 'paragraph', 'content' => [
                 ['type' => 'text', 'text' => 'un post', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'post', 'id' => '01a1b801-ce58-723d-8234-b76d9105d011']]]],
                 ['type' => 'text', 'text' => 'una sección', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'term', 'id' => '01a1b801-ce58-723d-8234-b76d9105d012']]]],
                 ['type' => 'text', 'text' => 'un autor', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'author', 'id' => '01a1b801-ce58-723d-8234-b76d9105d013']]]],
+                ['type' => 'text', 'text' => 'un vídeo', 'marks' => [['type' => 'link', 'attrs' => ['type' => 'external', 'id' => '01a1b801-ce58-723d-8234-b76d9105d014']]]],
             ]]],
             [['type' => 'paragraph', 'text' => [
                 ['text' => 'un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105d011'],
                 ['text' => 'una sección', 'marks' => ['link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105d012'],
                 ['text' => 'un autor', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105d013'],
+                ['text' => 'un vídeo', 'marks' => ['link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105d014'],
+            ]]],
+        ];
+        yield 'bold links to a post, a term, an author and an external resource' => [
+            [['type' => 'paragraph', 'content' => [
+                ['type' => 'text', 'text' => 'un post', 'marks' => [['type' => 'bold'], ['type' => 'link', 'attrs' => ['type' => 'post', 'id' => '01a1b801-ce58-723d-8234-b76d9105d011']]]],
+                ['type' => 'text', 'text' => 'una sección', 'marks' => [['type' => 'bold'], ['type' => 'link', 'attrs' => ['type' => 'term', 'id' => '01a1b801-ce58-723d-8234-b76d9105d012']]]],
+                ['type' => 'text', 'text' => 'un autor', 'marks' => [['type' => 'bold'], ['type' => 'link', 'attrs' => ['type' => 'author', 'id' => '01a1b801-ce58-723d-8234-b76d9105d013']]]],
+                ['type' => 'text', 'text' => 'un vídeo', 'marks' => [['type' => 'bold'], ['type' => 'link', 'attrs' => ['type' => 'external', 'id' => '01a1b801-ce58-723d-8234-b76d9105d014']]]],
+            ]]],
+            [['type' => 'paragraph', 'text' => [
+                ['text' => 'un post', 'marks' => ['bold', 'link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105d011'],
+                ['text' => 'una sección', 'marks' => ['bold', 'link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105d012'],
+                ['text' => 'un autor', 'marks' => ['bold', 'link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105d013'],
+                ['text' => 'un vídeo', 'marks' => ['bold', 'link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105d014'],
             ]]],
         ];
         yield 'a widget showing a post' => [

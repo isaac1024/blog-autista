@@ -167,6 +167,13 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
                 ['type' => 'list', 'style' => 'ordered', 'items' => [Text::text('Sesión'), Text::text('Idioma')]],
                 Text::callout('important', 'Puedes borrarlas desde tu navegador.'),
                 Text::table(['Nombre', 'Finalidad'], [['PHPSESSID', '']]),
+                // Bold links to every kind of content, each by its id.
+                ['type' => 'paragraph', 'text' => [
+                    ['text' => 'un post', 'marks' => ['bold', 'link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105d011'],
+                    ['text' => ' una sección', 'marks' => ['bold', 'link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105d012'],
+                    ['text' => ' un autor', 'marks' => ['bold', 'link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105d013'],
+                    ['text' => ' un vídeo', 'marks' => ['bold', 'link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105d014'],
+                ]],
             ),
             metaDescription: 'Qué cookies usa el blog y para qué.',
             robots: Robots::NoindexFollow,

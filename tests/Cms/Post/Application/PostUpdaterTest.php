@@ -8,6 +8,7 @@ use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostUpdater;
 use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostAuthorsUsed;
+use Cms\Post\Domain\PostExternalsLinked;
 use Cms\Post\Domain\PostImagesUsed;
 use Cms\Post\Domain\PostPagesLinked;
 use Cms\Post\Domain\PostPostsLinked;
@@ -37,6 +38,20 @@ final class PostUpdaterTest extends TestCase
     private const string IMAGE = '01a1b801-ce58-723d-8234-b76d9105d001';
 
     private const string PAGE = '01a1b801-ce58-723d-8234-b76d9105e001';
+
+    private const string OTHER_PAGE = '01a1b801-ce58-723d-8234-b76d9105e002';
+
+    private const string POST = '01a1b801-ce58-723d-8234-b76d9105e101';
+
+    private const string OTHER_POST = '01a1b801-ce58-723d-8234-b76d9105e102';
+
+    private const string LINKED_AUTHOR = '01a1b801-ce58-723d-8234-b76d9105e201';
+
+    private const string OTHER_AUTHOR = '01a1b801-ce58-723d-8234-b76d9105e202';
+
+    private const string EXTERNAL = '01a1b801-ce58-723d-8234-b76d9105e301';
+
+    private const string OTHER_EXTERNAL = '01a1b801-ce58-723d-8234-b76d9105e302';
 
     #[\Override]
     protected function setUp(): void
@@ -124,6 +139,34 @@ final class PostUpdaterTest extends TestCase
         );
 
         self::update($repository, $eventBus, section: '', author: '', tags: [PostMother::OTHER_TAG], content: PostMother::CONTENT, metaDescription: PostMother::META_DESCRIPTION);
+    }
+
+    /**
+     * What the content on the site links to stays in use while the site
+     * shows it, though the version edited links elsewhere: the pages, the
+     * posts, the authors and the external resources of both are told.
+     */
+    public function testItTellsWhatTheContentOnTheSiteStillLinksTo(): void
+    {
+        $links = static fn (string $page, string $post, string $author, string $external): array => RichTextMother::stored(
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'Una página', 'marks' => ['link'], 'page_id' => $page],
+                ['text' => ' un post', 'marks' => ['link'], 'post_id' => $post],
+                ['text' => ' un autor', 'marks' => ['link'], 'author_id' => $author],
+                ['text' => ' un vídeo', 'marks' => ['link'], 'external_id' => $external],
+            ]],
+        );
+        $repository = self::createStub(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::published(content: $links(self::PAGE, self::POST, self::LINKED_AUTHOR, self::EXTERNAL)));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostPagesLinked && ['page_ids' => [self::PAGE, self::OTHER_PAGE]] === $event->toPrimitives()),
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostPostsLinked && ['post_ids' => [self::POST, self::OTHER_POST]] === $event->toPrimitives()),
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostAuthorsUsed && ['author_ids' => [self::LINKED_AUTHOR, self::OTHER_AUTHOR, PostMother::AUTHOR]] === $event->toPrimitives()),
+            self::callback(static fn (DomainEvent $event): bool => $event instanceof PostExternalsLinked && ['external_ids' => [self::EXTERNAL, self::OTHER_EXTERNAL]] === $event->toPrimitives()),
+        );
+
+        self::update($repository, $eventBus, section: PostMother::SECTION, author: PostMother::AUTHOR, tags: [], content: $links(self::OTHER_PAGE, self::OTHER_POST, self::OTHER_AUTHOR, self::OTHER_EXTERNAL), metaDescription: PostMother::META_DESCRIPTION);
     }
 
     /**

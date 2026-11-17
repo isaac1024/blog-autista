@@ -239,24 +239,18 @@ final class Post extends AggregateRoot
     public function publish(Classifiers $classifiers, PostImages $postImages): void
     {
         $now = Clock::now();
-        $this->version->assertPublishable();
+        ['slug' => $slug, 'section' => $sectionId, 'author' => $authorId, 'openingImage' => $openingImage] = $this->version->assertPublishable();
 
         if (!$this->hasSomethingToPublish()) {
             throw InvalidPostPublication::nothingToPublish();
         }
 
         $classification = $this->version->classification();
-        $sectionId = $classification->section() ?? throw InvalidPostPublication::withoutSection();
-        $authorId = $classification->author() ?? throw InvalidPostPublication::withoutAuthor();
         $section = $classifiers->sectionOnSite($sectionId) ?? throw InvalidPostPublication::sectionOffSite();
         $author = $classifiers->authorOnSite($authorId) ?? throw InvalidPostPublication::authorOffSite();
-        $openingImage = $this->version->openingImage() ?? throw InvalidPostPublication::withoutOpeningImage();
-
         if (!$postImages->isOnSite($openingImage)) {
             throw InvalidPostPublication::openingImageOffSite();
         }
-
-        $slug = $this->version->slug() ?? throw InvalidPostPublication::withoutSlug();
 
         $timeline = $this->timeline->published($now);
         $address = new PostAddress($section->slug(), $timeline->firstPublishedAt() ?? $now, $slug);
@@ -586,11 +580,8 @@ final class Post extends AggregateRoot
         $authors = [];
         $externals = [];
 
-        foreach ([$this->version, $this->onSite()] as $version) {
-            if (null === $version) {
-                continue;
-            }
-
+        // The version on the site, while there is one, besides the one edited.
+        foreach (array_filter([$this->version, $this->onSite()]) as $version) {
             $classification = $version->classification();
             $images = [...$images, ...$version->imageIds()];
             $pages = [...$pages, ...$version->content()->pageIds()];

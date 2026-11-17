@@ -199,6 +199,26 @@ final class SitemapTest extends WebTestCase
     }
 
     /**
+     * A file that loses an address, or gains one, changed when it did: the
+     * index tells search engines so, though the rest of it didn't change.
+     */
+    public function testAFileChangesWhenAnAddressLeavesIt(): void
+    {
+        $client = self::createClient();
+        $this->publishSite();
+
+        self::mockTime(ClockMother::now('2026-11-12 08:00:00'));
+        $this->dispatch('cms.page.unpublished', self::PAGE, ['revision' => 2]);
+
+        self::assertSame(['/' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'paginas'));
+        self::assertSame('2026-11-12T08:00:00+00:00', $this->index($client)['/sitemap-paginas.xml']);
+
+        // So does one that gains an address.
+        $this->dispatch('cms.page.published', self::PAGE, ['last_published_at' => '2026-11-14T09:00:00+00:00', 'revision' => 3] + CmsPagePublishedMother::body());
+        self::assertSame('2026-11-14T09:00:00+00:00', $this->index($client)['/sitemap-paginas.xml']);
+    }
+
+    /**
      * An event the projection has already taken changes nothing again.
      */
     public function testItTakesNoEventTwice(): void

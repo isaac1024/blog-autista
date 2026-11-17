@@ -53,9 +53,13 @@ final class SitemapFile
         $this->touched($moment);
     }
 
+    /**
+     * One of its entries left it, at the moment given: only an entry it has
+     * is removed, so it never counts fewer than none.
+     */
     public function removed(\DateTimeImmutable $moment): void
     {
-        $this->entries = max(0, $this->entries - 1);
+        --$this->entries;
         $this->touched($moment);
     }
 

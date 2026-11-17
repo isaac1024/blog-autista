@@ -124,7 +124,8 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
 
     /**
      * The index of the tags follows each post: republished with other tags,
-     * it lists under those alone, dated as the post; deleted, under none.
+     * it lists under those alone, dated as the post; deleted, under none,
+     * while the others keep theirs.
      */
     public function testItKeepsTheIndexOfTheTagsWithEachPost(): void
     {
@@ -152,6 +153,8 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->repository()->delete($this->repository()->find(new PostId(self::NEWEST)) ?? throw new \LogicException('Saved above.'));
         $this->entityManager()->clear();
         self::assertSame([], $this->listed(PostSelection::ofTag(self::SLEEP), 0, 10));
+        // The rows of the others stay.
+        self::assertSame([self::OLDEST, self::MIDDLE], $this->listed(PostSelection::ofTag(self::SOUND), 0, 10));
     }
 
     /**

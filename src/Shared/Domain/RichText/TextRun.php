@@ -10,10 +10,13 @@ namespace Shared\Domain\RichText;
 final readonly class TextRun
 {
     /**
+     * Only read from its stored form, which checks it links exactly when it
+     * has the link mark, and tells where in the document it doesn't.
+     *
      * @param list<Mark> $marks
      * @param ?Link      $link  what the link mark links to, null without one
      */
-    public function __construct(
+    private function __construct(
         private string $text,
         private array $marks,
         private ?Link $link,
@@ -21,8 +24,6 @@ final readonly class TextRun
         if ('' === $text) {
             throw InvalidRichText::empty('text');
         }
-
-        self::assertLinks($marks, $link, 'text');
     }
 
     public static function fromArray(mixed $data, string $path): self
@@ -37,7 +38,6 @@ final readonly class TextRun
 
         $marks = array_values(array_unique($marks, \SORT_REGULAR));
         $link = Link::fromArray($data, $path);
-        // Checked here too, to tell where in the document it fails.
         self::assertLinks($marks, $link, $path);
 
         return new self(Parse::string($data['text'] ?? null, $path.'.text'), $marks, $link);

@@ -7,6 +7,7 @@ namespace Cms\Tests\Author\Application;
 use Cms\Author\Application\AuthorDeleter;
 use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Domain\Author;
+use Cms\Author\Domain\AuthorContentsLinked;
 use Cms\Author\Domain\AuthorImagesUsed;
 use Cms\Author\Domain\AuthorPagesLinked;
 use Cms\Author\Domain\AuthorRedirects;
@@ -90,6 +91,27 @@ final class AuthorDeleterTest extends TestCase
         new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
     }
 
+    /**
+     * The posts, terms, authors and external resources the bio of an
+     * author deleted linked to are freed; a bio that linked none tells
+     * nothing of them.
+     */
+    public function testItFreesWhatTheBioOfAnAuthorDeletedLinkedTo(): void
+    {
+        $linking = AuthorMother::create(bio: RichTextMother::stored(['type' => 'paragraph', 'text' => [
+            ['text' => 'Un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e101'],
+            ['text' => ' una etiqueta', 'marks' => ['link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e201'],
+            ['text' => ' una autora', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e301'],
+            ['text' => ' un vídeo', 'marks' => ['link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105e401'],
+        ]]));
+
+        self::assertSame(
+            [AuthorContentsLinked::class => ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]],
+            self::eventsOfDeleting($linking),
+        );
+        self::assertSame([], self::eventsOfDeleting(AuthorMother::create()));
+    }
+
     public function testItNeverDeletesAPublishedAuthor(): void
     {
         $repository = $this->createMock(AuthorRepository::class);
@@ -101,5 +123,27 @@ final class AuthorDeleterTest extends TestCase
         $this->expectExceptionObject(InvalidAuthorPublication::publishedAuthor());
 
         new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage, self::createStub(AuthorUsage::class));
+    }
+
+    /**
+     * What deleting the author tells, each event by its class.
+     *
+     * @return array<class-string, array<string, mixed>>
+     */
+    private static function eventsOfDeleting(Author $author): array
+    {
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn($author);
+        $told = [];
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback(static function (DomainEvent ...$events) use (&$told): void {
+            foreach ($events as $event) {
+                $told[$event::class] = $event->toPrimitives();
+            }
+        });
+
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
+
+        return $told;
     }
 }
