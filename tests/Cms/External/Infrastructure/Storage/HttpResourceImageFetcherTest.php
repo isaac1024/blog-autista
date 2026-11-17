@@ -74,6 +74,27 @@ final class HttpResourceImageFetcherTest extends KernelTestCase
         yield 'an image too heavy' => [str_repeat('a', 5_000_001), 200, ['content-type' => 'image/png']];
     }
 
+    /**
+     * A PNG that tells it is 20000 × 20000 in a few KB: decoding it would
+     * take GD more memory than PHP has, and end it with a fatal error.
+     */
+    public function testItMakesNothingOfAnImageTooLargeWithoutDecodingIt(): void
+    {
+        RecordedSites::answer(self::URL, self::pngOf(20_000, 20_000), 200, ['content-type' => 'image/png']);
+
+        self::assertNull(self::getContainer()->get(ResourceImageFetcher::class)->fetch(self::URL, ImageShape::Landscape));
+    }
+
+    public function testItTakesAnImageAsLargeAsAPhoto(): void
+    {
+        RecordedSites::answer(self::URL, self::image('jpeg', 1600, 900), 200, ['content-type' => 'image/jpeg']);
+
+        $file = self::getContainer()->get(ResourceImageFetcher::class)->fetch(self::URL, ImageShape::Landscape);
+
+        self::assertNotNull($file);
+        unlink($file->path());
+    }
+
     public function testItMakesNothingOfAnImageThatCannotBeReached(): void
     {
         RecordedSites::failToReach(self::URL);
@@ -81,9 +102,13 @@ final class HttpResourceImageFetcherTest extends KernelTestCase
         self::assertNull(self::getContainer()->get(ResourceImageFetcher::class)->fetch(self::URL, ImageShape::Landscape));
     }
 
-    private static function image(string $type): string
+    /**
+     * @param positive-int $width
+     * @param positive-int $height
+     */
+    private static function image(string $type, int $width = 320, int $height = 200): string
     {
-        $image = imagecreatetruecolor(320, 200);
+        $image = imagecreatetruecolor($width, $height);
         self::assertNotFalse($image);
         ob_start();
         match ($type) {
@@ -94,5 +119,20 @@ final class HttpResourceImageFetcherTest extends KernelTestCase
         };
 
         return (string) ob_get_clean();
+    }
+
+    /**
+     * A PNG of the width and the height its header tells, whose data, a few
+     * KB of compressed blank rows, holds a small part of them.
+     */
+    private static function pngOf(int $width, int $height): string
+    {
+        $chunk = static fn (string $type, string $data): string => pack('N', \strlen($data)).$type.$data.pack('N', crc32($type.$data));
+
+        // 8 bits per channel, truecolor with alpha.
+        $header = pack('NNCCCCC', $width, $height, 8, 6, 0, 0, 0);
+        $rows = (string) gzcompress(str_repeat("\0", 16 * (1 + 4 * $width)));
+
+        return "\x89PNG\r\n\x1a\n".$chunk('IHDR', $header).$chunk('IDAT', $rows).$chunk('IEND', '');
     }
 }

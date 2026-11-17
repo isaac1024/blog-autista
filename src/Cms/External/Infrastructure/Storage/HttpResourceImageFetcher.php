@@ -15,14 +15,23 @@ use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /**
  * Outbound adapter that downloads the image of a resource over HTTP, takes
- * it only when it is a JPEG, PNG, WebP or GIF image no heavier than it may
- * be, and crops and encodes it as WebP, at the size of its shape, in a file
- * of its own.
+ * it only when it is a JPEG, PNG, WebP or GIF image no heavier, nor larger,
+ * than it may be, and crops and encodes it as WebP, at the size of its
+ * shape, in a file of its own.
  */
 #[AsAlias(ResourceImageFetcher::class)]
 final readonly class HttpResourceImageFetcher implements ResourceImageFetcher
 {
     public const int MAX_BYTES = 5_000_000;
+
+    /**
+     * Most pixels an image may have. GD holds every pixel of an image it
+     * reads in memory, 4 bytes each, however small its file: 24 MP take some
+     * 96 MB, well within the 384 MB PHP has on Hetzner, whereas a PNG of
+     * 16000 × 16000 that weighs 730 KB exhausts them with a fatal error no
+     * catch stops.
+     */
+    public const int MAX_PIXELS = 24_000_000;
 
     private const array TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -52,6 +61,13 @@ final readonly class HttpResourceImageFetcher implements ResourceImageFetcher
 
         // What the file is, told by its content, whatever the server says.
         if (!\in_array(new \finfo(\FILEINFO_MIME_TYPE)->buffer($response->body), self::TYPES, true)) {
+            return null;
+        }
+
+        // Its size, read from its header alone, before GD decodes all of it.
+        $size = getimagesizefromstring($response->body);
+
+        if (false === $size || $size[0] * $size[1] > self::MAX_PIXELS) {
             return null;
         }
 
