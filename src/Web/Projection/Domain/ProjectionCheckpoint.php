@@ -32,11 +32,6 @@ final class ProjectionCheckpoint
         }
     }
 
-    public static function for(string $projection, string $aggregateId, int $revision): self
-    {
-        return new self($projection, $aggregateId, $revision);
-    }
-
     public function revision(): int
     {
         return $this->revision;

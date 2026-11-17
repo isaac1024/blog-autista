@@ -48,4 +48,9 @@ final class Relation
     {
         return $this->sourceId;
     }
+
+    public function targetId(): string
+    {
+        return $this->targetId;
+    }
 }

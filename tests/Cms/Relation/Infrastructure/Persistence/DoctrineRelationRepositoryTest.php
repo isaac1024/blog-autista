@@ -8,6 +8,7 @@ use Cms\Relation\Domain\Relation;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Relation\Domain\ResourceType;
 use Cms\Tests\Relation\Domain\CmsPageImagesUsedMother as Ids;
+use Doctrine\DBAL\Connection;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -43,6 +44,27 @@ final class DoctrineRelationRepositoryTest extends KernelTestCase
 
         self::assertFalse($repository->isUsed(ResourceType::Image, Ids::IMAGE));
         self::assertTrue($repository->isUsed(ResourceType::Image, Ids::OTHER_IMAGE));
+    }
+
+    /**
+     * Only what changed is written: a relation kept is the same row it was,
+     * one no longer there is removed and one new is added; the same list
+     * again writes nothing.
+     */
+    public function testItWritesOnlyTheRelationsThatChanged(): void
+    {
+        $repository = $this->repository();
+        $repository->replace(ResourceType::Page, Ids::PAGE, ResourceType::Image, [Ids::IMAGE, Ids::OTHER_IMAGE]);
+        $before = $this->rows();
+
+        $repository->replace(ResourceType::Page, Ids::PAGE, ResourceType::Image, [Ids::OTHER_IMAGE, Ids::IMAGE]);
+        self::assertSame($before, $this->rows());
+
+        $repository->replace(ResourceType::Page, Ids::PAGE, ResourceType::Image, [Ids::OTHER_IMAGE, self::OTHER_PAGE]);
+        $after = $this->rows();
+
+        self::assertSame($before[Ids::OTHER_IMAGE], $after[Ids::OTHER_IMAGE]);
+        self::assertEqualsCanonicalizing([Ids::OTHER_IMAGE, self::OTHER_PAGE], array_keys($after));
     }
 
     public function testItRemovesEveryRelationOfASourceThatUsesNothingAnyLonger(): void
@@ -150,6 +172,20 @@ final class DoctrineRelationRepositoryTest extends KernelTestCase
     private function sources(array $relations): array
     {
         return array_map(static fn (Relation $relation): array => [$relation->sourceType()->value, $relation->sourceId()], $relations);
+    }
+
+    /**
+     * The id of each row of the images the page uses, by the image, as the
+     * table keeps them.
+     *
+     * @return array<mixed>
+     */
+    private function rows(): array
+    {
+        return self::getContainer()->get(Connection::class)->fetchAllKeyValue(
+            "SELECT target_id, id FROM cms_relation WHERE source_type = 'page' AND source_id = ? AND target_type = 'image' ORDER BY target_id",
+            [Ids::PAGE],
+        );
     }
 
     private function repository(): RelationRepository

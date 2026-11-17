@@ -130,20 +130,32 @@ final readonly class DoctrinePostRepository implements PostRepository
     }
 
     /**
-     * Replaces the rows of the index of the tags of the post with those of
-     * the tags it has now, dated by the day it was first published.
+     * Brings the rows of the index of the tags of the post to those of the
+     * tags it has now, dated by the day it was first published: removes
+     * those it no longer has, dates again those whose day changed and adds
+     * the new ones, writing nothing when nothing changed.
      */
     private function indexTags(Post $post): void
     {
         $connection = $this->entityManager->getConnection();
-        $connection->delete('web_post_tag', ['post_id' => $post->id()->value()]);
+        $postId = $post->id()->value();
+        $wanted = array_values(array_unique($post->tagIds()));
+        /** @var array<string, string> $kept first published at, by tag */
+        $kept = $connection->fetchAllKeyValue('SELECT term_id, first_published_at FROM web_post_tag WHERE post_id = :post', ['post' => $postId]);
+        $firstPublishedAt = $connection->convertToDatabaseValue($post->firstPublishedAt(), Types::DATETIME_IMMUTABLE);
 
-        foreach (array_unique($post->tagIds()) as $termId) {
-            $connection->insert('web_post_tag', [
-                'post_id' => $post->id()->value(),
-                'term_id' => $termId,
-                'first_published_at' => $post->firstPublishedAt(),
-            ], ['first_published_at' => Types::DATETIME_IMMUTABLE]);
+        // Each row by its key, so no range is locked: concurrent consumers of
+        // the queue then never wait on each other's gaps.
+        foreach ($kept as $termId => $date) {
+            if (!\in_array($termId, $wanted, true)) {
+                $connection->delete('web_post_tag', ['post_id' => $postId, 'term_id' => $termId]);
+            } elseif ($date !== $firstPublishedAt) {
+                $connection->update('web_post_tag', ['first_published_at' => $firstPublishedAt], ['post_id' => $postId, 'term_id' => $termId]);
+            }
+        }
+
+        foreach (array_diff($wanted, array_keys($kept)) as $termId) {
+            $connection->insert('web_post_tag', ['post_id' => $postId, 'term_id' => $termId, 'first_published_at' => $firstPublishedAt]);
         }
     }
 

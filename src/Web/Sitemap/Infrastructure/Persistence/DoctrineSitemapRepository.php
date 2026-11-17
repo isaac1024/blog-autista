@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Web\Sitemap\Infrastructure\Persistence;
 
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Web\Sitemap\Domain\SitemapEntry;
 use Web\Sitemap\Domain\SitemapFile;
@@ -28,6 +30,10 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
         return $this->entityManager->find(SitemapEntry::class, $resourceId);
     }
 
+    /**
+     * Locked while changed, as the entries of a section or a tag every post
+     * filed under it touches.
+     */
     #[\Override]
     public function entries(array $resourceIds): array
     {
@@ -35,7 +41,21 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             return [];
         }
 
-        return $this->entityManager->getRepository(SitemapEntry::class)->findBy(['resourceId' => $resourceIds]);
+        /** @var Query<null, SitemapEntry> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('entry')
+            ->from(SitemapEntry::class, 'entry')
+            ->where('entry.resourceId IN (:ids)')
+            // Always in the same order, so two changes never lock them crosswise.
+            ->orderBy('entry.resourceId')
+            ->setParameter('ids', $resourceIds)
+            ->getQuery();
+
+        if ($this->isChanging()) {
+            $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+        }
+
+        return $query->getResult();
     }
 
     #[\Override]
@@ -58,10 +78,15 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
         $this->entityManager->flush();
     }
 
+    /**
+     * Locked while changed: every post of a year counts in the same file,
+     * and consumers of the queue applying two of them at once would each
+     * write the count they read, which the database refuses as changed since.
+     */
     #[\Override]
     public function file(string $name): ?SitemapFile
     {
-        return $this->entityManager->find(SitemapFile::class, $name);
+        return $this->entityManager->find(SitemapFile::class, $name, $this->isChanging() ? LockMode::PESSIMISTIC_WRITE : LockMode::NONE);
     }
 
     #[\Override]
@@ -114,6 +139,15 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             'SELECT DISTINCT e.image_id FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file AND e.image_id IS NOT NULL AND i.id IS NULL',
             ['file' => $file],
         ));
+    }
+
+    /**
+     * Whether it is read to be changed, within the transaction of a
+     * projection, rather than to be served.
+     */
+    private function isChanging(): bool
+    {
+        return $this->entityManager->getConnection()->isTransactionActive();
     }
 
     private static function text(mixed $value): string

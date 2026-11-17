@@ -19,24 +19,33 @@ final readonly class DoctrineRelationRepository implements RelationRepository
 {
     public function __construct(private EntityManagerInterface $entityManager) {}
 
+    /**
+     * Removes, by their ids, only the relations no longer there, and adds
+     * only those new: saving what didn't change writes nothing. A range is
+     * never deleted, so saving a new post locks no gap of the index other
+     * posts saved at once would insert into, which deadlocked them.
+     */
     #[\Override]
     public function replace(ResourceType $sourceType, string $sourceId, ResourceType $targetType, array $targetIds): void
     {
-        $this->entityManager->wrapInTransaction(function () use ($sourceType, $sourceId, $targetType, $targetIds): void {
-            $this->entityManager->createQueryBuilder()
-                ->delete(Relation::class, 'relation')
-                ->where('relation.sourceType = :sourceType AND relation.sourceId = :sourceId AND relation.targetType = :targetType')
-                ->setParameter('sourceType', $sourceType)
-                ->setParameter('sourceId', $sourceId)
-                ->setParameter('targetType', $targetType)
-                ->getQuery()
-                ->execute();
+        /** @var list<Relation> $kept */
+        $kept = $this->entityManager->getRepository(Relation::class)->findBy(['sourceType' => $sourceType, 'sourceId' => $sourceId, 'targetType' => $targetType]);
+        $wanted = array_values(array_unique($targetIds));
+        $keptIds = [];
 
-            // The transaction flushes them as it commits.
-            foreach (array_unique($targetIds) as $targetId) {
-                $this->entityManager->persist(Relation::between($sourceType, $sourceId, $targetType, $targetId));
+        foreach ($kept as $relation) {
+            if (\in_array($relation->targetId(), $wanted, true)) {
+                $keptIds[] = $relation->targetId();
+            } else {
+                $this->entityManager->remove($relation);
             }
-        });
+        }
+
+        foreach (array_diff($wanted, $keptIds) as $targetId) {
+            $this->entityManager->persist(Relation::between($sourceType, $sourceId, $targetType, $targetId));
+        }
+
+        $this->entityManager->flush();
     }
 
     #[\Override]

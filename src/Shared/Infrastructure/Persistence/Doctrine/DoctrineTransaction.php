@@ -31,9 +31,7 @@ final readonly class DoctrineTransaction implements Transaction
 
             return $result;
         } catch (\Throwable $exception) {
-            $connection->rollBack();
-
-            throw $exception;
+            TransactionRollback::rethrow($connection, $exception);
         }
     }
 }

@@ -70,8 +70,8 @@ also counts the visits of the day just over, every night.
 
 Each page on the site sends its visit, once its reader sees it, from
 `assets/web.js` to `POST /v`, on the site's own host, with no cookie. The visit
-waits in `web_visit` until its day (in Madrid) is over; every night
-`NightlyVisitCount` counts it into `web_visit_total` and deletes it, so what is
+waits in `shared_visit` until its day (in Madrid) is over; every night
+`NightlyVisitCount` counts it into `shared_visit_total` and deletes it, so what is
 kept tells no reader from another. Readers of a day are told apart by a keyed
 hash of their address and browser, keyed with a salt of the day kept in Redis
 (`web.visit_salt.cache`), never in the database. A limiter, also in Redis,
@@ -248,6 +248,13 @@ images, from `public/media/`, under `/media/`.
   session. Changing `APP_SECRET` does too, and also invalidates every preview
   link already handed out: rotate it only when needed, and say so to whoever
   holds a preview link.
+- The cron job that consumes `async` never overlaps itself: keep its
+  `--time-limit` well under the minute between runs, and put
+  `flock -n var/async.lock` before it, so a run a slow message stretches past
+  the minute makes the next one skip rather than start a second consumer.
+  Consumers side by side are safe (projections run in read committed and lock
+  only the rows they change, and a deadlock is retried by Messenger), but
+  each one is a PHP process of the 10 the account has.
 - HSTS: `curl -sI https://<site>/` and `curl -sI https://<cms>/login` each
   carry `Strict-Transport-Security: max-age=31536000` **once**. Nelmio sends it
   in `prod`; if Hetzner's nginx adds its own too, turn one of them off. And
