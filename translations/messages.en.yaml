@@ -1126,6 +1126,10 @@ content:
     table:
         label: 'Table'
 site:
+    retry: 'Try again'
+    error_help:
+        words: 'We filled in the words of the address you opened.'
+        latest: 'Latest posts'
     footer:
         privacy: 'No trackers from other sites. What comes from them loads only if you agree.'
     home: 'Go to the home page'

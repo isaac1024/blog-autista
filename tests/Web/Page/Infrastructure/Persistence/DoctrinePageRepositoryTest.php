@@ -55,6 +55,23 @@ final class DoctrinePageRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findHome());
     }
 
+    public function testItFindsThePageThatSearchesByItsType(): void
+    {
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), slug: 'sobre-mi')));
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Buscar', slug: 'buscar', type: PageType::Search)));
+        $this->entityManager()->clear();
+
+        self::assertSame('buscar', $this->repository()->findSearch()?->slug());
+    }
+
+    public function testItFindsNoPageThatSearchesUntilOneIsOnTheSite(): void
+    {
+        $this->repository()->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), slug: 'sobre-mi')));
+        $this->entityManager()->clear();
+
+        self::assertNull($this->repository()->findSearch());
+    }
+
     public function testItFindsOnlyThePagesOnTheSiteAmongThoseGiven(): void
     {
         $first = PageIdMother::random();

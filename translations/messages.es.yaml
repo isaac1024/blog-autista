@@ -1126,6 +1126,10 @@ content:
     table:
         label: 'Tabla'
 site:
+    retry: 'Volver a intentarlo'
+    error_help:
+        words: 'Hemos puesto las palabras de la dirección que abriste.'
+        latest: 'Lo último'
     footer:
         privacy: 'Sin rastreadores de otras webs. Lo que viene de ellas solo se carga si lo aceptas.'
     home: 'Ir a la portada'

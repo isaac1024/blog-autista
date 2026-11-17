@@ -59,7 +59,7 @@ final readonly class SiteErrorListener
         $response = null !== ImageCopy::fromUrl($event->getRequest()->getPathInfo())
             // An image is asked for by a page, not read: it gets no page.
             ? new Response()
-            : $this->page($error);
+            : $this->page($error, $event->getRequest()->getPathInfo());
 
         if (null === $response) {
             return;
@@ -79,10 +79,10 @@ final readonly class SiteErrorListener
      * The page of the error, or null when painting it failed too, which is
      * logged with what made it fail.
      */
-    private function page(SiteError $error): ?Response
+    private function page(SiteError $error, string $path): ?Response
     {
         try {
-            return ($this->siteErrorResponse)($error);
+            return ($this->siteErrorResponse)($error, $path);
         } catch (\Throwable $failure) {
             $this->logger->error('The error page of the site failed to paint: {message}', ['message' => $failure->getMessage(), 'exception' => $failure]);
 

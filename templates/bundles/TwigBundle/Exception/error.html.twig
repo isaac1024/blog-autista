@@ -17,7 +17,14 @@
 
 {% block body %}
     <main id="main" class="{{ constant('Shared\\Infrastructure\\Ui\\WebLayout::MAIN_CLASS') }} grow">
+        <twig:Shared:ErrorIllustration :error="reason" />
         <twig:Shared:PageTitle :title="('site.' ~ reason ~ '.title')|trans({}, null, locale)" :subtitle="('site.' ~ reason ~ '.message')|trans({}, null, locale)" />
-        <twig:Shared:ButtonLink :url="path('web_home')" :label="'site.home'|trans({}, null, locale)" />
+{# A static copy is served at any address, so trying again is an empty link: the address it is at. #}
+        <div class="flex flex-wrap gap-3">
+{% if reason == 'server_error' %}
+            <twig:Shared:ButtonLink url="" :label="'site.retry'|trans({}, null, locale)" />
+{% endif %}
+            <twig:Shared:ButtonLink :url="path('web_home')" :label="'site.home'|trans({}, null, locale)" />
+        </div>
     </main>
 {% endblock %}

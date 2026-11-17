@@ -78,4 +78,11 @@ final readonly class DoctrinePageRepository implements PageRepository
         // The CMS keeps the site to one cookie policy.
         return $this->entityManager->getRepository(Page::class)->findOneBy(['type' => PageType::CookiePolicy]);
     }
+
+    #[\Override]
+    public function findSearch(): ?Page
+    {
+        // The CMS keeps the site to one page that searches.
+        return $this->entityManager->getRepository(Page::class)->findOneBy(['type' => PageType::Search]);
+    }
 }

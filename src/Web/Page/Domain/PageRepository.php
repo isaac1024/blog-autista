@@ -39,4 +39,9 @@ interface PageRepository
      * while it is on the site.
      */
     public function findCookiePolicy(): ?Page;
+
+    /**
+     * The page that searches the posts of the site, while it is on the site.
+     */
+    public function findSearch(): ?Page;
 }
