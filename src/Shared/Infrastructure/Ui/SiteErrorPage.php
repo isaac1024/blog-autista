@@ -30,11 +30,11 @@ final readonly class SiteErrorPage
      * The page of an address the site doesn't answer, no longer does or
      * failed to, in the layout its title started.
      *
-     * @param string         $path      the address asked for, from its first slash
-     * @param ?string        $searchUrl the page that searches the site, null while it has none
-     * @param list<PostCard> $latest    the latest posts of the site, none where it failed
+     * @param string                                 $path   the address asked for, from its first slash
+     * @param ?array{url: string, parameter: string} $search the page that searches the site and the query parameter it reads, null while it has none
+     * @param list<PostCard>                         $latest the latest posts of the site, none where it failed
      */
-    public function paint(Page $layout, SiteError $error, string $homeUrl, string $path, ?string $searchUrl, string $searchName, array $latest): Page
+    public function paint(Page $layout, SiteError $error, string $homeUrl, string $path, ?array $search, array $latest): Page
     {
         $page = $layout
             ->withMain('Shared:ErrorIllustration', ['error' => $error->value])
@@ -50,8 +50,8 @@ final readonly class SiteErrorPage
         }
 
         return $page->withMain('Shared:SiteErrorHelp', [
-            'searchUrl' => $searchUrl,
-            'searchName' => $searchName,
+            'searchUrl' => $search['url'] ?? null,
+            'searchName' => $search['parameter'] ?? '',
             'words' => self::words($path),
             'latest' => $latest,
             'homeUrl' => $homeUrl,

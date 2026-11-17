@@ -53,14 +53,7 @@ final readonly class PublishedPost
 
     public function __invoke(PostResponse $post): Page
     {
-        [$year, $month, $day] = explode('-', $post->day);
-        $canonical = $this->urlGenerator->generate('web_post', [
-            'section' => $post->sectionSlug,
-            'year' => $year,
-            'month' => $month,
-            'day' => $day,
-            'slug' => $post->slug,
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
+        $canonical = $this->canonical($post);
 
         // An image off the site, the opening one too, is painted as the one
         // its address now leads to, if any, so the pages its caption links to
@@ -97,7 +90,7 @@ final readonly class PublishedPost
                     null === $opening ? null : StructuredData::absolute($home, $opening['src']),
                     $post->firstPublishedAt,
                     $post->lastPublishedAt,
-                    ['name' => $author->name ?? $post->authorName, 'url' => null === $author ? null : $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL)],
+                    $this->creator($post, $author),
                     $section->name ?? $post->sectionName,
                     array_column($tags, 'name'),
                     $this->siteLayout->publisherUrl(),
@@ -109,19 +102,61 @@ final readonly class PublishedPost
             null === $section
                 ? ['name' => $post->sectionName, 'url' => null]
                 : ['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug])],
-            null === $author
-                ? ['name' => $post->authorName, 'url' => null, 'avatar' => null]
-                : [
-                    'name' => $author->name,
-                    'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
-                    'avatar' => SiteMedia::avatar($author->avatarName, $author->name),
-                ],
+            $this->signature($post, $author),
             $tags,
             $opening,
             $post->content,
             $images,
             ($this->linkedContents)($post->content, $images, $post->id),
         );
+    }
+
+    /**
+     * The address the post is served at, the one search engines keep.
+     */
+    private function canonical(PostResponse $post): string
+    {
+        [$year, $month, $day] = explode('-', $post->day);
+
+        return $this->urlGenerator->generate('web_post', [
+            'section' => $post->sectionSlug,
+            'year' => $year,
+            'month' => $month,
+            'day' => $day,
+            'slug' => $post->slug,
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+    }
+
+    /**
+     * Who wrote the post, as search engines are told: by the address of
+     * their page while they are on the site.
+     *
+     * @return array{name: string, url: ?string}
+     */
+    private function creator(PostResponse $post, ?AuthorResponse $author): array
+    {
+        return [
+            'name' => $author->name ?? $post->authorName,
+            'url' => null === $author ? null : $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL),
+        ];
+    }
+
+    /**
+     * Who signs the post, leading to their page with their avatar while they
+     * are on the site, or as the one their address now leads to; otherwise
+     * by the name they had when it was published, as text.
+     *
+     * @return array{name: string, url: ?string, avatar: ?array{src: string, srcset: string, size: int, alt: string}}
+     */
+    private function signature(PostResponse $post, ?AuthorResponse $author): array
+    {
+        return null === $author
+            ? ['name' => $post->authorName, 'url' => null, 'avatar' => null]
+            : [
+                'name' => $author->name,
+                'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
+                'avatar' => SiteMedia::avatar($author->avatarName, $author->name),
+            ];
     }
 
     /**

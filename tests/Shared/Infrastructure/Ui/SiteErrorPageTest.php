@@ -55,7 +55,7 @@ final class SiteErrorPageTest extends TestCase
     #[DataProvider('addresses')]
     public function testItTakesTheWordsOfTheAddress(string $path, string $words): void
     {
-        PageComponents::one($this->paint(404, $path), 'Shared:SiteErrorHelp', ['words' => $words, 'searchUrl' => null]);
+        PageComponents::one($this->paint(404, $path), 'Shared:SiteErrorHelp', ['words' => $words, 'searchUrl' => null, 'searchName' => '']);
     }
 
     /**
@@ -108,7 +108,7 @@ final class SiteErrorPageTest extends TestCase
     {
         $errorPage = new SiteErrorPage(new CatalogueTranslator());
         $error = SiteError::fromStatusCode($statusCode);
-        $page = $errorPage->paint(Page::create($errorPage->title($error)), $error, '/', $path, $searchUrl, 'q', $latest);
+        $page = $errorPage->paint(Page::create($errorPage->title($error)), $error, '/', $path, null === $searchUrl ? null : ['url' => $searchUrl, 'parameter' => 'q'], $latest);
         ComponentContracts::assertHonoured($page);
 
         return $page;

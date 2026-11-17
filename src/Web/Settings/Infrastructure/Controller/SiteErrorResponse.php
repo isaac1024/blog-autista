@@ -67,8 +67,7 @@ final readonly class SiteErrorResponse
                 $error,
                 $homeUrl,
                 $path,
-                null === $search?->slug ? null : $this->urlGenerator->generate('web_page', ['slug' => $search->slug]),
-                SiteSearch::PARAMETER,
+                null === $search?->slug ? null : ['url' => $this->urlGenerator->generate('web_page', ['slug' => $search->slug]), 'parameter' => SiteSearch::PARAMETER],
                 $failed ? [] : $this->postCardsComponent->cards(($this->sitePostCards)(
                     new LatestPostsFinder(new PostSelection(null, null, []), self::LATEST)($this->postRepository),
                 )),

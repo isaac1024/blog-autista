@@ -47,6 +47,10 @@ final class PostHeader
     /**
      * @param array{name: string, url: ?string}                                                                      $section
      * @param array{name: string, url: ?string, avatar: ?array{src: string, srcset: string, size: int, alt: string}} $author
+     *
+     * It takes what the head shows, one parameter each
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
     public function mount(string $title, bool $updated, string $date, string $datetime, int $readingMinutes, array $section, array $author): void
     {
