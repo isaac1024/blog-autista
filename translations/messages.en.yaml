@@ -1095,8 +1095,9 @@ content:
     related_page:
         label: 'Related content'
     external:
-        from: 'Content of %provider%'
-        open: 'Open on %provider%'
+        provided_by: 'on %provider%'
+        open_short: 'Open'
+        open_where: 'on %provider% (%title%)'
         load: 'Load the content of %provider% here'
         forget: 'Stop loading content of %provider% on its own'
         frame_title: '%title% (%provider%)'

@@ -1,18 +1,28 @@
 {#
-    The whole card is the link, so it is one stop for the keyboard and its
-    name says what it is and that it leaves the blog before the title. The
-    title is no heading, so the outline of the page stays its own.
+    What comes from another site sits on a panel of its own, with a line on
+    top that says what it is and where it comes from. The whole card is the
+    link, so it is one stop for the keyboard, and its name says what it is
+    and that it leaves the blog before the title. The title is no heading,
+    so the outline of the page stays its own.
 #}
-<a class="group grid gap-3 rounded-card border-2 border-border bg-surface p-5 text-text no-underline transition-colors duration-150 hover:border-accent motion-reduce:transition-none forced-colors:border-[LinkText]" href="{{ url }}" rel="external">
+<a class="group -mx-[clamp(1rem,4vw,2rem)] grid gap-2 bg-surface px-[clamp(1rem,4vw,1.25rem)] pt-3 pb-5 text-text no-underline sm:mx-0 forced-colors:border forced-colors:border-[LinkText]" href="{{ url }}" rel="external">
+    <span class="flex items-start gap-2.5 text-base leading-snug">
+        <svg class="mt-px size-5 flex-none text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{% if kind == 'document' %}
+            <path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4"/>
+{% elseif kind == 'study' %}
+            <path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>
+{% else %}
+            <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>
+{% endif %}
+        </svg>
+        <span><span class="font-bold">{{ ('content.external.label.' ~ kind)|trans }}</span><span class="sr-only">, {{ 'content.external.leaves'|trans }}:</span>{% if source is not empty %}<span class="block text-muted">{{ source|join(', ') }}</span>{% endif %}</span>
+    </span>
 {% if image %}
-    <img class="block h-auto w-full bg-bg" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
+    <img class="mt-2 block h-auto w-full bg-bg" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
 {% endif %}
-    <span class="text-[1rem] font-bold text-muted">{{ ('content.external.label.' ~ kind)|trans }}<span class="sr-only">, {{ 'content.external.leaves'|trans }}:</span></span>
-    <span class="text-xl font-bold leading-tight text-balance text-accent underline decoration-[0.1em] underline-offset-[0.15em] group-hover:text-accent-strong" lang="{{ language }}">{{ title }}</span>
+    <span class="mt-1 text-xl leading-snug font-semibold text-balance text-accent underline decoration-[0.06em] underline-offset-[0.18em] group-hover:text-accent-strong group-hover:decoration-[0.12em]" lang="{{ language }}">{{ title }}</span>
 {% if summary %}
-    <span lang="{{ language }}">{{ summary }}</span>
-{% endif %}
-{% if source is not empty %}
-    <span class="text-[1rem] text-muted">{{ source|join(' · ') }}</span>
+    <span class="leading-normal" lang="{{ language }}">{{ summary }}</span>
 {% endif %}
 </a>

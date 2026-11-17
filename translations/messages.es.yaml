@@ -1095,8 +1095,9 @@ content:
     related_page:
         label: 'Contenido relacionado'
     external:
-        from: 'Contenido de %provider%'
-        open: 'Abrir en %provider%'
+        provided_by: 'de %provider%'
+        open_short: 'Abrir'
+        open_where: 'en %provider% (%title%)'
         load: 'Cargar aquí el contenido de %provider%'
         forget: 'No cargar más contenido de %provider% automáticamente'
         frame_title: '%title% (%provider%)'

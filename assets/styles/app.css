@@ -341,9 +341,11 @@
         /*
          * A quote of the author's own text: larger, light and italic, hung
          * from an opening mark in the accent. It takes no panel, which is
-         * kept for what comes from other sites.
+         * kept for what comes from other sites. Only the quotes of the text
+         * itself: a post embedded from another site quotes in its own way.
          */
-        & blockquote {
+        & > blockquote,
+        & > figure[data-quote] > blockquote {
             position: relative;
             display: flex;
             flex-direction: column;
@@ -356,7 +358,8 @@
             line-height: 1.5;
         }
 
-        & blockquote::before {
+        & > blockquote::before,
+        & > figure[data-quote] > blockquote::before {
             content: "\201C" / "";
             position: absolute;
             top: -0.2em;
@@ -741,4 +744,15 @@
             font-weight: 700;
         }
     }
+}
+
+/*
+ * The notice of consent may say more than the room of the facade holds, as
+ * on a phone: while it is open the frame grows to it, and goes back to its
+ * room once it closes. Outside the layers, so it overrides the utilities
+ * that give the frame its room.
+ */
+.external-embed-frame:has(> [data-external-notice]:not([hidden])) {
+    height: auto;
+    aspect-ratio: auto;
 }
