@@ -45,9 +45,10 @@ use Shared\Domain\RichText\RichTextFeatures;
  *   neither does.
  *
  * Its rules reach every value object, error and event of the author, so its
- * coupling and its methods grow with what an author is.
+ * coupling, its methods and its length grow with what an author is.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveClassLength")
  * @SuppressWarnings("PHPMD.TooManyMethods")
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */

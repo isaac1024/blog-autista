@@ -8,6 +8,12 @@ namespace Shared\Domain\Event;
  * A received event that carries the publication revision of its aggregate,
  * so whoever listens can tell an older event from a newer one whatever order
  * they arrive in.
+ *
+ * Every event of a published aggregate a listener hears is one, so they
+ * grow in number with what the contexts tell each other, as received events
+ * do, rather than with how they are designed.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract readonly class RevisedReceivedEvent extends ReceivedEvent
 {
