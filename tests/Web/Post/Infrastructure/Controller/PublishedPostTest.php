@@ -6,9 +6,11 @@ namespace Web\Tests\Post\Infrastructure\Controller;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\AvatarCopy;
 use Shared\Infrastructure\Ui\Page\Page as SitePage;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
+use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
@@ -82,9 +84,9 @@ final class PublishedPostTest extends TestCase
             authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
         );
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Día a día', 'url' => '/dia-a-dia/'],
-            'author' => ['name' => 'Isaac', 'url' => '/autor/isaac.html'],
+            'author' => ['name' => 'Isaac', 'url' => '/autor/isaac.html', 'avatar' => SiteMedia::avatar(AvatarCopy::named('isaac', '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp'), 'Isaac')],
         ]);
         // Only the tags on the site, in order.
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Ruido', 'url' => '/tag/ruido.html']]]);
@@ -98,9 +100,9 @@ final class PublishedPostTest extends TestCase
     {
         $page = $this->compose([self::TAG], terms: [self::SECTION => self::term('tag', 'Vida diaria', 'vida-diaria')]);
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Vida diaria', 'url' => null],
-            'author' => ['name' => 'Isaac Abreu', 'url' => null],
+            'author' => ['name' => 'Isaac Abreu', 'url' => null, 'avatar' => null],
         ]);
         self::assertSame([], PageComponents::find($page, 'Shared:PostTags', []));
     }
@@ -129,9 +131,9 @@ final class PublishedPostTest extends TestCase
             ],
         );
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Día a día', 'url' => '/dia-a-dia/'],
-            'author' => ['name' => 'Isaac', 'url' => '/autor/isaac.html'],
+            'author' => ['name' => 'Isaac', 'url' => '/autor/isaac.html', 'avatar' => SiteMedia::avatar(AvatarCopy::named('isaac', '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp'), 'Isaac')],
         ]);
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Calma', 'url' => '/tag/calma.html']]]);
     }
@@ -147,9 +149,9 @@ final class PublishedPostTest extends TestCase
             new Redirect(null, null, self::AUTHOR),
         ]);
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Vida diaria', 'url' => null],
-            'author' => ['name' => 'Isaac Abreu', 'url' => null],
+            'author' => ['name' => 'Isaac Abreu', 'url' => null, 'avatar' => null],
         ]);
     }
 
@@ -217,7 +219,7 @@ final class PublishedPostTest extends TestCase
     #[DataProvider('dates')]
     public function testItDatesThePostByItsLastPublicationAndSaysWhetherItWasUpdated(array $changes, bool $updated, string $date): void
     {
-        PageComponents::one($this->compose([], changes: $changes), 'Shared:PostMeta', ['updated' => $updated, 'date' => $date]);
+        PageComponents::one($this->compose([], changes: $changes), 'Shared:PostHeader', ['updated' => $updated, 'date' => $date]);
     }
 
     /**

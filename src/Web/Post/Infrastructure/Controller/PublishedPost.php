@@ -105,12 +105,17 @@ final readonly class PublishedPost
             $post->title,
             $post->firstPublishedAt,
             $post->lastPublishedAt,
+            $post->readingMinutes,
             null === $section
                 ? ['name' => $post->sectionName, 'url' => null]
                 : ['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug])],
             null === $author
-                ? ['name' => $post->authorName, 'url' => null]
-                : ['name' => $author->name, 'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug])],
+                ? ['name' => $post->authorName, 'url' => null, 'avatar' => null]
+                : [
+                    'name' => $author->name,
+                    'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
+                    'avatar' => SiteMedia::avatar($author->avatarName, $author->name),
+                ],
             $tags,
             $opening,
             $post->content,

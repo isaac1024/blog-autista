@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
 final class AuthorOnSiteFinderTest extends TestCase
 {
     /**
-     * The site shows the name an author was published with, not one edited
-     * since.
+     * The site shows the name and the avatar an author was published with,
+     * not those edited since.
      */
     public function testItGivesTheAuthorOnTheSiteAsTheSiteServesIt(): void
     {
@@ -24,9 +24,12 @@ final class AuthorOnSiteFinderTest extends TestCase
         $repository->expects(self::once())
             ->method('find')
             ->with(self::equalTo(AuthorIdMother::create()))
-            ->willReturn(AuthorMother::published(name: 'Otro nombre', publishedName: AuthorMother::NAME));
+            ->willReturn(AuthorMother::published(name: 'Otro nombre', publishedName: AuthorMother::NAME, avatar: AuthorMother::OTHER_AVATAR, publishedAvatar: AuthorMother::AVATAR));
 
-        self::assertEquals(new AuthorOnSiteResponse(AuthorMother::NAME, AuthorMother::SLUG), new AuthorOnSiteFinder(AuthorIdMother::DEFAULT_VALUE)($repository));
+        self::assertEquals(
+            new AuthorOnSiteResponse(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, AuthorMother::AVATAR),
+            new AuthorOnSiteFinder(AuthorIdMother::DEFAULT_VALUE)($repository),
+        );
     }
 
     #[DataProvider('offTheSite')]

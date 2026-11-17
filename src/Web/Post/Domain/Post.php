@@ -66,6 +66,11 @@ final class Post
          */
         #[ORM\Column(type: 'text', length: 16777215)]
         private string $searchText,
+        /*
+         * The minutes it takes to read, as when it was published.
+         */
+        #[ORM\Column(type: 'smallint', options: ['unsigned' => true])]
+        private int $readingMinutes,
         #[ORM\Column(length: 20, enumType: Robots::class)]
         private Robots $robots,
         #[ORM\Column(type: 'date_immutable')]
@@ -92,6 +97,7 @@ final class Post
             $event->content(),
             $event->metaDescription(),
             $event->content()->plainText(),
+            $event->content()->readingMinutes(),
             $event->robots(),
             $event->day(),
             $event->firstPublishedAt(),
@@ -121,6 +127,7 @@ final class Post
         $this->content = $event->content();
         $this->metaDescription = $event->metaDescription();
         $this->searchText = $event->content()->plainText();
+        $this->readingMinutes = $event->content()->readingMinutes();
         $this->robots = $event->robots();
         $this->day = $event->day();
         $this->firstPublishedAt = $event->firstPublishedAt();
@@ -207,6 +214,11 @@ final class Post
     public function metaDescription(): ?string
     {
         return $this->metaDescription;
+    }
+
+    public function readingMinutes(): int
+    {
+        return $this->readingMinutes;
     }
 
     public function robots(): Robots

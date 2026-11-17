@@ -18,7 +18,8 @@ final readonly class PostResponse
 {
     /**
      * @param list<string> $tagIds
-     * @param string       $day    the day it was first published, as Y-m-d
+     * @param string       $day            the day it was first published, as Y-m-d
+     * @param int          $readingMinutes the minutes it takes to read
      */
     public function __construct(
         public string $id,
@@ -33,6 +34,7 @@ final readonly class PostResponse
         public string $openingImageId,
         public RichText $content,
         public ?string $metaDescription,
+        public int $readingMinutes,
         public string $robots,
         public string $day,
         public \DateTimeImmutable $firstPublishedAt,
@@ -54,6 +56,7 @@ final readonly class PostResponse
             $post->openingImageId(),
             $post->content(),
             $post->metaDescription(),
+            $post->readingMinutes(),
             $post->robots()->value,
             $post->day()->format('Y-m-d'),
             $post->firstPublishedAt(),

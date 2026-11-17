@@ -10,8 +10,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Composes a post as the site serves it, and as the CMS previews it: its
- * title, when it was published and who signs it under which section, the
- * image it opens with, its content, and its tags. The opening image is also
+ * section, its title, who signs it, when it was published and how long it
+ * takes to read, the image it opens with, its content, and its tags. The opening image is also
  * the one the page is shared with.
  *
  * It always dates the post by when it was last published, the day of Madrid
@@ -31,14 +31,15 @@ final readonly class SitePostPage
 
     /**
      * The section and the author lead to their pages while they are on the
-     * site, a null url otherwise, and are named as text then. Embedded images
+     * site, a null url otherwise, and are named as text then; the author shows
+     * their avatar while they have one. Embedded images
      * and linked pages are painted from what the caller knows of them, keyed
      * by id, as SitePage paints a page. The opening image is painted the same
      * way, opening the text, and is left out while the caller has none of it
      * on the site.
      *
      * @param array{name: string, url: ?string}                                                                          $section
-     * @param array{name: string, url: ?string}                                                                          $author
+     * @param array{name: string, url: ?string, avatar: ?array{src: string, srcset: string, size: int, alt: string}}     $author
      * @param list<array{name: string, url: string}>                                                                     $tags    those on the site, in order
      * @param ?array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}               $opening as SiteMedia::image() paints it, null for none
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
@@ -51,6 +52,7 @@ final readonly class SitePostPage
         string $title,
         \DateTimeImmutable $firstPublishedAt,
         \DateTimeImmutable $lastPublishedAt,
+        int $readingMinutes,
         array $section,
         array $author,
         array $tags,
@@ -72,11 +74,12 @@ final readonly class SitePostPage
         }
 
         $page = $layout
-            ->withMain('Shared:PageTitle', ['title' => $title])
-            ->withMain('Shared:PostMeta', [
+            ->withMain('Shared:PostHeader', [
+                'title' => $title,
                 'updated' => $last->format('Y-m-d') !== $firstPublishedAt->setTimezone($zone)->format('Y-m-d'),
                 'date' => (string) $formatter->format($last),
                 'datetime' => $last->format(\DATE_ATOM),
+                'readingMinutes' => $readingMinutes,
                 'section' => $section,
                 'author' => $author,
             ])

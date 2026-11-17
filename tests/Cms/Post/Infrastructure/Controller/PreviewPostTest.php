@@ -7,6 +7,7 @@ namespace Cms\Tests\Post\Infrastructure\Controller;
 use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Infrastructure\Controller\AvatarUrl;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Infrastructure\Controller\ExternalImageUrl;
 use Cms\External\Infrastructure\Ui\CmsExternalViews;
@@ -41,6 +42,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
@@ -70,10 +72,12 @@ final class PreviewPostTest extends TestCase
     {
         $page = $this->preview(PostMother::publishable(tags: [PostMother::OTHER_TAG, PostMother::TAG]), onSite: true);
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        $header = PageComponents::one($page, 'Shared:PostHeader', [
+            'title' => PostMother::TITLE,
+            'readingMinutes' => 1,
             'section' => ['name' => 'Publicada', 'url' => '/vida-diaria/'],
-            'author' => ['name' => 'Firma publicada', 'url' => '/autor/isaac.html'],
         ]);
+        self::assertAuthorOnSite('Firma publicada', '/autor/isaac.html', $header);
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Sensorialidad', 'url' => '/tag/sensorialidad.html']]]);
         self::assertSame('noindex,nofollow', $page->robots);
     }
@@ -100,9 +104,9 @@ final class PreviewPostTest extends TestCase
     {
         $page = $this->preview(PostMother::publishable(tags: [PostMother::OTHER_TAG]), onSite: false);
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => TermMother::NAME, 'url' => null],
-            'author' => ['name' => AuthorMother::NAME, 'url' => null],
+            'author' => ['name' => AuthorMother::NAME, 'url' => null, 'avatar' => null],
         ]);
         self::assertSame([], PageComponents::find($page, 'Shared:PostTags', []));
         self::assertSame(RouteNameUrlGenerator::SITE.'/', $page->canonical);
@@ -110,9 +114,9 @@ final class PreviewPostTest extends TestCase
 
     public function testItNamesNoSectionNorAuthorOfAnUnfiledPost(): void
     {
-        PageComponents::one($this->preview(PostMother::create(), onSite: true), 'Shared:PostMeta', [
+        PageComponents::one($this->preview(PostMother::create(), onSite: true), 'Shared:PostHeader', [
             'section' => ['name' => '', 'url' => null],
-            'author' => ['name' => '', 'url' => null],
+            'author' => ['name' => '', 'url' => null, 'avatar' => null],
         ]);
     }
 
@@ -137,10 +141,10 @@ final class PreviewPostTest extends TestCase
             ],
         );
 
-        PageComponents::one($page, 'Shared:PostMeta', [
+        $header = PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Día a día', 'url' => '/dia-a-dia/'],
-            'author' => ['name' => 'Ana', 'url' => '/autor/ana.html'],
         ]);
+        self::assertAuthorOnSite('Ana', '/autor/ana.html', $header);
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Calma', 'url' => '/tag/calma.html']]]);
     }
 
@@ -152,7 +156,7 @@ final class PreviewPostTest extends TestCase
     {
         $page = $this->preview($post, onSite: true);
 
-        PageComponents::one($page, 'Shared:PostMeta', ['updated' => $updated, 'date' => '20 de noviembre de 2026']);
+        PageComponents::one($page, 'Shared:PostHeader', ['updated' => $updated, 'date' => '20 de noviembre de 2026']);
         self::assertSame($canonical ?? RouteNameUrlGenerator::SITE.'/', $page->canonical);
     }
 
@@ -219,9 +223,29 @@ final class PreviewPostTest extends TestCase
             $authorRepository,
             $redirects,
             new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
+            new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 
         return $page;
+    }
+
+    /**
+     * The author leads to their page by their name there, with the avatar
+     * they have on the site, from the CMS by a signed link, as on the
+     * preview of the author.
+     */
+    private static function assertAuthorOnSite(string $name, string $url, PageComponent $header): void
+    {
+        $author = $header->props['author'] ?? null;
+        self::assertIsArray($author);
+        self::assertSame([$name, $url], [$author['name'] ?? null, $author['url'] ?? null]);
+        $avatar = $author['avatar'] ?? null;
+        self::assertIsArray($avatar);
+        $src = $avatar['src'] ?? null;
+        self::assertIsString($src);
+        self::assertStringContainsString(AuthorMother::AVATAR, $src);
+        self::assertStringContainsString('_hash=', $src);
+        self::assertSame(['', 400, $name], [$avatar['srcset'] ?? null, $avatar['size'] ?? null, $avatar['alt'] ?? null]);
     }
 }

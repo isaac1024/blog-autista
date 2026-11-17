@@ -17,6 +17,11 @@ final readonly class RichText
     public const int VERSION = 1;
 
     /**
+     * Words an adult reads in a minute, in Spanish, at an unhurried pace.
+     */
+    public const int WORDS_PER_MINUTE = 200;
+
+    /**
      * @param list<Block> $blocks
      */
     public function __construct(private array $blocks)
@@ -160,6 +165,17 @@ final readonly class RichText
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The minutes it takes to read, at WORDS_PER_MINUTE, rounded up: one at
+     * least, as a text with only images or widgets is still looked at.
+     */
+    public function readingMinutes(): int
+    {
+        $words = (int) preg_match_all('/[\p{L}\p{N}]+/u', $this->plainText());
+
+        return max(1, (int) ceil($words / self::WORDS_PER_MINUTE));
     }
 
     /**

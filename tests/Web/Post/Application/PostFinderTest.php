@@ -41,6 +41,7 @@ final class PostFinderTest extends TestCase
                 CmsPostPublishedMother::OPENING_IMAGE,
                 RichText::fromArray(CmsPostPublishedMother::CONTENT),
                 'Qué cambió el primer día con tapones.',
+                1,
                 'noindex,follow',
                 '2026-11-07',
                 ClockMother::now(),
@@ -48,6 +49,28 @@ final class PostFinderTest extends TestCase
             ),
             (new PostFinder('vida-diaria', '2026-11-07', 'mi-primer-dia'))($repository),
         );
+    }
+
+    /**
+     * How long it takes to read, at 200 words a minute rounded up, as when
+     * it was published: a minute at least, whatever little it says.
+     */
+    public function testItHandsOverTheMinutesThePostTakesToRead(): void
+    {
+        foreach ([400 => 2, 401 => 3, 0 => 1] as $words => $minutes) {
+            $content = ['version' => 1, 'blocks' => 0 === $words ? [] : [
+                ['type' => 'heading', 'level' => 2, 'text' => [['text' => 'Ruido']]],
+                ['type' => 'paragraph', 'text' => [['text' => trim(str_repeat('día, ', $words - 1))]]],
+            ]];
+            $repository = self::createStub(PostRepository::class);
+            $repository->method('findAt')->willReturn(Post::publish(CmsPostPublishedMother::create(content: $content)));
+
+            self::assertSame(
+                $minutes,
+                (new PostFinder('vida-diaria', '2026-11-07', 'mi-primer-dia'))($repository)->readingMinutes,
+                \sprintf('%d words', $words),
+            );
+        }
     }
 
     public function testItThrowsWhenNoPostIsAtTheAddress(): void

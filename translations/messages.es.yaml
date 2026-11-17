@@ -1138,10 +1138,9 @@ site:
         title: 'Algo ha fallado en el blog'
         message: 'No es culpa tuya. Vuelve a intentarlo dentro de un rato.'
     post:
+        reading: '{1}1 minuto de lectura|]1,Inf[%count% minutos de lectura'
         published: 'Publicado el'
         updated: 'Actualizado el'
-        by: 'Por'
-        in: 'en'
         tags: 'Etiquetas'
     posts:
         empty: 'Todavía no hay entradas.'

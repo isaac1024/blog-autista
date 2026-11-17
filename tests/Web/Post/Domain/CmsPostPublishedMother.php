@@ -76,7 +76,8 @@ final class CmsPostPublishedMother
     }
 
     /**
-     * @param list<string> $tagIds
+     * @param list<string>                                            $tagIds
+     * @param array{version: int, blocks: list<array<string, mixed>>} $content as the CMS stores and sends it
      */
     public static function create(
         string $id = PostIdMother::DEFAULT_VALUE,
@@ -89,6 +90,7 @@ final class CmsPostPublishedMother
         Robots $robots = Robots::IndexFollow,
         string $lastPublishedAt = ClockMother::NOW,
         int $revision = 1,
+        array $content = self::CONTENT,
     ): CmsPostPublished {
         return new CmsPostPublished(
             $id,
@@ -101,7 +103,7 @@ final class CmsPostPublishedMother
             'Isaac Abreu',
             $tagIds,
             self::OPENING_IMAGE,
-            RichText::fromArray(self::CONTENT),
+            RichText::fromArray($content),
             $metaDescription,
             $robots,
             $day,

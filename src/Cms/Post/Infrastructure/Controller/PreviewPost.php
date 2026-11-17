@@ -7,6 +7,8 @@ namespace Cms\Post\Infrastructure\Controller;
 use Cms\Author\Application\AuthorOnSiteFinder;
 use Cms\Author\Application\AuthorsFinder;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\Author\Domain\AvatarFile;
+use Cms\Author\Infrastructure\Controller\AvatarUrl;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
@@ -47,6 +49,12 @@ final readonly class PreviewPost
     public const string ROBOTS = 'noindex,nofollow';
 
     /**
+     * How long the link to the avatar of its author lasts, from when the
+     * preview is painted, as on the preview of the author.
+     */
+    private const string AVATAR_VALIDITY = 'P1D';
+
+    /**
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */
     public function __construct(
@@ -59,6 +67,7 @@ final readonly class PreviewPost
         private AuthorRepository $authorRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private CmsLinkedContents $linkedContents,
+        private AvatarUrl $avatarUrl,
     ) {}
 
     public function __invoke(PostResponse $post): Page
@@ -83,6 +92,7 @@ final readonly class PreviewPost
             $post->title,
             $post->firstPublishedAt ?? $now,
             $now,
+            $content->readingMinutes(),
             $this->section($post->sectionId),
             $this->author($post->authorId),
             $this->tags($post->tagIds),
@@ -114,11 +124,11 @@ final readonly class PreviewPost
     }
 
     /**
-     * The author as the site names it, leading to its page, while it is on
-     * the site, or the one its address now leads to; otherwise as it is
-     * saved, as text, and none while unsigned.
+     * The author as the site names it, leading to its page, with the avatar
+     * it has there, while it is on the site, or the one its address now
+     * leads to; otherwise as it is saved, as text, and none while unsigned.
      *
-     * @return array{name: string, url: ?string}
+     * @return array{name: string, url: ?string, avatar: ?array{src: string, srcset: string, size: int, alt: string}}
      */
     private function author(?string $id): array
     {
@@ -140,12 +150,21 @@ final readonly class PreviewPost
         )[$id] ?? null;
 
         if (null !== $onSite) {
-            return ['name' => $onSite->name, 'url' => $this->urlGenerator->generate('web_author', ['slug' => $onSite->slug])];
+            return [
+                'name' => $onSite->name,
+                'url' => $this->urlGenerator->generate('web_author', ['slug' => $onSite->slug]),
+                'avatar' => null === $onSite->avatar ? null : [
+                    'src' => ($this->avatarUrl)($onSite->id, $onSite->avatar, Clock::now()->add(new \DateInterval(self::AVATAR_VALIDITY))),
+                    'srcset' => '',
+                    'size' => AvatarFile::SIZE,
+                    'alt' => $onSite->name,
+                ],
+            ];
         }
 
         $saved = null === $id ? [] : new AuthorsFinder([$id])($this->authorRepository);
 
-        return ['name' => $saved[0]->name ?? '', 'url' => null];
+        return ['name' => $saved[0]->name ?? '', 'url' => null, 'avatar' => null];
     }
 
     /**

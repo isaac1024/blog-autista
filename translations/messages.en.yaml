@@ -1138,10 +1138,9 @@ site:
         title: 'Something went wrong on the blog'
         message: 'It isn’t your fault. Try again in a while.'
     post:
+        reading: '{1}1 minute read|]1,Inf[%count% minutes read'
         published: 'Published on'
         updated: 'Updated on'
-        by: 'By'
-        in: 'in'
         tags: 'Tags'
     posts:
         empty: 'There are no posts yet.'

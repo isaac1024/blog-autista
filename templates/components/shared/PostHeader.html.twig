@@ -1,0 +1,31 @@
+{#
+    The section above the title, then who signs the post, beside their
+    avatar, with the date and how long it takes to read, one under the other.
+    A preview of a draft may have no author or no section yet: it says what
+    it has.
+#}
+{% macro named(item, class) %}
+{%- if item.url is not null -%}
+<a class="{{ class }} hover:text-accent-strong hover:underline hover:decoration-[0.08em] hover:underline-offset-[0.2em]" href="{{ item.url }}">{{ item.name }}</a>
+{%- else -%}
+<span class="{{ class }}">{{ item.name }}</span>
+{%- endif -%}
+{% endmacro %}
+<header class="m-0 grid gap-5">
+{% if section.name %}
+    <p class="m-0 text-base">{{ _self.named(section, 'text-accent underline decoration-[0.06em] underline-offset-[0.2em]') }}</p>
+{% endif %}
+    <h1 class="m-0 text-[clamp(2.125rem,4.5vw,3rem)] leading-[1.15] font-normal tracking-[-0.015em] text-balance break-words">{{ title }}</h1>
+    <div class="flex items-center gap-4">
+{% if author.avatar %}
+        <img class="block size-14 flex-none bg-surface object-cover" src="{{ author.avatar.src }}"{% if author.avatar.srcset is not empty %} srcset="{{ author.avatar.srcset }}" sizes="3.5rem"{% endif %} width="{{ author.avatar.size }}" height="{{ author.avatar.size }}" alt="" decoding="async">
+{% endif %}
+        <p class="m-0 text-base leading-normal text-muted">
+{% if author.name %}
+            {{ _self.named(author, 'font-bold text-text no-underline') }}<br>
+{% endif %}
+            {{ (updated ? 'site.post.updated' : 'site.post.published')|trans }} <time datetime="{{ datetime }}">{{ date }}</time><br>
+            {{ 'site.post.reading'|trans({'%count%': readingMinutes}) }}
+        </p>
+    </div>
+</header>
