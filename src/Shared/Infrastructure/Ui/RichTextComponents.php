@@ -29,6 +29,9 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
  *
  * @phpstan-import-type ExternalView from ExternalComponents
  * @phpstan-import-type PostCard from PostCards
+ *
+ * @phpstan-type RelatedView array{kind: string, summary: ?string, image: ?array{src: string, srcset: string, width: int, height: int}, section: ?string, published: ?\DateTimeImmutable}
+ * @phpstan-type LinkedContent array{url: string, title: string, external?: ExternalView, related?: RelatedView}
  */
 final readonly class RichTextComponents
 {
@@ -39,7 +42,7 @@ final readonly class RichTextComponents
      * shared, so pages, posts, terms and authors share one map.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages   the contents linked on the site, pages or posts, sections, tags, authors or external resources, with their current address and name, and all a widget paints of an external resource, keyed by id
+     * @param array<string, LinkedContent>                                                                               $pages   the contents linked on the site, pages or posts, sections, tags, authors or external resources, with their current address and name, and all a widget paints of an external resource, keyed by id
      * @param array<string, list<PostCard>>                                                                              $mosaics the cards of the posts each mosaic shows, keyed by Mosaic::key(); a mosaic with none isn't painted
      *
      * @return list<PageComponent>
@@ -98,7 +101,7 @@ final readonly class RichTextComponents
      * linking what is on the site, as an embedded image's does.
      *
      * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                   $pages as for its text
+     * @param array<string, LinkedContent>                                                                $pages as for its text
      */
     public function opening(array $image, array $pages): PageComponent
     {
@@ -139,8 +142,8 @@ final readonly class RichTextComponents
      * An external resource is painted as what it is: behind its facade, or
      * as a card that leads to it.
      *
-     * @param array{url: string, title: string, external?: ExternalView} $page
-     * @param bool                                                       $lead whether its picture, if any, is the first of the text
+     * @param LinkedContent $page
+     * @param bool          $lead whether its picture, if any, is the first of the text
      */
     private static function widget(WidgetKind $kind, array $page, bool $lead): PageComponent
     {
@@ -148,10 +151,18 @@ final readonly class RichTextComponents
             return ExternalComponents::component($page['external'], $lead);
         }
 
+        $related = $page['related'] ?? ['kind' => 'page', 'summary' => null, 'image' => null, 'section' => null, 'published' => null];
+
         return match ($kind) {
-            WidgetKind::RelatedPage => new PageComponent('Shared:ContentRelatedPage', [
-                'title' => $page['title'],
+            WidgetKind::RelatedPage => new PageComponent('Shared:ContentRelated', [
+                'kind' => $related['kind'],
                 'url' => $page['url'],
+                'title' => $page['title'],
+                'summary' => $related['summary'],
+                'image' => $related['image'],
+                'section' => $related['section'],
+                'published' => $related['published'],
+                'lead' => false,
             ]),
         };
     }

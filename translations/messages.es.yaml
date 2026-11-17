@@ -1092,8 +1092,13 @@ cms:
         submit: 'Entrar'
 
 content:
-    related_page:
-        label: 'Contenido relacionado'
+    related:
+        label:
+            page: 'Página'
+            post: 'Post'
+            section: 'Sección'
+            tag: 'Etiqueta'
+            author: 'Autoría'
     external:
         provided_by: 'de %provider%'
         open_short: 'Abrir'

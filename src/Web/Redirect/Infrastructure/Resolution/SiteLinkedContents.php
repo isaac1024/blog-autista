@@ -8,11 +8,15 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\ExternalComponents;
+use Shared\Infrastructure\Ui\RichTextComponents;
+use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
 use Web\External\Infrastructure\Ui\SiteExternalViews;
+use Web\Image\Application\ImagesOnSiteFinder;
+use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
@@ -38,6 +42,8 @@ use Web\Taxonomy\Domain\TermRepository;
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type LinkedContent from RichTextComponents
+ * @phpstan-import-type RelatedView from RichTextComponents
  */
 final readonly class SiteLinkedContents
 {
@@ -49,13 +55,14 @@ final readonly class SiteLinkedContents
         private AuthorRepository $authorRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteExternalViews $externalViews,
+        private ImageRepository $imageRepository,
     ) {}
 
     /**
      * @param array<string, array{caption: RichText}> $images  as painted, keyed by id
      * @param ?string                                 $painted the id of the content painted, linked by no text of its own
      *
-     * @return array<string, array{url: string, title: string, external?: ExternalView}>
+     * @return array<string, LinkedContent>
      */
     public function __invoke(RichText $content, array $images, ?string $painted): array
     {
@@ -68,7 +75,7 @@ final readonly class SiteLinkedContents
      *
      * @param list<array{type: string, id: string, label: ?string}> $entries
      *
-     * @return array<string, array{url: string, title: string, external?: ExternalView}>
+     * @return array<string, LinkedContent>
      */
     public function menuTargets(array $entries): array
     {
@@ -81,7 +88,7 @@ final readonly class SiteLinkedContents
     /**
      * @param \Closure(LinkType): list<string> $ids what is linked of each kind
      *
-     * @return array<string, array{url: string, title: string, external?: ExternalView}>
+     * @return array<string, LinkedContent>
      */
     private function linked(\Closure $ids, ?string $painted): array
     {
@@ -89,44 +96,84 @@ final readonly class SiteLinkedContents
             ...$this->resolve(LinkType::Page, $ids(LinkType::Page), $painted, fn (array $ids): array => array_map(fn (PageResponse $page): array => [
                 'url' => null === $page->slug ? $this->urlGenerator->generate('web_home') : $this->urlGenerator->generate('web_page', ['slug' => $page->slug]),
                 'title' => $page->title,
+                'related' => self::related('page', $page->metaDescription, null, null, null),
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
-            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
-                $post = new PostOnSiteFinder($id)($this->postRepository);
-
-                if (null === $post) {
-                    return null;
-                }
-
-                [$year, $month, $day] = explode('-', $post->day);
-
-                return ['url' => $this->urlGenerator->generate('web_post', ['section' => $post->sectionSlug, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->slug]), 'title' => $post->title];
-            })),
+            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => $this->each($ids, $this->post(...))),
             ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
                 $section = new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository);
 
                 if (null !== $section) {
-                    return ['url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug]), 'title' => $section->name];
+                    return ['url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug]), 'title' => $section->name, 'related' => self::related('section', $section->metaDescription, null, null, null)];
                 }
 
                 $tag = new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository);
 
-                return null === $tag ? null : ['url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]), 'title' => $tag->name];
+                return null === $tag ? null : ['url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]), 'title' => $tag->name, 'related' => self::related('tag', $tag->metaDescription, null, null, null)];
             })),
-            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
-                $author = new AuthorOnSiteFinder($id)($this->authorRepository);
-
-                return null === $author ? null : ['url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]), 'title' => $author->name];
-            })),
+            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, $this->author(...))),
             // No address of the site leads to an external resource, so none is redirected.
             ...($this->externalViews)($ids(LinkType::External)),
         ];
     }
 
     /**
-     * @param list<string>                                                             $ids
-     * @param \Closure(list<string>): array<string, array{url: string, title: string}> $onSite
+     * A post on the site, as a link and a card of related content show it.
      *
-     * @return array<string, array{url: string, title: string}>
+     * @return ?LinkedContent
+     */
+    private function post(string $id): ?array
+    {
+        $post = new PostOnSiteFinder($id)($this->postRepository);
+
+        if (null === $post) {
+            return null;
+        }
+
+        [$year, $month, $day] = explode('-', $post->day);
+
+        $image = new ImagesOnSiteFinder([$post->openingImageId])($this->imageRepository)[$post->openingImageId] ?? null;
+        $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
+
+        return [
+            'url' => $this->urlGenerator->generate('web_post', ['section' => $post->sectionSlug, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->slug]),
+            'title' => $post->title,
+            'related' => self::related(
+                'post',
+                $post->metaDescription,
+                null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
+                $post->sectionName,
+                $post->firstPublishedAt,
+            ),
+        ];
+    }
+
+    /**
+     * An author on the site, as a link and a card of related content show it.
+     *
+     * @return ?LinkedContent
+     */
+    private function author(string $id): ?array
+    {
+        $author = new AuthorOnSiteFinder($id)($this->authorRepository);
+
+        if (null === $author) {
+            return null;
+        }
+
+        $avatar = SiteMedia::avatar($author->avatarName, $author->name);
+
+        return [
+            'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
+            'title' => $author->name,
+            'related' => self::related('author', $author->metaDescription, ['src' => $avatar['src'], 'srcset' => $avatar['srcset'], 'width' => $avatar['size'], 'height' => $avatar['size']], null, null),
+        ];
+    }
+
+    /**
+     * @param list<string>                                         $ids
+     * @param \Closure(list<string>): array<string, LinkedContent> $onSite
+     *
+     * @return array<string, LinkedContent>
      */
     private function resolve(LinkType $type, array $ids, ?string $painted, \Closure $onSite): array
     {
@@ -134,10 +181,10 @@ final readonly class SiteLinkedContents
     }
 
     /**
-     * @param list<string>                                         $ids
-     * @param \Closure(string): ?array{url: string, title: string} $find
+     * @param list<string>                     $ids
+     * @param \Closure(string): ?LinkedContent $find
      *
-     * @return array<string, array{url: string, title: string}>
+     * @return array<string, LinkedContent>
      */
     private function each(array $ids, \Closure $find): array
     {
@@ -152,5 +199,18 @@ final readonly class SiteLinkedContents
         }
 
         return $found;
+    }
+
+    /**
+     * What a card of related content shows of a content of the blog, beside
+     * its name.
+     *
+     * @param ?array{src: string, srcset: string, width: int, height: int} $image
+     *
+     * @return RelatedView
+     */
+    private static function related(string $kind, ?string $summary, ?array $image, ?string $section, ?\DateTimeImmutable $published): array
+    {
+        return ['kind' => $kind, 'summary' => $summary, 'image' => $image, 'section' => $section, 'published' => $published];
     }
 }

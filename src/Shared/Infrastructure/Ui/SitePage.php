@@ -17,6 +17,7 @@ use Shared\Infrastructure\Ui\Page\Page;
  * previews it the same.
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type LinkedContent from RichTextComponents
  * @phpstan-import-type PostCard from PostCards
  */
 final readonly class SitePage
@@ -29,7 +30,7 @@ final readonly class SitePage
      * site, isn't painted, and text linking it stays plain.
      *
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
+     * @param array<string, LinkedContent>                                                                               $pages
      * @param array<string, list<PostCard>>                                                                              $mosaics the cards of each mosaic, keyed by Mosaic::key()
      */
     public function __invoke(
@@ -69,7 +70,7 @@ final readonly class SitePage
      * The origins of the resources the widgets of the content embed, which
      * the page lets frame them, each once: those of a page, and of a post.
      *
-     * @param array<string, array{url: string, title: string, external?: ExternalView}> $pages
+     * @param array<string, LinkedContent> $pages
      *
      * @return list<string>
      */

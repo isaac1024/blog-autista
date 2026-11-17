@@ -19,6 +19,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * was first published.
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type LinkedContent from RichTextComponents
  */
 final readonly class SitePostPage
 {
@@ -43,7 +44,7 @@ final readonly class SitePostPage
      * @param list<array{name: string, url: string}>                                                                     $tags    those on the site, in order
      * @param ?array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}               $opening as SiteMedia::image() paints it, null for none
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
+     * @param array<string, LinkedContent>                                                                               $pages
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")
      */

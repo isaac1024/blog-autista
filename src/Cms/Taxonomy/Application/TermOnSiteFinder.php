@@ -27,6 +27,6 @@ final readonly class TermOnSiteFinder
 
         return null === $version || null === $slug
             ? null
-            : new TermOnSiteResponse($version->name()->value(), $slug->value());
+            : new TermOnSiteResponse($version->name()->value(), $slug->value(), $version->seo()->description());
     }
 }

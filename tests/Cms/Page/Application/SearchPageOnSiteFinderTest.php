@@ -24,7 +24,7 @@ final class SearchPageOnSiteFinderTest extends TestCase
             ->with(PageType::Search)
             ->willReturn(PageMother::published(title: 'Otra', slug: 'buscar', type: PageType::Search, publishedTitle: 'Buscar'));
 
-        self::assertEquals(new PageOnSiteResponse('Buscar', 'buscar'), new SearchPageOnSiteFinder()($repository));
+        self::assertEquals(new PageOnSiteResponse('Buscar', 'buscar', PageMother::META_DESCRIPTION), new SearchPageOnSiteFinder()($repository));
     }
 
     public function testItFindsNoneWhileThePageThatSearchesIsOffTheSite(): void

@@ -45,8 +45,8 @@ final class PagesOnSiteFinderTest extends TestCase
         ]);
 
         self::assertEquals([
-            self::ABOUT => new PageOnSiteResponse('Sobre mí', 'sobre-mi'),
-            self::HOME => new PageOnSiteResponse('Portada', null),
+            self::ABOUT => new PageOnSiteResponse('Sobre mí', 'sobre-mi', PageMother::META_DESCRIPTION),
+            self::HOME => new PageOnSiteResponse('Portada', null, PageMother::META_DESCRIPTION),
         ], new PagesOnSiteFinder([self::ABOUT, self::HOME])($repository));
     }
 

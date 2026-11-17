@@ -95,7 +95,7 @@ final class PreviewPageTest extends TestCase
             ['href' => null, 'runs' => [['text' => 'Borrador', 'bold' => false]]],
         ], $blocks[0]->props['text']);
         self::assertSame('Alt publicado', $blocks[1]->props['alt']);
-        self::assertSame(['title' => 'Destino publicado', 'url' => '/publicada.html'], $blocks[2]->props);
+        self::assertSame(['title' => 'Destino publicado', 'url' => '/publicada.html'], ['title' => $blocks[2]->props['title'], 'url' => $blocks[2]->props['url']]);
         self::assertSame('Sobre mí', $result->main[0]->props['title']);
     }
 
@@ -283,10 +283,10 @@ final class PreviewPageTest extends TestCase
         return new PreviewPage(
             $urlGenerator,
             new SitePage(new RichTextComponents()),
-            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))), self::createStub(PageRepository::class)),
+            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Author\Infrastructure\Controller\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
             $imageRepository,
             $redirectsByOrigin,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Author\Infrastructure\Controller\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
             new CmsMosaics(new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
         );
     }

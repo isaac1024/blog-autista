@@ -14,6 +14,7 @@ use Shared\Infrastructure\Ui\Page\Page;
  * serves it this way, and the CMS previews it the same.
  *
  * @phpstan-import-type ExternalView from ExternalComponents
+ * @phpstan-import-type LinkedContent from RichTextComponents
  * @phpstan-import-type PostCard from PostCards
  */
 final readonly class SiteAuthorPage
@@ -26,7 +27,7 @@ final readonly class SiteAuthorPage
      *
      * @param ?array{src: string, srcset: string, size: int, alt: string}                                                $avatar  null for none, as a draft may have
      * @param array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}> $images  as SiteMedia::image() paints them
-     * @param array<string, array{url: string, title: string, external?: ExternalView}>                                  $pages
+     * @param array<string, LinkedContent>                                                                               $pages
      * @param array<string, list<PostCard>>                                                                              $mosaics the cards of each mosaic, keyed by Mosaic::key()
      *
      * @SuppressWarnings("PHPMD.ExcessiveParameterList")

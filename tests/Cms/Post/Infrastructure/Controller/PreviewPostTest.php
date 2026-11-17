@@ -215,14 +215,14 @@ final class PreviewPostTest extends TestCase
 
         $page = new PreviewPost(
             $urlGenerator,
-            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))), self::createStub(PageRepository::class)),
+            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
             new SitePostPage(new RichTextComponents(), $translator),
             new PostUrl($urlGenerator),
             $imageRepository,
             $termRepository,
             $authorRepository,
             $redirects,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
             new AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);

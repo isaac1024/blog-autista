@@ -22,6 +22,6 @@ final readonly class AuthorOnSiteFinder
 
         return null === $version || null === $slug
             ? null
-            : new AuthorOnSiteResponse($this->id, $version->name()->value(), $slug->value(), $version->avatar()?->value());
+            : new AuthorOnSiteResponse($this->id, $version->name()->value(), $slug->value(), $version->avatar()?->value(), $version->seo()->description());
     }
 }

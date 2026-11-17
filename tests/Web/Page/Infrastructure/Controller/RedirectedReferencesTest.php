@@ -129,7 +129,7 @@ final class RedirectedReferencesTest extends KernelTestCase
 
     public function testItShowsTheWidgetOfAPageOffTheSiteAsThePageItsAddressLeadsTo(): void
     {
-        $widget = $this->components($this->paint(), 'Shared:ContentRelatedPage')[0] ?? self::fail('No widget painted.');
+        $widget = $this->components($this->paint(), 'Shared:ContentRelated')[0] ?? self::fail('No widget painted.');
 
         self::assertSame(['title' => 'Página B', 'url' => '/pagina-b.html'], ['title' => $widget->props['title'], 'url' => $widget->props['url']]);
     }

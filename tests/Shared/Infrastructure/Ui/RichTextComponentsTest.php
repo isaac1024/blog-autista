@@ -233,7 +233,7 @@ final class RichTextComponentsTest extends TestCase
         ]]), [], [self::PUBLISHED => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí']], []);
 
         self::assertSame(
-            ['Shared:ContentParagraph', 'Shared:ContentRelatedPage', 'Shared:ContentParagraph'],
+            ['Shared:ContentParagraph', 'Shared:ContentRelated', 'Shared:ContentParagraph'],
             array_map(static fn (PageComponent $component): string => $component->name, $components),
         );
     }
@@ -256,7 +256,9 @@ final class RichTextComponentsTest extends TestCase
 
         $components = new RichTextComponents()($content, [], [
             self::PUBLISHED => ['url' => '/vida-diaria/2026/11/07/un-post.html', 'title' => 'Un post'],
-            self::OTHER_PUBLISHED => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
+            self::OTHER_PUBLISHED => ['url' => '/autor/isaac.html', 'title' => 'Isaac', 'related' => [
+                'kind' => 'author', 'summary' => 'Quién escribe.', 'image' => self::PICTURE, 'section' => null, 'published' => null,
+            ]],
         ], []);
 
         self::assertSame([
@@ -264,7 +266,16 @@ final class RichTextComponentsTest extends TestCase
             ['href' => '/autor/isaac.html', 'runs' => [['text' => ' y un autor', 'bold' => false]]],
             ['href' => null, 'runs' => [['text' => ' y una sección que no está', 'bold' => false]]],
         ], $components[0]->props['text']);
-        self::assertSame(['Shared:ContentRelatedPage', ['title' => 'Isaac', 'url' => '/autor/isaac.html']], [$components[1]->name, $components[1]->props]);
+        self::assertSame(['Shared:ContentRelated', [
+            'kind' => 'author',
+            'url' => '/autor/isaac.html',
+            'title' => 'Isaac',
+            'summary' => 'Quién escribe.',
+            'image' => self::PICTURE,
+            'section' => null,
+            'published' => null,
+            'lead' => true,
+        ]], [$components[1]->name, $components[1]->props]);
         self::assertSame([], $content->pageIds());
     }
 

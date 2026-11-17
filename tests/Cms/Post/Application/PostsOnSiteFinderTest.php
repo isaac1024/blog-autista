@@ -14,6 +14,7 @@ use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\TestCase;
+use Shared\Tests\Domain\ClockMother;
 
 final class PostsOnSiteFinderTest extends TestCase
 {
@@ -23,7 +24,8 @@ final class PostsOnSiteFinderTest extends TestCase
 
     /**
      * The site shows the title and address a post was published with, not
-     * those edited since; one never published, or taken off, is not on it,
+     * those edited since, with what a card of it shows and the moment it was
+     * first published; one never published, or taken off, is not on it,
      * and what is not an id never reaches the repository.
      */
     public function testItGivesThePostsOnTheSiteAsTheSiteServesThem(): void
@@ -37,7 +39,7 @@ final class PostsOnSiteFinderTest extends TestCase
         $repository->method('find')->willReturnCallback(static fn (PostId $id): ?Post => $posts[$id->value()] ?? null);
 
         self::assertEquals(
-            [PostIdMother::DEFAULT_VALUE => new PostOnSiteResponse(PostMother::TITLE, new PostAddressResponse(TermMother::SLUG, '2026-11-07', PostMother::SLUG))],
+            [PostIdMother::DEFAULT_VALUE => new PostOnSiteResponse(PostMother::TITLE, new PostAddressResponse(TermMother::SLUG, '2026-11-07', PostMother::SLUG), PostMother::META_DESCRIPTION, PostMother::SECTION, PostMother::OPENING_IMAGE, ClockMother::now())],
             new PostsOnSiteFinder([PostIdMother::DEFAULT_VALUE, self::DRAFT, 'mi-post', self::OFF_SITE, PostIdMother::DEFAULT_VALUE])($repository),
         );
     }

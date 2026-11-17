@@ -27,7 +27,7 @@ final class AuthorOnSiteFinderTest extends TestCase
             ->willReturn(AuthorMother::published(name: 'Otro nombre', publishedName: AuthorMother::NAME, avatar: AuthorMother::OTHER_AVATAR, publishedAvatar: AuthorMother::AVATAR));
 
         self::assertEquals(
-            new AuthorOnSiteResponse(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, AuthorMother::AVATAR),
+            new AuthorOnSiteResponse(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, AuthorMother::AVATAR, AuthorMother::META_DESCRIPTION),
             new AuthorOnSiteFinder(AuthorIdMother::DEFAULT_VALUE)($repository),
         );
     }

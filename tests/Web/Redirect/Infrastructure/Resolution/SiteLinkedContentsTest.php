@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Author\Domain\Author;
 use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\CmsAuthorPublished;
+use Web\Image\Domain\Image;
+use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Domain\CmsPostPublished;
@@ -19,6 +21,7 @@ use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
@@ -44,6 +47,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
     protected function setUp(): void
     {
         self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi')));
+        self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: CmsPostPublishedMother::OPENING_IMAGE, path: '2026/11/faro.webp')));
         self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::DEFAULT_VALUE, CmsPostPublishedMother::body() + ['revision' => 1])));
         $terms = self::getContainer()->get(TermRepository::class);
         $terms->save(self::term(self::SECTION, 'section', 'Vida diaria', 'vida-diaria'));
@@ -63,6 +67,42 @@ final class SiteLinkedContentsTest extends KernelTestCase
         // author off it whose address leads to a page: not one of its kind.
         self::redirect('01a1b801-ce58-723d-8234-b76d9105c001', '/tag/ruido.html', 'term', self::TAG, 'term', self::GONE_TAG);
         self::redirect('01a1b801-ce58-723d-8234-b76d9105c002', '/autor/ana.html', 'page', self::PAGE, 'author', self::GONE_AUTHOR);
+    }
+
+    /**
+     * A card of related content shows what each kind says of itself to
+     * search engines; a post, its section, the day it was first published
+     * and its opening image too; an author, their avatar.
+     */
+    public function testItTellsWhatACardOfRelatedContentShowsOfEachKind(): void
+    {
+        $content = self::text(['page_id' => self::PAGE], ['post_id' => PostIdMother::DEFAULT_VALUE], ['term_id' => self::SECTION], ['term_id' => self::TAG], ['author_id' => self::AUTHOR]);
+
+        $related = array_map(
+            static fn (array $linked): mixed => $linked['related'] ?? null,
+            self::getContainer()->get(SiteLinkedContents::class)($content, [], null),
+        );
+
+        $nothing = ['image' => null, 'section' => null, 'published' => null];
+        self::assertEquals([
+            self::PAGE => ['kind' => 'page', 'summary' => 'Quién escribe este blog sobre autismo y por qué.', ...$nothing],
+            PostIdMother::DEFAULT_VALUE => [
+                'kind' => 'post',
+                'summary' => 'Qué cambió el primer día con tapones.',
+                'image' => ['src' => '/media/2026/11/faro-1200w.webp', 'srcset' => '/media/2026/11/faro-400w.webp 400w, /media/2026/11/faro-800w.webp 800w, /media/2026/11/faro-1200w.webp 1200w', 'width' => 1200, 'height' => 675],
+                'section' => 'Vida diaria',
+                'published' => new \DateTimeImmutable('2026-11-07T10:00:00+00:00'),
+            ],
+            self::SECTION => ['kind' => 'section', 'summary' => 'Sobre esto.', ...$nothing],
+            self::TAG => ['kind' => 'tag', 'summary' => 'Sobre esto.', ...$nothing],
+            self::AUTHOR => [
+                'kind' => 'author',
+                'summary' => 'Quién escribe.',
+                'image' => ['src' => '/media/autores/isaac-68f1e2a357-400w.webp', 'srcset' => '/media/autores/isaac-68f1e2a357-96w.webp 96w, /media/autores/isaac-68f1e2a357-200w.webp 200w, /media/autores/isaac-68f1e2a357-400w.webp 400w', 'width' => 400, 'height' => 400],
+                'section' => null,
+                'published' => null,
+            ],
+        ], $related);
     }
 
     public function testItFindsEveryKindOfContentLinkedWhereTheSiteServesIt(): void
@@ -87,7 +127,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
             self::AUTHOR => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
             self::TAG => ['url' => '/tag/sueno.html', 'title' => 'Sueño'],
             self::GONE_TAG => ['url' => '/tag/sueno.html', 'title' => 'Sueño'],
-        ], $linked);
+        ], array_map(static fn (array $linked): array => ['url' => $linked['url'], 'title' => $linked['title']], $linked));
     }
 
     /**

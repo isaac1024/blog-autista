@@ -24,7 +24,7 @@ final class CookiePolicyOnSiteFinderTest extends TestCase
             ->with(PageType::CookiePolicy)
             ->willReturn(PageMother::published(title: 'Otra', slug: 'cookies', type: PageType::CookiePolicy, publishedTitle: 'Política de cookies'));
 
-        self::assertEquals(new PageOnSiteResponse('Política de cookies', 'cookies'), new CookiePolicyOnSiteFinder()($repository));
+        self::assertEquals(new PageOnSiteResponse('Política de cookies', 'cookies', PageMother::META_DESCRIPTION), new CookiePolicyOnSiteFinder()($repository));
     }
 
     public function testItFindsNoneWhileTheCookiePolicyIsOffTheSite(): void

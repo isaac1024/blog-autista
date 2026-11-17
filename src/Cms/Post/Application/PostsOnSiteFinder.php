@@ -36,9 +36,18 @@ final readonly class PostsOnSiteFinder
 
             $version = $post?->onSite();
             $address = $post?->publishedAddress();
+            $section = $version?->classification()->section();
+            $firstPublishedAt = $post?->timeline()->firstPublishedAt();
 
-            if (null !== $version && null !== $address) {
-                $posts[$id] = new PostOnSiteResponse($version->title()->value(), PostAddressResponse::fromAddress($address));
+            if (null !== $version && null !== $address && null !== $section && null !== $firstPublishedAt) {
+                $posts[$id] = new PostOnSiteResponse(
+                    $version->title()->value(),
+                    PostAddressResponse::fromAddress($address),
+                    $version->seo()->description(),
+                    $section->value(),
+                    $version->openingImage()?->value(),
+                    $firstPublishedAt,
+                );
             }
         }
 

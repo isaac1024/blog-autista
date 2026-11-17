@@ -1092,8 +1092,13 @@ cms:
         submit: 'Sign in'
 
 content:
-    related_page:
-        label: 'Related content'
+    related:
+        label:
+            page: 'Page'
+            post: 'Post'
+            section: 'Section'
+            tag: 'Tag'
+            author: 'Author'
     external:
         provided_by: 'on %provider%'
         open_short: 'Open'
