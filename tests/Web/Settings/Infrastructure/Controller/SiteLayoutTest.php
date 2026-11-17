@@ -189,7 +189,7 @@ final class SiteLayoutTest extends TestCase
                 'description' => 'Quién escribe este blog.',
             ],
         ], $layout->page('Sobre mí')->structuredData);
-        self::assertSame('/isaac.html', $layout->publisherUrl());
+        self::assertSame('/isaac.html', $layout->pageWithPublisher('Sobre mí')['publisherUrl']);
 
         // On the page of that author, the person is told once, as the page tells it.
         $profile = StructuredData::person('/isaac.html', 'Isaac Abreu', null, 'Otra descripción.');
@@ -214,12 +214,12 @@ final class SiteLayoutTest extends TestCase
             $layout = self::layout(Settings::publish(Event::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: $authorId)), $pages, $images, $authors);
 
             self::assertSame([['@type' => 'WebSite', '@id' => '/#website', 'url' => '/', 'name' => Event::NAME, 'inLanguage' => 'es']], $layout->page('Sobre mí')->structuredData);
-            self::assertNull($layout->publisherUrl());
+            self::assertNull($layout->pageWithPublisher('Sobre mí')['publisherUrl']);
         }
 
         $unpublished = self::layout(null, $pages, $images, $authors);
         self::assertSame([], $unpublished->page('Sobre mí')->structuredData);
-        self::assertNull($unpublished->publisherUrl());
+        self::assertNull($unpublished->pageWithPublisher('Sobre mí')['publisherUrl']);
     }
 
     private static function layout(?Settings $settings, PageRepository $pages, ImageRepository $images, ?AuthorRepository $authors = null): SiteLayout

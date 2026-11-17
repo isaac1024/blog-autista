@@ -57,11 +57,23 @@ final readonly class SiteLayout
 
     public function page(string $title): Page
     {
+        return $this->pageWithPublisher($title)['page'];
+    }
+
+    /**
+     * The page, and the address of the page of the author of the blog, the
+     * one search engines take as who publishes it, while they are on the
+     * site: both from one reading of the settings.
+     *
+     * @return array{page: Page, publisherUrl: ?string}
+     */
+    public function pageWithPublisher(string $title): array
+    {
         $settings = new SettingsOnSiteFinder()($this->settingsRepository);
         $homeUrl = $this->urlGenerator->generate('web_home');
 
         if (null === $settings) {
-            return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], $this->searchUrl(), null));
+            return ['page' => WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], $this->searchUrl(), null)), 'publisherUrl' => null];
         }
 
         $targets = $this->linkedContents->menuTargets([...$settings->mainMenu, ...$settings->footerMenu]);
@@ -77,24 +89,9 @@ final readonly class SiteLayout
         $publisher = $this->publisher($settings);
         $page = $page->withStructuredData(StructuredData::website($home, $settings->name, $publisher['url'] ?? null));
 
-        return null === $publisher ? $page : $page->withStructuredData($publisher['node']);
-    }
-
-    /**
-     * The address of the page of the author of the blog, the one search
-     * engines take as who publishes it, while they are on the site.
-     */
-    public function publisherUrl(): ?string
-    {
-        $settings = new SettingsOnSiteFinder()($this->settingsRepository);
-
-        if (null === $settings) {
-            return null;
-        }
-
-        $publisher = $this->publisher($settings);
-
-        return null === $publisher ? null : $publisher['url'];
+        return null === $publisher
+            ? ['page' => $page, 'publisherUrl' => null]
+            : ['page' => $page->withStructuredData($publisher['node']), 'publisherUrl' => $publisher['url']];
     }
 
     /**

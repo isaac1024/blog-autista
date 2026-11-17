@@ -13,7 +13,8 @@ use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Application\PostResponse;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
-use Web\Taxonomy\Application\TermOnSiteFinder;
+use Web\Taxonomy\Application\TermResponse;
+use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -45,17 +46,16 @@ final readonly class SitePostCards
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
-        $sections = [];
-
-        foreach (array_unique(array_map(static fn (PostResponse $post): string => $post->sectionId, $posts)) as $id) {
-            $sections[$id] = new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository)?->name;
-        }
+        $sections = array_filter(
+            new TermsOnSiteFinder(array_values(array_unique(array_map(static fn (PostResponse $post): string => $post->sectionId, $posts))))($this->termRepository),
+            static fn (TermResponse $term): bool => Taxonomy::Section->value === $term->taxonomy,
+        );
 
         return array_map(fn (PostResponse $post): array => [
             'url' => $this->url($post),
             'title' => $post->title,
             'excerpt' => $post->metaDescription,
-            'section' => $sections[$post->sectionId] ?? $post->sectionName,
+            'section' => $sections[$post->sectionId]->name ?? $post->sectionName,
             'firstPublishedAt' => $post->firstPublishedAt,
             'image' => self::image($images[$post->openingImageId] ?? null),
         ], $posts);

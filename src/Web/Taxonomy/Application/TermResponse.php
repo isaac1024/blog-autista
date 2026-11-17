@@ -13,11 +13,13 @@ use Web\Taxonomy\Domain\Term;
 final readonly class TermResponse
 {
     /**
+     * @param string  $taxonomy        one of the Taxonomy values
      * @param ?string $metaDescription null when there is none
      * @param string  $robots          one of the Robots values
      */
     public function __construct(
         public string $id,
+        public string $taxonomy,
         public string $name,
         public string $slug,
         public ?string $metaDescription,
@@ -28,6 +30,7 @@ final readonly class TermResponse
     {
         return new self(
             $term->id()->value(),
+            $term->taxonomy()->value,
             $term->name(),
             $term->slug(),
             $term->metaDescription(),

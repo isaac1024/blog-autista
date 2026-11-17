@@ -42,6 +42,44 @@ final class DoctrineTermRepositoryTest extends KernelTestCase
         self::assertNull($this->repository()->findBySlug(Taxonomy::Section, 'dia-a-dia'));
     }
 
+    /**
+     * The terms among those asked for, of any taxonomy, in one query; those
+     * it doesn't have are left out.
+     */
+    public function testItFindsTheTermsAmongThoseGiven(): void
+    {
+        $tag = TermIdMother::random();
+        $missing = TermIdMother::random();
+        $this->repository()->save(Term::publish(CmsTermPublishedMother::create()));
+        $this->repository()->save(Term::publish(CmsTermPublishedMother::create(id: $tag->value(), taxonomy: Taxonomy::Tag, name: 'Etiqueta')));
+        $this->repository()->save(Term::publish(CmsTermPublishedMother::create(id: TermIdMother::random()->value(), slug: 'dia-a-dia', name: 'No pedida')));
+        $this->entityManager()->clear();
+
+        $names = array_map(static fn (Term $term): string => $term->name(), $this->repository()->findByIds([$missing, $tag, TermIdMother::create()]));
+        sort($names);
+
+        self::assertSame(['Etiqueta', 'Vida diaria'], $names);
+        self::assertSame([], $this->repository()->findByIds([]));
+    }
+
+    /**
+     * A term already read is handed over as read, beside those it reads.
+     */
+    public function testItFindsTheTermsAlreadyReadWithThoseItReads(): void
+    {
+        $tag = TermIdMother::random();
+        $this->repository()->save(Term::publish(CmsTermPublishedMother::create()));
+        $this->repository()->save(Term::publish(CmsTermPublishedMother::create(id: $tag->value(), taxonomy: Taxonomy::Tag, name: 'Etiqueta')));
+        $this->entityManager()->clear();
+        $read = $this->repository()->find(TermIdMother::create());
+
+        $terms = $this->repository()->findByIds([TermIdMother::create(), $tag]);
+
+        self::assertCount(2, $terms);
+        self::assertSame($read, $terms[0]);
+        self::assertSame('Etiqueta', $terms[1]->name());
+    }
+
     public function testItDeletesOnlyTheGivenTerm(): void
     {
         $kept = Term::publish(CmsTermPublishedMother::create(id: TermIdMother::random()->value(), slug: 'dia-a-dia'));

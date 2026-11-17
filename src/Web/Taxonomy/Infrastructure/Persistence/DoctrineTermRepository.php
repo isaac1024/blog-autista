@@ -41,6 +41,42 @@ final readonly class DoctrineTermRepository implements TermRepository
     }
 
     #[\Override]
+    public function findByIds(array $ids): array
+    {
+        // A term already read in this request, such as the section of the
+        // page of a section, is taken as read, as find() takes it: only the
+        // others are asked for, if any.
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+        $loaded = [];
+        $missing = [];
+
+        foreach ($ids as $id) {
+            $term = $unitOfWork->tryGetById($id->value(), Term::class);
+
+            if ($term instanceof Term) {
+                $loaded[] = $term;
+            } else {
+                $missing[] = $id->value();
+            }
+        }
+
+        if ([] === $missing) {
+            return $loaded;
+        }
+
+        /** @var list<Term> $terms */
+        $terms = $this->entityManager->createQueryBuilder()
+            ->select('term')
+            ->from(Term::class, 'term')
+            ->where('term.id IN (:ids)')
+            ->setParameter('ids', $missing)
+            ->getQuery()
+            ->getResult();
+
+        return [...$loaded, ...$terms];
+    }
+
+    #[\Override]
     public function findBySlug(Taxonomy $taxonomy, string $slug): ?Term
     {
         return $this->entityManager->getRepository(Term::class)->findOneBy(['taxonomy' => $taxonomy, 'slug' => $slug]);

@@ -22,7 +22,8 @@ use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
-use Web\Taxonomy\Application\TermOnSiteFinder;
+use Web\Taxonomy\Application\TermResponse;
+use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -99,21 +100,32 @@ final readonly class SiteLinkedContents
                 'related' => self::related('page', $page->metaDescription, null, null, null),
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
             ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => $this->each($ids, $this->post(...))),
-            ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
-                $section = new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository);
-
-                if (null !== $section) {
-                    return ['url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug]), 'title' => $section->name, 'related' => self::related('section', $section->metaDescription, null, null, null)];
-                }
-
-                $tag = new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository);
-
-                return null === $tag ? null : ['url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]), 'title' => $tag->name, 'related' => self::related('tag', $tag->metaDescription, null, null, null)];
-            })),
+            ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, $this->terms(...)),
             ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, $this->author(...))),
             // No address of the site leads to an external resource, so none is redirected.
             ...($this->externalViews)($ids(LinkType::External)),
         ];
+    }
+
+    /**
+     * The sections and the tags on the site among those given, read at
+     * once, as a link and a card of related content show them.
+     *
+     * @param list<string> $ids
+     *
+     * @return array<string, LinkedContent>
+     */
+    private function terms(array $ids): array
+    {
+        return array_map(function (TermResponse $term): array {
+            $kind = Taxonomy::Section->value === $term->taxonomy ? 'section' : 'tag';
+
+            return [
+                'url' => $this->urlGenerator->generate('web_'.$kind, ['slug' => $term->slug]),
+                'title' => $term->name,
+                'related' => self::related($kind, $term->metaDescription, null, null, null),
+            ];
+        }, new TermsOnSiteFinder($ids)($this->termRepository));
     }
 
     /**

@@ -26,7 +26,7 @@ final class TermFinderTest extends TestCase
             ->willReturn(Term::publish(CmsTermPublishedMother::create(taxonomy: Taxonomy::Tag, robots: Robots::NoindexFollow)));
 
         self::assertEquals(
-            new TermResponse(TermIdMother::DEFAULT_VALUE, 'Vida diaria', 'vida-diaria', 'Artículos sobre la vida diaria.', 'noindex,follow'),
+            new TermResponse(TermIdMother::DEFAULT_VALUE, 'tag', 'Vida diaria', 'vida-diaria', 'Artículos sobre la vida diaria.', 'noindex,follow'),
             (new TermFinder('tag', 'vida-diaria'))($repository),
         );
     }

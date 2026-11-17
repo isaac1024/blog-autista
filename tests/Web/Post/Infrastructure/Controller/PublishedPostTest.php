@@ -72,14 +72,20 @@ final class PublishedPostTest extends TestCase
      * The largest copy of the opening image of the post, which it is shared with.
      */
     private const string OPENING_SRC = '/media/2026/11/'.CmsPostPublishedMother::OPENING_IMAGE.'-1200w.webp';
+    /**
+     * How many times the post composed read the terms, and the settings.
+     */
+    private int $termReads = 0;
+
+    private int $settingsReads = 0;
 
     public function testItLeadsToTheSectionTheAuthorAndTheTagsOnTheSiteByTheirNamesThere(): void
     {
         $page = $this->compose(
             [self::TAG, self::OTHER_TAG],
             terms: [
-                self::SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
-                self::OTHER_TAG => self::term('tag', 'Ruido', 'ruido'),
+                self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
+                self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
             ],
             authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
         );
@@ -98,7 +104,7 @@ final class PublishedPostTest extends TestCase
 
     public function testItNamesTheSectionAndTheAuthorOffTheSiteAsTheyWereWhenPublishedWithoutLinks(): void
     {
-        $page = $this->compose([self::TAG], terms: [self::SECTION => self::term('tag', 'Vida diaria', 'vida-diaria')]);
+        $page = $this->compose([self::TAG], terms: [self::SECTION => self::term(self::SECTION, 'tag', 'Vida diaria', 'vida-diaria')]);
 
         PageComponents::one($page, 'Shared:PostHeader', [
             'section' => ['name' => 'Vida diaria', 'url' => null],
@@ -117,8 +123,8 @@ final class PublishedPostTest extends TestCase
         $page = $this->compose(
             [self::TAG, self::OTHER_TAG, self::THIRD_TAG],
             terms: [
-                self::NEW_SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
-                self::NEW_TAG => self::term('tag', 'Calma', 'calma'),
+                self::NEW_SECTION => self::term(self::NEW_SECTION, 'section', 'Día a día', 'dia-a-dia'),
+                self::NEW_TAG => self::term(self::NEW_TAG, 'tag', 'Calma', 'calma'),
             ],
             authors: [self::NEW_AUTHOR => self::author('Isaac', 'isaac')],
             redirects: [
@@ -144,7 +150,7 @@ final class PublishedPostTest extends TestCase
      */
     public function testItNamesASectionWhoseAddressLeadsToNoSectionAsItWas(): void
     {
-        $page = $this->compose([], terms: [self::NEW_TAG => self::term('tag', 'Calma', 'calma')], redirects: [
+        $page = $this->compose([], terms: [self::NEW_TAG => self::term(self::NEW_TAG, 'tag', 'Calma', 'calma')], redirects: [
             new Redirect('term', self::NEW_TAG, self::SECTION),
             new Redirect(null, null, self::AUTHOR),
         ]);
@@ -243,8 +249,8 @@ final class PublishedPostTest extends TestCase
         $page = $this->compose(
             [self::TAG, self::OTHER_TAG],
             terms: [
-                self::SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
-                self::OTHER_TAG => self::term('tag', 'Ruido', 'ruido'),
+                self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
+                self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
             ],
             authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
             images: [self::image(CmsPostPublishedMother::OPENING_IMAGE, 'Andén del metro vacío')],
@@ -288,8 +294,8 @@ final class PublishedPostTest extends TestCase
         $page = $this->compose(
             [self::TAG, self::OTHER_TAG],
             terms: [
-                self::SECTION => self::term('section', 'Día a día', 'dia-a-dia'),
-                self::OTHER_TAG => self::term('tag', 'Ruido', 'ruido'),
+                self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
+                self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
             ],
         );
 
@@ -328,6 +334,26 @@ final class PublishedPostTest extends TestCase
     {
         yield 'another author than who publishes the blog' => [self::NEW_AUTHOR, 'Ana', 'ana', 2];
         yield 'the author who publishes the blog' => [self::AUTHOR, 'Isaac', 'isaac', 1];
+    }
+
+    /**
+     * The section and all the tags, however many, are read at once; the
+     * settings, once for the whole page.
+     */
+    public function testItReadsItsTermsAtOnceAndTheSettingsOnce(): void
+    {
+        $this->compose(
+            [self::TAG, self::OTHER_TAG, self::THIRD_TAG],
+            terms: [
+                self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
+                self::TAG => self::term(self::TAG, 'tag', 'Calma', 'calma'),
+                self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
+                self::THIRD_TAG => self::term(self::THIRD_TAG, 'tag', 'Sueño', 'sueno'),
+            ],
+            settings: Settings::publish(CmsSettingsPublishedMother::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: self::AUTHOR)),
+        );
+
+        self::assertSame(['terms' => 1, 'settings' => 1], ['terms' => $this->termReads, 'settings' => $this->settingsReads]);
     }
 
     /**
@@ -377,7 +403,14 @@ final class PublishedPostTest extends TestCase
         $translator = new CatalogueTranslator();
         $translator->setLocale('es');
         $termRepository = self::createStub(TermRepository::class);
-        $termRepository->method('find')->willReturnCallback(static fn (TermId $id): ?Term => $terms[$id->value()] ?? null);
+        $termRepository->method('findByIds')->willReturnCallback(
+            function (array $ids) use ($terms): array {
+                // As the repository, which asks for no term when given none.
+                $this->termReads += [] === $ids ? 0 : 1;
+
+                return array_values(array_filter(array_map(static fn (mixed $id): ?Term => $id instanceof TermId ? $terms[$id->value()] ?? null : null, $ids)));
+            },
+        );
         $authorRepository = self::createStub(AuthorRepository::class);
         $authorRepository->method('find')->willReturnCallback(static fn (AuthorId $id): ?Author => $authors[$id->value()] ?? null);
         $imageRepository = self::createStub(ImageRepository::class);
@@ -400,7 +433,11 @@ final class PublishedPostTest extends TestCase
         ));
 
         $settingsRepository = self::createStub(SettingsRepository::class);
-        $settingsRepository->method('find')->willReturn($settings);
+        $settingsRepository->method('find')->willReturnCallback(function () use ($settings): ?Settings {
+            ++$this->settingsReads;
+
+            return $settings;
+        });
 
         $page = new PublishedPost(
             $urlGenerator,
@@ -422,9 +459,9 @@ final class PublishedPostTest extends TestCase
         return Image::publish(CmsImagePublishedMother::create(id: $id, alt: $alt, path: '2026/11/'.$id.'.webp'));
     }
 
-    private static function term(string $taxonomy, string $name, string $slug): Term
+    private static function term(string $id, string $taxonomy, string $name, string $slug): Term
     {
-        return Term::publish(CmsTermPublished::fromPrimitives(TermId::random()->value(), [
+        return Term::publish(CmsTermPublished::fromPrimitives($id, [
             'taxonomy' => $taxonomy,
             'name' => $name,
             'slug' => $slug,

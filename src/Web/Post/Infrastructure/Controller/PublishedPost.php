@@ -21,8 +21,8 @@ use Web\Post\Application\PostResponse;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Infrastructure\Controller\SiteLayout;
-use Web\Taxonomy\Application\TermOnSiteFinder;
 use Web\Taxonomy\Application\TermResponse;
+use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -69,18 +69,20 @@ final readonly class PublishedPost
 
         // A section or an author off the site is shown as the one its address
         // now leads to, if any; otherwise by the name it had, as text.
-        $section = $this->terms(Taxonomy::Section, [$post->sectionId])[$post->sectionId] ?? null;
+        $terms = $this->terms([$post->sectionId, ...$post->tagIds]);
+        $section = $terms[$post->sectionId] ?? null;
+        $section = Taxonomy::Section->value === $section?->taxonomy ? $section : null;
         $author = new ReferenceResolver('author', [$post->authorId], null)(
             fn (array $ids): array => $this->authorsOnSite($ids),
             $this->redirectsByOrigin,
         )[$post->authorId] ?? null;
 
-        $tags = $this->tags($post->tagIds);
+        $tags = $this->tags($post->tagIds, $terms);
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
         $opening = $images[$post->openingImageId] ?? null;
         $person = null === $author ? null : AuthorPerson::node($author, $this->urlGenerator);
 
-        $layout = $this->siteLayout->page($post->title);
+        ['page' => $layout, 'publisherUrl' => $publisherUrl] = $this->siteLayout->pageWithPublisher($post->title);
 
         // Who signs it, while on the site, is a node of the graph the post
         // refers to, told once if they publish the blog too.
@@ -103,7 +105,7 @@ final readonly class PublishedPost
                     ['name' => $author->name ?? $post->authorName, 'url' => $person['url'] ?? null],
                     $section->name ?? $post->sectionName,
                     array_column($tags, 'name'),
-                    $this->siteLayout->publisherUrl(),
+                    $publisherUrl,
                 )),
             $post->title,
             $post->firstPublishedAt,
@@ -157,59 +159,44 @@ final readonly class PublishedPost
 
     /**
      * The tags on the site among those given, in order, each leading to its
-     * page, once; a tag off the site, as the one its address now leads to.
+     * page, once; a tag off the site, as the one its address now leads to,
+     * while that is a tag.
      *
-     * @param list<string> $ids
+     * @param list<string>                $ids
+     * @param array<string, TermResponse> $terms as terms() shows them, keyed by the id given
      *
      * @return list<array{name: string, url: string}>
      */
-    private function tags(array $ids): array
+    private function tags(array $ids, array $terms): array
     {
         $tags = [];
 
-        foreach ($this->terms(Taxonomy::Tag, $ids) as $tag) {
-            $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+        foreach ($ids as $id) {
+            $tag = $terms[$id] ?? null;
+
+            if (Taxonomy::Tag->value === $tag?->taxonomy) {
+                $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
+            }
         }
 
         return array_values($tags);
     }
 
     /**
-     * The terms of the taxonomy among those given, in order, as the site has
-     * them, keyed by the id given; one off the site, as the term of the
-     * taxonomy its address now leads to.
+     * The terms among those given, the section and the tags at once, as the
+     * site has them, keyed by the id given; one off the site, as the term its
+     * address now leads to. Each tells its taxonomy, which its caller checks.
      *
      * @param list<string> $ids
      *
      * @return array<string, TermResponse>
      */
-    private function terms(Taxonomy $taxonomy, array $ids): array
+    private function terms(array $ids): array
     {
-        $resolved = new ReferenceResolver('term', $ids, null)(
-            function (array $ids) use ($taxonomy): array {
-                $terms = [];
-
-                foreach ($ids as $id) {
-                    $term = new TermOnSiteFinder($taxonomy->value, $id)($this->termRepository);
-
-                    if (null !== $term) {
-                        $terms[$id] = $term;
-                    }
-                }
-
-                return $terms;
-            },
+        return new ReferenceResolver('term', $ids, null)(
+            fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
             $this->redirectsByOrigin,
         );
-        $terms = [];
-
-        foreach ($ids as $id) {
-            if (\array_key_exists($id, $resolved)) {
-                $terms[$id] = $resolved[$id];
-            }
-        }
-
-        return $terms;
     }
 
     /**
