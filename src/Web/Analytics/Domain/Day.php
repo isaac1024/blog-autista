@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace Web\Analytics\Domain;
 
 use Shared\Domain\Clock;
+use Shared\Domain\SiteTimeZone;
 
 /**
  * A day as the blog counts it: in Madrid, whatever time zone the server keeps.
  */
 final readonly class Day
 {
-    public const string TIME_ZONE = 'Europe/Madrid';
-
     private function __construct(private string $value) {}
 
     public static function today(): self
     {
-        return new self(Clock::now()->setTimezone(new \DateTimeZone(self::TIME_ZONE))->format('Y-m-d'));
+        return new self(Clock::now()->setTimezone(SiteTimeZone::zone())->format('Y-m-d'));
     }
 
     /**
@@ -41,7 +40,7 @@ final readonly class Day
      */
     public function endsAt(): \DateTimeImmutable
     {
-        return new \DateTimeImmutable($this->value, new \DateTimeZone(self::TIME_ZONE))->modify('+1 day');
+        return new \DateTimeImmutable($this->value, SiteTimeZone::zone())->modify('+1 day');
     }
 
     public function value(): string

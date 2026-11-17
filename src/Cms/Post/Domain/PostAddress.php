@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Post\Domain;
 
 use Cms\Shared\Domain\Slug;
+use Shared\Domain\SiteTimeZone;
 
 /**
  * Where the site serves a post: under the slug its section had when the post
@@ -14,8 +15,6 @@ use Cms\Shared\Domain\Slug;
  */
 final readonly class PostAddress
 {
-    public const string TIME_ZONE = 'Europe/Madrid';
-
     private string $day;
 
     public function __construct(
@@ -23,7 +22,7 @@ final readonly class PostAddress
         \DateTimeImmutable $firstPublishedAt,
         private Slug $slug,
     ) {
-        $this->day = $firstPublishedAt->setTimezone(new \DateTimeZone(self::TIME_ZONE))->format('Y-m-d');
+        $this->day = $firstPublishedAt->setTimezone(SiteTimeZone::zone())->format('Y-m-d');
     }
 
     public function section(): Slug

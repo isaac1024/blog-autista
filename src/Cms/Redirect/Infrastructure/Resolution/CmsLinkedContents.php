@@ -25,6 +25,7 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\ExternalComponents;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
@@ -108,13 +109,11 @@ final readonly class CmsLinkedContents
                 'related' => self::related('page', $page->metaDescription, null, null, null),
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
             ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => array_map(function (PostOnSiteResponse $post): array {
-                [$year, $month, $day] = explode('-', $post->address->day);
-
                 $image = null === $post->openingImageId ? null : new ImagesOnSiteFinder([$post->openingImageId])($this->imageRepository)[$post->openingImageId] ?? null;
                 $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
 
                 return [
-                    'url' => $this->urlGenerator->generate('web_post', ['section' => $post->address->section, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->address->slug]),
+                    'url' => PostAddressUrl::generate($this->urlGenerator, $post->address->section, $post->address->day, $post->address->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
                     'title' => $post->title,
                     'related' => self::related(
                         'post',

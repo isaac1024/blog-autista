@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Ui;
 
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Twig\Components\PostCards;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -45,8 +46,8 @@ final readonly class PostCardsComponent
      */
     public function cards(array $posts): array
     {
-        $zone = new \DateTimeZone(SitePostPage::TIME_ZONE);
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, SitePostPage::TIME_ZONE);
+        $zone = SiteTimeZone::zone();
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return array_map(static function (array $post) use ($zone, $formatter): array {
             $published = $post['firstPublishedAt']->setTimezone($zone);

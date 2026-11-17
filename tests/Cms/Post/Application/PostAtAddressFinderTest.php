@@ -13,6 +13,7 @@ use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shared\Domain\SiteTimeZone;
 
 final class PostAtAddressFinderTest extends TestCase
 {
@@ -69,6 +70,6 @@ final class PostAtAddressFinderTest extends TestCase
 
     private static function address(): PostAddress
     {
-        return new PostAddress(new Slug(TermMother::SLUG), new \DateTimeImmutable('2026-11-07', new \DateTimeZone(PostAddress::TIME_ZONE)), new Slug(PostMother::SLUG));
+        return new PostAddress(new Slug(TermMother::SLUG), new \DateTimeImmutable('2026-11-07', SiteTimeZone::zone()), new Slug(PostMother::SLUG));
     }
 }

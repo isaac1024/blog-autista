@@ -7,6 +7,7 @@ namespace Web\Sitemap\Infrastructure\Event;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Projection\Domain\Projection;
 use Web\Sitemap\Application\PostEntryPlacer;
@@ -43,13 +44,7 @@ final readonly class SitemapPostsSubscriber implements DomainEventSubscriber
                 $day = new \DateTimeImmutable($event->day);
                 new PostEntryPlacer(
                     $event->aggregateId(),
-                    $this->urlGenerator->generate('web_post', [
-                        'section' => $event->sectionSlug,
-                        'year' => $day->format('Y'),
-                        'month' => $day->format('m'),
-                        'day' => $day->format('d'),
-                        'slug' => $event->slug,
-                    ]),
+                    PostAddressUrl::generate($this->urlGenerator, $event->sectionSlug, $event->day, $event->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
                     $day,
                     $event->lastPublishedAt,
                     $event->openingImageId,

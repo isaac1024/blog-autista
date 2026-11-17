@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Analytics\Infrastructure\Scheduler;
 
 use Shared\Domain\MutualExclusion;
+use Shared\Domain\SiteTimeZone;
 use Shared\Domain\Transaction;
 use Symfony\Component\Scheduler\Attribute\AsPeriodicTask;
 use Web\Analytics\Application\VisitCounter;
@@ -15,7 +16,7 @@ use Web\Analytics\Domain\VisitRepository;
  * seconds here, so the time moves an hour with summer time, between 00:10
  * and 02:10 in Madrid: always once the day is over and its salt is gone.
  */
-#[AsPeriodicTask(frequency: '1 day', from: '01:10 Europe/Madrid')]
+#[AsPeriodicTask(frequency: '1 day', from: '01:10 '.SiteTimeZone::NAME)]
 final readonly class NightlyVisitCount
 {
     public function __construct(

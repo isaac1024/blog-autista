@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Shared\Infrastructure\Ui;
 
 use Shared\Domain\RichText\RichText;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\Page\Page;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -23,8 +24,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  */
 final readonly class SitePostPage
 {
-    public const string TIME_ZONE = 'Europe/Madrid';
-
     public function __construct(
         private RichTextComponents $richTextComponents,
         private TranslatorInterface $translator,
@@ -62,9 +61,9 @@ final readonly class SitePostPage
         array $images,
         array $pages,
     ): Page {
-        $zone = new \DateTimeZone(self::TIME_ZONE);
+        $zone = SiteTimeZone::zone();
         $last = $lastPublishedAt->setTimezone($zone);
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, self::TIME_ZONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         // A post shows no mosaic of posts.
         $prose = ($this->richTextComponents)($content, $images, $pages, []);

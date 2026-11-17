@@ -8,6 +8,7 @@ use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostRepository;
 use Cms\Shared\Domain\Slug;
 use Shared\Domain\DomainError;
+use Shared\Domain\SiteTimeZone;
 
 /**
  * Finds the post at an address of the site, by the slug of its section, the
@@ -41,7 +42,7 @@ final readonly class PostAtAddressFinder
 
     private function address(): ?PostAddress
     {
-        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $this->day, new \DateTimeZone(PostAddress::TIME_ZONE));
+        $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $this->day, SiteTimeZone::zone());
 
         // A day the calendar doesn't have, such as 2026-02-30, names none.
         if (false === $day || $day->format('Y-m-d') !== $this->day) {

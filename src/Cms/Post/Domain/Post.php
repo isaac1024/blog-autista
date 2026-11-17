@@ -19,6 +19,7 @@ use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
+use Shared\Domain\SiteTimeZone;
 
 /**
  * A post of the blog, filed under a section, signed by an author and
@@ -463,7 +464,7 @@ final class Post extends AggregateRoot
 
         return new PostAddress(
             $this->publishedSectionSlug,
-            new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
+            new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), SiteTimeZone::zone()),
             $this->publishedSlug,
         );
     }
@@ -489,7 +490,7 @@ final class Post extends AggregateRoot
 
         return new PostAddress(
             $this->lastSectionSlug,
-            new \DateTimeImmutable($this->lastDay->format('Y-m-d'), new \DateTimeZone(PostAddress::TIME_ZONE)),
+            new \DateTimeImmutable($this->lastDay->format('Y-m-d'), SiteTimeZone::zone()),
             $this->lastSlug,
         );
     }

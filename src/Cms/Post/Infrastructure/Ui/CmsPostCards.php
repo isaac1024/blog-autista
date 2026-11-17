@@ -16,6 +16,7 @@ use Cms\Taxonomy\Application\TermOnSiteFinder;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Redirect\ReferenceResolver;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -66,15 +67,7 @@ final readonly class CmsPostCards
 
     private function url(PostOnSiteCardResponse $post): string
     {
-        [$year, $month, $day] = explode('-', $post->day);
-
-        return $this->urlGenerator->generate('web_post', [
-            'section' => $post->sectionSlug,
-            'year' => $year,
-            'month' => $month,
-            'day' => $day,
-            'slug' => $post->slug,
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
+        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     /**

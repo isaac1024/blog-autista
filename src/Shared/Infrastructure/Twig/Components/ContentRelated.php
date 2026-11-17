@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Twig\Components;
 
-use Shared\Infrastructure\Ui\SitePostPage;
+use Shared\Domain\SiteTimeZone;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
@@ -67,7 +67,7 @@ final class ContentRelated
         $this->lead = $lead;
         $this->source = array_values(array_filter([
             $section,
-            null === $published ? null : (string) new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, SitePostPage::TIME_ZONE)->format($published),
+            null === $published ? null : (string) new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::NONE, SiteTimeZone::NAME)->format($published),
         ], static fn (?string $part): bool => null !== $part && '' !== $part));
     }
 }

@@ -6,6 +6,7 @@ namespace Web\Post\Infrastructure\Controller;
 
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Shared\Infrastructure\Ui\StructuredData;
@@ -128,15 +129,7 @@ final readonly class PublishedPost
      */
     private function canonical(PostResponse $post): string
     {
-        [$year, $month, $day] = explode('-', $post->day);
-
-        return $this->urlGenerator->generate('web_post', [
-            'section' => $post->sectionSlug,
-            'year' => $year,
-            'month' => $month,
-            'day' => $day,
-            'slug' => $post->slug,
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
+        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     /**

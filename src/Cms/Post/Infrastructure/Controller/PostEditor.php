@@ -9,7 +9,6 @@ use Cms\Author\Domain\AuthorStatus;
 use Cms\Author\Infrastructure\Controller\AuthorState;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
-use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostStatus;
 use Cms\Post\Domain\PostTitle;
 use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
@@ -21,6 +20,7 @@ use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermStatus;
 use Cms\Taxonomy\Infrastructure\Controller\TermState;
 use Shared\Domain\Clock;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -427,7 +427,7 @@ final readonly class PostEditor
         }
 
         $day = $post->publishedDay
-            ?? ($post->firstPublishedAt ?? Clock::now())->setTimezone(new \DateTimeZone(PostAddress::TIME_ZONE))->format('Y-m-d');
+            ?? ($post->firstPublishedAt ?? Clock::now())->setTimezone(SiteTimeZone::zone())->format('Y-m-d');
 
         return \sprintf(
             '/%s/%s/',

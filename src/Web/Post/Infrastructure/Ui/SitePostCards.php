@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Post\Infrastructure\Ui;
 
 use Shared\Domain\Redirect\ReferenceResolver;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -63,15 +64,7 @@ final readonly class SitePostCards
 
     private function url(PostResponse $post): string
     {
-        [$year, $month, $day] = explode('-', $post->day);
-
-        return $this->urlGenerator->generate('web_post', [
-            'section' => $post->sectionSlug,
-            'year' => $year,
-            'month' => $month,
-            'day' => $day,
-            'slug' => $post->slug,
-        ]);
+        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH);
     }
 
     /**

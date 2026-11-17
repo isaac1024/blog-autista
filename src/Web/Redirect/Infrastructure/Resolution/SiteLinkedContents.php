@@ -8,6 +8,7 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\ExternalComponents;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
@@ -141,13 +142,11 @@ final readonly class SiteLinkedContents
             return null;
         }
 
-        [$year, $month, $day] = explode('-', $post->day);
-
         $image = new ImagesOnSiteFinder([$post->openingImageId])($this->imageRepository)[$post->openingImageId] ?? null;
         $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
 
         return [
-            'url' => $this->urlGenerator->generate('web_post', ['section' => $post->sectionSlug, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->slug]),
+            'url' => PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
             'title' => $post->title,
             'related' => self::related(
                 'post',

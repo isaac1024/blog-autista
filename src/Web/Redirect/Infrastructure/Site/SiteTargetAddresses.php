@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Redirect\Infrastructure\Site;
 
 use Shared\Domain\ImageCopy;
+use Shared\Infrastructure\Ui\PostAddressUrl;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
@@ -84,9 +85,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
             return null;
         }
 
-        [$year, $month, $day] = explode('-', $post->day);
-
-        return $this->urlGenerator->generate('web_post', ['section' => $post->sectionSlug, 'year' => $year, 'month' => $month, 'day' => $day, 'slug' => $post->slug]);
+        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH);
     }
 
     /**

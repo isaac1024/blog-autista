@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Analytics\Domain;
 
 use Shared\Domain\Clock;
+use Shared\Domain\SiteTimeZone;
 
 /**
  * A run of days, first and last included, as the site counts them: in
@@ -12,8 +13,6 @@ use Shared\Domain\Clock;
  */
 final readonly class Days
 {
-    public const string TIME_ZONE = 'Europe/Madrid';
-
     /**
      * The hour of Madrid by which the nightly count is done: it runs between
      * 00:10 and 02:10, as summer time moves it.
@@ -48,7 +47,7 @@ final readonly class Days
      */
     public static function isOverdue(string $day): bool
     {
-        $now = Clock::now()->setTimezone(new \DateTimeZone(self::TIME_ZONE));
+        $now = Clock::now()->setTimezone(SiteTimeZone::zone());
         $due = self::todayInMadrid()->modify($now >= $now->setTime(self::NIGHTLY_COUNT_DONE_BY, 0) ? '-1 day' : '-2 days');
 
         return $day <= $due->format('Y-m-d');
@@ -82,6 +81,6 @@ final readonly class Days
 
     private static function todayInMadrid(): \DateTimeImmutable
     {
-        return new \DateTimeImmutable(Clock::now()->setTimezone(new \DateTimeZone(self::TIME_ZONE))->format('Y-m-d'));
+        return new \DateTimeImmutable(Clock::now()->setTimezone(SiteTimeZone::zone())->format('Y-m-d'));
     }
 }
