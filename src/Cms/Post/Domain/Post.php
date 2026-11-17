@@ -64,6 +64,10 @@ use Shared\Domain\SiteTimeZone;
 #[ORM\UniqueConstraint(name: 'uniq_cms_post_published_address', columns: ['published_section_slug', 'published_day', 'published_slug'])]
 #[ORM\Index(name: 'idx_cms_post_last_address', columns: ['last_section_slug', 'last_day', 'last_slug'])]
 #[ORM\Index(name: 'ftx_cms_post_title', columns: ['title'], flags: ['fulltext'])]
+// The ids alone, newest first, for a page deep in the list: the primary key
+// holds every column of the post, contents and all, and reading thousands
+// of them to skip them takes seconds.
+#[ORM\Index(name: 'idx_cms_post_id', columns: ['id'])]
 final class Post extends AggregateRoot
 {
     /**

@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_relation')]
 #[ORM\UniqueConstraint(name: 'uniq_cms_relation', columns: ['source_type', 'source_id', 'target_type', 'target_id'])]
-#[ORM\Index(name: 'idx_cms_relation_target', columns: ['target_type', 'target_id'])]
+#[ORM\Index(name: 'idx_cms_relation_target', columns: ['target_type', 'target_id', 'source_type', 'source_id'])]
 final class Relation
 {
     /**

@@ -92,16 +92,7 @@ final readonly class DoctrineExternalResourceRepository implements ExternalResou
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('resource')
-            ->from(ExternalResource::class, 'resource');
-
-        /** @var Query<null, ExternalResource> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'resource')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, ExternalResource::class, 'resource', $criteria);
     }
 
     #[\Override]

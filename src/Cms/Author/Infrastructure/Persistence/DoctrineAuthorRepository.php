@@ -113,16 +113,7 @@ final readonly class DoctrineAuthorRepository implements AuthorRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('author')
-            ->from(Author::class, 'author');
-
-        /** @var Query<null, Author> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'author')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Author::class, 'author', $criteria);
     }
 
     /**

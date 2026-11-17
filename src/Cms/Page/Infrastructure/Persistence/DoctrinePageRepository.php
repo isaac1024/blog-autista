@@ -122,16 +122,7 @@ final readonly class DoctrinePageRepository implements PageRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('page')
-            ->from(Page::class, 'page');
-
-        /** @var Query<null, Page> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'page')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Page::class, 'page', $criteria);
     }
 
     /**

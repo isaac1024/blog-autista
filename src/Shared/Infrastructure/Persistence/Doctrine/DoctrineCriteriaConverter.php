@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Shared\Infrastructure\Persistence\Doctrine;
 
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Shared\Domain\Criteria\Criteria;
 use Shared\Domain\Criteria\Filter;
@@ -18,6 +21,11 @@ use Shared\Domain\Criteria\OrderDirection;
  *
  * Full-text filters rank the results by relevance first; the criteria order,
  * if any, breaks the ties.
+ *
+ * A page of results is read in two steps: the ids of the page, which the
+ * indexes alone give, then the entities of those ids. Reading the entities
+ * whole for the page would read, and throw away, every one before it,
+ * contents and all, which takes seconds a few thousand rows in.
  */
 final readonly class DoctrineCriteriaConverter
 {
@@ -34,7 +42,54 @@ final readonly class DoctrineCriteriaConverter
      */
     public function __construct(private array $fields) {}
 
-    public function apply(Criteria $criteria, QueryBuilder $queryBuilder, string $alias): QueryBuilder
+    /**
+     * The entities of the class that match the criteria, in its order.
+     *
+     * @template T of object
+     *
+     * @param class-string<T> $class whose identifier is a single field
+     *
+     * @return list<T>
+     */
+    public function matching(EntityManagerInterface $entityManager, string $class, string $alias, Criteria $criteria): array
+    {
+        $metadata = $entityManager->getClassMetadata($class);
+        $idField = $metadata->getSingleIdentifierFieldName();
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $idType = Type::getType((string) $metadata->getTypeOfField($idField));
+        // An id read alone may come as stored, or as the entity holds it.
+        $stored = static function (mixed $id) use ($idType, $platform): string {
+            $value = \is_string($id) ? $id : $idType->convertToDatabaseValue($id, $platform);
+
+            return \is_string($value) ? $value : throw new \UnexpectedValueException('An id is stored as no text.');
+        };
+
+        $ids = array_map($stored, $this->apply($criteria, $entityManager->createQueryBuilder()->select(\sprintf('%s.%s', $alias, $idField))->from($class, $alias), $alias)
+            ->getQuery()
+            ->getSingleColumnResult());
+
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<T> $entities */
+        $entities = $entityManager->createQueryBuilder()
+            ->select($alias)
+            ->from($class, $alias)
+            ->where(\sprintf('%s.%s IN (:ids)', $alias, $idField))
+            ->setParameter('ids', $ids, ArrayParameterType::STRING)
+            ->getQuery()
+            ->getResult();
+        $byId = [];
+
+        foreach ($entities as $entity) {
+            $byId[$stored($metadata->getSingleIdReflectionProperty()?->getValue($entity))] = $entity;
+        }
+
+        return array_values(array_filter(array_map(static fn (string $id): ?object => $byId[$id] ?? null, $ids)));
+    }
+
+    private function apply(Criteria $criteria, QueryBuilder $queryBuilder, string $alias): QueryBuilder
     {
         $queryBuilder
             ->setFirstResult($criteria->offset)

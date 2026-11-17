@@ -14,7 +14,6 @@ use Cms\Post\Domain\PostStatus;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Query;
 use Shared\Domain\Criteria\Criteria;
 use Shared\Infrastructure\Persistence\Doctrine\DoctrineCriteriaConverter;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -94,16 +93,7 @@ final readonly class DoctrinePostRepository implements PostRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('post')
-            ->from(Post::class, 'post');
-
-        /** @var Query<null, Post> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'post')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Post::class, 'post', $criteria);
     }
 
     /**

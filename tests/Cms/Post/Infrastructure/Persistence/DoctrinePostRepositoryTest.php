@@ -20,6 +20,8 @@ use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Domain\Criteria\Criteria;
+use Shared\Domain\Criteria\Order;
+use Shared\Domain\Criteria\OrderDirection;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -132,6 +134,30 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $found = $this->repository()->matching(new Criteria(limit: 10, filters: [TitleFilter::matches('inesperados ruidos')], order: null, offset: 0));
 
         self::assertSame([$id], array_map(static fn (Post $post): string => $post->id()->value(), $found));
+    }
+
+    /**
+     * Each page of a list holds exactly the posts of its place in the order,
+     * the last page those that are left.
+     */
+    public function testItFindsAPageOfThePostsInTheirOrder(): void
+    {
+        $ids = array_map(static fn (int $index): string => \sprintf('01a1e000-0000-7000-8000-%012d', $index), range(1, 5));
+
+        foreach ($ids as $id) {
+            $this->repository()->save(PostMother::create(id: $id, slug: 'entrada-'.substr($id, -1)));
+        }
+
+        $this->entityManager()->clear();
+        $page = fn (int $offset): array => array_map(
+            static fn (Post $post): string => $post->id()->value(),
+            $this->repository()->matching(new Criteria(limit: 2, filters: [], order: new Order('id', OrderDirection::Descending), offset: $offset)),
+        );
+
+        self::assertSame([$ids[4], $ids[3]], $page(0));
+        self::assertSame([$ids[2], $ids[1]], $page(2));
+        self::assertSame([$ids[0]], $page(4));
+        self::assertSame([], $page(6));
     }
 
     public function testItDeletesThePost(): void

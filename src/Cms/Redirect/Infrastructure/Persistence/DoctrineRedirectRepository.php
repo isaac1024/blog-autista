@@ -133,16 +133,7 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('redirect')
-            ->from(Redirect::class, 'redirect');
-
-        /** @var Query<null, Redirect> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'redirect')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Redirect::class, 'redirect', $criteria);
     }
 
     /**

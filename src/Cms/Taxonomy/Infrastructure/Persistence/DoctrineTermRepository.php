@@ -99,16 +99,7 @@ final readonly class DoctrineTermRepository implements TermRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('term')
-            ->from(Term::class, 'term');
-
-        /** @var Query<null, Term> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'term')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Term::class, 'term', $criteria);
     }
 
     /**

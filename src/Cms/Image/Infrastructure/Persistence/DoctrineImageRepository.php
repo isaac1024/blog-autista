@@ -77,15 +77,6 @@ final readonly class DoctrineImageRepository implements ImageRepository
     #[\Override]
     public function matching(Criteria $criteria): array
     {
-        $queryBuilder = $this->entityManager->createQueryBuilder()
-            ->select('image')
-            ->from(Image::class, 'image');
-
-        /** @var Query<null, Image> $query */
-        $query = new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)
-            ->apply($criteria, $queryBuilder, 'image')
-            ->getQuery();
-
-        return $query->getResult();
+        return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Image::class, 'image', $criteria);
     }
 }

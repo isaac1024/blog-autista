@@ -63,29 +63,50 @@ final readonly class DoctrineRelationRepository implements RelationRepository
         return 0 < (int) $count;
     }
 
+    /**
+     * Read a kind of user at a time, in the order of the kinds, each by id
+     * through the index of what it uses: ordering every user at once by its
+     * kind would sort them all for each slice, thousands for a tag many
+     * posts are filed under. How many each kind has, through the same index,
+     * tells where the slice starts.
+     */
     #[\Override]
     public function usersOf(ResourceType $targetType, string $targetId, int $limit, int $offset): array
     {
-        /** @var Query<null, Relation> $query */
-        $query = $this->entityManager->createQueryBuilder()
-            ->select('relation')
-            // Pages first, then images, then the settings, then the authors, then the posts, whatever their names.
-            ->addSelect('CASE WHEN relation.sourceType = :page THEN 0 WHEN relation.sourceType = :image THEN 1 WHEN relation.sourceType = :settings THEN 2 WHEN relation.sourceType = :author THEN 3 ELSE 4 END AS HIDDEN sourceOrder')
-            ->from(Relation::class, 'relation')
-            ->where('relation.targetType = :targetType AND relation.targetId = :targetId')
-            ->orderBy('sourceOrder')
-            // Ids are unique within a type, so every slice is the same.
-            ->addOrderBy('relation.sourceId')
-            ->setParameter('page', ResourceType::Page)
-            ->setParameter('image', ResourceType::Image)
-            ->setParameter('settings', ResourceType::Settings)
-            ->setParameter('author', ResourceType::Author)
-            ->setParameter('targetType', $targetType)
-            ->setParameter('targetId', $targetId)
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
-            ->getQuery();
+        $users = [];
 
-        return $query->getResult();
+        foreach (ResourceType::cases() as $sourceType) {
+            if ($limit <= 0) {
+                break;
+            }
+
+            $ofKind = $this->entityManager->createQueryBuilder()
+                ->from(Relation::class, 'relation')
+                ->where('relation.targetType = :targetType AND relation.targetId = :targetId AND relation.sourceType = :sourceType')
+                ->setParameter('targetType', $targetType)
+                ->setParameter('targetId', $targetId)
+                ->setParameter('sourceType', $sourceType);
+            $count = (int) (clone $ofKind)->select('COUNT(relation)')->getQuery()->getSingleScalarResult();
+
+            if ($offset >= $count) {
+                $offset -= $count;
+
+                continue;
+            }
+
+            /** @var Query<null, Relation> $query */
+            $query = $ofKind->select('relation')
+                // Ids are unique within a kind, so every slice is the same.
+                ->orderBy('relation.sourceId')
+                ->setFirstResult($offset)
+                ->setMaxResults($limit)
+                ->getQuery();
+            $slice = $query->getResult();
+            $users = [...$users, ...$slice];
+            $limit -= \count($slice);
+            $offset = 0;
+        }
+
+        return $users;
     }
 }
