@@ -14,6 +14,8 @@ use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
 use Web\Post\Domain\SearchTerms;
+use Web\Post\Domain\SearchTooBroad;
+use Web\Post\Infrastructure\Persistence\DoctrinePostRepository;
 use Web\Shared\Domain\Robots;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
@@ -176,9 +178,10 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     }
 
     /**
-     * Every word searched must be in the title, the summary or the text of
+     * Every word searched must be in the title, the summary or a heading of
      * the content, as the start of a word, whatever its accents; the most
-     * relevant come first, the newest first among equals.
+     * relevant come first, the newest first among equals. What only its
+     * paragraphs say is not searched.
      */
     #[SkipDatabaseRollback]
     public function testItSearchesThePostsByTheirWords(): void
@@ -186,7 +189,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->publishText(self::OLDEST, '2026-11-01T10:00:00+00:00', 'El ruido del metro', 'Cómo viví la hora punta.', 'Hoy probé los tapones en el metro: cuánto ruido.');
         $this->publishText(self::MIDDLE, '2026-11-03T10:00:00+00:00', 'Dormir con ruido', 'Sobre el sueño.', 'Los tapones me ayudan a dormir.');
         $this->publishText(self::NEWEST, '2026-11-05T10:00:00+00:00', 'Luces fuertes', 'La luz del súper.', 'Nada de ruido aquí, solo sensorialidad visual.');
-        $this->publishText(self::TIED, '2026-11-05T10:00:00+00:00', 'Una cita', 'Sin nada que ver.', 'Otra cosa.');
+        $this->publishText(self::TIED, '2026-11-05T10:00:00+00:00', 'Una cita', 'Sin nada que ver.', 'Otra cosa.', 'De pasada, el elefante del cuarto.');
         $this->entityManager()->clear();
 
         $searched = fn (string $text, int $offset = 0, int $limit = 10): array => array_map(static fn (Post $post): string => $post->id()->value(), $this->repository()->searched(SearchTerms::fromText($text), $offset, $limit));
@@ -201,6 +204,18 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertSame([self::NEWEST, self::MIDDLE], $searched('ruido', 1, 2));
         self::assertSame([], $searched('elefante'));
         self::assertSame([], $searched('no y'));
+    }
+
+    /**
+     * A search that would take longer than it may asks for another word.
+     */
+    public function testItRefusesASearchThatWouldTakeLongerThanItMay(): void
+    {
+        $repository = new DoctrinePostRepository($this->entityManager(), 0.000001);
+
+        $this->expectException(SearchTooBroad::class);
+
+        $repository->searched(SearchTerms::fromText('ruido'), 0, 10);
     }
 
     /**
@@ -231,13 +246,20 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         return $post;
     }
 
-    private function publishText(string $id, string $firstPublishedAt, string $title, string $summary, string $text): void
+    /**
+     * A post whose content is a heading saying the heading given, then a
+     * paragraph saying the text given.
+     */
+    private function publishText(string $id, string $firstPublishedAt, string $title, string $summary, string $heading, string $text = 'Un párrafo cualquiera.'): void
     {
         $this->repository()->save(Post::publish(CmsPostPublished::fromPrimitives($id, [
             'title' => $title,
             'slug' => 'entrada-'.substr($id, -4),
             'meta_description' => $summary,
-            'content' => ['version' => 1, 'blocks' => [['type' => 'paragraph', 'text' => [['text' => $text]]]]],
+            'content' => ['version' => 1, 'blocks' => [
+                ['type' => 'heading', 'level' => 2, 'text' => [['text' => $heading]]],
+                ['type' => 'paragraph', 'text' => [['text' => $text]]],
+            ]],
             'first_published_at' => $firstPublishedAt,
             'revision' => 1,
         ] + CmsPostPublishedMother::body())));

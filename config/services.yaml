@@ -23,6 +23,10 @@ parameters:
     cms.external.image_directory: '%kernel.project_dir%/media/externos'
     web.external.originals_directory: '%cms.external.image_directory%'
     web.external.public_directory: '%web.image.public_directory%/externos'
+    # The seconds a search of the site may take: a word most posts are about
+    # takes longer as they grow, and is asked to be narrowed rather than
+    # holding a PHP process, of the 10 the hosting has.
+    web.post.search_time_limit: 1.5
 
 services:
     # default configuration for services in *this* file

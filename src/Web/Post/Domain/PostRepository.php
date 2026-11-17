@@ -42,6 +42,8 @@ interface PostRepository
      * as the start of a word, the most relevant first, newest first among
      * equals, from the offset given, as many as the limit at most.
      *
+     * @throws SearchTooBroad when it would take longer than a search may
+     *
      * @return list<Post>
      */
     public function searched(SearchTerms $terms, int $offset, int $limit): array;

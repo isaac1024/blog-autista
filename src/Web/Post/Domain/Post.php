@@ -61,8 +61,10 @@ final class Post
         #[ORM\Column(length: 200, nullable: true)]
         private ?string $metaDescription,
         /*
-         * What its content says, as plain text, which the site searches with
-         * its title and its summary.
+         * What its headings say, which the site searches with its title and
+         * its summary: what each post is about, not every word it says on
+         * the way, so a word that most posts use somewhere still finds those
+         * about it, and soon.
          */
         #[ORM\Column(type: 'text', length: 16777215)]
         private string $searchText,
@@ -96,7 +98,7 @@ final class Post
             $event->openingImageId(),
             $event->content(),
             $event->metaDescription(),
-            $event->content()->plainText(),
+            $event->content()->headings(),
             $event->content()->readingMinutes(),
             $event->robots(),
             $event->day(),
@@ -126,7 +128,7 @@ final class Post
         $this->openingImageId = $event->openingImageId();
         $this->content = $event->content();
         $this->metaDescription = $event->metaDescription();
-        $this->searchText = $event->content()->plainText();
+        $this->searchText = $event->content()->headings();
         $this->readingMinutes = $event->content()->readingMinutes();
         $this->robots = $event->robots();
         $this->day = $event->day();

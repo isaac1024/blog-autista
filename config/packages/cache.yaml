@@ -17,6 +17,10 @@ framework:
             # that keeps the counts from being flooded.
             web.visit_limiter.cache:
                 adapter: cache.adapter.redis
+            # How many searches each reader has sent of late, for the limiter
+            # that keeps a sweep of words from taking every PHP process.
+            web.search_limiter.cache:
+                adapter: cache.adapter.redis
 
 when@test:
     services:
@@ -36,4 +40,6 @@ when@test:
                 web.visit_salt.cache:
                     adapter: web.test.cache.adapter.memory
                 web.visit_limiter.cache:
+                    adapter: web.test.cache.adapter.memory
+                web.search_limiter.cache:
                     adapter: web.test.cache.adapter.memory

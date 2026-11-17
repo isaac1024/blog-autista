@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
+use Web\Post\Domain\PostRepository;
+use Web\Post\Domain\SearchTerms;
+use Web\Post\Domain\SearchTooBroad;
 use Web\Shared\Domain\Robots;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
@@ -69,6 +72,49 @@ final class SearchPageTest extends WebTestCase
         yield 'before the first' => ['?q=ruido&pagina=0'];
         yield 'not a number' => ['?q=ruido&pagina=dos'];
         yield 'a number written otherwise' => ['?q=ruido&pagina=01'];
+    }
+
+    /**
+     * Words so common the search would take longer than it may are answered
+     * as any other search, asking for another word, and kept as long.
+     */
+    public function testItAnswersASearchTooBroadAsAnyOther(): void
+    {
+        $client = self::createClient();
+        $this->publishPages();
+        $posts = self::createStub(PostRepository::class);
+        $posts->method('searched')->willThrowException(SearchTooBroad::forTerms(SearchTerms::fromText('ansiedad')));
+        self::getContainer()->set(PostRepository::class, $posts);
+
+        $client->request('GET', self::HOST.'/buscar.html?q=ansiedad');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('max-age=0, public, s-maxage=300', $client->getResponse()->headers->get('Cache-Control'));
+    }
+
+    /**
+     * A reader may search twenty times a minute, whatever they search; past
+     * that they are told to wait, and that answer is kept by no cache. The
+     * page alone, searching nothing, never counts.
+     */
+    public function testItAsksAReaderWhoSearchesTooOftenToWait(): void
+    {
+        $client = self::createClient();
+        // One kernel for every request, as the limiter keeps its counts across them.
+        $client->disableReboot();
+        $this->publishPages();
+
+        for ($search = 1; $search <= 20; ++$search) {
+            $client->request('GET', self::HOST.'/buscar.html?q=palabra'.$search);
+            self::assertResponseIsSuccessful();
+        }
+
+        $client->request('GET', self::HOST.'/buscar.html');
+        self::assertResponseIsSuccessful();
+
+        $client->request('GET', self::HOST.'/buscar.html?q=otra');
+        self::assertResponseStatusCodeSame(Response::HTTP_TOO_MANY_REQUESTS);
+        self::assertStringNotContainsString('public', (string) $client->getResponse()->headers->get('Cache-Control'));
     }
 
     public function testItLeavesTheQueryOfAnyOtherPageAlone(): void

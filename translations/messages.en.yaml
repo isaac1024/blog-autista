@@ -1164,6 +1164,8 @@ site:
         label: 'Search the blog'
         submit: 'Search'
         too_short: 'Write a word of at least %min% letters.'
+        too_broad: 'Too many posts have “%text%”. Add another word to narrow the search.'
+        too_many: 'You have searched many times in a row. Wait a minute and try again.'
         none: 'No posts with “%text%”.'
 ui:
     search: 'Search'

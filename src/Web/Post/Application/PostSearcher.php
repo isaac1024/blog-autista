@@ -6,6 +6,7 @@ namespace Web\Post\Application;
 
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\SearchTerms;
+use Web\Post\Domain\SearchTooBroad;
 
 /**
  * Searches the posts of the site by the words a reader writes, a page of
@@ -27,7 +28,12 @@ final readonly class PostSearcher
 
         $terms = SearchTerms::fromText($this->text);
         $asked = '' !== trim($this->text);
-        $posts = $terms->isEmpty() ? [] : $postRepository->searched($terms, ($this->page - 1) * PostLister::PAGE_SIZE, PostLister::PAGE_SIZE + 1);
+
+        try {
+            $posts = $terms->isEmpty() ? [] : $postRepository->searched($terms, ($this->page - 1) * PostLister::PAGE_SIZE, PostLister::PAGE_SIZE + 1);
+        } catch (SearchTooBroad) {
+            return new PostSearchResponse(true, false, true, [], false);
+        }
 
         if ([] === $posts && $this->page > 1) {
             throw PostsPageNotFound::numbered($this->page);
@@ -36,6 +42,7 @@ final readonly class PostSearcher
         return new PostSearchResponse(
             $asked,
             $asked && $terms->isEmpty(),
+            false,
             array_map(PostResponse::fromPost(...), \array_slice($posts, 0, PostLister::PAGE_SIZE)),
             \count($posts) > PostLister::PAGE_SIZE,
         );

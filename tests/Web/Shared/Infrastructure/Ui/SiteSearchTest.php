@@ -18,6 +18,7 @@ use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\SearchTerms;
+use Web\Post\Domain\SearchTooBroad;
 use Web\Redirect\Domain\RedirectRepository;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\SitePostCards;
@@ -89,6 +90,39 @@ final class SiteSearchTest extends TestCase
         self::assertSame([], PageComponents::find($page, 'Shared:Pagination', []));
     }
 
+    /**
+     * Words so common the search would take longer than it may ask for
+     * another, with what was written kept in the field.
+     */
+    public function testItAsksForAnotherWordWhenTheSearchIsTooBroad(): void
+    {
+        $postRepository = self::createStub(PostRepository::class);
+        $postRepository->method('searched')->willThrowException(SearchTooBroad::forTerms(SearchTerms::fromText('ansiedad')));
+
+        $page = $this->search($postRepository, ' ansiedad ', 1);
+
+        PageComponents::one($page, 'Shared:SearchForm', ['value' => ' ansiedad ']);
+        PageComponents::one($page, 'Shared:Notice', ['message' => 'site.search.too_broad(%text%=ansiedad)']);
+        self::assertSame([], PageComponents::find($page, 'Shared:Pagination', []));
+    }
+
+    /**
+     * A reader who searched more often than they may is asked to wait, with
+     * what they wrote kept in the field, and nothing is searched.
+     */
+    public function testItAsksAReaderWhoSearchedTooOftenToWait(): void
+    {
+        $postRepository = $this->createMock(PostRepository::class);
+        $postRepository->expects(self::never())->method('searched');
+        $urlGenerator = new RouteNameUrlGenerator();
+        $translator = new CatalogueTranslator();
+
+        $page = self::siteSearch($postRepository, $urlGenerator, $translator)->limited(Page::create('Buscar'), 'buscar', 'ruido');
+
+        PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html', 'value' => 'ruido']);
+        PageComponents::one($page, 'Shared:Notice', ['message' => 'site.search.too_many']);
+    }
+
     public function testItHasNoPageOfResultsPastTheLast(): void
     {
         $postRepository = self::createStub(PostRepository::class);
@@ -102,14 +136,18 @@ final class SiteSearchTest extends TestCase
     private function search(PostRepository $postRepository, string $text, int $number): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
-        $translator = new CatalogueTranslator();
 
+        return self::siteSearch($postRepository, $urlGenerator, new CatalogueTranslator())(Page::create('Buscar'), 'buscar', $text, $number);
+    }
+
+    private static function siteSearch(PostRepository $postRepository, RouteNameUrlGenerator $urlGenerator, CatalogueTranslator $translator): SiteSearch
+    {
         return new SiteSearch(
             $postRepository,
             new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))),
             new PostCardsComponent($translator),
             new ListPagination($translator, $urlGenerator),
             $translator,
-        )(Page::create('Buscar'), 'buscar', $text, $number);
+        );
     }
 }

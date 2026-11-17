@@ -10,3 +10,12 @@ framework:
             limit: 60
             interval: '1 minute'
             cache_pool: web.visit_limiter.cache
+        # The searches of the site one address may ask in a minute, of those
+        # the page cache doesn't answer: more than anyone reading searches,
+        # few enough that a bot sweeping words can't take every PHP process,
+        # each search holding one up to its time limit.
+        web_search:
+            policy: sliding_window
+            limit: 20
+            interval: '1 minute'
+            cache_pool: web.search_limiter.cache

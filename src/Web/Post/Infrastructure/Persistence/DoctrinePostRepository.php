@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace Web\Post\Infrastructure\Persistence;
 
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Web\Post\Domain\Post;
 use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
 use Web\Post\Domain\SearchTerms;
+use Web\Post\Domain\SearchTooBroad;
 use Web\Shared\Domain\Robots;
 
 /**
@@ -24,7 +27,21 @@ use Web\Shared\Domain\Robots;
 #[AsAlias(PostRepository::class)]
 final readonly class DoctrinePostRepository implements PostRepository
 {
-    public function __construct(private EntityManagerInterface $entityManager) {}
+    /**
+     * MariaDB's errors when a statement takes longer than it may: stopped
+     * between rows, or within the full-text index, which tells it as an
+     * interruption.
+     */
+    private const array STATEMENT_TIME_EXCEEDED = [1969, 188];
+
+    /**
+     * @param float $searchTimeLimit the seconds a search may take, which MariaDB stops it after
+     */
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        #[Autowire(param: 'web.post.search_time_limit')]
+        private float $searchTimeLimit,
+    ) {}
 
     /**
      * Saves the post and the rows of the index of its tags at once.
@@ -90,11 +107,20 @@ final readonly class DoctrinePostRepository implements PostRepository
 
         $match = 'MATCH (p.title, p.meta_description, p.search_text) AGAINST (:words IN BOOLEAN MODE)';
 
-        return $this->postsOf(array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
-            \sprintf('SELECT p.id FROM web_post p WHERE %1$s ORDER BY %1$s DESC, p.first_published_at DESC, p.id DESC LIMIT :limit OFFSET :offset', $match),
-            ['words' => implode(' ', array_map(static fn (string $word): string => '+'.$word.'*', $terms->words)), 'limit' => $limit, 'offset' => $offset],
-            ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
-        )));
+        // Its time grows with every post it finds, whatever page is asked:
+        // MariaDB stops it past the limit, so no word frequent enough holds
+        // a process of the site, of the few the hosting has, for seconds.
+        try {
+            $ids = $this->entityManager->getConnection()->fetchFirstColumn(
+                \sprintf('SET STATEMENT max_statement_time = %2$.6F FOR SELECT p.id FROM web_post p WHERE %1$s ORDER BY %1$s DESC, p.first_published_at DESC, p.id DESC LIMIT :limit OFFSET :offset', $match, $this->searchTimeLimit),
+                ['words' => implode(' ', array_map(static fn (string $word): string => '+'.$word.'*', $terms->words)), 'limit' => $limit, 'offset' => $offset],
+                ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
+            );
+        } catch (DriverException $exception) {
+            throw \in_array($exception->getCode(), self::STATEMENT_TIME_EXCEEDED, true) ? SearchTooBroad::forTerms($terms, $exception) : $exception;
+        }
+
+        return $this->postsOf(array_map(self::id(...), $ids));
     }
 
     /**

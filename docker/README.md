@@ -255,6 +255,12 @@ images, from `public/media/`, under `/media/`.
   Consumers side by side are safe (projections run in read committed and lock
   only the rows they change, and a deadlock is retried by Messenger), but
   each one is a PHP process of the 10 the account has.
+- Search: once a month, at night, a cron job runs `OPTIMIZE TABLE web_post`
+  (`bin/console dbal:run-sql 'OPTIMIZE TABLE web_post'`), which compacts the
+  full-text index after many posts are published and republished. A search
+  that would take longer than `web.post.search_time_limit` (1.5 s) asks for
+  another word, and an address may search 20 times a minute (`web_search` in
+  Redis), so a sweep of words can't take the 10 PHP processes.
 - HSTS: `curl -sI https://<site>/` and `curl -sI https://<cms>/login` each
   carry `Strict-Transport-Security: max-age=31536000` **once**. Nelmio sends it
   in `prod`; if Hetzner's nginx adds its own too, turn one of them off. And

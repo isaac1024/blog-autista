@@ -156,15 +156,16 @@ final readonly class RichText
      */
     public function plainText(): string
     {
-        $lines = [];
+        return self::lines($this->blocks);
+    }
 
-        foreach ($this->blocks as $block) {
-            foreach ($block->texts() as $text) {
-                $lines[] = implode('', array_map(static fn (TextRun $run): string => $run->text(), $text->runs()));
-            }
-        }
-
-        return implode("\n", $lines);
+    /**
+     * What its headings say, as plain text, a line per heading: what a text
+     * is about, as a search reads it, without every word it says on the way.
+     */
+    public function headings(): string
+    {
+        return self::lines(array_filter($this->blocks, static fn (Block $block): bool => $block instanceof Heading));
     }
 
     /**
@@ -213,5 +214,21 @@ final readonly class RichText
             BlockType::Widget => Widget::fromArray($data, $path),
             BlockType::Mosaic => Mosaic::fromArray($data, $path),
         };
+    }
+
+    /**
+     * @param iterable<Block> $blocks
+     */
+    private static function lines(iterable $blocks): string
+    {
+        $lines = [];
+
+        foreach ($blocks as $block) {
+            foreach ($block->texts() as $text) {
+                $lines[] = implode('', array_map(static fn (TextRun $run): string => $run->text(), $text->runs()));
+            }
+        }
+
+        return implode("\n", $lines);
     }
 }
