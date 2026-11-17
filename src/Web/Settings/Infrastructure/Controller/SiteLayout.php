@@ -13,6 +13,7 @@ use Shared\Infrastructure\Ui\WebLayout;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
+use Web\Author\Infrastructure\Ui\AuthorPerson;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\SearchPageFinder;
@@ -73,7 +74,7 @@ final readonly class SiteLayout
             $this->shareImage($settings),
         ));
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
-        $publisher = $this->publisher($settings, $home);
+        $publisher = $this->publisher($settings);
         $page = $page->withStructuredData(StructuredData::website($home, $settings->name, $publisher['url'] ?? null));
 
         return null === $publisher ? $page : $page->withStructuredData($publisher['node']);
@@ -91,7 +92,7 @@ final readonly class SiteLayout
             return null;
         }
 
-        $publisher = $this->publisher($settings, $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL));
+        $publisher = $this->publisher($settings);
 
         return null === $publisher ? null : $publisher['url'];
     }
@@ -102,22 +103,11 @@ final readonly class SiteLayout
      *
      * @return ?array{url: string, node: array<string, mixed>}
      */
-    private function publisher(SettingsResponse $settings, string $home): ?array
+    private function publisher(SettingsResponse $settings): ?array
     {
         $author = null === $settings->authorId ? null : new AuthorOnSiteFinder($settings->authorId)($this->authorRepository);
 
-        if (null === $author) {
-            return null;
-        }
-
-        $url = $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL);
-
-        return ['url' => $url, 'node' => StructuredData::person(
-            $url,
-            $author->name,
-            StructuredData::absolute($home, SiteMedia::avatar($author->avatarName, $author->name)['src']),
-            $author->metaDescription,
-        )];
+        return null === $author ? null : AuthorPerson::node($author, $this->urlGenerator);
     }
 
     /**

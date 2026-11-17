@@ -11,6 +11,7 @@ use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
+use Web\Author\Infrastructure\Ui\AuthorPerson;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
@@ -43,8 +44,6 @@ final readonly class PublishedAuthor
 
     public function __invoke(AuthorResponse $author): Page
     {
-        $canonical = $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL);
-
         // An image off the site is painted as the one its address now leads
         // to, if any, so the pages its caption links to are those of that one.
         $images = array_map(
@@ -57,6 +56,8 @@ final readonly class PublishedAuthor
 
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
         $avatar = SiteMedia::avatar($author->avatarName, $author->name);
+        $person = AuthorPerson::node($author, $this->urlGenerator);
+        $canonical = $person['url'];
 
         // The page of a person: the person, who may be the one who publishes the blog too, is one node.
         return ($this->siteAuthorPage)(
@@ -66,7 +67,7 @@ final readonly class PublishedAuthor
                 ->withStructuredData(StructuredData::webPage('ProfilePage', $home, $canonical, $author->name, $author->metaDescription, [
                     'mainEntity' => ['@id' => StructuredData::personId($canonical)],
                 ]))
-                ->withStructuredData(StructuredData::person($canonical, $author->name, StructuredData::absolute($home, $avatar['src']), $author->metaDescription)),
+                ->withStructuredData($person['node']),
             $author->name,
             $avatar,
             $author->bio,

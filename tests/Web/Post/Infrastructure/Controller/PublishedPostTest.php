@@ -252,6 +252,7 @@ final class PublishedPostTest extends TestCase
         $canonical = RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html';
 
         self::assertSame([
+            self::person('Isaac', 'isaac'),
             [
                 '@type' => 'WebPage',
                 '@id' => $canonical.'#webpage',
@@ -298,6 +299,35 @@ final class PublishedPostTest extends TestCase
             'section' => 'Día a día',
             'tags' => ['Ruido'],
         ], $page->article);
+    }
+
+    /**
+     * Who signs a post, while on the site, is told as a person of its own,
+     * whoever publishes the blog; when they publish it too, they are told once.
+     */
+    #[DataProvider('signers')]
+    public function testItTellsSearchEnginesWhoSignsThePost(string $publisher, string $publisherName, string $publisherSlug, int $people): void
+    {
+        $authors = [self::AUTHOR => self::author('Isaac', 'isaac'), self::NEW_AUTHOR => self::author('Ana', 'ana')];
+        $page = $this->compose(
+            [],
+            authors: [self::AUTHOR => $authors[self::AUTHOR], $publisher => $authors[$publisher]],
+            settings: Settings::publish(CmsSettingsPublishedMother::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: $publisher)),
+        );
+
+        $nodes = array_values(array_filter($page->structuredData, static fn (array $node): bool => 'Person' === $node['@type']));
+        self::assertCount($people, $nodes);
+        self::assertContains(self::person('Isaac', 'isaac'), $nodes);
+        self::assertContains(self::person($publisherName, $publisherSlug), $nodes);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, int}>
+     */
+    public static function signers(): iterable
+    {
+        yield 'another author than who publishes the blog' => [self::NEW_AUTHOR, 'Ana', 'ana', 2];
+        yield 'the author who publishes the blog' => [self::AUTHOR, 'Isaac', 'isaac', 1];
     }
 
     /**
@@ -404,6 +434,25 @@ final class PublishedPostTest extends TestCase
             'last_published_at' => ClockMother::now()->format(\DATE_ATOM),
             'revision' => 1,
         ]));
+    }
+
+    /**
+     * The node of an author on the site, made by author() with that name and slug.
+     *
+     * @return array<string, mixed>
+     */
+    private static function person(string $name, string $slug): array
+    {
+        $url = RouteNameUrlGenerator::SITE.'/autor/'.$slug.'.html';
+
+        return [
+            '@type' => 'Person',
+            '@id' => $url.'#person',
+            'url' => $url,
+            'name' => $name,
+            'image' => RouteNameUrlGenerator::SITE.SiteMedia::avatar(AvatarCopy::named($slug, '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp'), $name)['src'],
+            'description' => 'Quién escribe.',
+        ];
     }
 
     private static function author(string $name, string $slug): Author

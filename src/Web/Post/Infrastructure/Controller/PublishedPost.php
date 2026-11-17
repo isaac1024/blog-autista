@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Application\AuthorResponse;
 use Web\Author\Domain\AuthorRepository;
+use Web\Author\Infrastructure\Ui\AuthorPerson;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
@@ -77,9 +78,18 @@ final readonly class PublishedPost
         $tags = $this->tags($post->tagIds);
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
         $opening = $images[$post->openingImageId] ?? null;
+        $person = null === $author ? null : AuthorPerson::node($author, $this->urlGenerator);
+
+        $layout = $this->siteLayout->page($post->title);
+
+        // Who signs it, while on the site, is a node of the graph the post
+        // refers to, told once if they publish the blog too.
+        if (null !== $person) {
+            $layout = $layout->withStructuredData($person['node']);
+        }
 
         return ($this->sitePostPage)(
-            $this->siteLayout->page($post->title)
+            $layout
                 ->withSearchEngineMetadata($post->metaDescription, $post->robots.',max-image-preview:large', $canonical)
                 ->withCountedVisits('post', $post->id)
                 ->withStructuredData(StructuredData::webPage('WebPage', $home, $canonical, $post->title, $post->metaDescription, []))
@@ -90,7 +100,7 @@ final readonly class PublishedPost
                     null === $opening ? null : StructuredData::absolute($home, $opening['src']),
                     $post->firstPublishedAt,
                     $post->lastPublishedAt,
-                    $this->creator($post, $author),
+                    ['name' => $author->name ?? $post->authorName, 'url' => $person['url'] ?? null],
                     $section->name ?? $post->sectionName,
                     array_column($tags, 'name'),
                     $this->siteLayout->publisherUrl(),
@@ -125,20 +135,6 @@ final readonly class PublishedPost
             'day' => $day,
             'slug' => $post->slug,
         ], UrlGeneratorInterface::ABSOLUTE_URL);
-    }
-
-    /**
-     * Who wrote the post, as search engines are told: by the address of
-     * their page while they are on the site.
-     *
-     * @return array{name: string, url: ?string}
-     */
-    private function creator(PostResponse $post, ?AuthorResponse $author): array
-    {
-        return [
-            'name' => $author->name ?? $post->authorName,
-            'url' => null === $author ? null : $this->urlGenerator->generate('web_author', ['slug' => $author->slug], UrlGeneratorInterface::ABSOLUTE_URL),
-        ];
     }
 
     /**
