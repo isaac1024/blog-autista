@@ -196,7 +196,7 @@ final class ExternalResourcesOnTheSiteTest extends WebTestCase
         $external = $linked[$id]['external'] ?? null;
         self::assertNotNull($external);
 
-        return ExternalComponents::component($external);
+        return ExternalComponents::component($external, false);
     }
 
     /**

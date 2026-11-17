@@ -34,10 +34,18 @@ final class PostCards
     public bool $wide = false;
 
     /**
+     * Whether its first card has the first picture of what the page shows, which the
+     * browser fetches at once rather than once it nears the screen, as it
+     * may be the largest thing on it as it opens.
+     */
+    public bool $lead = false;
+
+    /**
      * @param list<PostCard> $cards
      */
-    public function mount(array $cards, int $headingLevel, bool $wide): void
+    public function mount(array $cards, int $headingLevel, bool $wide, bool $lead): void
     {
+        $this->lead = $lead;
         $this->cards = $cards;
         $this->headingLevel = $headingLevel;
         $this->wide = $wide;

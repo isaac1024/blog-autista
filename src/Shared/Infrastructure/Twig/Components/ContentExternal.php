@@ -43,14 +43,22 @@ final class ContentExternal
      */
     public ?array $image = null;
 
+    /**
+     * Whether it is the first picture of what the page shows, which the
+     * browser fetches at once rather than once it nears the screen, as it
+     * may be the largest thing on it as it opens.
+     */
+    public bool $lead = false;
+
     public function __construct(private readonly TranslatorInterface $translator) {}
 
     /**
      * @param array<array-key, mixed>                                      $details as the resource tells them
      * @param ?array{src: string, srcset: string, width: int, height: int} $image
      */
-    public function mount(string $kind, string $url, string $title, ?string $summary, string $language, array $details, ?array $image): void
+    public function mount(string $kind, string $url, string $title, ?string $summary, string $language, array $details, ?array $image, bool $lead): void
     {
+        $this->lead = $lead;
         $this->kind = $kind;
         $this->url = $url;
         $this->title = $title;

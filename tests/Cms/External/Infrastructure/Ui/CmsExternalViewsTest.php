@@ -40,7 +40,7 @@ final class CmsExternalViewsTest extends KernelTestCase
         self::assertSame([ExternalResourceMother::ID], array_keys($linked));
         $external = $linked[ExternalResourceMother::ID]['external'] ?? null;
         self::assertNotNull($external);
-        $video = ExternalComponents::component($external);
+        $video = ExternalComponents::component($external, false);
         self::assertSame(['Shared:ExternalEmbed', 'Un vídeo'], [$video->name, $video->props['title']]);
         $image = $video->props['image'];
         self::assertIsArray($image);

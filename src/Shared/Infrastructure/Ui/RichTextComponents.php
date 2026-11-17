@@ -61,7 +61,7 @@ final readonly class RichTextComponents
                 $cards = $mosaics[$block->key()] ?? [];
 
                 if ([] !== $cards) {
-                    $components[] = new PageComponent('Shared:PostCards', ['cards' => $cards, 'headingLevel' => $headingLevel + 1, 'wide' => false]);
+                    $components[] = new PageComponent('Shared:PostCards', ['cards' => $cards, 'headingLevel' => $headingLevel + 1, 'wide' => false, 'lead' => false]);
                 }
 
                 continue;
@@ -71,7 +71,7 @@ final readonly class RichTextComponents
                 $image = $images[$block->imageId()] ?? null;
 
                 if (null !== $image) {
-                    $components[] = self::image($image, $links, false);
+                    $components[] = self::image($image, $links, false, false);
                 }
 
                 continue;
@@ -81,7 +81,7 @@ final readonly class RichTextComponents
                 $page = $pages[$block->target()->id()] ?? null;
 
                 if (null !== $page) {
-                    $components[] = self::widget($block->kind(), $page);
+                    $components[] = self::widget($block->kind(), $page, false);
                 }
 
                 continue;
@@ -90,7 +90,7 @@ final readonly class RichTextComponents
             $components[] = self::block($block, $links);
         }
 
-        return $components;
+        return self::leading($components);
     }
 
     /**
@@ -102,7 +102,37 @@ final readonly class RichTextComponents
      */
     public function opening(array $image, array $pages): PageComponent
     {
-        return self::image($image, array_map(static fn (array $page): string => $page['url'], $pages), true);
+        return self::image($image, array_map(static fn (array $page): string => $page['url'], $pages), true, false);
+    }
+
+    /**
+     * The first picture of the text is fetched at once: it may be the
+     * largest thing on the page as it opens. One further down costs no more
+     * than the fetch it would have had anyway.
+     *
+     * @param list<PageComponent> $components
+     *
+     * @return list<PageComponent>
+     */
+    private static function leading(array $components): array
+    {
+        foreach ($components as $index => $component) {
+            $cards = $component->props['cards'] ?? null;
+            $picture = match ($component->name) {
+                'Shared:ContentImage' => true,
+                // The first card is the one fetched at once.
+                'Shared:PostCards' => \is_array($cards) && \is_array($cards[0] ?? null) && null !== ($cards[0]['image'] ?? null),
+                default => null !== ($component->props['image'] ?? null),
+            };
+
+            if ($picture) {
+                $components[$index] = new PageComponent($component->name, [...$component->props, 'lead' => true], $component->children);
+
+                return $components;
+            }
+        }
+
+        return $components;
     }
 
     /**
@@ -110,11 +140,12 @@ final readonly class RichTextComponents
      * as a card that leads to it.
      *
      * @param array{url: string, title: string, external?: ExternalView} $page
+     * @param bool                                                       $lead whether its picture, if any, is the first of the text
      */
-    private static function widget(WidgetKind $kind, array $page): PageComponent
+    private static function widget(WidgetKind $kind, array $page, bool $lead): PageComponent
     {
         if (isset($page['external'])) {
-            return ExternalComponents::component($page['external']);
+            return ExternalComponents::component($page['external'], $lead);
         }
 
         return match ($kind) {
@@ -129,8 +160,9 @@ final readonly class RichTextComponents
      * @param array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText} $image
      * @param array<string, string>                                                                       $links
      * @param bool                                                                                        $opening whether it opens the content rather than sits in it
+     * @param bool                                                                                        $lead    whether it is the first picture of the text
      */
-    private static function image(array $image, array $links, bool $opening): PageComponent
+    private static function image(array $image, array $links, bool $opening, bool $lead): PageComponent
     {
         $caption = $image['caption']->blocks()[0] ?? null;
 
@@ -143,6 +175,7 @@ final readonly class RichTextComponents
             // A caption is a single paragraph.
             'caption' => $caption instanceof Paragraph ? self::runs($caption->text(), $links) : [],
             'opening' => $opening,
+            'lead' => $lead,
         ]);
     }
 

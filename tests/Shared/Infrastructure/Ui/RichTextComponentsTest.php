@@ -17,6 +17,8 @@ final class RichTextComponentsTest extends TestCase
     private const string MISSING = '01a1b801-ce58-723d-8234-b76d9105d002';
     private const string OTHER_PUBLISHED = '01a1b801-ce58-723d-8234-b76d9105d003';
 
+    private const array PICTURE = ['src' => '/media/a-800.webp', 'srcset' => '/media/a-800.webp 800w', 'width' => 800, 'height' => 450];
+
     public function testItLinksOnlyRunsWhosePageIsOnTheSite(): void
     {
         $content = RichText::fromArray([
@@ -264,5 +266,83 @@ final class RichTextComponentsTest extends TestCase
         ], $components[0]->props['text']);
         self::assertSame(['Shared:ContentRelatedPage', ['title' => 'Isaac', 'url' => '/autor/isaac.html']], [$components[1]->name, $components[1]->props]);
         self::assertSame([], $content->pageIds());
+    }
+
+    /**
+     * The first picture of the text may be the largest thing on the page as
+     * it opens, so it is fetched at once, whatever shows it; what shows none
+     * leaves it to the next. The opening image of a content is fetched
+     * first anyway.
+     */
+    public function testItFetchesTheFirstPictureOfTheTextAtOnce(): void
+    {
+        self::assertSame([null, false, true, false, false], self::leads([
+            ['type' => 'paragraph', 'text' => [['text' => 'Antes']]],
+            ['type' => 'widget', 'kind' => 'related_page', 'external_id' => self::MISSING],
+            ['type' => 'image', 'id' => self::PUBLISHED],
+            ['type' => 'widget', 'kind' => 'related_page', 'external_id' => self::OTHER_PUBLISHED],
+            ['type' => 'image', 'id' => self::PUBLISHED],
+        ]));
+        self::assertSame([true, false], self::leads([
+            ['type' => 'widget', 'kind' => 'related_page', 'external_id' => self::OTHER_PUBLISHED],
+            ['type' => 'image', 'id' => self::PUBLISHED],
+        ]));
+        self::assertSame([false, true, false], self::leads([
+            ['type' => 'mosaic', 'limit' => 3, 'section_id' => null, 'author_id' => null, 'tag_ids' => []],
+            ['type' => 'mosaic', 'limit' => 4, 'section_id' => null, 'author_id' => null, 'tag_ids' => []],
+            ['type' => 'image', 'id' => self::PUBLISHED],
+        ]), 'a mosaic whose first card shows no picture leaves it to the next');
+        self::assertFalse(new RichTextComponents()->opening(self::image(), [])->props['lead']);
+    }
+
+    /**
+     * Whether each component the blocks are painted with is fetched at once,
+     * null for those that show no picture.
+     *
+     * @param list<array<string, mixed>> $blocks
+     *
+     * @return list<mixed>
+     */
+    private static function leads(array $blocks): array
+    {
+        $components = new RichTextComponents()(RichText::fromArray(['version' => 1, 'blocks' => $blocks]), [self::PUBLISHED => self::image()], [
+            self::MISSING => self::external('sin-imagen', null),
+            self::OTHER_PUBLISHED => self::external('con-imagen', self::PICTURE),
+        ], ['3|||' => [self::card(null), self::card(self::PICTURE)], '4|||' => [self::card(self::PICTURE)]]);
+
+        return array_map(static fn (PageComponent $component): mixed => $component->props['lead'] ?? null, $components);
+    }
+
+    /**
+     * @return array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}
+     */
+    private static function image(): array
+    {
+        return [...self::PICTURE, 'alt' => 'Una imagen', 'caption' => RichText::empty()];
+    }
+
+    /**
+     * @param ?array{src: string, srcset: string, width: int, height: int} $image
+     *
+     * @return array{url: string, title: string, external: array{kind: string, provider: ?string, locator: ?string, url: string, title: string, summary: ?string, language: string, details: array<array-key, mixed>, image: ?array{src: string, srcset: string, width: int, height: int}, cookies: ?string}}
+     */
+    private static function external(string $title, ?array $image): array
+    {
+        $url = 'https://www.example.org/'.$title;
+
+        return ['url' => $url, 'title' => $title, 'external' => [
+            'kind' => 'article', 'provider' => null, 'locator' => null, 'url' => $url, 'title' => $title,
+            'summary' => null, 'language' => 'es', 'details' => [], 'image' => $image, 'cookies' => null,
+        ]];
+    }
+
+    /**
+     * @param ?array{src: string, srcset: string, width: int, height: int} $image
+     *
+     * @return array{url: string, title: string, excerpt: ?string, section: string, date: string, datetime: string, image: ?array{src: string, srcset: string, width: int, height: int}}
+     */
+    private static function card(?array $image): array
+    {
+        return ['url' => '/un-post.html', 'title' => 'Un post', 'excerpt' => null, 'section' => 'Vida diaria', 'date' => '17 de noviembre de 2026', 'datetime' => '2026-11-17', 'image' => $image];
     }
 }

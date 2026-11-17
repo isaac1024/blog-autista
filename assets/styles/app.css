@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * What only shows where the page runs scripts, from its first paint: the
+ * script of the head marks the root before the body is read, so showing it
+ * moves nothing once the page has painted.
+ */
+@custom-variant scripted (&:where([data-scripted] *));
+
 @source "../../templates";
 @source "../../src";
 @source "../controllers";

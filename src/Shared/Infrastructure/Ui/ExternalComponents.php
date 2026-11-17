@@ -21,8 +21,9 @@ final readonly class ExternalComponents
 {
     /**
      * @param ExternalView $external
+     * @param bool         $lead     whether its picture is the first of what the page shows, fetched at once
      */
-    public static function component(array $external): PageComponent
+    public static function component(array $external, bool $lead): PageComponent
     {
         $kind = ResourceKind::from($external['kind']);
         $provider = null === $external['provider'] ? null : new Providers()->named($external['provider']);
@@ -37,6 +38,7 @@ final readonly class ExternalComponents
                 'language' => $external['language'],
                 'details' => $external['details'],
                 'image' => $external['image'],
+                'lead' => $lead,
             ]);
         }
 
@@ -54,6 +56,7 @@ final readonly class ExternalComponents
             'cookiesUrl' => $external['cookies'],
             'details' => $external['details'],
             'image' => $external['image'],
+            'lead' => $lead,
         ]);
     }
 
@@ -65,7 +68,7 @@ final readonly class ExternalComponents
      */
     public static function frameOrigin(array $external): ?string
     {
-        $component = self::component($external);
+        $component = self::component($external, false);
 
         return 'Shared:ExternalEmbed' === $component->name && \is_string($component->props['frameOrigin'] ?? null) ? $component->props['frameOrigin'] : null;
     }

@@ -19,7 +19,7 @@
         <span><span class="font-bold">{{ ('content.external.label.' ~ kind)|trans }}</span><span class="sr-only">, {{ 'content.external.leaves'|trans }}:</span>{% if source is not empty %}<span class="block text-muted">{{ source|join(', ') }}</span>{% endif %}</span>
     </span>
 {% if image %}
-    <img class="mt-2 block h-auto w-full bg-bg" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt="" loading="lazy" decoding="async">
+    <img class="mt-2 block h-auto w-full bg-bg" src="{{ image.src }}" srcset="{{ image.srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ image.width }}" height="{{ image.height }}" alt=""{% if not lead %} loading="lazy" decoding="async"{% endif %}>
 {% endif %}
     <span class="mt-1 text-xl leading-snug font-semibold text-balance text-accent underline decoration-[0.06em] underline-offset-[0.18em] group-hover:text-accent-strong group-hover:decoration-[0.12em]" lang="{{ language }}">{{ title }}</span>
 {% if summary %}

@@ -30,6 +30,8 @@ final readonly class PostCardsComponent
             'cards' => $this->cards($posts),
             'headingLevel' => $headingLevel,
             'wide' => $wide,
+            // A list of posts is what its page shows: its first picture opens it.
+            'lead' => true,
         ]);
     }
 

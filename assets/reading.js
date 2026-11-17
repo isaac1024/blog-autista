@@ -1,8 +1,9 @@
 /*
  * The reading settings of the header: a button that opens a panel to make
  * the text bigger or smaller and to pick the theme. Each change shows at
- * once and is kept in the browser for the next pages. Without this script
- * the settings can't be changed, so the button stays hidden.
+ * once and is kept in the browser for the next pages. Without scripts the
+ * settings can't be changed, so the button stays hidden: the script of the
+ * head shows it.
  */
 import { applySettings, readSettings, resize, saveSettings, SIZES } from './reading/settings.js';
 
@@ -82,5 +83,4 @@ for (const settingsElement of /** @type {NodeListOf<HTMLElement>} */ (document.q
     });
 
     show();
-    settingsElement.hidden = false;
 }

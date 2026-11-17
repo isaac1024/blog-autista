@@ -107,7 +107,7 @@ final class PublishedTermTest extends TestCase
         self::assertSame('Sueño', $first->title);
         self::assertSame(RouteNameUrlGenerator::SITE.'/tag/sueno.html', $first->canonical);
         /** @var list<array<string, mixed>> $cards */
-        $cards = PageComponents::one($first, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => true])->props['cards'];
+        $cards = PageComponents::one($first, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => true, 'lead' => true])->props['cards'];
         self::assertCount(20, $cards);
         self::assertSame(['url' => '/vida-diaria/2026/11/07/entrada-0.html', 'title' => 'Entrada 0', 'excerpt' => 'Qué cambió el primer día con tapones.', 'section' => 'Vida diaria'], array_intersect_key($cards[0], array_flip(['url', 'title', 'excerpt', 'section'])));
         PageComponents::one($first, 'Shared:Pagination', ['previousUrl' => null, 'nextUrl' => '/tag/sueno.html?pagina=2']);

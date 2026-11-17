@@ -6,7 +6,13 @@
  * reading.js lets the reader change it.
  *
  * A value the stylesheet doesn't know changes nothing, so it is set as kept.
+ *
+ * It marks the root too, so what only works with scripts, such as the
+ * button of the settings, shows from the first paint rather than moving
+ * what is beside it once the scripts of the body run.
  */
+document.documentElement.dataset.scripted = '';
+
 try {
     const kept = JSON.parse(String(window.localStorage.getItem('reading')));
 

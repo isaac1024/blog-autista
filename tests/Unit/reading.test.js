@@ -87,10 +87,10 @@ test('the head sets only what was kept as text, and nothing when nothing, or not
     }
 });
 
-test('without the script the settings stay hidden; with it, the button shows and the panel stays closed', async () => {
+test('the script of the head marks the page as one that runs scripts, which shows the button, and the panel stays closed', async () => {
     const { document, toggle, panel } = await page();
 
-    assert.equal(document.querySelector('[data-reading]')?.hasAttribute('hidden'), false);
+    assert.equal(document.documentElement.dataset.scripted, '');
     assert.equal(toggle.getAttribute('aria-expanded'), 'false');
     assert.equal(panel.hidden, true);
 });

@@ -32,6 +32,7 @@ final class VersionedImportsTest extends KernelTestCase
         self::assertSame([
             $assets->getPublicPath('external/consent.js'),
             $assets->getPublicPath('external/frames.js'),
+            $assets->getPublicPath('external/heights.js'),
         ], $imports[1]);
         self::assertStringNotContainsString("'./", (string) $script->content);
     }

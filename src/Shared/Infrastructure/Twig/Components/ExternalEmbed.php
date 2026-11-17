@@ -71,6 +71,13 @@ final class ExternalEmbed
     public ?string $show = null;
 
     /**
+     * Whether it is the first picture of what the page shows, which the
+     * browser fetches at once rather than once it nears the screen, as it
+     * may be the largest thing on it as it opens.
+     */
+    public bool $lead = false;
+
+    /**
      * How many facades were painted so far, so each has an id of its own.
      */
     private static int $painted = 0;
@@ -102,7 +109,9 @@ final class ExternalEmbed
         ?string $cookiesUrl,
         array $details,
         ?array $image,
+        bool $lead,
     ): void {
+        $this->lead = $lead;
         $this->id = \sprintf('external-%s-%d', hash('crc32b', $embedUrl), ++self::$painted);
         $this->kind = $kind;
         $this->provider = $provider;

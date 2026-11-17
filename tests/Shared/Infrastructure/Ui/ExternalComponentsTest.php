@@ -24,7 +24,7 @@ final class ExternalComponentsTest extends TestCase
     public function testItFramesWhatAProviderEmbedsFromThatProviderAlone(string $kind, string $provider, string $locator, array $expected): void
     {
         $view = self::view($kind, $provider, $locator);
-        $component = ExternalComponents::component($view);
+        $component = ExternalComponents::component($view, false);
 
         self::assertSame('Shared:ExternalEmbed', $component->name);
         self::assertSame($expected, array_intersect_key($component->props, $expected));
@@ -58,7 +58,7 @@ final class ExternalComponentsTest extends TestCase
     public function testItPaintsAsACardWhatNoProviderFrames(string $kind, ?string $provider, ?string $locator): void
     {
         $view = self::view($kind, $provider, $locator);
-        $component = ExternalComponents::component($view);
+        $component = ExternalComponents::component($view, false);
 
         self::assertSame('Shared:ContentExternal', $component->name);
         self::assertSame(['kind' => $kind, 'url' => $view['url'], 'title' => 'Un recurso'], array_intersect_key($component->props, ['kind' => true, 'url' => true, 'title' => true]));

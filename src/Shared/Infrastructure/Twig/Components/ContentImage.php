@@ -44,11 +44,19 @@ final class ContentImage
     public bool $opening = false;
 
     /**
+     * Whether it is the first picture of what the page shows, which the
+     * browser fetches at once rather than once it nears the screen, as it
+     * may be the largest thing on it as it opens.
+     */
+    public bool $lead = false;
+
+    /**
      * @param list<array{href: ?string, runs: list<array{text: string, bold: bool}>}> $caption stretches of text, each linking one page or none
      */
-    public function mount(string $src, string $srcset, int $width, int $height, string $alt, array $caption, bool $opening): void
+    public function mount(string $src, string $srcset, int $width, int $height, string $alt, array $caption, bool $opening, bool $lead): void
     {
         $this->opening = $opening;
+        $this->lead = $lead;
         $this->src = $src;
         $this->srcset = $srcset;
         $this->width = $width;

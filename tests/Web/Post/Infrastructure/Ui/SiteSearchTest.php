@@ -49,7 +49,7 @@ final class SiteSearchTest extends TestCase
 
         PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html', 'name' => 'q', 'value' => ' Ruido, metro y RUIDO ']);
         /** @var list<array<string, mixed>> $cards */
-        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => false])->props['cards'];
+        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => false, 'lead' => true])->props['cards'];
         self::assertCount(20, $cards);
         self::assertSame('Entrada 1', $cards[0]['title']);
         PageComponents::one($page, 'Shared:Pagination', ['previousUrl' => null, 'nextUrl' => '/buscar.html?q=+Ruido%2C+metro+y+RUIDO+&pagina=2']);

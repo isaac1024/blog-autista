@@ -71,7 +71,7 @@ final class ExternalEmbedTest extends TestCase
         $translator = new CatalogueTranslator();
         $translator->setLocale('es');
         $embed = new ExternalEmbed($translator);
-        $embed->mount($kind, 'youtube', 'YouTube', 'https://youtu.be/dQw4w9WgXcQ', 'Un vídeo', 'es', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', 'https://www.youtube-nocookie.com', 'landscape', 'https://policies.google.com/privacy', '/cookies.html', $details, null);
+        $embed->mount($kind, 'youtube', 'YouTube', 'https://youtu.be/dQw4w9WgXcQ', 'Un vídeo', 'es', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ', 'https://www.youtube-nocookie.com', 'landscape', 'https://policies.google.com/privacy', '/cookies.html', $details, null, false);
 
         return $embed;
     }

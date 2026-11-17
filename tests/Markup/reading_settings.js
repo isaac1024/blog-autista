@@ -4,7 +4,7 @@
  */
 
 export const readingSettings = () => `
-    <div class="relative" data-reading hidden>
+    <div class="relative hidden scripted:block" data-reading>
         <button type="button" aria-expanded="false" aria-controls="reading-settings" aria-label="Ajustes de lectura" data-reading-toggle>
             <span aria-hidden="true">Aa</span>
         </button>

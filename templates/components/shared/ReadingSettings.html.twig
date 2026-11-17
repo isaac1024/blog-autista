@@ -1,10 +1,12 @@
 {#
-    Hidden until reading.js runs, since only it can change the settings. The
+    Hidden without scripts, since only reading.js can change the settings;
+    with them, shown from the first paint, as the script of the head marks
+    the page before it is painted, so nothing beside it moves. The
     "Aa" is an icon: the button is named by its words, and on wider screens
     the short one shows beside it. The panel opens under the button and
     closes with Escape or a click elsewhere.
 #}
-<div{{ attributes.defaults({class: 'relative'}) }} data-reading hidden>
+<div{{ attributes.defaults({class: 'relative hidden scripted:block'}) }} data-reading>
     <button class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-0 bg-transparent px-2 font-bold text-text hover:text-accent aria-expanded:bg-surface" type="button" aria-expanded="false" aria-controls="reading-settings" aria-label="{{ 'ui.reading.toggle'|trans }}" data-reading-toggle>
         <span aria-hidden="true">Aa</span>
         <span class="hidden font-normal md:inline" aria-hidden="true">{{ 'ui.reading.short'|trans }}</span>

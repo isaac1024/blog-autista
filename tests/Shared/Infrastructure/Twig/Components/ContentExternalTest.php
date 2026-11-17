@@ -23,7 +23,7 @@ final class ContentExternalTest extends TestCase
     public function testItTellsWhereEachKindComesFrom(string $kind, string $url, array $details, array $source): void
     {
         $card = new ContentExternal(self::translator());
-        $card->mount($kind, $url, 'Un recurso', 'De qué trata.', 'es', $details, null);
+        $card->mount($kind, $url, 'Un recurso', 'De qué trata.', 'es', $details, null, false);
 
         self::assertSame($source, $card->source);
         self::assertSame([$kind, $url, 'Un recurso', 'De qué trata.', 'es', null], [$card->kind, $card->url, $card->title, $card->summary, $card->language, $card->image]);
