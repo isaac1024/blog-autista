@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
+use Web\Shared\Infrastructure\Http\StreamedXml;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Sitemap\Application\SitemapFileNotFound;
 use Web\Sitemap\Application\SitemapLinesReader;
@@ -52,7 +53,7 @@ final class SitemapFileController extends AbstractController
         $site = rtrim($this->generateUrl('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL), '/');
 
         return new StreamedResponse(static function () use ($lines, $site, $redirected): void {
-            $xml = SitemapXml::open();
+            $xml = StreamedXml::open();
             $xml->startElement('urlset');
             $xml->writeAttribute('xmlns', SitemapXml::NAMESPACE);
             $xml->writeAttribute('xmlns:image', SitemapXml::IMAGE_NAMESPACE);
@@ -80,7 +81,7 @@ final class SitemapFileController extends AbstractController
             }
 
             $xml->endElement();
-            SitemapXml::close($xml);
+            StreamedXml::close($xml);
         }, 200, ['Content-Type' => SitemapXml::CONTENT_TYPE]);
     }
 }

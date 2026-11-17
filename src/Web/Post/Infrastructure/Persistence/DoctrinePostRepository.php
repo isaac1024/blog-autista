@@ -14,6 +14,7 @@ use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
 use Web\Post\Domain\SearchTerms;
+use Web\Shared\Domain\Robots;
 
 /**
  * Outbound adapter that persists and reads the posts on the site through
@@ -64,6 +65,16 @@ final readonly class DoctrinePostRepository implements PostRepository
     public function listed(PostSelection $selection, int $offset, int $limit): array
     {
         return $this->postsOf($this->listedIds($selection, $offset, $limit));
+    }
+
+    #[\Override]
+    public function indexed(int $limit): array
+    {
+        return $this->postsOf(array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
+            'SELECT id FROM web_post WHERE robots = :robots ORDER BY first_published_at DESC, id DESC LIMIT :limit',
+            ['robots' => Robots::IndexFollow->value, 'limit' => $limit],
+            ['limit' => ParameterType::INTEGER],
+        )));
     }
 
     /**

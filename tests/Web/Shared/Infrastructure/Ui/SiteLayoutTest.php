@@ -55,6 +55,7 @@ final class SiteLayoutTest extends TestCase
 
         self::assertSame('Sobre mí', $page->title);
         self::assertNull($page->siteName);
+        self::assertNull($page->feed);
         self::assertSame([
             'header' => ['brand' => null, 'homeUrl' => '/', 'links' => [], 'searchUrl' => null],
             'footer' => ['brand' => null, 'links' => []],
@@ -93,6 +94,8 @@ final class SiteLayoutTest extends TestCase
         $page = self::layout($settings, $pages, $images)->page('Sobre mí');
 
         self::assertSame(Event::NAME, $page->siteName);
+        // The feed of the site, named as the blog.
+        self::assertSame(['url' => '/feed.xml', 'title' => Event::NAME], $page->feed);
         self::assertSame([
             'header' => ['brand' => Event::NAME, 'homeUrl' => '/', 'links' => [
                 ['label' => 'Contacto', 'url' => '/contacto.html'],
@@ -229,7 +232,11 @@ final class SiteLayoutTest extends TestCase
             static function (string $name, array $parameters = []): string {
                 $slug = $parameters['slug'] ?? null;
 
-                return 'web_home' === $name ? '/' : (\is_string($slug) ? '/'.$slug.'.html' : '');
+                return match (true) {
+                    'web_home' === $name => '/',
+                    'web_feed' === $name => '/feed.xml',
+                    default => \is_string($slug) ? '/'.$slug.'.html' : '',
+                };
             },
         );
         $repository = self::createStub(SettingsRepository::class);

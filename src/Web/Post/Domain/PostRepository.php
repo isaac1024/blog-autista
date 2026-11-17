@@ -30,6 +30,14 @@ interface PostRepository
     public function listed(PostSelection $selection, int $offset, int $limit): array;
 
     /**
+     * The posts search engines may index, newest first by the day they were
+     * first published, as many as the limit at most.
+     *
+     * @return list<Post>
+     */
+    public function indexed(int $limit): array;
+
+    /**
      * The posts whose title, summary or content have every word searched,
      * as the start of a word, the most relevant first, newest first among
      * equals, from the offset given, as many as the limit at most.

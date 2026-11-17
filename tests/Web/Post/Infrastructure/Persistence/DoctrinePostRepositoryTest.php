@@ -123,6 +123,24 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     }
 
     /**
+     * The posts search engines may index, newest first, ties by id, as many
+     * as asked for: those that ask not to be indexed are left out.
+     */
+    public function testItReadsThePostsSearchEnginesMayIndexNewestFirst(): void
+    {
+        $this->publish(self::OLDEST, '2026-11-01T10:00:00+00:00', self::SECTION, self::AUTHOR, []);
+        $this->publish(self::MIDDLE, '2026-11-03T10:00:00+00:00', self::SECTION, self::AUTHOR, [], Robots::NoindexFollow);
+        $this->publish(self::NEWEST, '2026-11-05T10:00:00+00:00', self::SECTION, self::AUTHOR, []);
+        $this->publish(self::TIED, '2026-11-05T10:00:00+00:00', self::SECTION, self::AUTHOR, [], Robots::NoindexNofollow);
+        $this->entityManager()->clear();
+
+        $ids = static fn (array $posts): array => array_map(static fn (mixed $post): string => $post instanceof Post ? $post->id()->value() : '', $posts);
+
+        self::assertSame([self::NEWEST, self::OLDEST], $ids($this->repository()->indexed(10)));
+        self::assertSame([self::NEWEST], $ids($this->repository()->indexed(1)));
+    }
+
+    /**
      * The index of the tags follows each post: republished with other tags,
      * it lists under those alone, dated as the post; deleted, under none,
      * while the others keep theirs.
@@ -196,7 +214,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     /**
      * @param list<string> $tagIds
      */
-    private function publish(string $id, string $firstPublishedAt, string $sectionId, string $authorId, array $tagIds): Post
+    private function publish(string $id, string $firstPublishedAt, string $sectionId, string $authorId, array $tagIds, Robots $robots = Robots::IndexFollow): Post
     {
         $post = Post::publish(CmsPostPublished::fromPrimitives($id, [
             'title' => 'Entrada '.$id,
@@ -205,6 +223,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
             'author_id' => $authorId,
             'tag_ids' => $tagIds,
             'first_published_at' => $firstPublishedAt,
+            'robots' => $robots->value,
             'revision' => 1,
         ] + CmsPostPublishedMother::body()));
         $this->repository()->save($post);

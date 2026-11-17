@@ -33,6 +33,7 @@ final readonly class Page
      * @param list<array<string, mixed>>                                $structuredData the nodes of schema.org it tells search engines it is, as JSON-LD
      * @param ?string                                                   $siteName       the name of the site it is part of, which it is shared as part of, null for none
      * @param ?Article                                                  $article        the post it shows, which it is shared as, null for a page that shows none
+     * @param ?array{url: string, title: string}                        $feed           the feed of the site it tells readers of, null for none
      */
     private function __construct(
         public string $title,
@@ -50,11 +51,12 @@ final readonly class Page
         public array $structuredData,
         public ?string $siteName,
         public ?array $article,
+        public ?array $feed,
     ) {}
 
     public static function create(string $title): self
     {
-        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, [], [], null, null);
+        return new self($title, [], [], [], self::DEFAULT_MAIN_CLASS, self::DEFAULT_LAYOUT, null, null, null, null, null, [], [], null, null, null);
     }
 
     /**
@@ -117,6 +119,7 @@ final readonly class Page
             $this->structuredData,
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 
@@ -142,6 +145,7 @@ final readonly class Page
             $this->structuredData,
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 
@@ -168,6 +172,7 @@ final readonly class Page
             $this->structuredData,
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 
@@ -195,6 +200,7 @@ final readonly class Page
             $this->structuredData,
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 
@@ -229,6 +235,7 @@ final readonly class Page
             [...$others, $node],
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 
@@ -254,6 +261,33 @@ final readonly class Page
             $this->structuredData,
             $siteName,
             $this->article,
+            $this->feed,
+        );
+    }
+
+    /**
+     * Tells readers and their feed readers where the feed of the site is,
+     * by its address and the name it goes by.
+     */
+    public function withFeed(string $url, string $title): self
+    {
+        return new self(
+            $this->title,
+            $this->header,
+            $this->main,
+            $this->footer,
+            $this->mainClass,
+            $this->layout,
+            $this->description,
+            $this->robots,
+            $this->canonical,
+            $this->image,
+            $this->countedContent,
+            $this->frames,
+            $this->structuredData,
+            $this->siteName,
+            $this->article,
+            ['url' => $url, 'title' => $title],
         );
     }
 
@@ -287,6 +321,7 @@ final readonly class Page
                 'section' => $section,
                 'tags' => $tags,
             ],
+            $this->feed,
         );
     }
 
@@ -318,6 +353,7 @@ final readonly class Page
             $this->structuredData,
             $this->siteName,
             $this->article,
+            $this->feed,
         );
     }
 }

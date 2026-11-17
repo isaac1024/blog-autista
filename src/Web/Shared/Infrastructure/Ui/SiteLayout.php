@@ -34,7 +34,8 @@ use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
  * published, pages go without chrome.
  *
  * Every page tells search engines it is part of the site, published by the
- * author of the blog while that author is on the site.
+ * author of the blog while that author is on the site, and tells readers
+ * where the feed of the site is.
  */
 final readonly class SiteLayout
 {
@@ -86,7 +87,9 @@ final readonly class SiteLayout
         ));
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
         $publisher = $this->publisher($settings);
-        $page = $page->withStructuredData(StructuredData::website($home, $settings->name, $publisher['url'] ?? null));
+        $page = $page
+            ->withStructuredData(StructuredData::website($home, $settings->name, $publisher['url'] ?? null))
+            ->withFeed($this->urlGenerator->generate('web_feed'), $settings->name);
 
         return null === $publisher
             ? ['page' => $page, 'publisherUrl' => null]

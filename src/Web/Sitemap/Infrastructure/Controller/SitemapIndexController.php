@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Web\Shared\Infrastructure\Http\StreamedXml;
 use Web\Sitemap\Application\SitemapFilesFinder;
 use Web\Sitemap\Domain\SitemapRepository;
 
@@ -23,7 +24,7 @@ final class SitemapIndexController extends AbstractController
         $files = new SitemapFilesFinder()($repository);
 
         return new StreamedResponse(function () use ($files): void {
-            $xml = SitemapXml::open();
+            $xml = StreamedXml::open();
             $xml->startElement('sitemapindex');
             $xml->writeAttribute('xmlns', SitemapXml::NAMESPACE);
 
@@ -35,7 +36,7 @@ final class SitemapIndexController extends AbstractController
             }
 
             $xml->endElement();
-            SitemapXml::close($xml);
+            StreamedXml::close($xml);
         }, 200, ['Content-Type' => SitemapXml::CONTENT_TYPE]);
     }
 }
