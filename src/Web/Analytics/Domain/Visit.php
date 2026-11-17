@@ -23,8 +23,8 @@ use Doctrine\ORM\Mapping as ORM;
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'web_visit')]
-#[ORM\Index(name: 'idx_web_visit_day', columns: ['day'])]
+#[ORM\Table(name: 'shared_visit')]
+#[ORM\Index(name: 'idx_shared_visit_day', columns: ['day'])]
 final class Visit
 {
     public function __construct(

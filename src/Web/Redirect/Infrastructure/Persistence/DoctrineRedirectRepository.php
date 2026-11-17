@@ -25,7 +25,7 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
     {
         /** @var array{target_type: ?string, target_id: ?string, origin_id: ?string}|false $row */
         $row = $this->connection->fetchAssociative(
-            'SELECT target_type, target_id, origin_id FROM cms_redirect WHERE source = :source',
+            'SELECT target_type, target_id, origin_id FROM shared_redirect WHERE source = :source',
             ['source' => $source],
         );
 
@@ -41,7 +41,7 @@ final readonly class DoctrineRedirectRepository implements RedirectRepository
 
         /** @var list<array{target_type: ?string, target_id: ?string, origin_id: ?string}> $rows */
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT target_type, target_id, origin_id FROM cms_redirect WHERE origin_type = :type AND origin_id IN (:ids) ORDER BY updated_at DESC, id DESC',
+            'SELECT target_type, target_id, origin_id FROM shared_redirect WHERE origin_type = :type AND origin_id IN (:ids) ORDER BY updated_at DESC, id DESC',
             ['type' => $type, 'ids' => $ids],
             ['ids' => ArrayParameterType::STRING],
         );

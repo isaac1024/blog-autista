@@ -11,6 +11,7 @@ use Cms\Analytics\Domain\Period;
 use Cms\Analytics\Domain\VisitCounts;
 use Cms\Tests\Analytics\Domain\CountMother;
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -30,6 +31,36 @@ final class DoctrineVisitCountsTest extends KernelTestCase
     protected function setUp(): void
     {
         self::mockTime('2026-11-09 10:00:00 Europe/Madrid');
+    }
+
+    /**
+     * The CMS reads the tables the site counts the visits in, the one pair
+     * of tables of the site it reads: the columns it reads are those the
+     * site keeps, so a migration of the site that renames or drops one
+     * breaks the report here, not in production.
+     *
+     * @param list<string> $read
+     */
+    #[DataProvider('tablesRead')]
+    public function testTheTablesItReadsHaveTheColumnsItReads(string $table, array $read): void
+    {
+        $columns = $this->connection()->fetchFirstColumn(
+            'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = :table',
+            ['table' => $table],
+        );
+
+        foreach ($read as $column) {
+            self::assertContains($column, $columns);
+        }
+    }
+
+    /**
+     * @return iterable<string, array{string, list<string>}>
+     */
+    public static function tablesRead(): iterable
+    {
+        yield 'the counts of the days counted' => ['shared_visit_total', ['day', 'dimension', 'value', 'views', 'visitors']];
+        yield 'the visits of the days not counted yet' => ['shared_visit', ['day', 'content_type', 'content_id', 'channel', 'source', 'device', 'country', 'reader']];
     }
 
     public function testItReadsTheCountsOfTheDaysAlreadyCountedWithinThem(): void
@@ -90,12 +121,12 @@ final class DoctrineVisitCountsTest extends KernelTestCase
 
     private function counted(string $day, string $dimension, string $value, int $views, int $visitors): void
     {
-        $this->connection()->insert('web_visit_total', ['day' => $day, 'dimension' => $dimension, 'value' => $value, 'views' => $views, 'visitors' => $visitors]);
+        $this->connection()->insert('shared_visit_total', ['day' => $day, 'dimension' => $dimension, 'value' => $value, 'views' => $views, 'visitors' => $visitors]);
     }
 
     private function kept(string $id, string $page, string $channel, ?string $source, string $reader, string $device, ?string $country, string $day = '2026-11-05'): void
     {
-        $this->connection()->insert('web_visit', [
+        $this->connection()->insert('shared_visit', [
             'id' => $id, 'content_type' => 'page', 'content_id' => $page, 'day' => $day, 'channel' => $channel, 'source' => $source,
             'reader' => str_repeat($reader, 64), 'device' => $device, 'country' => $country,
         ]);

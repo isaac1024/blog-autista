@@ -25,10 +25,10 @@ use Shared\Domain\Clock;
  * resource as its origin, so what links to it follows the redirect too.
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'cms_redirect')]
-#[ORM\UniqueConstraint(name: 'uniq_cms_redirect_source', columns: ['source'])]
-#[ORM\Index(name: 'idx_cms_redirect_target', columns: ['target_type', 'target_id'])]
-#[ORM\Index(name: 'idx_cms_redirect_origin', columns: ['origin_type', 'origin_id'])]
+#[ORM\Table(name: 'shared_redirect')]
+#[ORM\UniqueConstraint(name: 'uniq_shared_redirect_source', columns: ['source'])]
+#[ORM\Index(name: 'idx_shared_redirect_target', columns: ['target_type', 'target_id'])]
+#[ORM\Index(name: 'idx_shared_redirect_origin', columns: ['origin_type', 'origin_id'])]
 final class Redirect
 {
     /**

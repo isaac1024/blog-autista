@@ -217,7 +217,7 @@ final class RedirectedReferencesTest extends KernelTestCase
      */
     private function redirect(string $id, string $source, ?string $targetType, ?string $targetId, string $originType, string $originId, string $changedAt = '2026-11-09 10:00'): void
     {
-        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
             'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
             'origin_type' => $originType, 'origin_id' => $originId, 'created_at' => $changedAt, 'updated_at' => $changedAt, 'version' => 1,
         ]);

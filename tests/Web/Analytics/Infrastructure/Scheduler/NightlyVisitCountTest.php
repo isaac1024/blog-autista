@@ -33,7 +33,7 @@ final class NightlyVisitCountTest extends KernelTestCase
         self::getContainer()->get(NightlyVisitCount::class)();
 
         $connection = self::getContainer()->get(Connection::class);
-        self::assertSame(['2026-11-05', '2026-11-06'], $connection->fetchFirstColumn("SELECT day FROM web_visit_total WHERE dimension = 'site' ORDER BY day"));
-        self::assertSame(['2026-11-07'], $connection->fetchFirstColumn('SELECT day FROM web_visit'));
+        self::assertSame(['2026-11-05', '2026-11-06'], $connection->fetchFirstColumn("SELECT day FROM shared_visit_total WHERE dimension = 'site' ORDER BY day"));
+        self::assertSame(['2026-11-07'], $connection->fetchFirstColumn('SELECT day FROM shared_visit'));
     }
 }

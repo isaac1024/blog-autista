@@ -147,7 +147,7 @@ final class SitemapTest extends WebTestCase
         $images = self::getContainer()->get(ImageRepository::class);
         $images->delete($images->find(new ImageId(self::IMAGE)) ?? self::fail('No image.'));
         $images->save(Image::publish(CmsImagePublishedMother::create(id: self::OTHER_IMAGE, path: '2026/11/'.self::OTHER_IMAGE.'.webp')));
-        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
             'id' => '01a1e900-0000-7000-8000-000000000001', 'source' => '/media/2026/11/'.self::IMAGE, 'target_type' => 'image', 'target_id' => self::OTHER_IMAGE,
             'origin_type' => 'image', 'origin_id' => self::IMAGE,
             'created_at' => '2026-11-09 09:00:00', 'updated_at' => '2026-11-09 09:00:00', 'version' => 1,

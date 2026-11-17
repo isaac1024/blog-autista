@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  * An unknown country is counted under an empty value.
  */
 #[ORM\Entity(readOnly: true)]
-#[ORM\Table(name: 'web_visit_total')]
+#[ORM\Table(name: 'shared_visit_total')]
 final class VisitTotal
 {
     #[ORM\Id]

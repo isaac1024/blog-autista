@@ -27,19 +27,19 @@ final readonly class DoctrineVisitCounts implements VisitCounts
     {
         /** @var list<array{day: string, dimension: string, value: string, views: int|string, visitors: int|string}> $rows */
         $rows = $this->connection->fetchAllAssociative(<<<'SQL'
-            SELECT day, dimension, value, views, visitors FROM web_visit_total WHERE day BETWEEN :first AND :last
+            SELECT day, dimension, value, views, visitors FROM shared_visit_total WHERE day BETWEEN :first AND :last
             UNION ALL
-            SELECT day, 'site', '', COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day
+            SELECT day, 'site', '', COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last GROUP BY day
             UNION ALL
-            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, content_type, content_id
+            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last GROUP BY day, content_type, content_id
             UNION ALL
-            SELECT day, 'channel', channel, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, channel
+            SELECT day, 'channel', channel, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last GROUP BY day, channel
             UNION ALL
-            SELECT day, 'source', source, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last AND source IS NOT NULL AND channel <> 'internal' GROUP BY day, source
+            SELECT day, 'source', source, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last AND source IS NOT NULL AND channel <> 'internal' GROUP BY day, source
             UNION ALL
-            SELECT day, 'device', device, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, device
+            SELECT day, 'device', device, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last GROUP BY day, device
             UNION ALL
-            SELECT day, 'country', COALESCE(country, ''), COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day BETWEEN :first AND :last GROUP BY day, COALESCE(country, '')
+            SELECT day, 'country', COALESCE(country, ''), COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day BETWEEN :first AND :last GROUP BY day, COALESCE(country, '')
             SQL, ['first' => $days->first(), 'last' => $days->last()]);
 
         $counts = [];
@@ -58,7 +58,7 @@ final readonly class DoctrineVisitCounts implements VisitCounts
     #[\Override]
     public function oldestUncountedDay(): ?string
     {
-        $day = $this->connection->fetchOne('SELECT MIN(day) FROM web_visit');
+        $day = $this->connection->fetchOne('SELECT MIN(day) FROM shared_visit');
 
         return \is_string($day) ? $day : null;
     }

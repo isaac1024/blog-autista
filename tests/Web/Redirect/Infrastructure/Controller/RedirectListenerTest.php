@@ -162,7 +162,7 @@ final class RedirectListenerTest extends WebTestCase
      */
     private function redirect(string $id, string $source, ?string $targetType, ?string $targetId): void
     {
-        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
             'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
             'origin_type' => null, 'origin_id' => null, 'created_at' => '2026-11-09 10:00', 'updated_at' => '2026-11-09 10:00', 'version' => 1,
         ]);

@@ -47,6 +47,18 @@ Symfony:
   under `templates/components/shared/` and the `Shared:` prefix. Layouts live in
   `Shared\Infrastructure\Ui` and `templates/shared/`. Contexts (`Cms`, `Web`) must not declare
   their own components or layouts; they compose the shared ones.
+- `Cms` and `Web` never read each other's tables; the site learns what the CMS
+  publishes from its events. The exceptions are the tables named `shared_*`,
+  written by one context and read, read-only, by the other:
+  - `shared_redirect`: the CMS writes it and `Web\Redirect` reads it, so a
+    redirect applies the moment it is saved instead of after the queue runs
+    (cron, every minute on Hetzner);
+  - `shared_visit` and `shared_visit_total`: the site counts its visits in
+    them and `Cms\Analytics` reads them for its report, today's included.
+
+  A contract test on the side that reads (`tests/Web/Redirect`,
+  `tests/Cms/Analytics`) fails when the columns it reads change. No other
+  table is read across contexts.
 
 Three specifics worth spelling out, because they are easy to get wrong:
 

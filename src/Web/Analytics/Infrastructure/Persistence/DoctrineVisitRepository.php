@@ -33,7 +33,7 @@ final readonly class DoctrineVisitRepository implements VisitRepository
     {
         /** @var list<string> $days */
         $days = $this->entityManager->getConnection()->fetchFirstColumn(
-            'SELECT DISTINCT day FROM web_visit WHERE day < :day ORDER BY day',
+            'SELECT DISTINCT day FROM shared_visit WHERE day < :day ORDER BY day',
             ['day' => $day->value()],
         );
 
@@ -58,20 +58,20 @@ final readonly class DoctrineVisitRepository implements VisitRepository
         // is exact. Each kind of content is counted by the dimension of its
         // name, such as the posts by "post".
         $connection->executeStatement(<<<'SQL'
-            INSERT INTO web_visit_total (day, dimension, value, views, visitors)
-            SELECT day, :site, '', COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day
+            INSERT INTO shared_visit_total (day, dimension, value, views, visitors)
+            SELECT day, :site, '', COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day
             UNION ALL
-            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, content_type, content_id
+            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, content_type, content_id
             UNION ALL
-            SELECT day, :channel, channel, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, channel
+            SELECT day, :channel, channel, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, channel
             UNION ALL
-            SELECT day, :source, source, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day AND source IS NOT NULL AND channel <> :internal GROUP BY day, source
+            SELECT day, :source, source, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day AND source IS NOT NULL AND channel <> :internal GROUP BY day, source
             UNION ALL
-            SELECT day, :device, device, COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, device
+            SELECT day, :device, device, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, device
             UNION ALL
-            SELECT day, :country, COALESCE(country, ''), COUNT(*), COUNT(DISTINCT reader) FROM web_visit WHERE day = :day GROUP BY day, COALESCE(country, '')
+            SELECT day, :country, COALESCE(country, ''), COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, COALESCE(country, '')
             SQL, $parameters);
 
-        $connection->executeStatement('DELETE FROM web_visit WHERE day = :day', ['day' => $day->value()]);
+        $connection->executeStatement('DELETE FROM shared_visit WHERE day = :day', ['day' => $day->value()]);
     }
 }

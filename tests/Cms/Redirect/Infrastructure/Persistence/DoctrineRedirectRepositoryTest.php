@@ -180,7 +180,7 @@ final class DoctrineRedirectRepositoryTest extends KernelTestCase
      */
     public function testItsTableIsTheOneMapped(): void
     {
-        self::assertTablesAreMapped('cms_redirect');
+        self::assertTablesAreMapped('shared_redirect');
     }
 
     /**
@@ -201,7 +201,7 @@ final class DoctrineRedirectRepositoryTest extends KernelTestCase
     private function changedMeanwhile(int $version, string $target): void
     {
         $this->entityManager()->getConnection()->executeStatement(
-            "UPDATE cms_redirect SET version = ?, target_type = 'page', target_id = ?, updated_at = ? WHERE id = ?",
+            "UPDATE shared_redirect SET version = ?, target_type = 'page', target_id = ?, updated_at = ? WHERE id = ?",
             [$version, $target, ClockMother::NOW, self::FIRST],
         );
     }

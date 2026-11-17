@@ -285,6 +285,6 @@ final class VisitControllerTest extends WebTestCase
      */
     private function visits(): array
     {
-        return self::getContainer()->get(Connection::class)->fetchAllAssociative('SELECT content_type, content_id, day, channel, source, device, country FROM web_visit ORDER BY id');
+        return self::getContainer()->get(Connection::class)->fetchAllAssociative('SELECT content_type, content_id, day, channel, source, device, country FROM shared_visit ORDER BY id');
     }
 }

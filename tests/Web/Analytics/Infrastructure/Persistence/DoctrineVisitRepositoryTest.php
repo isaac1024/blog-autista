@@ -87,7 +87,7 @@ final class DoctrineVisitRepositoryTest extends KernelTestCase
             ['source', 'google.es', 2, 2],
         ], $this->totals(VisitMother::DAY));
         // Only the day counted is forgotten.
-        self::assertSame(['2026-11-08'], $this->connection()->fetchFirstColumn('SELECT day FROM web_visit'));
+        self::assertSame(['2026-11-08'], $this->connection()->fetchFirstColumn('SELECT day FROM shared_visit'));
     }
 
     /**
@@ -114,7 +114,7 @@ final class DoctrineVisitRepositoryTest extends KernelTestCase
      */
     public function testItsTablesAreTheOnesMapped(): void
     {
-        self::assertTablesAreMapped('web_visit', 'web_visit_total');
+        self::assertTablesAreMapped('shared_visit', 'shared_visit_total');
     }
 
     private function save(Visit $visit): void
@@ -128,7 +128,7 @@ final class DoctrineVisitRepositoryTest extends KernelTestCase
     private function totals(string $day): array
     {
         /** @var list<array{dimension: string, value: string, views: int|string, visitors: int|string}> $rows */
-        $rows = $this->connection()->fetchAllAssociative('SELECT dimension, value, views, visitors FROM web_visit_total WHERE day = ? ORDER BY dimension, BINARY value', [$day]);
+        $rows = $this->connection()->fetchAllAssociative('SELECT dimension, value, views, visitors FROM shared_visit_total WHERE day = ? ORDER BY dimension, BINARY value', [$day]);
 
         return array_map(static fn (array $row): array => [$row['dimension'], $row['value'], (int) $row['views'], (int) $row['visitors']], $rows);
     }

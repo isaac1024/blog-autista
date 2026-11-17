@@ -10,11 +10,29 @@ use Web\Redirect\Domain\RedirectRepository;
 use Web\Tests\Redirect\Domain\RedirectMother;
 
 /**
- * The site reads the redirects as the CMS keeps them, from its table.
+ * The site reads the redirects as the CMS keeps them, from the table both
+ * contexts share: the one table of the CMS the site reads, so a redirect
+ * applies the moment it is saved, with no queue in between.
  */
 final class DoctrineRedirectRepositoryTest extends KernelTestCase
 {
     private const string OTHER_ORIGIN = '0196f3a0-0000-7000-8000-0000000000a3';
+
+    /**
+     * The columns the site reads are those the CMS keeps: a migration of the
+     * CMS that renames or drops one breaks the site here, not in production.
+     */
+    public function testTheTableItReadsHasTheColumnsItReads(): void
+    {
+        $columns = self::getContainer()->get(Connection::class)->fetchFirstColumn(
+            'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = :table',
+            ['table' => 'shared_redirect'],
+        );
+
+        foreach (['id', 'source', 'target_type', 'target_id', 'origin_type', 'origin_id', 'updated_at'] as $column) {
+            self::assertContains($column, $columns);
+        }
+    }
 
     public function testItReadsTheRedirectAtAnAddress(): void
     {
@@ -64,7 +82,7 @@ final class DoctrineRedirectRepositoryTest extends KernelTestCase
      */
     private function keep(string $id, string $source, ?string $targetType, ?string $targetId, ?string $originId = null, string $originType = 'page', string $updatedAt = '2026-11-09 10:00:00'): void
     {
-        self::getContainer()->get(Connection::class)->insert('cms_redirect', [
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
             'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
             'origin_type' => null === $originId ? null : $originType, 'origin_id' => $originId,
             'created_at' => '2026-11-09 09:00:00', 'updated_at' => $updatedAt, 'version' => 1,
