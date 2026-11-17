@@ -6,6 +6,7 @@ namespace Cms\Author\Infrastructure\Controller;
 
 use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Domain\AuthorStatus;
+use Cms\Shared\Infrastructure\Ui\AuthorState;
 
 /**
  * An author as a field that picks one shows it: its name, as the title of

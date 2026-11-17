@@ -6,7 +6,7 @@ namespace Cms\Author\Infrastructure\Controller;
 
 use Cms\Author\Application\AuthorResponse;
 use Cms\Redirect\Domain\Resource;
-use Cms\Redirect\Infrastructure\Controller\RetirementForm;
+use Cms\Shared\Infrastructure\Publication\RetirementForm;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;

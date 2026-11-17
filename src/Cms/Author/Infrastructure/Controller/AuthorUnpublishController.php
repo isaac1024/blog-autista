@@ -14,7 +14,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
-use Cms\Redirect\Infrastructure\Controller\RetirementRequest;
+use Cms\Shared\Infrastructure\Publication\RetirementRequest;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;

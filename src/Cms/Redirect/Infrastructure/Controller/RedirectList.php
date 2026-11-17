@@ -6,6 +6,7 @@ namespace Cms\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\RedirectsResponse;
 use Cms\Redirect\Domain\Resource;
+use Cms\Shared\Infrastructure\Ui\RedirectRows;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;

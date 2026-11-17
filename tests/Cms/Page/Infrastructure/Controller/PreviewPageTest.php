@@ -6,8 +6,6 @@ namespace Cms\Tests\Page\Infrastructure\Controller;
 
 use Cms\Author\Domain\AuthorRepository;
 use Cms\External\Domain\ExternalResourceRepository;
-use Cms\External\Infrastructure\Controller\ExternalImageUrl;
-use Cms\External\Infrastructure\Ui\CmsExternalViews;
 use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImageId;
 use Cms\Image\Domain\ImageRepository;
@@ -18,15 +16,17 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Infrastructure\Controller\PreviewPage;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
-use Cms\Post\Infrastructure\Ui\CmsMosaics;
-use Cms\Post\Infrastructure\Ui\CmsPostCards;
 use Cms\Redirect\Domain\RedirectRepository;
-use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
-use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsRepository;
-use Cms\Settings\Infrastructure\Controller\PreviewLayout;
 use Cms\Shared\Domain\Robots;
+use Cms\Shared\Infrastructure\Http\ExternalImageUrl;
+use Cms\Shared\Infrastructure\Resolution\CmsLinkedContents;
+use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
+use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
+use Cms\Shared\Infrastructure\Ui\CmsMosaics;
+use Cms\Shared\Infrastructure\Ui\CmsPostCards;
+use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
 use Cms\Tests\Page\Domain\PageMother;
@@ -283,10 +283,10 @@ final class PreviewPageTest extends TestCase
         return new PreviewPage(
             $urlGenerator,
             new SitePage(new RichTextComponents()),
-            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Author\Infrastructure\Controller\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
+            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
             $imageRepository,
             $redirectsByOrigin,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Author\Infrastructure\Controller\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
             new CmsMosaics(new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
         );
     }

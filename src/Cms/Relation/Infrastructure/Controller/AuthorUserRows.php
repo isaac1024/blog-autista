@@ -7,7 +7,7 @@ namespace Cms\Relation\Infrastructure\Controller;
 use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Application\AuthorsFinder;
 use Cms\Author\Domain\AuthorRepository;
-use Cms\Author\Infrastructure\Controller\AuthorState;
+use Cms\Shared\Infrastructure\Ui\AuthorState;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;

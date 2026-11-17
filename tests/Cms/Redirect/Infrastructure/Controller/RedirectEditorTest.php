@@ -7,7 +7,7 @@ namespace Cms\Tests\Redirect\Infrastructure\Controller;
 use Cms\Page\Domain\Page as PageAggregate;
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Infrastructure\Controller\RedirectEditor;
-use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
+use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Tests\Page\Domain\PageMother;

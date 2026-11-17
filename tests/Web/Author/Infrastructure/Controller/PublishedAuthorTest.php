@@ -18,17 +18,17 @@ use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\CmsAuthorPublished;
 use Web\Author\Infrastructure\Controller\PublishedAuthor;
 use Web\External\Domain\ExternalResourceRepository as WebExternalResourceRepository;
-use Web\External\Infrastructure\Ui\SiteExternalViews;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Domain\PostRepository;
-use Web\Post\Infrastructure\Ui\SiteMosaics;
-use Web\Post\Infrastructure\Ui\SitePostCards;
 use Web\Redirect\Domain\RedirectRepository;
-use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
-use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Domain\SettingsRepository;
-use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
+use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
+use Web\Shared\Infrastructure\Ui\SiteExternalViews;
+use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SiteMosaics;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Domain\TermRepository;
 
 final class PublishedAuthorTest extends TestCase

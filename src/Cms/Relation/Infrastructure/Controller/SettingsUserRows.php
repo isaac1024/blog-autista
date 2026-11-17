@@ -7,7 +7,7 @@ namespace Cms\Relation\Infrastructure\Controller;
 use Cms\Settings\Application\SettingsFinder;
 use Cms\Settings\Application\SettingsNotFound;
 use Cms\Settings\Domain\SettingsRepository;
-use Cms\Settings\Infrastructure\Controller\SettingsState;
+use Cms\Shared\Infrastructure\Ui\SettingsState;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;

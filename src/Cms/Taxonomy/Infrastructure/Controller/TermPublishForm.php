@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
 use Cms\Redirect\Application\PublicationOutlook;
-use Cms\Redirect\Infrastructure\Controller\PublicationForm;
+use Cms\Shared\Infrastructure\Publication\PublicationForm;
 use Cms\Taxonomy\Application\TermResponse;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;

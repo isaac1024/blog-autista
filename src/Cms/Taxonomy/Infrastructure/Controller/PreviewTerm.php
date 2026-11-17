@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
 use Cms\Post\Domain\PostSelection;
-use Cms\Post\Infrastructure\Ui\CmsPostCards;
-use Cms\Settings\Infrastructure\Controller\PreviewLayout;
+use Cms\Shared\Infrastructure\Ui\CmsPostCards;
+use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Application\TermResponse;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\SiteTermPage;

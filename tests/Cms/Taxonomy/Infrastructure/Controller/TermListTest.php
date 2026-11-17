@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Taxonomy\Infrastructure\Controller;
 
+use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsResponse;
 use Cms\Taxonomy\Domain\Taxonomy;
@@ -12,7 +13,6 @@ use Cms\Taxonomy\Domain\TermName;
 use Cms\Taxonomy\Infrastructure\Controller\TaxonomySegment;
 use Cms\Taxonomy\Infrastructure\Controller\TermAddress;
 use Cms\Taxonomy\Infrastructure\Controller\TermList;
-use Cms\Taxonomy\Infrastructure\Controller\TermState;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

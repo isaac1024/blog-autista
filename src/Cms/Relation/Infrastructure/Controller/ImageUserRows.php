@@ -7,7 +7,7 @@ namespace Cms\Relation\Infrastructure\Controller;
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImagesFinder;
 use Cms\Image\Domain\ImageRepository;
-use Cms\Image\Infrastructure\Controller\ImageState;
+use Cms\Shared\Infrastructure\Ui\ImageState;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;

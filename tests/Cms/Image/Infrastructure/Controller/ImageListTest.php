@@ -9,7 +9,7 @@ use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
 use Cms\Image\Infrastructure\Controller\ImageList;
-use Cms\Image\Infrastructure\Controller\ImageState;
+use Cms\Shared\Infrastructure\Ui\ImageState;
 use Cms\Tests\Image\Domain\ImageMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

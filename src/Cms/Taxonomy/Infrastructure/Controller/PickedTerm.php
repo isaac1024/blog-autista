@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
+use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermStatus;
 

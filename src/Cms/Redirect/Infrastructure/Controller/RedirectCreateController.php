@@ -8,6 +8,7 @@ use Cms\Redirect\Application\RedirectCreator;
 use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
+use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Shared\Domain\DomainError;
 use Shared\Domain\MutualExclusion;
 use Shared\Infrastructure\Http\CsrfRequestGuard;

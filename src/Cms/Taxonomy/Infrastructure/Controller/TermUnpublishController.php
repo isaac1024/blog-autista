@@ -9,7 +9,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
-use Cms\Redirect\Infrastructure\Controller\RetirementRequest;
+use Cms\Shared\Infrastructure\Publication\RetirementRequest;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Application\TermUnpublisher;
 use Cms\Taxonomy\Domain\TermRedirects;

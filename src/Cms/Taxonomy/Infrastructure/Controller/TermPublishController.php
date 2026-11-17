@@ -11,7 +11,7 @@ use Cms\Redirect\Domain\RedirectId;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
-use Cms\Redirect\Infrastructure\Controller\PublicationRequest;
+use Cms\Shared\Infrastructure\Publication\PublicationRequest;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Application\TermPublisher;
 use Cms\Taxonomy\Domain\TermRepository;

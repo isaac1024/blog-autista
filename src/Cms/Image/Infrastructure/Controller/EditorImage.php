@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Image\Infrastructure\Controller;
 
 use Cms\Image\Application\ImageResponse;
+use Cms\Shared\Infrastructure\Ui\ImageState;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**

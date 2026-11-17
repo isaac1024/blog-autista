@@ -12,7 +12,7 @@ use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Application\RedirectsResponse;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Infrastructure\Controller\RedirectList;
-use Cms\Redirect\Infrastructure\Controller\RedirectRows;
+use Cms\Shared\Infrastructure\Ui\RedirectRows;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Tests\Author\Domain\AuthorMother;

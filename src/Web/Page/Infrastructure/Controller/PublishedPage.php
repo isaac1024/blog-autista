@@ -15,10 +15,10 @@ use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Domain\PageType;
-use Web\Post\Infrastructure\Ui\SiteMosaics;
-use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
-use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
-use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
+use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
+use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SiteMosaics;
 
 /**
  * Composes a page of the site, painted as SitePage paints it, in the chrome of

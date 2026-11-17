@@ -7,6 +7,7 @@ namespace Cms\Post\Infrastructure\Controller;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Application\PostsResponse;
 use Cms\Post\Domain\PostTitle;
+use Cms\Shared\Infrastructure\Ui\PostState;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;

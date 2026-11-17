@@ -14,6 +14,7 @@ use Cms\External\Domain\ResourceUrl;
 use Cms\External\Domain\ResourceVersion;
 use Cms\External\Domain\SocialPostDetails;
 use Cms\External\Domain\StudyDetails;
+use Cms\Shared\Infrastructure\Http\ExternalImageUrl;
 use Shared\Domain\Clock;
 use Shared\Domain\External\ImageShape;
 use Shared\Domain\External\ResourceKind;

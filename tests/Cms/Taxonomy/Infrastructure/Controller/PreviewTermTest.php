@@ -6,18 +6,18 @@ namespace Cms\Tests\Taxonomy\Infrastructure\Controller;
 
 use Cms\Author\Domain\AuthorRepository;
 use Cms\External\Domain\ExternalResourceRepository;
-use Cms\External\Infrastructure\Controller\ExternalImageUrl;
-use Cms\External\Infrastructure\Ui\CmsExternalViews;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
-use Cms\Post\Infrastructure\Ui\CmsPostCards;
 use Cms\Redirect\Domain\RedirectRepository;
-use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
-use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Domain\SettingsRepository;
-use Cms\Settings\Infrastructure\Controller\PreviewLayout;
+use Cms\Shared\Infrastructure\Http\ExternalImageUrl;
+use Cms\Shared\Infrastructure\Resolution\CmsLinkedContents;
+use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
+use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
+use Cms\Shared\Infrastructure\Ui\CmsPostCards;
+use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
@@ -91,7 +91,7 @@ final class PreviewTermTest extends TestCase
         $redirectsByOrigin = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
         $termRepository = self::createStub(TermRepository::class);
         $termRepository->method('find')->willReturn(TermMother::published());
-        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Author\Infrastructure\Controller\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
+        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
 
         return new PreviewTerm(
             new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirectsByOrigin, $linkedContents, self::createStub(PageRepository::class)),

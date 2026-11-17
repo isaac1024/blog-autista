@@ -15,7 +15,7 @@ use Web\Page\Application\PageNotFound;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\PageType;
 use Web\Post\Application\PostsPageNotFound;
-use Web\Post\Infrastructure\Ui\SiteSearch;
+use Web\Shared\Infrastructure\Ui\SiteSearch;
 
 /**
  * Serves every published page but the home page at its own address. The

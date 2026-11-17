@@ -13,8 +13,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Web\Post\Application\PostLister;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
-use Web\Post\Infrastructure\Ui\SitePostCards;
-use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Application\TermResponse;
 
 /**

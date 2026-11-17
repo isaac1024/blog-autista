@@ -11,14 +11,14 @@ use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
-use Web\Author\Infrastructure\Ui\AuthorPerson;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Post\Infrastructure\Ui\SiteMosaics;
-use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
-use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
-use Web\Settings\Infrastructure\Controller\SiteLayout;
+use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
+use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
+use Web\Shared\Infrastructure\Ui\AuthorPerson;
+use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SiteMosaics;
 
 /**
  * Composes the page of an author of the site, painted as SiteAuthorPage

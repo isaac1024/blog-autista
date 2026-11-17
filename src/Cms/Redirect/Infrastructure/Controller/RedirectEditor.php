@@ -6,6 +6,8 @@ namespace Cms\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Domain\ResourceType;
+use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
+use Cms\Shared\Infrastructure\Ui\RedirectNames;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;

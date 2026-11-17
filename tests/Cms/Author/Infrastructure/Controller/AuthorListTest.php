@@ -9,7 +9,7 @@ use Cms\Author\Application\AuthorsResponse;
 use Cms\Author\Domain\Author;
 use Cms\Author\Domain\AuthorName;
 use Cms\Author\Infrastructure\Controller\AuthorList;
-use Cms\Author\Infrastructure\Controller\AuthorState;
+use Cms\Shared\Infrastructure\Ui\AuthorState;
 use Cms\Tests\Author\Domain\AuthorMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

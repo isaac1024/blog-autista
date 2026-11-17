@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Infrastructure\Controller;
 
 use Cms\Page\Application\PageResponse;
+use Cms\Shared\Infrastructure\Ui\PageState;
 
 /**
  * A page as the rich text editor shows it, to link to it or once linked:

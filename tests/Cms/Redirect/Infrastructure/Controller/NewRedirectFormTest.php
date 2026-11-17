@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cms\Tests\Redirect\Infrastructure\Controller;
 
 use Cms\Redirect\Infrastructure\Controller\NewRedirectForm;
-use Cms\Redirect\Infrastructure\Controller\RedirectTargetField;
+use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\SitePath;

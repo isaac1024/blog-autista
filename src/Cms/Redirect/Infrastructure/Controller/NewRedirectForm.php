@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Redirect\Infrastructure\Controller;
 
+use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Shared\Domain\SitePath;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;

@@ -8,6 +8,7 @@ use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
+use Cms\Shared\Infrastructure\Ui\ImageState;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;

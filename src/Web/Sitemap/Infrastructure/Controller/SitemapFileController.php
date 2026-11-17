@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
+use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Sitemap\Application\SitemapFileNotFound;
 use Web\Sitemap\Application\SitemapLinesReader;
 use Web\Sitemap\Domain\SitemapRepository;

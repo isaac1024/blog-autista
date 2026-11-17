@@ -40,3 +40,7 @@ services:
         class: Shared\Tests\Architecture\HexagonalArchitectureRules
         tags:
             - phpat.test
+    -
+        class: Shared\Tests\Architecture\ModuleIndependenceRules
+        tags:
+            - phpat.test

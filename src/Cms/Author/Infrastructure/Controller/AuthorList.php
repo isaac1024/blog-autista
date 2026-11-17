@@ -7,6 +7,7 @@ namespace Cms\Author\Infrastructure\Controller;
 use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Application\AuthorsResponse;
 use Cms\Author\Domain\AuthorName;
+use Cms\Shared\Infrastructure\Ui\AuthorState;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;

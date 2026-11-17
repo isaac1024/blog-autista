@@ -6,6 +6,7 @@ namespace Cms\Post\Infrastructure\Controller;
 
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\PostStatus;
+use Cms\Shared\Infrastructure\Ui\PostState;
 
 /**
  * A post as a field that picks one shows it: its title and where it stands

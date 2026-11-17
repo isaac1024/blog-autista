@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
-use Cms\Redirect\Infrastructure\Controller\LastAddressPanel;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
+use Cms\Shared\Infrastructure\Publication\LastAddressPanel;
+use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermName;
 use Cms\Taxonomy\Domain\TermStatus;

@@ -6,6 +6,8 @@ namespace Cms\Page\Infrastructure\Controller;
 
 use Cms\Page\Application\PageResponse;
 use Cms\Page\Application\PagesResponse;
+use Cms\Shared\Infrastructure\Ui\PageRole;
+use Cms\Shared\Infrastructure\Ui\PageState;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;

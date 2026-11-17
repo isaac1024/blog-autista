@@ -17,8 +17,9 @@ use Web\Page\Domain\PageRepository;
 use Web\Post\Application\LatestPostsFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
-use Web\Post\Infrastructure\Ui\SitePostCards;
-use Web\Post\Infrastructure\Ui\SiteSearch;
+use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
+use Web\Shared\Infrastructure\Ui\SiteSearch;
 
 /**
  * Paints the page of an error of the site, in its chrome and in its one

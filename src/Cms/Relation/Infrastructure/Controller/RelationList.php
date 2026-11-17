@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Relation\Infrastructure\Controller;
 
-use Cms\Redirect\Infrastructure\Controller\IncomingRedirectsPanel;
 use Cms\Relation\Application\UsersResponse;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;

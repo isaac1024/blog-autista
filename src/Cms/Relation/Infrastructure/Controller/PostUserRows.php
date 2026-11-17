@@ -8,7 +8,7 @@ use Cms\Post\Application\PostFinder;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\PostRepository;
-use Cms\Post\Infrastructure\Controller\PostState;
+use Cms\Shared\Infrastructure\Ui\PostState;
 use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;

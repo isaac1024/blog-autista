@@ -9,6 +9,7 @@ use Cms\Settings\Domain\Menu;
 use Cms\Settings\Domain\MenuItem;
 use Cms\Settings\Domain\SiteName;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
+use Cms\Shared\Infrastructure\Ui\SettingsState;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
