@@ -12,11 +12,15 @@ let runs = 0;
  * near the screen, those it watches on the screen while they paint, and
  * the timers it sets, which run only when a test makes their time up.
  */
-const page = async ({ markup = externalEmbed(), kept = null, observer = true } = {}) => {
+const page = async ({ markup = externalEmbed(), kept = null, observer = true, stored = {} } = {}) => {
     const { document, window } = await mount(markup, {});
 
     if (kept !== null) {
         window.localStorage.setItem(CONSENT, JSON.stringify(kept));
+    }
+
+    for (const [key, value] of Object.entries(stored)) {
+        window.localStorage.setItem(key, value);
     }
 
     // What is watched to load near the screen, and to paint on it.
@@ -427,6 +431,29 @@ test('a post is shown its frame tells its height, from its origin alone, as tall
     assert.equal(frame.getAttribute('height'), '400');
     assert.equal('shown' in frame.dataset, true);
     assert.equal(part(0, '[data-external-facade]').hidden, true);
+});
+
+test('a post keeps the height its frame told, and takes it at once the next time, until consent is taken back', async () => {
+    const src = 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b';
+    const markup = externalEmbed({ provider: 'bluesky', src, origin: 'https://embed.bsky.app', space: 'reported' });
+    const heights = () => JSON.parse(first.window.localStorage.getItem('external-heights') ?? '{}');
+    const first = await page({ markup });
+    await first.click(0, '[data-external-load]');
+    await first.click(0, '[data-external-accept]');
+    const framed = { postMessage: () => {} };
+    Object.defineProperty(first.iframe(), 'contentWindow', { configurable: true, value: framed });
+    const event = new first.window.MessageEvent('message', { data: { id: 'external-frame-1', height: 412 }, origin: 'https://embed.bsky.app' });
+    Object.defineProperty(event, 'source', { value: framed });
+    first.window.dispatchEvent(event);
+
+    // A test page lays nothing out: every frame is 0 wide.
+    assert.deepEqual(heights(), { [`bluesky 0 ${src}`]: 412 }, 'kept by its address, not by the id of this page');
+
+    const next = await page({ markup, kept: { bluesky: '2026-11-15T10:00:00.000Z' }, observer: false, stored: { 'external-heights': JSON.stringify(heights()) } });
+    assert.equal(next.iframe().getAttribute('height'), '412');
+
+    await next.click(0, '[data-external-forget]');
+    assert.deepEqual(JSON.parse(next.window.localStorage.getItem('external-heights') ?? '{}'), {});
 });
 
 test('a post is told apart from the frames that are not loaded', async () => {

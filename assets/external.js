@@ -9,10 +9,12 @@
  * stays for good when it never does in the time it is on the screen, as
  * when a provider changes its frame: a browser paints no frame off it, so
  * some tell nothing until the reader comes back to them. A video or an
- * audio the reader played starts playing on its own.
+ * audio the reader played starts playing on its own. A post takes the
+ * room its frame said it had the last time, at that width, if it did.
  */
 import { grantConsent, hasConsent, revokeConsent } from './external/consent.js';
 import { frameUrl, greeting, playCommand, reportedHeight, reportsHeight } from './external/frames.js';
+import { forgetHeights, keepHeight, keptHeight } from './external/heights.js';
 
 /** How long a frame has to paint itself on the screen before its facade stays for good. */
 const PAINT_TIMEOUT = 10_000;
@@ -182,8 +184,9 @@ const load = (embed, played) => {
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
 
     if (reportsHeight(embed.provider)) {
-        // As tall as what the facade shows, until the frame tells its height.
-        iframe.height = String(embed.facade.offsetHeight);
+        // As tall as it said it was the last time, or as what the facade
+        // shows, until the frame tells its height.
+        iframe.height = String(keptHeight(storage, embed.provider, src, embed.frame.clientWidth) ?? embed.facade.offsetHeight);
     }
 
     // A provider told once it is ready starts what the reader played.
@@ -306,6 +309,7 @@ const agree = (embed) => {
  */
 const disagree = (embed) => {
     revokeConsent(storage, embed.provider);
+    forgetHeights(storage, embed.provider);
 
     for (const other of embeds.filter((candidate) => candidate.provider === embed.provider)) {
         observer?.unobserve(other.element);
@@ -385,6 +389,7 @@ window.addEventListener('message', (event) => {
         const height = reportedHeight(embed.provider, event.data, embed.id);
 
         if (height !== null) {
+            keepHeight(storage, embed.provider, String(embed.element.dataset.src), embed.frame.clientWidth, height);
             iframe.height = String(height);
             reveal(embed, iframe);
         }
