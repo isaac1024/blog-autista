@@ -181,6 +181,8 @@ test('agreeing keeps it for the provider and loads its frame, unseen until it pa
     assert.equal(frame.getAttribute('allow'), 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     assert.equal(frame.allowFullscreen, true);
     assert.equal(frame.hasAttribute('height'), false, 'it keeps the room of its facade');
+    assert.equal(frame.hasAttribute('scrolling'), false, 'a room of its own never scrolls');
+    assert.equal(frame.inert, true, 'unseen, it cannot be reached');
     assert.equal(part(0, '[data-external-notice]').hidden, true);
     assert.equal(part(0, '[data-external-facade]').hidden, false, 'the facade stays until the frame paints');
     assert.equal('shown' in frame.dataset, false);
@@ -192,6 +194,7 @@ test('agreeing keeps it for the provider and loads its frame, unseen until it pa
     frame.dispatchEvent(new window.Event('load'));
 
     assert.equal('shown' in frame.dataset, true);
+    assert.equal(frame.inert, false);
     assert.deepEqual(asked, [], 'YouTube is asked nothing');
     assert.equal(part(0, '[data-external-facade]').hidden, true);
 });
@@ -412,6 +415,7 @@ test('a post is shown its frame tells its height, from its origin alone, as tall
     Object.defineProperty(frame, 'contentWindow', { configurable: true, value: framed });
     assert.equal(frame.src, 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b?id=external-frame-1');
     assert.equal(frame.getAttribute('height'), String(part(0, '[data-external-facade]').offsetHeight));
+    assert.equal(frame.getAttribute('scrolling'), 'no', 'as tall as it tells, it never scrolls');
 
     frame.dispatchEvent(new window.Event('load'));
     assert.equal('shown' in frame.dataset, false, 'loaded, it still has to tell its height');

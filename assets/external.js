@@ -120,6 +120,7 @@ const reveal = (embed, iframe) => {
 
     onScreen?.unobserve(embed.element);
     stopClock(embed);
+    iframe.inert = false;
     iframe.toggleAttribute('data-shown', true);
     embed.facade.hidden = true;
 };
@@ -183,7 +184,13 @@ const load = (embed, played) => {
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
 
+    // Unseen until it paints itself, it can't be reached.
+    iframe.inert = true;
+
     if (reportsHeight(embed.provider)) {
+        // Their own scripts frame them so: the height they tell leaves no
+        // room for a scroll bar.
+        iframe.setAttribute('scrolling', 'no');
         // As tall as it said it was the last time, or as what the facade
         // shows, until the frame tells its height.
         iframe.height = String(keptHeight(storage, embed.provider, src, embed.frame.clientWidth) ?? embed.facade.offsetHeight);

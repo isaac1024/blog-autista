@@ -248,6 +248,9 @@
      * The frame of a resource embedded behind a facade takes the facade's
      * place, in the same cell, unseen until it has painted itself. A frame
      * of a fixed room fills it; one that reports its height has that height.
+     * Transparent, not hidden: a browser paints no frame of another site it
+     * hides, and some tell their height only once painted. Until then it is
+     * inert, so it can't be reached either.
      */
     .external-embed-frame > iframe {
         grid-column: 1;
@@ -255,10 +258,10 @@
         display: block;
         width: 100%;
         border: 0;
-        visibility: hidden;
+        opacity: 0;
 
         &[data-shown] {
-            visibility: visible;
+            opacity: 1;
         }
     }
 
