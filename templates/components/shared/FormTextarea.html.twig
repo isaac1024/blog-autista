@@ -7,7 +7,7 @@
     line: the single-line controller turns line breaks into spaces.
 #}
 {% set actions = (singleLine ? ['keydown->single-line#preventBreak', 'input->single-line#flatten'] : [])|merge(this.counted ? ['input->character-count#update'] : []) %}
-    <textarea{{ attributes.defaults({class: 'w-full rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]' ~ (singleLine ? ' resize-none overflow-hidden [field-sizing:content]' : '')}) }} id="{{ id }}" name="{{ name }}" rows="{{ singleLine ? 1 : rows }}"{% if singleLine %} data-controller="single-line"{% endif %}{% if this.counted %} data-character-count-target="field"{% endif %}{% if actions is not empty %} data-action="{{ actions|join(' ') }}"{% endif %}>{{ value }}</textarea>
+    <textarea{{ attributes.defaults({class: 'w-full rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text focus-visible:border-accent forced-colors:border-[ButtonText]' ~ (singleLine ? ' resize-none overflow-hidden [field-sizing:content]' : '')}) }} id="{{ id }}" name="{{ name }}" rows="{{ singleLine ? 1 : rows }}"{% if singleLine %} data-controller="single-line"{% endif %}{% if this.counted %} data-character-count-target="field"{% endif %}{% if actions is not empty %} data-action="{{ actions|join(' ') }}"{% endif %}>{{ value }}</textarea>
 {% if this.counted %}
     {{ counter.output(id ~ '-count', this.length, recommendedMin, recommendedMax) }}
 </div>

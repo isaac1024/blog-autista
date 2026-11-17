@@ -1,5 +1,5 @@
 <nav aria-label="{{ label }}">
-    <ul class="m-0 inline-flex list-none flex-wrap border-2 border-border p-0 forced-colors:border-[CanvasText]">
+    <ul class="m-0 inline-flex list-none flex-wrap border border-border p-0 forced-colors:border-[CanvasText]">
 {% for link in links %}
         <li class="flex">
             <a class="flex min-h-11 items-center px-4 no-underline {{ link.current ? 'bg-accent font-bold text-on-accent forced-colors:bg-[Highlight] forced-colors:text-[HighlightText]' : 'text-text hover:bg-accent-soft hover:text-accent-strong' }}" href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.label }}</a>

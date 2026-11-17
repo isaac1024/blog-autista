@@ -52,7 +52,7 @@
     the name itself shows.
 #}
 {% macro button(command, label, options = {}) %}
-<button class="group/button relative inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-control border-2 border-transparent bg-surface px-2 text-[1rem] font-bold text-text transition-colors duration-150 hover:border-border aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:opacity-60 aria-disabled:hover:border-transparent motion-reduce:transition-none forced-colors:border-[ButtonText] forced-colors:aria-pressed:border-[Highlight]" type="button" data-rich-text-editor-target="button" data-action="mousedown->rich-text-editor#keepFocus rich-text-editor#run" data-command="{{ command }}" data-label="{{ label }}"{% if options.sectionLabel ?? false %} data-section-label="{{ options.sectionLabel }}"{% endif %}{% if options.toggle ?? false %} aria-pressed="false"{% endif %}>
+<button class="group/button relative inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-control border border-transparent bg-surface px-2 text-[1rem] font-bold text-text transition-colors duration-150 hover:border-border aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:opacity-60 aria-disabled:hover:border-transparent motion-reduce:transition-none forced-colors:border-[ButtonText] forced-colors:aria-pressed:border-[Highlight]" type="button" data-rich-text-editor-target="button" data-action="mousedown->rich-text-editor#keepFocus rich-text-editor#run" data-command="{{ command }}" data-label="{{ label }}"{% if options.sectionLabel ?? false %} data-section-label="{{ options.sectionLabel }}"{% endif %}{% if options.toggle ?? false %} aria-pressed="false"{% endif %}>
 {% if options.icon ?? true %}
     {{ _self.icon(command) }}
     <span class="sr-only" data-role="name">{{ label }}</span>
@@ -67,7 +67,7 @@
     current kind, which the controller keeps up to date.
 #}
 {% macro blockTypeButton(id) %}
-<button class="relative inline-flex min-h-11 cursor-pointer items-center justify-center gap-1 rounded-control border-2 border-border bg-surface px-2 text-[1rem] font-bold text-text hover:border-accent aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:opacity-60 forced-colors:border-[ButtonText]" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="{{ id }}-menu" data-rich-text-editor-target="blockType" data-action="mousedown->rich-text-editor#keepFocus rich-text-editor#openBlockMenu">
+<button class="relative inline-flex min-h-11 cursor-pointer items-center justify-center gap-1 rounded-control border border-border bg-bg px-2 text-[1rem] font-bold text-text hover:border-accent aria-disabled:cursor-not-allowed aria-disabled:text-muted aria-disabled:opacity-60 forced-colors:border-[ButtonText]" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="{{ id }}-menu" data-rich-text-editor-target="blockType" data-action="mousedown->rich-text-editor#keepFocus rich-text-editor#openBlockMenu">
     <span class="sr-only">{{ 'ui.editor.block_type'|trans }}:</span>
     <span class="w-32 truncate text-left" data-role="name"></span>
     <svg class="h-4 w-4 flex-none" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4" /></svg>
@@ -82,10 +82,10 @@
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint" data-rich-text-editor-target="hint" hidden>{{ hint ?? 'ui.editor.hint'|trans }}</p>
     </div>
     <noscript>
-        <p class="m-0 rounded-control border-2 border-border bg-surface p-4 text-[1rem] text-muted">{{ 'ui.editor.noscript'|trans }}</p>
+        <p class="m-0 rounded-control border border-border bg-bg p-4 text-[1rem] text-muted">{{ 'ui.editor.noscript'|trans }}</p>
     </noscript>
     <div class="grid gap-3" data-rich-text-editor-target="frame" hidden>
-        <div class="relative min-w-0 rounded-card border-2 border-border bg-surface has-[.ProseMirror-focused]:border-accent has-[.ProseMirror-focused]:outline-3 has-[.ProseMirror-focused]:outline-offset-3 has-[.ProseMirror-focused]:outline-focus forced-colors:border-[ButtonText]" data-rich-text-editor-target="canvas" data-action="focusout->rich-text-editor#leave keydown->rich-text-editor#controlsKey">
+        <div class="relative min-w-0 rounded-card border border-border bg-bg has-[.ProseMirror-focused]:border-accent has-[.ProseMirror-focused]:outline-3 has-[.ProseMirror-focused]:outline-offset-3 has-[.ProseMirror-focused]:outline-focus forced-colors:border-[ButtonText]" data-rich-text-editor-target="canvas" data-action="focusout->rich-text-editor#leave keydown->rich-text-editor#controlsKey">
             <div data-rich-text-editor-target="editor"></div>
 
             {# Pinned at the bottom, right above the form actions, where the thumb reaches it. #}
@@ -121,7 +121,7 @@
                     {{ _self.button('undo', 'ui.editor.undo'|trans) }}
                     {{ _self.button('redo', 'ui.editor.redo'|trans) }}
 {% if not singleParagraph %}
-                    <button class="group/button relative ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border-2 border-border bg-surface px-3 text-[1rem] font-bold text-text hover:border-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-outline-dialog" command="show-modal" aria-haspopup="dialog" data-action="mousedown->rich-text-editor#keepFocus" data-rich-text-editor-target="outlineButton" hidden>
+                    <button class="group/button relative ml-auto inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-control border border-border bg-bg px-3 text-[1rem] font-bold text-text hover:border-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-outline-dialog" command="show-modal" aria-haspopup="dialog" data-action="mousedown->rich-text-editor#keepFocus" data-rich-text-editor-target="outlineButton" hidden>
                         {{ _self.icon('outline') }}
                         <span>{{ 'ui.editor.outline'|trans }}</span>
                     </button>
@@ -156,7 +156,7 @@
             </div>
 
             {# Menu of block kinds, opened by "/" or by the block kind button. #}
-            <ul class="fixed z-40 m-0 max-h-72 w-64 list-none overflow-y-auto rounded-control border-2 border-border bg-surface p-1 shadow-card" id="{{ id }}-menu" role="listbox" tabindex="-1" aria-label="{{ 'ui.editor.slash_menu'|trans }}" data-rich-text-editor-target="menu" data-action="keydown->rich-text-editor#menuButtonKey focusout->rich-text-editor#menuFocusOut" hidden></ul>
+            <ul class="fixed z-40 m-0 max-h-72 w-64 list-none overflow-y-auto rounded-control border border-border bg-bg p-1 shadow-card" id="{{ id }}-menu" role="listbox" tabindex="-1" aria-label="{{ 'ui.editor.slash_menu'|trans }}" data-rich-text-editor-target="menu" data-action="keydown->rich-text-editor#menuButtonKey focusout->rich-text-editor#menuFocusOut" hidden></ul>
         </div>
 {% if maxLength %}
         <p class="m-0 text-[1rem] text-muted" id="{{ id }}-count" data-rich-text-editor-target="count"></p>
@@ -179,11 +179,11 @@
 
 {% if not singleParagraph %}
     {# The outline of the headings, in a dialog opened from the dock: every section one step away. #}
-    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[28rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-outline-dialog" aria-labelledby="{{ id }}-outline-title" closedby="any" data-rich-text-editor-target="outlineDialog">
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[28rem] overflow-y-auto rounded-card border border-border bg-bg p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-outline-dialog" aria-labelledby="{{ id }}-outline-title" closedby="any" data-rich-text-editor-target="outlineDialog">
         <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="m-0 text-xl font-bold" id="{{ id }}-outline-title">{{ 'ui.editor.outline'|trans }}</h2>
-                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-outline-dialog" command="close">
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border border-border bg-bg text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-outline-dialog" command="close">
                     <span class="sr-only">{{ 'ui.close'|trans }}</span>
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
@@ -194,11 +194,11 @@
 {% endif %}
 {% if this.allowsImages %}
     {# The images of the library to embed one, searched by their alternative text. #}
-    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-image-dialog" aria-labelledby="{{ id }}-image-title" closedby="any" data-rich-text-editor-target="imageDialog">
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border border-border bg-bg p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-image-dialog" aria-labelledby="{{ id }}-image-title" closedby="any" data-rich-text-editor-target="imageDialog">
         <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="m-0 text-xl font-bold" id="{{ id }}-image-title">{{ 'ui.editor.image.title'|trans }}</h2>
-                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-image-dialog" command="close">
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border border-border bg-bg text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-image-dialog" command="close">
                     <span class="sr-only">{{ 'ui.close'|trans }}</span>
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
@@ -210,8 +210,8 @@
             <div class="flex flex-col gap-2" role="search">
                 <label class="text-[1rem] font-bold" for="{{ id }}-image-search">{{ 'ui.editor.image.search'|trans }}</label>
                 <div class="flex gap-2">
-                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-image-search" data-rich-text-editor-target="imageSearch" data-action="keydown.enter->rich-text-editor#searchImages">
-                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="rich-text-editor#searchImages">{{ 'ui.editor.image.search_submit'|trans }}</button>
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-image-search" data-rich-text-editor-target="imageSearch" data-action="keydown.enter->rich-text-editor#searchImages">
+                    <button class="min-h-12 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="rich-text-editor#searchImages">{{ 'ui.editor.image.search_submit'|trans }}</button>
                 </div>
             </div>
             <p class="m-0 text-[1rem] text-muted" role="status" data-rich-text-editor-target="imageStatus"></p>
@@ -225,11 +225,11 @@
         of content first, then one of it searched by its name. Its title
         says which.
     #}
-    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-page-dialog" aria-labelledby="{{ id }}-page-title" closedby="any" data-rich-text-editor-target="pageDialog">
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border border-border bg-bg p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-page-dialog" aria-labelledby="{{ id }}-page-title" closedby="any" data-rich-text-editor-target="pageDialog">
         <div class="flex flex-col gap-4 p-[clamp(1.25rem,4vw,2rem)]">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="m-0 text-xl font-bold" id="{{ id }}-page-title" data-rich-text-editor-target="pageDialogTitle">{{ (this.allowsLinks ? 'ui.editor.link.title' : 'ui.editor.widget.title')|trans }}</h2>
-                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-page-dialog" command="close">
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border border-border bg-bg text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-page-dialog" command="close">
                     <span class="sr-only">{{ 'ui.close'|trans }}</span>
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
@@ -247,13 +247,13 @@
             <div class="flex flex-col gap-2" role="search">
                 <label class="text-[1rem] font-bold" for="{{ id }}-page-search">{{ 'ui.editor.link.search'|trans }}</label>
                 <div class="flex gap-2">
-                    <input class="min-h-12 min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-page-search" data-rich-text-editor-target="pageSearch" data-action="keydown.enter->rich-text-editor#searchPages">
-                    <button class="min-h-12 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="rich-text-editor#searchPages">{{ 'ui.editor.link.search_submit'|trans }}</button>
+                    <input class="min-h-12 min-w-0 flex-1 rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text focus-visible:border-accent" type="search" id="{{ id }}-page-search" data-rich-text-editor-target="pageSearch" data-action="keydown.enter->rich-text-editor#searchPages">
+                    <button class="min-h-12 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-action="rich-text-editor#searchPages">{{ 'ui.editor.link.search_submit'|trans }}</button>
                 </div>
             </div>
             <p class="m-0 text-[1rem] text-muted" role="status" data-rich-text-editor-target="pageStatus"></p>
             <ul class="m-0 grid list-none gap-2 p-0" aria-label="{{ 'ui.editor.link.list'|trans }}" data-rich-text-editor-target="pageResults"></ul>
-            <button class="min-h-12 cursor-pointer self-start rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="pageMore" data-action="rich-text-editor#morePages" hidden>{{ 'ui.editor.link.more'|trans }}</button>
+            <button class="min-h-12 cursor-pointer self-start rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="pageMore" data-action="rich-text-editor#morePages" hidden>{{ 'ui.editor.link.more'|trans }}</button>
         </div>
     </dialog>
 {% endif %}
@@ -263,11 +263,11 @@
         them down to, each picked in the dialog of contents. Not a form: the
         editor sits in the form of what it edits.
     #}
-    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border-2 border-border bg-surface p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-mosaic-dialog" aria-labelledby="{{ id }}-mosaic-title" closedby="any" data-rich-text-editor-target="mosaicDialog">
+    <dialog class="m-auto max-h-[calc(100dvh_-_2rem)] w-[calc(100%_-_2rem)] max-w-[40rem] overflow-y-auto rounded-card border border-border bg-bg p-0 text-text shadow-card backdrop:bg-black/60" id="{{ id }}-mosaic-dialog" aria-labelledby="{{ id }}-mosaic-title" closedby="any" data-rich-text-editor-target="mosaicDialog">
         <div class="flex flex-col gap-5 p-[clamp(1.25rem,4vw,2rem)]">
             <div class="flex items-center justify-between gap-4">
                 <h2 class="m-0 text-xl font-bold" id="{{ id }}-mosaic-title">{{ 'ui.editor.mosaic.title'|trans }}</h2>
-                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border-2 border-border bg-surface text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">
+                <button class="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-control border border-border bg-bg text-text hover:border-accent hover:text-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">
                     <span class="sr-only">{{ 'ui.close'|trans }}</span>
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                 </button>
@@ -275,33 +275,33 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[1rem] font-bold" for="{{ id }}-mosaic-limit">{{ 'ui.editor.mosaic.limit'|trans }}</label>
                 <p class="m-0 text-[1rem] text-muted" id="{{ id }}-mosaic-limit-hint">{{ 'ui.editor.mosaic.limit_hint'|trans }}</p>
-                <input class="min-h-12 w-32 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="number" min="1" max="20" step="1" inputmode="numeric" id="{{ id }}-mosaic-limit" aria-describedby="{{ id }}-mosaic-limit-hint" data-rich-text-editor-target="mosaicLimit">
+                <input class="min-h-12 w-32 rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text focus-visible:border-accent" type="number" min="1" max="20" step="1" inputmode="numeric" id="{{ id }}-mosaic-limit" aria-describedby="{{ id }}-mosaic-limit-hint" data-rich-text-editor-target="mosaicLimit">
             </div>
             <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-section-label">
                 <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-section-label">{{ 'ui.editor.mosaic.section'|trans }}</p>
                 <p class="m-0 text-[1rem]" data-rich-text-editor-target="mosaicSection"></p>
                 <div class="flex flex-wrap gap-2">
-                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionChoose" data-action="rich-text-editor#chooseMosaicSection">{{ 'ui.editor.mosaic.choose_section'|trans }}</button>
-                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionRemove" data-action="rich-text-editor#removeMosaicSection" hidden>{{ 'ui.editor.mosaic.remove_section'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionChoose" data-action="rich-text-editor#chooseMosaicSection">{{ 'ui.editor.mosaic.choose_section'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSectionRemove" data-action="rich-text-editor#removeMosaicSection" hidden>{{ 'ui.editor.mosaic.remove_section'|trans }}</button>
                 </div>
             </div>
             <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-author-label">
                 <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-author-label">{{ 'ui.editor.mosaic.author'|trans }}</p>
                 <p class="m-0 text-[1rem]" data-rich-text-editor-target="mosaicAuthor"></p>
                 <div class="flex flex-wrap gap-2">
-                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorChoose" data-action="rich-text-editor#chooseMosaicAuthor">{{ 'ui.editor.mosaic.choose_author'|trans }}</button>
-                    <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorRemove" data-action="rich-text-editor#removeMosaicAuthor" hidden>{{ 'ui.editor.mosaic.remove_author'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorChoose" data-action="rich-text-editor#chooseMosaicAuthor">{{ 'ui.editor.mosaic.choose_author'|trans }}</button>
+                    <button class="min-h-11 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicAuthorRemove" data-action="rich-text-editor#removeMosaicAuthor" hidden>{{ 'ui.editor.mosaic.remove_author'|trans }}</button>
                 </div>
             </div>
             <div class="flex flex-col gap-2" role="group" aria-labelledby="{{ id }}-mosaic-tags-label" aria-describedby="{{ id }}-mosaic-tags-hint">
                 <p class="m-0 text-[1rem] font-bold" id="{{ id }}-mosaic-tags-label">{{ 'ui.editor.mosaic.tags'|trans }}</p>
                 <p class="m-0 text-[1rem] text-muted" id="{{ id }}-mosaic-tags-hint">{{ 'ui.editor.mosaic.tags_hint'|trans }}</p>
                 <ul class="m-0 grid list-none gap-2 p-0 text-[1rem]" data-rich-text-editor-target="mosaicTags"></ul>
-                <button class="min-h-11 cursor-pointer rounded-control border-2 border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText] self-start" type="button" data-rich-text-editor-target="mosaicTagChoose" data-action="rich-text-editor#chooseMosaicTag">{{ 'ui.editor.mosaic.choose_tag'|trans }}</button>
+                <button class="min-h-11 cursor-pointer rounded-control border border-accent bg-surface px-4 text-[1rem] font-bold text-accent hover:bg-accent hover:text-on-accent forced-colors:border-[ButtonText] self-start" type="button" data-rich-text-editor-target="mosaicTagChoose" data-action="rich-text-editor#chooseMosaicTag">{{ 'ui.editor.mosaic.choose_tag'|trans }}</button>
             </div>
             <div class="flex flex-wrap gap-3 border-t border-divider pt-4">
-                <button class="min-h-12 cursor-pointer rounded-control border-2 border-transparent bg-accent px-5 py-3 text-base font-bold text-on-accent hover:bg-accent-strong forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSubmit" data-action="rich-text-editor#applyMosaic"></button>
-                <button class="min-h-12 cursor-pointer rounded-control border-2 border-border bg-surface px-5 py-3 text-base font-bold text-text hover:border-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">{{ 'ui.editor.mosaic.cancel'|trans }}</button>
+                <button class="min-h-12 cursor-pointer rounded-control border border-transparent bg-accent px-5 py-3 text-base font-bold text-on-accent hover:bg-accent-strong forced-colors:border-[ButtonText]" type="button" data-rich-text-editor-target="mosaicSubmit" data-action="rich-text-editor#applyMosaic"></button>
+                <button class="min-h-12 cursor-pointer rounded-control border border-border bg-bg px-5 py-3 text-base font-bold text-text hover:border-accent forced-colors:border-[ButtonText]" type="button" commandfor="{{ id }}-mosaic-dialog" command="close">{{ 'ui.editor.mosaic.cancel'|trans }}</button>
             </div>
         </div>
     </dialog>

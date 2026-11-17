@@ -2,8 +2,8 @@
     <label class="text-[1rem] font-bold" for="{{ id }}">{{ label }}</label>
     <p class="m-0 text-[1rem] text-muted" id="{{ id }}-hint">{{ hint }}</p>
     <div class="flex flex-col gap-2 sm:flex-row">
-        <input class="min-h-12 w-full min-w-0 flex-1 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text focus-visible:border-accent" type="url" id="{{ id }}" value="{{ value }}" readonly spellcheck="false" aria-describedby="{{ id }}-hint {{ id }}-status" data-copy-field-target="value" data-action="focus->copy-field#select">
-        <button class="min-h-12 w-full flex-none cursor-pointer rounded-control border-2 border-accent bg-surface px-5 py-3 text-base font-bold text-accent transition-colors duration-150 hover:bg-accent hover:text-on-accent active:translate-y-px motion-reduce:transition-none motion-reduce:active:translate-y-0 sm:w-auto forced-colors:border-[ButtonText]" type="button" data-action="copy-field#copy">{{ copyLabel }}</button>
+        <input class="min-h-12 w-full min-w-0 flex-1 rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text focus-visible:border-accent" type="url" id="{{ id }}" value="{{ value }}" readonly spellcheck="false" aria-describedby="{{ id }}-hint {{ id }}-status" data-copy-field-target="value" data-action="focus->copy-field#select">
+        <button class="min-h-12 w-full flex-none cursor-pointer rounded-control border border-accent bg-surface px-5 py-3 text-base font-bold text-accent transition-colors duration-150 hover:bg-accent hover:text-on-accent active:translate-y-px motion-reduce:transition-none motion-reduce:active:translate-y-0 sm:w-auto forced-colors:border-[ButtonText]" type="button" data-action="copy-field#copy">{{ copyLabel }}</button>
     </div>
     <p class="m-0 min-h-[1.5em] text-[1rem] text-muted" id="{{ id }}-status" role="status" data-copy-field-target="status"></p>
 </div>

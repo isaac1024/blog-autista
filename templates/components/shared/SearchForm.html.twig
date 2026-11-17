@@ -2,7 +2,7 @@
     <form class="flex flex-col gap-2" method="get" action="{{ action }}">
         <label class="text-base font-bold" for="{{ id }}">{{ label }}</label>
         <div class="flex">
-            <input class="min-h-12 min-w-0 flex-1 rounded-control border border-r-0 border-border bg-surface px-4 py-2.5 text-text focus-visible:border-accent [&::-webkit-search-cancel-button]:cursor-pointer" type="search" id="{{ id }}" name="{{ name }}" value="{{ value }}">
+            <input class="min-h-12 min-w-0 flex-1 rounded-control border border-r-0 border-border bg-bg px-4 py-2.5 text-text focus-visible:border-accent [&::-webkit-search-cancel-button]:cursor-pointer" type="search" id="{{ id }}" name="{{ name }}" value="{{ value }}">
             <button class="min-h-12 flex-none cursor-pointer rounded-control border border-accent bg-accent px-5 py-2.5 text-base font-bold text-on-accent hover:border-accent-strong hover:bg-accent-strong forced-colors:border-[ButtonText]" type="submit">{{ submit }}</button>
         </div>
     </form>

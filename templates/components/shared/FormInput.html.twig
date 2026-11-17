@@ -1,16 +1,16 @@
 {% if prefix or suffix %}
 {# The frame draws the border and the focus ring, so the affixes read as part of the field. #}
-<div class="flex min-h-12 w-full items-stretch overflow-hidden rounded-control border-2 border-border bg-surface focus-within:border-accent focus-within:outline-3 focus-within:outline-offset-3 focus-within:outline-focus forced-colors:border-[ButtonText]">
+<div class="flex min-h-12 w-full items-stretch overflow-hidden rounded-control border border-border bg-bg focus-within:border-accent focus-within:outline-3 focus-within:outline-offset-3 focus-within:outline-focus forced-colors:border-[ButtonText]">
 {% if prefix %}
     {# A long prefix, such as the date of a post, wraps after its slashes instead of leaving the field no room. #}
-    <span class="flex min-w-0 items-center border-r-2 border-divider bg-bg px-3 wrap-anywhere text-muted"><span>{{ prefix|e|replace({'/': '/<wbr>'})|raw }}</span></span>
+    <span class="flex min-w-0 items-center border-r border-divider bg-bg px-3 wrap-anywhere text-muted"><span>{{ prefix|e|replace({'/': '/<wbr>'})|raw }}</span></span>
 {% endif %}
     <input{{ attributes.defaults({class: 'min-w-32 flex-1 border-0 bg-transparent px-[0.9rem] py-3 text-text focus-visible:outline-none'}) }} type="{{ type }}" id="{{ id }}" name="{{ name }}" value="{{ value }}"{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}>
 {% if suffix %}
-    <span class="flex flex-none items-center border-l-2 border-divider bg-bg px-3 text-muted">{{ suffix }}</span>
+    <span class="flex flex-none items-center border-l border-divider bg-bg px-3 text-muted">{{ suffix }}</span>
 {% endif %}
 </div>
 {% else %}
-{% set inputAttributes = type == 'hidden' ? attributes : attributes.defaults({class: 'w-full min-h-12 rounded-control border-2 border-border bg-surface px-[0.9rem] py-3 text-text placeholder:text-muted placeholder:opacity-100 focus-visible:border-accent'}) %}
+{% set inputAttributes = type == 'hidden' ? attributes : attributes.defaults({class: 'w-full min-h-12 rounded-control border border-border bg-bg px-[0.9rem] py-3 text-text placeholder:text-muted placeholder:opacity-100 focus-visible:border-accent'}) %}
 <input{{ inputAttributes }} type="{{ type }}" id="{{ id }}" name="{{ name }}" value="{{ value }}"{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}>
 {% endif %}
