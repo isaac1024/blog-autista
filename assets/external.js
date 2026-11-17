@@ -6,12 +6,15 @@
  * for that provider alone, and its frames load on their own when they near
  * the screen, on this page and the next; the line below each tells how to
  * stop that. The facade stays until the frame has painted itself, and
- * stays for good when it never does, as when a provider changes its frame.
+ * stays for good when it never does in the time it is on the screen, as
+ * when a provider changes its frame: a browser paints no frame off it, so
+ * some tell nothing until the reader comes back to them. A video or an
+ * audio the reader played starts playing on its own.
  */
 import { grantConsent, hasConsent, revokeConsent } from './external/consent.js';
-import { frameUrl, greeting, reportedHeight, reportsHeight } from './external/frames.js';
+import { frameUrl, greeting, playCommand, reportedHeight, reportsHeight } from './external/frames.js';
 
-/** How long a frame has to paint itself before its facade stays for good. */
+/** How long a frame has to paint itself on the screen before its facade stays for good. */
 const PAINT_TIMEOUT = 10_000;
 
 /** How far from the screen a frame starts loading, so it is ready when seen. */
@@ -45,6 +48,8 @@ let frames = 0;
  * @property {HTMLButtonElement} accept
  * @property {HTMLButtonElement} cancel
  * @property {HTMLIFrameElement | null} iframe
+ * @property {number | null} clock The time its frame has left to paint
+ *     itself, running while it is on the screen.
  * @property {string} id
  */
 
@@ -76,11 +81,25 @@ const showFooter = (embed) => {
 };
 
 /**
+ * Stops the time of a frame to paint itself.
+ *
+ * @param {Embed} embed
+ */
+const stopClock = (embed) => {
+    if (embed.clock !== null) {
+        window.clearTimeout(embed.clock);
+        embed.clock = null;
+    }
+};
+
+/**
  * Takes the frame away and shows the facade again.
  *
  * @param {Embed} embed
  */
 const unload = (embed) => {
+    onScreen?.unobserve(embed.element);
+    stopClock(embed);
     embed.iframe?.remove();
     embed.iframe = null;
     embed.facade.hidden = false;
@@ -97,17 +116,56 @@ const reveal = (embed, iframe) => {
         return;
     }
 
+    onScreen?.unobserve(embed.element);
+    stopClock(embed);
     iframe.toggleAttribute('data-shown', true);
     embed.facade.hidden = true;
 };
+
+/**
+ * Gives the frame loading its time to paint itself, from now on, unless it
+ * already has it; once up, a frame still unpainted goes.
+ *
+ * @param {Embed} embed
+ */
+const startClock = (embed) => {
+    const { iframe } = embed;
+
+    if (embed.clock !== null) {
+        return;
+    }
+
+    embed.clock = window.setTimeout(() => {
+        if (embed.iframe === iframe) {
+            unload(embed);
+        }
+    }, PAINT_TIMEOUT);
+};
+
+/** The time of a frame to paint itself runs while it is on the screen alone. */
+const onScreen = 'IntersectionObserver' in window
+    ? new window.IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            // It watches the embeds alone.
+            const embed = /** @type {Embed} */ (embeds.find((candidate) => candidate.element === entry.target));
+
+            if (entry.isIntersecting) {
+                startClock(embed);
+            } else {
+                stopClock(embed);
+            }
+        }
+    })
+    : null;
 
 /**
  * Loads the frame of the resource behind its facade, which stays until the
  * frame has painted itself.
  *
  * @param {Embed} embed
+ * @param {boolean} played Whether the reader played it, so it starts.
  */
-const load = (embed) => {
+const load = (embed, played) => {
     // Played again while its frame still paints.
     if (embed.iframe !== null) {
         return;
@@ -115,9 +173,9 @@ const load = (embed) => {
 
     const { src, title, origin } = /** @type {{src: string, title: string, origin: string}} */ (embed.element.dataset);
     const iframe = document.createElement('iframe');
-    iframe.src = frameUrl(embed.provider, src, embed.id);
+    iframe.src = frameUrl(embed.provider, src, embed.id, played);
     iframe.title = title;
-    iframe.allow = 'encrypted-media; fullscreen; picture-in-picture';
+    iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
     iframe.allowFullscreen = true;
     // The site sends no referrer; YouTube plays only for pages that say where they are.
     iframe.referrerPolicy = 'strict-origin-when-cross-origin';
@@ -128,6 +186,8 @@ const load = (embed) => {
         iframe.height = String(embed.facade.offsetHeight);
     }
 
+    // A provider told once it is ready starts what the reader played.
+    iframe.toggleAttribute('data-played', played);
     embed.iframe = iframe;
     embed.frame.append(iframe);
 
@@ -143,11 +203,13 @@ const load = (embed) => {
         }
     });
 
-    window.setTimeout(() => {
-        if (embed.iframe === iframe && !('shown' in iframe.dataset)) {
-            unload(embed);
-        }
-    }, PAINT_TIMEOUT);
+    if (onScreen === null) {
+        startClock(embed);
+
+        return;
+    }
+
+    onScreen.observe(embed.element);
 };
 
 const observer = 'IntersectionObserver' in window
@@ -158,7 +220,7 @@ const observer = 'IntersectionObserver' in window
 
             if (entry.isIntersecting && hasConsent(storage, embed.provider)) {
                 self.unobserve(entry.target);
-                load(embed);
+                load(embed, false);
             }
         }
     }, { rootMargin: NEAR })
@@ -172,7 +234,7 @@ const observer = 'IntersectionObserver' in window
  */
 const loadWhenNear = (embed) => {
     if (observer === null) {
-        load(embed);
+        load(embed, false);
 
         return;
     }
@@ -206,7 +268,7 @@ const openNotice = (embed, opener) => {
  */
 const play = (embed, button) => {
     if (hasConsent(storage, embed.provider)) {
-        load(embed);
+        load(embed, true);
 
         return;
     }
@@ -223,7 +285,7 @@ const play = (embed, button) => {
 const agree = (embed) => {
     grantConsent(storage, embed.provider, new Date());
     embed.notice.hidden = true;
-    load(embed);
+    load(embed, true);
 
     for (const other of embeds.filter((candidate) => candidate.provider === embed.provider)) {
         showFooter(other);
@@ -276,6 +338,7 @@ for (const element of document.querySelectorAll('[data-external-embed]')) {
         accept: part(element, '[data-external-accept]', HTMLButtonElement),
         cancel: part(element, '[data-external-cancel]', HTMLButtonElement),
         iframe: null,
+        clock: null,
         id: `external-frame-${frames}`,
     };
     embeds.push(embed);
@@ -310,6 +373,13 @@ window.addEventListener('message', (event) => {
 
         if (iframe === null || iframe.contentWindow !== event.source || event.origin !== embed.element.dataset.origin) {
             continue;
+        }
+
+        const command = 'played' in iframe.dataset ? playCommand(embed.provider, event.data) : null;
+
+        if (command !== null) {
+            delete iframe.dataset.played;
+            /** @type {Window} */ (iframe.contentWindow).postMessage(command, event.origin);
         }
 
         const height = reportedHeight(embed.provider, event.data, embed.id);

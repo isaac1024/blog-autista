@@ -3,7 +3,8 @@
  * is, for those whose height depends on what they show: Bluesky and X take
  * an id in their address and give it back with the height; Mastodon is
  * asked for it, with an id, once its frame loads; Threads sends the height
- * alone.
+ * alone. And how a video or an audio the reader played starts on its own:
+ * YouTube and TikTok are told in the address, Spotify once it is ready.
  */
 
 /** Providers whose frames report their height. */
@@ -17,16 +18,24 @@ const REPORTED = new Set(['bluesky', 'x', 'mastodon', 'threads']);
  */
 export const reportsHeight = (provider) => REPORTED.has(provider);
 
+/** Providers told in the address of their frame to start playing. */
+const PLAYED_BY_ADDRESS = new Set(['youtube', 'tiktok']);
+
 /**
  * The address of the frame, with the id the provider gives back, if it
- * takes one.
+ * takes one, and, for a video the reader played, the word to start.
  *
  * @param {string} provider
  * @param {string} src
  * @param {string} id
+ * @param {boolean} played
  */
-export const frameUrl = (provider, src, id) => {
+export const frameUrl = (provider, src, id, played) => {
     const url = new URL(src);
+
+    if (played && PLAYED_BY_ADDRESS.has(provider)) {
+        url.searchParams.set('autoplay', '1');
+    }
 
     if (provider === 'bluesky') {
         url.searchParams.set('id', id);
@@ -48,6 +57,16 @@ export const frameUrl = (provider, src, id) => {
  * @returns {unknown}
  */
 export const greeting = (provider, id) => (provider === 'mastodon' ? { type: 'setHeight', id } : null);
+
+/**
+ * What to tell a frame the reader played, in answer to a message of it, so
+ * it starts: only Spotify, once it says it is ready.
+ *
+ * @param {string} provider
+ * @param {unknown} data
+ * @returns {unknown}
+ */
+export const playCommand = (provider, data) => (provider === 'spotify' && Object(data).type === 'ready' ? { command: 'toggle' } : null);
 
 /**
  * The height in pixels a message of a frame tells, or null when it tells

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { frameUrl, greeting, reportedHeight, reportsHeight } from '../../../assets/external/frames.js';
+import { frameUrl, greeting, playCommand, reportedHeight, reportsHeight } from '../../../assets/external/frames.js';
 
 const ID = 'external-frame-1';
 
@@ -12,9 +12,24 @@ test('the frames of posts report their height; videos and audios keep their room
 });
 
 test('Bluesky and X take the id they give back in the address of their frame', () => {
-    assert.equal(frameUrl('bluesky', 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b', ID), 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b?id=external-frame-1');
-    assert.equal(frameUrl('x', 'https://platform.twitter.com/embed/Tweet.html?id=20&dnt=true', ID), 'https://platform.twitter.com/embed/Tweet.html?id=20&dnt=true&embedId=external-frame-1');
-    assert.equal(frameUrl('youtube', 'https://www.youtube-nocookie.com/embed/abc?hl=es', ID), 'https://www.youtube-nocookie.com/embed/abc?hl=es');
+    assert.equal(frameUrl('bluesky', 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b', ID, true), 'https://embed.bsky.app/embed/did:plc:a/app.bsky.feed.post/b?id=external-frame-1');
+    assert.equal(frameUrl('x', 'https://platform.twitter.com/embed/Tweet.html?id=20&dnt=true', ID, true), 'https://platform.twitter.com/embed/Tweet.html?id=20&dnt=true&embedId=external-frame-1');
+    assert.equal(frameUrl('youtube', 'https://www.youtube-nocookie.com/embed/abc?hl=es', ID, false), 'https://www.youtube-nocookie.com/embed/abc?hl=es');
+});
+
+test('a video of YouTube or TikTok the reader played is told to start in its address; Spotify is not', () => {
+    assert.equal(frameUrl('youtube', 'https://www.youtube-nocookie.com/embed/abc?hl=es', ID, true), 'https://www.youtube-nocookie.com/embed/abc?hl=es&autoplay=1');
+    assert.equal(frameUrl('tiktok', 'https://www.tiktok.com/player/v1/1?rel=0', ID, true), 'https://www.tiktok.com/player/v1/1?rel=0&autoplay=1');
+    assert.equal(frameUrl('tiktok', 'https://www.tiktok.com/player/v1/1?rel=0', ID, false), 'https://www.tiktok.com/player/v1/1?rel=0');
+    assert.equal(frameUrl('spotify', 'https://open.spotify.com/embed/episode/a', ID, true), 'https://open.spotify.com/embed/episode/a');
+});
+
+test('only Spotify is told to start, once it says it is ready', () => {
+    assert.deepEqual(playCommand('spotify', { type: 'ready' }), { command: 'toggle' });
+
+    for (const [provider, data] of [['spotify', { type: 'playback_update' }], ['spotify', null], ['spotify', 'ready'], ['youtube', { type: 'ready' }]]) {
+        assert.equal(playCommand(provider, data), null, JSON.stringify([provider, data]));
+    }
 });
 
 test('only Mastodon is asked for its height, with the id', () => {

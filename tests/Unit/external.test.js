@@ -9,7 +9,8 @@ let runs = 0;
 /**
  * Runs the script of a page that embeds resources, on the given markup and
  * with what the browser keeps, and records the frames it is told to load
- * near the screen, and the timers it sets.
+ * near the screen, those it watches on the screen while they paint, and
+ * the timers it sets, which run only when a test makes their time up.
  */
 const page = async ({ markup = externalEmbed(), kept = null, observer = true } = {}) => {
     const { document, window } = await mount(markup, {});
@@ -18,21 +19,28 @@ const page = async ({ markup = externalEmbed(), kept = null, observer = true } =
         window.localStorage.setItem(CONSENT, JSON.stringify(kept));
     }
 
+    // What is watched to load near the screen, and to paint on it.
     const observed = [];
+    const seen = [];
     const watching = [];
     window.IntersectionObserver = observer
         ? class {
             constructor(callback, options) {
                 this.callback = callback;
+                this.entries = options === undefined ? seen : observed;
                 watching.push(options);
             }
 
             observe(element) {
-                observed.push({ element, near: () => this.callback([{ target: element, isIntersecting: true }], this), far: () => this.callback([{ target: element, isIntersecting: false }], this) });
+                this.entries.push({ element, near: () => this.callback([{ target: element, isIntersecting: true }], this), far: () => this.callback([{ target: element, isIntersecting: false }], this) });
             }
 
             unobserve(element) {
-                observed.splice(observed.findIndex((entry) => entry.element === element), 1);
+                const index = this.entries.findIndex((entry) => entry.element === element);
+
+                if (index !== -1) {
+                    this.entries.splice(index, 1);
+                }
             }
         }
         : undefined;
@@ -43,9 +51,12 @@ const page = async ({ markup = externalEmbed(), kept = null, observer = true } =
 
     const timers = [];
     window.setTimeout = (callback, delay) => {
-        timers.push({ callback, delay });
+        timers.push({ callback, delay, cleared: false });
 
         return timers.length;
+    };
+    window.clearTimeout = (timer) => {
+        timers[timer - 1].cleared = true;
     };
 
     runs += 1;
@@ -59,8 +70,16 @@ const page = async ({ markup = externalEmbed(), kept = null, observer = true } =
         document,
         window,
         observed,
+        seen,
         watching,
         timers,
+        // The time is up for every timer still running.
+        expire: () => {
+            for (const timer of timers.filter((candidate) => !candidate.cleared)) {
+                timer.cleared = true;
+                timer.callback();
+            }
+        },
         part,
         iframe: (index = 0) => part(index, 'iframe'),
         // Never the frame itself against null: a failing assertion would
@@ -151,11 +170,11 @@ test('agreeing keeps it for the provider and loads its frame, unseen until it pa
 
     assert.deepEqual(Object.keys(consent()), ['youtube']);
     const frame = iframe();
-    assert.equal(frame.src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?hl=es');
+    assert.equal(frame.src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?hl=es&autoplay=1', 'played, it starts');
     assert.equal(frame.title, 'Un vídeo (YouTube)');
     assert.equal(frame.getAttribute('referrerpolicy'), 'strict-origin-when-cross-origin');
     assert.equal(frame.getAttribute('sandbox'), 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation');
-    assert.equal(frame.getAttribute('allow'), 'encrypted-media; fullscreen; picture-in-picture');
+    assert.equal(frame.getAttribute('allow'), 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     assert.equal(frame.allowFullscreen, true);
     assert.equal(frame.hasAttribute('height'), false, 'it keeps the room of its facade');
     assert.equal(part(0, '[data-external-notice]').hidden, true);
@@ -198,10 +217,11 @@ test('with consent kept, a frame loads near the screen, once, and at once where 
 
     assert.equal(near.loaded(), false);
     assert.equal(near.part(0, '[data-external-forget]').hidden, false);
-    assert.deepEqual(near.watching, [{ rootMargin: '200% 0px' }], 'it loads two screens ahead');
+    assert.deepEqual(near.watching, [undefined, { rootMargin: '200% 0px' }], 'it loads two screens ahead, and watches the screen itself while it paints');
     near.observed[0].near();
     assert.equal(near.loaded(), true);
     assert.equal(near.observed.length, 0);
+    assert.equal(near.iframe().src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?hl=es', 'loaded on its own, it waits to be played');
 
     const blind = await page({ kept, observer: false });
     assert.equal(blind.loaded(), true);
@@ -215,46 +235,166 @@ test('consent of one provider loads nothing of another', async () => {
     assert.equal(part(0, '[data-external-load]').hidden, false);
 });
 
-test('a frame that never paints in time goes, and the facade stays', async () => {
-    const { loaded, click, iframe, timers, part } = await page();
+test('a frame that never paints in its time on the screen goes, and the facade stays', async () => {
+    const { loaded, click, iframe, timers, seen, expire, part } = await page();
     await click(0, '[data-external-load]');
     await click(0, '[data-external-accept]');
     const frame = iframe();
 
-    const [{ callback, delay }] = timers;
-    assert.equal(delay, 10_000);
-    callback();
+    assert.equal(timers.length, 0, 'off the screen, its time does not run');
+    seen[0].near();
+    seen[0].near();
+    assert.equal(timers.length, 1, 'once on it, it runs once');
+    assert.equal(timers[0].delay, 10_000);
+    expire();
 
     assert.equal(frame.isConnected, false);
     assert.equal(loaded(), false);
     assert.equal(part(0, '[data-external-facade]').hidden, false);
+    assert.equal(seen.length, 0, 'gone, it is watched no more');
 });
 
-test('a frame that painted in time stays when the time is up', async () => {
-    const { loaded, click, iframe, timers, window } = await page();
+test('the time of a frame to paint stops while it is off the screen, and starts again when back', async () => {
+    const { loaded, click, timers, seen, expire } = await page();
     await click(0, '[data-external-load]');
     await click(0, '[data-external-accept]');
-    iframe().dispatchEvent(new window.Event('load'));
 
-    timers[0].callback();
+    seen[0].near();
+    seen[0].far();
+    seen[0].far();
+    expire();
+    assert.equal(loaded(), true, 'the time it was off the screen does not count');
+
+    seen[0].near();
+    assert.equal(timers.length, 2);
+    expire();
+    assert.equal(loaded(), false);
+});
+
+test('without a way to tell the screen, the time of a frame runs from its loading', async () => {
+    const { loaded, timers, expire } = await page({ kept: { youtube: '2026-11-15T10:00:00.000Z' }, observer: false });
+
+    assert.equal(timers.length, 1);
+    expire();
+    assert.equal(loaded(), false);
+});
+
+test('without a way to tell the screen, a frame that paints in time stays', async () => {
+    const { loaded, iframe, part, expire, window } = await page({ kept: { youtube: '2026-11-15T10:00:00.000Z' }, observer: false });
+
+    iframe().dispatchEvent(new window.Event('load'));
+    expire();
 
     assert.equal(loaded(), true);
+    assert.equal(part(0, '[data-external-facade]').hidden, true);
+});
+
+test('the time to paint runs for the frame on the screen alone, not for the others loading', async () => {
+    const markup = externalEmbed({ index: 1 }) + externalEmbed({ index: 2 });
+    const { loaded, observed, seen, expire } = await page({ markup, kept: { youtube: '2026-11-15T10:00:00.000Z' } });
+    observed[0].near();
+    observed[0].near();
+
+    seen[1].near();
+    expire();
+
+    assert.equal(loaded(0), true);
+    assert.equal(loaded(1), false);
+});
+
+test('a frame that painted in time stays when the time is up, and is watched no more', async () => {
+    const { loaded, click, iframe, seen, expire, window } = await page();
+    await click(0, '[data-external-load]');
+    await click(0, '[data-external-accept]');
+    seen[0].near();
+    iframe().dispatchEvent(new window.Event('load'));
+
+    expire();
+
+    assert.equal(loaded(), true);
+    assert.equal(seen.length, 0);
 });
 
 test('a frame taken away and loaded again is not taken away by the time of the first', async () => {
-    const { loaded, click, iframe, timers, window, part } = await page();
+    const { loaded, click, iframe, timers, seen, window, part } = await page();
     await click(0, '[data-external-load]');
     await click(0, '[data-external-accept]');
+    seen[0].near();
     const first = iframe();
+    const [firstTime] = timers;
     await click(0, '[data-external-forget]');
+    assert.equal(firstTime.cleared, true, 'taken away, its time stops');
     await click(0, '[data-external-load]');
     await click(0, '[data-external-accept]');
 
     first.dispatchEvent(new window.Event('load'));
     assert.equal(part(0, '[data-external-facade]').hidden, false, 'the first frame, gone, shows nothing');
-    timers[0].callback();
+    firstTime.callback();
 
     assert.equal(loaded(), true);
+});
+
+test('a frame whose time is up after another took its place leaves that one', async () => {
+    const { loaded, timers, part } = await page({ kept: { youtube: '2026-11-15T10:00:00.000Z' }, observer: false });
+    const [firstTime] = timers;
+    firstTime.callback();
+    await part(0, '[data-external-play]').click();
+
+    firstTime.callback();
+
+    assert.equal(loaded(), true);
+});
+
+test('a video of TikTok played starts; one loaded on its own does not', async () => {
+    const markup = externalEmbed({ index: 1, provider: 'tiktok', src: 'https://www.tiktok.com/player/v1/1?rel=0', origin: 'https://www.tiktok.com', space: 'portrait' })
+        + externalEmbed({ index: 2, provider: 'tiktok', src: 'https://www.tiktok.com/player/v1/2?rel=0', origin: 'https://www.tiktok.com', space: 'portrait' });
+    const { click, iframe, observed } = await page({ markup });
+
+    await click(0, '[data-external-play]');
+    await click(0, '[data-external-accept]');
+    observed[0].near();
+
+    assert.equal(iframe(0).src, 'https://www.tiktok.com/player/v1/1?rel=0&autoplay=1');
+    assert.equal(iframe(1).src, 'https://www.tiktok.com/player/v1/2?rel=0');
+});
+
+test('with consent, the facade of a video plays it at once, and it starts', async () => {
+    const { click, iframe, expire } = await page({ kept: { youtube: '2026-11-15T10:00:00.000Z' }, observer: false });
+    assert.equal(iframe().src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?hl=es', 'loaded on its own, it waits');
+    expire();
+
+    await click(0, '[data-external-play]');
+
+    assert.equal(iframe().src, 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?hl=es&autoplay=1');
+});
+
+test('an audio of Spotify played is told to start once it is ready, at its origin, once; one loaded on its own is not', async () => {
+    const spotify = (index) => externalEmbed({ index, provider: 'spotify', src: `https://open.spotify.com/embed/episode/${index}`, origin: 'https://open.spotify.com', space: 'compact' });
+    const { click, iframe, observed, window } = await page({ markup: spotify(1) + spotify(2) });
+    await click(0, '[data-external-play]');
+    await click(0, '[data-external-accept]');
+    observed[0].near();
+    const asked = [[], []];
+
+    for (const index of [0, 1]) {
+        Object.defineProperty(iframe(index), 'contentWindow', { configurable: true, value: { postMessage: (message, origin) => asked[index].push([message, origin]) } });
+    }
+
+    const tell = (index, data, origin = 'https://open.spotify.com') => {
+        const event = new window.MessageEvent('message', { data, origin });
+        Object.defineProperty(event, 'source', { value: iframe(index).contentWindow });
+        window.dispatchEvent(event);
+    };
+    tell(0, { type: 'playback_update' });
+    tell(0, { type: 'ready' }, 'https://evil.example');
+    assert.deepEqual(asked[0], [], 'nothing before it is ready, nor to another origin');
+
+    tell(0, { type: 'ready' });
+    tell(0, { type: 'ready' });
+    tell(1, { type: 'ready' });
+
+    assert.equal(iframe(0).src, 'https://open.spotify.com/embed/episode/1', 'Spotify is not told in its address');
+    assert.deepEqual(asked, [[[{ command: 'toggle' }, 'https://open.spotify.com']], []]);
 });
 
 test('a post is shown its frame tells its height, from its origin alone, as tall as it says', async () => {
