@@ -15,6 +15,8 @@ use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
+use Web\Page\Application\SearchPageFinder;
+use Web\Page\Domain\PageRepository;
 use Web\Redirect\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Redirect\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Settings\Application\SettingsOnSiteFinder;
@@ -23,7 +25,8 @@ use Web\Settings\Domain\SettingsRepository;
 
 /**
  * Starts every page of the site in its layout, with the chrome its settings
- * give it: the name of the blog, the menus and the default image.
+ * give it: the name of the blog, the menus and the default image, and a
+ * link to the page that searches it while it is on the site.
  *
  * Only what is on the site is painted: a menu leaves out its pages off the
  * site, and an image off it is never shared, unless the address of either
@@ -35,6 +38,12 @@ use Web\Settings\Domain\SettingsRepository;
  */
 final readonly class SiteLayout
 {
+    /**
+     * It paints from the settings, the images, the redirects, the contents
+     * the menus lead to, the authors and the pages, so it reaches them all.
+     *
+     * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+     */
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
         private SettingsRepository $settingsRepository,
@@ -42,6 +51,7 @@ final readonly class SiteLayout
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteLinkedContents $linkedContents,
         private AuthorRepository $authorRepository,
+        private PageRepository $pageRepository,
     ) {}
 
     public function page(string $title): Page
@@ -50,7 +60,7 @@ final readonly class SiteLayout
         $homeUrl = $this->urlGenerator->generate('web_home');
 
         if (null === $settings) {
-            return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], null));
+            return WebLayout::page($title, new SiteChrome(null, $homeUrl, [], [], $this->searchUrl(), null));
         }
 
         $targets = $this->linkedContents->menuTargets([...$settings->mainMenu, ...$settings->footerMenu]);
@@ -59,6 +69,7 @@ final readonly class SiteLayout
             $homeUrl,
             self::links($settings->mainMenu, $targets),
             self::links($settings->footerMenu, $targets),
+            $this->searchUrl(),
             $this->shareImage($settings),
         ));
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
@@ -131,6 +142,16 @@ final readonly class SiteLayout
         }
 
         return $links;
+    }
+
+    /**
+     * The page that searches the site, while it is on the site.
+     */
+    private function searchUrl(): ?string
+    {
+        $slug = new SearchPageFinder()($this->pageRepository)?->slug;
+
+        return null === $slug ? null : $this->urlGenerator->generate('web_page', ['slug' => $slug]);
     }
 
     /**

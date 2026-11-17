@@ -215,7 +215,7 @@ final class PreviewPostTest extends TestCase
 
         $page = new PreviewPost(
             $urlGenerator,
-            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))))),
+            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))), self::createStub(PageRepository::class)),
             new SitePostPage(new RichTextComponents(), $translator),
             new PostUrl($urlGenerator),
             $imageRepository,

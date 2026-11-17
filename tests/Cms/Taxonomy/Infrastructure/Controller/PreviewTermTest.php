@@ -94,7 +94,7 @@ final class PreviewTermTest extends TestCase
         $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))));
 
         return new PreviewTerm(
-            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirectsByOrigin, $linkedContents),
+            new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirectsByOrigin, $linkedContents, self::createStub(PageRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             new TermAddress($urlGenerator),
             $urlGenerator,

@@ -55,7 +55,7 @@ final class SiteLayoutTest extends TestCase
 
         self::assertSame('Sobre mí', $page->title);
         self::assertSame([
-            'header' => ['brand' => null, 'homeUrl' => '/', 'links' => []],
+            'header' => ['brand' => null, 'homeUrl' => '/', 'links' => [], 'searchUrl' => null],
             'footer' => ['brand' => null, 'links' => []],
             'image' => null,
         ], self::chrome($page));
@@ -95,13 +95,30 @@ final class SiteLayoutTest extends TestCase
             'header' => ['brand' => Event::NAME, 'homeUrl' => '/', 'links' => [
                 ['label' => 'Contacto', 'url' => '/contacto.html'],
                 ['label' => 'Quién soy', 'url' => '/sobre-mi.html'],
-            ]],
+            ], 'searchUrl' => null],
             'footer' => ['brand' => Event::NAME, 'links' => [
                 ['label' => 'Inicio', 'url' => '/'],
                 ['label' => 'Sobre mí', 'url' => '/sobre-mi.html'],
             ]],
             'image' => null,
         ], self::chrome($page));
+    }
+
+    /**
+     * The header leads to the page that searches the site while it is on
+     * the site, whether the settings are published or not.
+     */
+    public function testItLeadsToTheSearchOfTheSiteWhileItsPageIsOnIt(): void
+    {
+        $pages = self::createStub(PageRepository::class);
+        $pages->method('findByIds')->willReturn([]);
+        $pages->method('findSearch')->willReturn(SitePage::publish(CmsPagePublishedMother::create(id: '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b99', title: 'Buscar', slug: 'buscar', type: PageType::Search)));
+        $images = self::createStub(ImageRepository::class);
+        $settings = Settings::publish(Event::create(defaultImageId: null, mainMenu: [], footerMenu: []));
+
+        self::assertSame('/buscar.html', self::chrome(self::layout($settings, $pages, $images)->page('Sobre mí'))['header']['searchUrl']);
+        self::assertSame('/buscar.html', self::chrome(self::layout(null, $pages, $images)->page('Sobre mí'))['header']['searchUrl']);
+        self::assertNull(self::chrome(self::layout($settings, self::createStub(PageRepository::class), $images)->page('Sobre mí'))['header']['searchUrl']);
     }
 
     public function testItSharesTheLargestCopyOfTheDefaultImageWhileItIsOnTheSite(): void
@@ -216,7 +233,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator)), $authors ?? self::createStub(AuthorRepository::class));
+        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator)), $authors ?? self::createStub(AuthorRepository::class), $pages);
     }
 
     /**

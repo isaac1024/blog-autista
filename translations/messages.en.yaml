@@ -1161,6 +1161,7 @@ site:
         too_short: 'Write a word of at least %min% letters.'
         none: 'No posts with “%text%”.'
 ui:
+    search: 'Search'
     skip_to_content: 'Skip to content'
     menu: 'Menu'
     reading:

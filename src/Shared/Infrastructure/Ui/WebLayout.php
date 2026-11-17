@@ -39,6 +39,7 @@ final class WebLayout
                 'brand' => $chrome->brand,
                 'homeUrl' => $chrome->homeUrl,
                 'links' => $chrome->mainLinks,
+                'searchUrl' => $chrome->searchUrl,
             ])
             ->withFooter('Shared:PageFooter', [
                 'brand' => $chrome->brand,

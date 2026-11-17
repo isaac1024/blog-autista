@@ -7,6 +7,8 @@ namespace Cms\Settings\Infrastructure\Controller;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Page\Application\SearchPageOnSiteFinder;
+use Cms\Page\Domain\PageRepository;
 use Cms\Redirect\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Redirect\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Settings\Application\SettingsOnSiteFinder;
@@ -37,6 +39,7 @@ final readonly class PreviewLayout
         private ImageRepository $imageRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private CmsLinkedContents $linkedContents,
+        private PageRepository $pageRepository,
     ) {}
 
     public function page(string $title): Page
@@ -50,7 +53,7 @@ final readonly class PreviewLayout
         $settings = new SettingsOnSiteFinder()($this->settingsRepository);
 
         if (null === $settings) {
-            return new SiteChrome(null, $homeUrl, [], [], null);
+            return new SiteChrome(null, $homeUrl, [], [], $this->searchUrl(), null);
         }
 
         $targets = $this->linkedContents->menuTargets([...$settings->mainMenu, ...$settings->footerMenu]);
@@ -60,8 +63,19 @@ final readonly class PreviewLayout
             $homeUrl,
             self::links($settings->mainMenu, $targets),
             self::links($settings->footerMenu, $targets),
+            $this->searchUrl(),
             $this->shareImage($settings),
         );
+    }
+
+    /**
+     * The page that searches the site, as it is on the site, while it is.
+     */
+    private function searchUrl(): ?string
+    {
+        $slug = new SearchPageOnSiteFinder()($this->pageRepository)?->slug;
+
+        return null === $slug ? null : $this->urlGenerator->generate('web_page', ['slug' => $slug]);
     }
 
     /**

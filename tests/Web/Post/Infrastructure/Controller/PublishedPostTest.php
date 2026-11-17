@@ -353,7 +353,7 @@ final class PublishedPostTest extends TestCase
         $page = new PublishedPost(
             $urlGenerator,
             new SitePostPage(new RichTextComponents(), $translator),
-            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), $authorRepository),
+            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator)), $authorRepository, self::createStub(PageRepository::class)),
             $imageRepository,
             $termRepository,
             $authorRepository,

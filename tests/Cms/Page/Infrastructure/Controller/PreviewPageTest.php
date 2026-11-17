@@ -283,7 +283,7 @@ final class PreviewPageTest extends TestCase
         return new PreviewPage(
             $urlGenerator,
             new SitePage(new RichTextComponents()),
-            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))))),
+            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))), self::createStub(PageRepository::class)),
             $imageRepository,
             $redirectsByOrigin,
             new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))))),
