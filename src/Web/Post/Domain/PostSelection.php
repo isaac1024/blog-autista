@@ -32,11 +32,12 @@ final readonly class PostSelection
     }
 
     /**
-     * Whether only a tag narrows it down, which the rows of the tags alone
-     * list, through their own index.
+     * Whether one tag alone narrows it down among the tags, with or without a
+     * section or an author: the rows of that tag list it, through their own
+     * index.
      */
-    public function isOnlyATag(): bool
+    public function hasOneTag(): bool
     {
-        return null === $this->sectionId && null === $this->authorId && 1 === \count($this->tagIds);
+        return 1 === \count($this->tagIds);
     }
 }

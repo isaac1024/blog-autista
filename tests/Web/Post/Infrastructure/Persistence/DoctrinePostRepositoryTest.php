@@ -99,7 +99,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     /**
      * Every list goes newest first by the day each post was first published,
      * ties by id; a section, an author and some tags narrow it down, each
-     * tag enough on its own.
+     * tag enough on its own, one alone read from its own rows.
      */
     public function testItListsThePostsOfASelectionNewestFirst(): void
     {
@@ -119,6 +119,12 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertSame([self::TIED, self::MIDDLE], $this->listed(PostSelection::ofTag(self::SOUND), 0, 10));
         self::assertSame([self::TIED, self::MIDDLE, self::OLDEST], $this->listed(new PostSelection(null, null, [self::SOUND, self::SLEEP]), 0, 10));
         self::assertSame([self::MIDDLE], $this->listed(new PostSelection(self::OTHER_SECTION, self::AUTHOR, [self::SLEEP]), 0, 10));
+        // One tag with a section or an author, ties by id and a page at a time.
+        self::assertSame([self::TIED, self::MIDDLE], $this->listed(new PostSelection(self::OTHER_SECTION, null, [self::SOUND]), 0, 10));
+        self::assertSame([self::MIDDLE], $this->listed(new PostSelection(self::OTHER_SECTION, null, [self::SOUND]), 1, 1));
+        self::assertSame([self::TIED], $this->listed(new PostSelection(null, self::OTHER_AUTHOR, [self::SOUND]), 0, 10));
+        self::assertSame([self::MIDDLE, self::OLDEST], $this->listed(new PostSelection(null, self::AUTHOR, [self::SLEEP]), 0, 10));
+        self::assertSame([], $this->listed(new PostSelection(self::SECTION, self::OTHER_AUTHOR, [self::SLEEP]), 0, 10));
         self::assertSame([self::TIED], $this->listed(new PostSelection(self::OTHER_SECTION, self::OTHER_AUTHOR, [self::SOUND, self::SLEEP]), 0, 10));
         self::assertSame([], $this->listed(PostSelection::ofTag(self::UNUSED), 0, 10));
         self::assertSame([], $this->listed(new PostSelection(null, null, []), 4, 10));

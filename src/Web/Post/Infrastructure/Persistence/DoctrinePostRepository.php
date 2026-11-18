@@ -186,24 +186,16 @@ final readonly class DoctrinePostRepository implements PostRepository
     }
 
     /**
-     * The ids of a page of the selection, newest first. Only a tag lists
-     * them from the rows of the tags, which keep the day for that; anything
-     * else, from the posts, through the index of a section or an author, or
-     * that of every post.
+     * The ids of a page of the selection, newest first. One tag lists them
+     * from its rows, which keep the day for that, a section or an author
+     * checked on each post; anything else, from the posts, through the index
+     * of a section or an author, or that of every post.
      *
      * @return list<string>
      */
     private function listedIds(PostSelection $selection, int $offset, int $limit): array
     {
         $connection = $this->entityManager->getConnection();
-
-        if ($selection->isOnlyATag()) {
-            return array_map(self::id(...), $connection->fetchFirstColumn(
-                'SELECT post_id FROM web_post_tag WHERE term_id = :tag ORDER BY first_published_at DESC, post_id DESC LIMIT :limit OFFSET :offset',
-                ['tag' => $selection->tagIds[0], 'limit' => $limit, 'offset' => $offset],
-                ['limit' => ParameterType::INTEGER, 'offset' => ParameterType::INTEGER],
-            ));
-        }
 
         $conditions = [];
         $parameters = ['limit' => $limit, 'offset' => $offset];
@@ -219,6 +211,26 @@ final readonly class DoctrinePostRepository implements PostRepository
             $parameters['author'] = $selection->authorId;
         }
 
+        // One tag lists from its own rows, newest first through their index,
+        // whatever else narrows it down, reading them in order until the page
+        // is full: tens of milliseconds at most, for a tag of thousands.
+        // Left to choose, MariaDB starts from the posts of the section or of
+        // the author and sorts them all, which takes seconds; hence the
+        // straight join.
+        if ($selection->hasOneTag()) {
+            return array_map(self::id(...), $connection->fetchFirstColumn(
+                \sprintf(
+                    'SELECT t.post_id FROM web_post_tag t%s WHERE t.term_id = :tag%s ORDER BY t.first_published_at DESC, t.post_id DESC LIMIT :limit OFFSET :offset',
+                    [] === $conditions ? '' : ' STRAIGHT_JOIN web_post p ON p.id = t.post_id',
+                    implode('', array_map(static fn (string $condition): string => ' AND '.$condition, $conditions)),
+                ),
+                ['tag' => $selection->tagIds[0]] + $parameters,
+                $types,
+            ));
+        }
+
+        // Two tags or more, any of them: here the plans that read from the
+        // posts are the quick ones.
         if ([] !== $selection->tagIds) {
             $conditions[] = 'EXISTS (SELECT 1 FROM web_post_tag t WHERE t.post_id = p.id AND t.term_id IN (:tags))';
             $parameters['tags'] = $selection->tagIds;
