@@ -10,6 +10,7 @@ use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
+use Web\Post\Domain\PostCard;
 use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
@@ -131,6 +132,32 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     }
 
     /**
+     * A card tells what the post saved has, read without its content: its
+     * title, address, section, signature, image, summary and dates.
+     */
+    public function testItReadsTheCardsOfThePostsAsSaved(): void
+    {
+        $post = Post::publish(CmsPostPublishedMother::create(lastPublishedAt: '2026-11-09T08:30:00+00:00'));
+        $this->repository()->save($post);
+        $this->entityManager()->clear();
+
+        self::assertEquals([new PostCard(
+            $post->id()->value(),
+            $post->title(),
+            $post->slug(),
+            $post->sectionId(),
+            $post->sectionName(),
+            $post->sectionSlug(),
+            $post->authorName(),
+            $post->openingImageId(),
+            $post->metaDescription(),
+            $post->day(),
+            $post->firstPublishedAt(),
+            $post->lastPublishedAt(),
+        )], $this->repository()->cardsOf([$post->id(), new PostId('01a1b801-ce58-723d-8234-b76d9105ffff')]));
+    }
+
+    /**
      * The posts search engines may index, newest first, ties by id, as many
      * as asked for: those that ask not to be indexed are left out.
      */
@@ -142,7 +169,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->publish(self::TIED, '2026-11-05T10:00:00+00:00', self::SECTION, self::AUTHOR, [], Robots::NoindexNofollow);
         $this->entityManager()->clear();
 
-        $ids = static fn (array $posts): array => array_map(static fn (mixed $post): string => $post instanceof Post ? $post->id()->value() : '', $posts);
+        $ids = static fn (array $posts): array => array_map(static fn (mixed $card): string => $card instanceof PostCard ? $card->id : '', $posts);
 
         self::assertSame([self::NEWEST, self::OLDEST], $ids($this->repository()->indexed(10)));
         self::assertSame([self::NEWEST], $ids($this->repository()->indexed(1)));
@@ -198,7 +225,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->publishText(self::TIED, '2026-11-05T10:00:00+00:00', 'Una cita', 'Sin nada que ver.', 'Otra cosa.', 'De pasada, el elefante del cuarto.');
         $this->entityManager()->clear();
 
-        $searched = fn (string $text, int $offset = 0, int $limit = 10): array => array_map(static fn (Post $post): string => $post->id()->value(), $this->repository()->searched(SearchTerms::fromText($text), $offset, $limit));
+        $searched = fn (string $text, int $offset = 0, int $limit = 10): array => array_map(static fn (PostCard $card): string => $card->id, $this->repository()->searched(SearchTerms::fromText($text), $offset, $limit));
 
         // Said twice, it ranks above those that say it once, which go newest first.
         self::assertSame([self::OLDEST, self::NEWEST, self::MIDDLE], $searched('ruido'));
@@ -276,7 +303,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
      */
     private function listed(PostSelection $selection, int $offset, int $limit): array
     {
-        return array_map(static fn (Post $post): string => $post->id()->value(), $this->repository()->listed($selection, $offset, $limit));
+        return array_map(static fn (PostCard $card): string => $card->id, $this->repository()->listed($selection, $offset, $limit));
     }
 
     private function repository(): PostRepository

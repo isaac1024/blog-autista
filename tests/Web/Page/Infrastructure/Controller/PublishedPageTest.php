@@ -39,6 +39,7 @@ use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostCardMother;
 use Web\Tests\Post\Domain\PostIdMother;
 
 final class PublishedPageTest extends TestCase
@@ -157,6 +158,7 @@ final class PublishedPageTest extends TestCase
             'slug' => 'entrada-'.$index,
             'revision' => 1,
         ] + CmsPostPublishedMother::body())), [1, 2]);
+        $posts = array_map(PostCardMother::of(...), $posts);
         $postRepository = $this->createMock(PostRepository::class);
         $postRepository->expects(self::exactly(2))->method('listed')->willReturnCallback(
             static fn (PostSelection $selection, int $offset, int $limit): array => 0 === $offset && 2 === $limit && [$tag] === $selection->tagIds && null === $selection->sectionId && null === $selection->authorId ? $posts : [],

@@ -11,7 +11,7 @@ namespace Web\Post\Application;
 final readonly class PostsPageResponse
 {
     /**
-     * @param list<PostResponse> $posts
+     * @param list<PostCardResponse> $posts
      */
     public function __construct(
         public array $posts,

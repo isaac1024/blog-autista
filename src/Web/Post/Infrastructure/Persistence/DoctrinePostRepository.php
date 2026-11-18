@@ -7,11 +7,13 @@ namespace Web\Post\Infrastructure\Persistence;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Web\Post\Domain\Post;
+use Web\Post\Domain\PostCard;
 use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
@@ -22,7 +24,8 @@ use Web\Shared\Domain\Robots;
 /**
  * Outbound adapter that persists and reads the posts on the site through
  * Doctrine ORM. Lists are read in two steps: the ids of a page of them, in
- * plain SQL, each through the index that orders it, then those posts.
+ * plain SQL, each through the index that orders it, then the cards of
+ * those posts, from the columns a card shows.
  */
 #[AsAlias(PostRepository::class)]
 final readonly class DoctrinePostRepository implements PostRepository
@@ -73,9 +76,9 @@ final readonly class DoctrinePostRepository implements PostRepository
     }
 
     #[\Override]
-    public function findByIds(array $ids): array
+    public function cardsOf(array $ids): array
     {
-        return $this->postsOf(array_map(static fn (PostId $id): string => $id->value(), $ids));
+        return $this->cards(array_map(static fn (PostId $id): string => $id->value(), $ids));
     }
 
     #[\Override]
@@ -87,13 +90,13 @@ final readonly class DoctrinePostRepository implements PostRepository
     #[\Override]
     public function listed(PostSelection $selection, int $offset, int $limit): array
     {
-        return $this->postsOf($this->listedIds($selection, $offset, $limit));
+        return $this->cards($this->listedIds($selection, $offset, $limit));
     }
 
     #[\Override]
     public function indexed(int $limit): array
     {
-        return $this->postsOf(array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
+        return $this->cards(array_map(self::id(...), $this->entityManager->getConnection()->fetchFirstColumn(
             'SELECT id FROM web_post WHERE robots = :robots ORDER BY first_published_at DESC, id DESC LIMIT :limit',
             ['robots' => Robots::IndexFollow->value, 'limit' => $limit],
             ['limit' => ParameterType::INTEGER],
@@ -126,39 +129,52 @@ final readonly class DoctrinePostRepository implements PostRepository
             throw \in_array($exception->getCode(), self::STATEMENT_TIME_EXCEEDED, true) ? SearchTooBroad::forTerms($terms, $exception) : $exception;
         }
 
-        return $this->postsOf(array_map(self::id(...), $ids));
+        return $this->cards(array_map(self::id(...), $ids));
     }
 
     /**
-     * The posts of the ids, in their order.
+     * The cards of the posts of the ids, in their order, read from the
+     * columns a card shows: never the content, nor the text searched.
      *
      * @param list<string> $ids
      *
-     * @return list<Post>
+     * @return list<PostCard>
      */
-    private function postsOf(array $ids): array
+    private function cards(array $ids): array
     {
         if ([] === $ids) {
             return [];
         }
 
-        $posts = [];
+        $connection = $this->entityManager->getConnection();
+        $cards = [];
 
-        /** @var list<Post> $found */
-        $found = $this->entityManager->createQueryBuilder()
-            ->select('p')
-            ->from(Post::class, 'p')
-            ->where('p.id IN (:ids)')
-            ->setParameter('ids', $ids, ArrayParameterType::STRING)
-            ->getQuery()
-            ->getResult();
+        /** @var list<array{id: string, title: string, slug: string, section_id: string, section_name: string, section_slug: string, author_name: string, opening_image_id: string, meta_description: ?string, day: string, first_published_at: string, last_published_at: string}> $rows */
+        $rows = $connection->fetchAllAssociative(
+            'SELECT id, title, slug, section_id, section_name, section_slug, author_name, opening_image_id, meta_description, day, first_published_at, last_published_at FROM web_post WHERE id IN (:ids)',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::STRING],
+        );
 
-        foreach ($found as $post) {
-            $posts[$post->id()->value()] = $post;
+        foreach ($rows as $row) {
+            $cards[$row['id']] = new PostCard(
+                $row['id'],
+                $row['title'],
+                $row['slug'],
+                $row['section_id'],
+                $row['section_name'],
+                $row['section_slug'],
+                $row['author_name'],
+                $row['opening_image_id'],
+                $row['meta_description'],
+                $this->moment(Types::DATE_IMMUTABLE, $row['day']),
+                $this->moment(Types::DATETIME_IMMUTABLE, $row['first_published_at']),
+                $this->moment(Types::DATETIME_IMMUTABLE, $row['last_published_at']),
+            );
         }
 
         // In the order the ids were listed.
-        return array_values(array_filter(array_map(static fn (string $id): ?Post => $posts[$id] ?? null, $ids)));
+        return array_values(array_filter(array_map(static fn (string $id): ?PostCard => $cards[$id] ?? null, $ids)));
     }
 
     /**
@@ -251,6 +267,16 @@ final readonly class DoctrinePostRepository implements PostRepository
             $parameters,
             $types,
         ));
+    }
+
+    /**
+     * A day or a moment of a card, read as the entity maps it.
+     */
+    private function moment(string $type, string $value): \DateTimeImmutable
+    {
+        $moment = Type::getType($type)->convertToPHPValue($value, $this->entityManager->getConnection()->getDatabasePlatform());
+
+        return $moment instanceof \DateTimeImmutable ? $moment : throw new \UnexpectedValueException('A listed post has no date where it should.');
     }
 
     private static function id(mixed $value): string

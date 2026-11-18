@@ -43,7 +43,7 @@ final readonly class PostSearcher
             $asked,
             $asked && $terms->isEmpty(),
             false,
-            array_map(PostResponse::fromPost(...), \array_slice($posts, 0, PostLister::PAGE_SIZE)),
+            array_map(PostCardResponse::fromCard(...), \array_slice($posts, 0, PostLister::PAGE_SIZE)),
             \count($posts) > PostLister::PAGE_SIZE,
         );
     }

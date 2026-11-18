@@ -34,6 +34,7 @@ use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Taxonomy\Infrastructure\Controller\PublishedTerm;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostCardMother;
 use Web\Tests\Post\Domain\PostIdMother;
 
 final class PublishedTermTest extends TestCase
@@ -96,6 +97,7 @@ final class PublishedTermTest extends TestCase
             ] + CmsPostPublishedMother::body()));
         }
 
+        $posts = array_map(PostCardMother::of(...), $posts);
         $postRepository = $this->createMock(PostRepository::class);
         $postRepository->expects(self::exactly(2))->method('listed')->willReturnCallback(
             static fn (PostSelection $selection, int $offset, int $limit): array => \array_slice($posts, $offset, $limit),

@@ -16,14 +16,14 @@ interface PostRepository
     public function find(PostId $id): ?Post;
 
     /**
-     * The posts on the site among those given, in the order given, read at
-     * once; an id of none is left out.
+     * The cards of the posts on the site among those given, in the order
+     * given, read at once; an id of none is left out.
      *
      * @param list<PostId> $ids
      *
-     * @return list<Post>
+     * @return list<PostCard>
      */
-    public function findByIds(array $ids): array;
+    public function cardsOf(array $ids): array;
 
     /**
      * The post served under the slug of a section, on the day it was first
@@ -32,18 +32,19 @@ interface PostRepository
     public function findAt(string $section, \DateTimeImmutable $day, string $slug): ?Post;
 
     /**
-     * The posts of the selection, newest first by the day they were first
-     * published, from the offset given, as many as the limit at most.
+     * The cards of the posts of the selection, newest first by the day they
+     * were first published, from the offset given, as many as the limit at
+     * most.
      *
-     * @return list<Post>
+     * @return list<PostCard>
      */
     public function listed(PostSelection $selection, int $offset, int $limit): array;
 
     /**
-     * The posts search engines may index, newest first by the day they were
-     * first published, as many as the limit at most.
+     * The cards of the posts search engines may index, newest first by the
+     * day they were first published, as many as the limit at most.
      *
-     * @return list<Post>
+     * @return list<PostCard>
      */
     public function indexed(int $limit): array;
 
@@ -54,7 +55,7 @@ interface PostRepository
      *
      * @throws SearchTooBroad when it would take longer than a search may
      *
-     * @return list<Post>
+     * @return list<PostCard> the cards of those posts
      */
     public function searched(SearchTerms $terms, int $offset, int $limit): array;
 }

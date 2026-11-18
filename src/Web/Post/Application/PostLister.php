@@ -35,7 +35,7 @@ final readonly class PostLister
         }
 
         return new PostsPageResponse(
-            array_map(PostResponse::fromPost(...), \array_slice($posts, 0, self::PAGE_SIZE)),
+            array_map(PostCardResponse::fromCard(...), \array_slice($posts, 0, self::PAGE_SIZE)),
             \count($posts) > self::PAGE_SIZE,
         );
     }

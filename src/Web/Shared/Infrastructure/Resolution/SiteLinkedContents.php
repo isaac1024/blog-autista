@@ -21,7 +21,7 @@ use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
-use Web\Post\Application\PostResponse;
+use Web\Post\Application\PostCardResponse;
 use Web\Post\Application\PostsOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
@@ -143,9 +143,9 @@ final readonly class SiteLinkedContents
     private function posts(array $ids): array
     {
         $posts = new PostsOnSiteFinder($ids)($this->postRepository);
-        $images = new ImagesOnSiteFinder(array_values(array_map(static fn (PostResponse $post): string => $post->openingImageId, $posts)))($this->imageRepository);
+        $images = new ImagesOnSiteFinder(array_values(array_map(static fn (PostCardResponse $post): string => $post->openingImageId, $posts)))($this->imageRepository);
 
-        return array_map(function (PostResponse $post) use ($images): array {
+        return array_map(function (PostCardResponse $post) use ($images): array {
             $image = $images[$post->openingImageId] ?? null;
             $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
 

@@ -9,8 +9,9 @@ use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 
 /**
- * Finds the posts on the site among those given, read at once; one off
- * the site, or what can't be the id of one, is left out.
+ * Finds the posts on the site among those given, read at once as their
+ * cards show them; one off the site, or what can't be the id of one, is
+ * left out.
  */
 final readonly class PostsOnSiteFinder
 {
@@ -20,7 +21,7 @@ final readonly class PostsOnSiteFinder
     public function __construct(private array $ids) {}
 
     /**
-     * @return array<string, PostResponse> keyed by id
+     * @return array<string, PostCardResponse> keyed by id
      */
     public function __invoke(PostRepository $postRepository): array
     {
@@ -36,8 +37,8 @@ final readonly class PostsOnSiteFinder
 
         $found = [];
 
-        foreach ($postRepository->findByIds($ids) as $post) {
-            $found[$post->id()->value()] = PostResponse::fromPost($post);
+        foreach ($postRepository->cardsOf($ids) as $card) {
+            $found[$card->id] = PostCardResponse::fromCard($card);
         }
 
         return $found;

@@ -20,10 +20,10 @@ final readonly class LatestPostsFinder
     ) {}
 
     /**
-     * @return list<PostResponse>
+     * @return list<PostCardResponse>
      */
     public function __invoke(PostRepository $postRepository): array
     {
-        return array_map(PostResponse::fromPost(...), $postRepository->listed($this->selection, 0, $this->limit));
+        return array_map(PostCardResponse::fromCard(...), $postRepository->listed($this->selection, 0, $this->limit));
     }
 }

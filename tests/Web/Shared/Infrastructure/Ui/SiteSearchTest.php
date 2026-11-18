@@ -25,6 +25,7 @@ use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Shared\Infrastructure\Ui\SiteSearch;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Post\Domain\PostCardMother;
 use Web\Tests\Post\Domain\PostIdMother;
 
 final class SiteSearchTest extends TestCase
@@ -40,6 +41,7 @@ final class SiteSearchTest extends TestCase
             'slug' => 'entrada-'.$index,
             'revision' => 1,
         ] + CmsPostPublishedMother::body())), range(1, 21));
+        $posts = array_map(PostCardMother::of(...), $posts);
         $postRepository = $this->createMock(PostRepository::class);
         $postRepository->expects(self::once())->method('searched')
             ->with(self::equalTo(SearchTerms::fromText('ruido metro')), 0, 21)

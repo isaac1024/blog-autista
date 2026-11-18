@@ -16,10 +16,10 @@ final readonly class IndexedPostsFinder
     public function __construct(private int $limit) {}
 
     /**
-     * @return list<PostResponse>
+     * @return list<PostCardResponse>
      */
     public function __invoke(PostRepository $postRepository): array
     {
-        return array_map(PostResponse::fromPost(...), $postRepository->indexed($this->limit));
+        return array_map(PostCardResponse::fromCard(...), $postRepository->indexed($this->limit));
     }
 }

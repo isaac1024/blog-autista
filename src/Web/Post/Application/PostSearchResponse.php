@@ -12,7 +12,7 @@ namespace Web\Post\Application;
 final readonly class PostSearchResponse
 {
     /**
-     * @param list<PostResponse> $posts
+     * @param list<PostCardResponse> $posts
      */
     public function __construct(
         public bool $asked,

@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
-use Web\Post\Application\PostResponse;
+use Web\Post\Application\PostCardResponse;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
@@ -37,22 +37,22 @@ final readonly class SitePostCards
     ) {}
 
     /**
-     * @param list<PostResponse> $posts
+     * @param list<PostCardResponse> $posts
      *
      * @return list<CardPost>
      */
     public function __invoke(array $posts): array
     {
-        $images = new ReferenceResolver('image', array_values(array_unique(array_map(static fn (PostResponse $post): string => $post->openingImageId, $posts))), null)(
+        $images = new ReferenceResolver('image', array_map(static fn (PostCardResponse $post): string => $post->openingImageId, $posts), null)(
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
         $sections = array_filter(
-            new TermsOnSiteFinder(array_values(array_unique(array_map(static fn (PostResponse $post): string => $post->sectionId, $posts))))($this->termRepository),
+            new TermsOnSiteFinder(array_map(static fn (PostCardResponse $post): string => $post->sectionId, $posts))($this->termRepository),
             static fn (TermResponse $term): bool => Taxonomy::Section->value === $term->taxonomy,
         );
 
-        return array_map(fn (PostResponse $post): array => [
+        return array_map(fn (PostCardResponse $post): array => [
             'url' => $this->url($post),
             'title' => $post->title,
             'excerpt' => $post->metaDescription,
@@ -62,7 +62,7 @@ final readonly class SitePostCards
         ], $posts);
     }
 
-    private function url(PostResponse $post): string
+    private function url(PostCardResponse $post): string
     {
         return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH);
     }

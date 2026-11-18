@@ -17,7 +17,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Application\IndexedPostsFinder;
-use Web\Post\Application\PostResponse;
+use Web\Post\Application\PostCardResponse;
 use Web\Post\Domain\PostRepository;
 use Web\Settings\Application\SettingsOnSiteFinder;
 use Web\Settings\Domain\SettingsRepository;
@@ -46,11 +46,11 @@ final class FeedController extends AbstractController
     public function __invoke(Request $request, UrlGeneratorInterface $urlGenerator, PostRepository $postRepository, ImageRepository $imageRepository, SettingsRepository $settingsRepository): StreamedResponse
     {
         $posts = new IndexedPostsFinder(self::LATEST)($postRepository);
-        $images = new ImagesOnSiteFinder(array_values(array_unique(array_map(static fn (PostResponse $post): string => $post->openingImageId, $posts))))($imageRepository);
+        $images = new ImagesOnSiteFinder(array_map(static fn (PostCardResponse $post): string => $post->openingImageId, $posts))($imageRepository);
         // Named as the blog, or as its host until its settings are published.
         $name = new SettingsOnSiteFinder()($settingsRepository)->name ?? $request->getHost();
         $home = $urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
-        $updated = [] === $posts ? Clock::now() : max(array_map(static fn (PostResponse $post): \DateTimeImmutable => $post->lastPublishedAt, $posts));
+        $updated = [] === $posts ? Clock::now() : max(array_map(static fn (PostCardResponse $post): \DateTimeImmutable => $post->lastPublishedAt, $posts));
 
         return new StreamedResponse(static function () use ($urlGenerator, $posts, $images, $name, $home, $updated): void {
             $xml = StreamedXml::open();
