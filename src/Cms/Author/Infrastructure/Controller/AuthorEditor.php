@@ -16,6 +16,7 @@ use Cms\Shared\Infrastructure\Http\AvatarUrl;
 use Cms\Shared\Infrastructure\Publication\LastAddressPanel;
 use Cms\Shared\Infrastructure\Ui\AuthorState;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -170,7 +171,7 @@ final readonly class AuthorEditor
      */
     private function previewModal(string $previewUrl, \DateTimeImmutable $expiresAt): PageComponent
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT, SiteTimeZone::NAME);
 
         return new PageComponent('Shared:Modal', [
             'id' => 'preview',
@@ -232,7 +233,7 @@ final readonly class AuthorEditor
      */
     private function dates(AuthorResponse $author): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.authors.edit.dates', [
             '%created%' => $formatter->format($author->createdAt),

@@ -66,7 +66,7 @@ final class AuthorEditorTest extends TestCase
         $editor = $this->edit(AuthorMother::create(id: self::ID));
 
         PageComponents::one($editor, 'Shared:Modal', ['id' => 'preview', 'trigger' => 'cms.authors.preview.trigger', 'variant' => 'secondary']);
-        PageComponents::one($editor, 'Shared:CopyField', ['value' => self::PREVIEW, 'hint' => 'cms.authors.preview.url_hint(%expires%=7 de noviembre de 2026, 10:00)']);
+        PageComponents::one($editor, 'Shared:CopyField', ['value' => self::PREVIEW, 'hint' => 'cms.authors.preview.url_hint(%expires%=7 de noviembre de 2026, 11:00)']);
         PageComponents::one($editor, 'Shared:ButtonLink', ['url' => self::PREVIEW, 'label' => 'cms.authors.preview.open']);
     }
 

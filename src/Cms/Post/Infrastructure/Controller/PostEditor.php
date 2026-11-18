@@ -200,7 +200,7 @@ final readonly class PostEditor
      */
     private function previewModal(string $previewUrl, \DateTimeImmutable $expiresAt): PageComponent
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT, SiteTimeZone::NAME);
 
         return new PageComponent('Shared:Modal', [
             'id' => 'preview',
@@ -262,7 +262,7 @@ final readonly class PostEditor
      */
     private function dates(PostResponse $post): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.posts.edit.dates', [
             '%created%' => $formatter->format($post->createdAt),

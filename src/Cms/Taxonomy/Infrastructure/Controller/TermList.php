@@ -8,6 +8,7 @@ use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsResponse;
 use Cms\Taxonomy\Domain\TermName;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -102,7 +103,7 @@ final readonly class TermList
      */
     private function row(TaxonomySegment $taxonomy, TermResponse $term): PageComponent
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
         $slug = $term->publishedSlug ?? $term->slug;
 
         return new PageComponent('Shared:ResourceRow', [

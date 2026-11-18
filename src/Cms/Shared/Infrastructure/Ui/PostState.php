@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Shared\Infrastructure\Ui;
 
 use Cms\Post\Application\PostResponse;
+use Shared\Domain\SiteTimeZone;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -36,7 +37,7 @@ final readonly class PostState
      */
     public function lastUpdate(PostResponse $post): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.posts.list.updated_at', ['%date%' => $formatter->format($post->updatedAt)]);
     }

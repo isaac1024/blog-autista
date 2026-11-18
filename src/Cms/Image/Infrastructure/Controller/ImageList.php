@@ -9,6 +9,7 @@ use Cms\Image\Application\ImagesResponse;
 use Cms\Image\Domain\Alt;
 use Cms\Image\Domain\Image;
 use Cms\Shared\Infrastructure\Ui\ImageState;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -106,7 +107,7 @@ final readonly class ImageList
      */
     private function row(ImageResponse $image): PageComponent
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return new PageComponent('Shared:ResourceRow', [
             'title' => $image->alt,

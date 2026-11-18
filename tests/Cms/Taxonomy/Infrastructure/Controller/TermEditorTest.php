@@ -64,7 +64,7 @@ final class TermEditorTest extends TestCase
     {
         $editor = $this->edit(TaxonomySegment::Sections, TermMother::create(id: self::ID));
 
-        PageComponents::one($editor, 'Shared:CopyField', ['value' => self::PREVIEW, 'hint' => 'cms.terms.preview.url_hint(%expires%=7 de noviembre de 2026, 10:00)']);
+        PageComponents::one($editor, 'Shared:CopyField', ['value' => self::PREVIEW, 'hint' => 'cms.terms.preview.url_hint(%expires%=7 de noviembre de 2026, 11:00)']);
         PageComponents::one($editor, 'Shared:ButtonLink', ['url' => self::PREVIEW, 'label' => 'cms.terms.preview.open']);
     }
 

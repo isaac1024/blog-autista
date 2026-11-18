@@ -18,6 +18,7 @@ use Cms\Shared\Infrastructure\Http\ExternalImageUrl;
 use Shared\Domain\Clock;
 use Shared\Domain\External\ImageShape;
 use Shared\Domain\External\ResourceKind;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -173,7 +174,7 @@ final readonly class ExternalResourceEditor
      */
     private function dates(ExternalResourceResponse $resource): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.externals.edit.dates', [
             '%created%' => $formatter->format($resource->createdAt),
@@ -418,7 +419,7 @@ final readonly class ExternalResourceEditor
      */
     private function availabilityPanel(ExternalResourceResponse $resource): array
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT, SiteTimeZone::NAME);
 
         return ['Shared:Panel', [
             'title' => $this->translator->trans('cms.externals.check.title'),

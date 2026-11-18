@@ -15,6 +15,7 @@ use Cms\Shared\Infrastructure\Publication\LastAddressPanel;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Shared\Infrastructure\Ui\PageRole;
 use Cms\Shared\Infrastructure\Ui\PageState;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Twig\Components\SearchPreview;
 use Shared\Infrastructure\Ui\CmsLayout;
@@ -172,7 +173,7 @@ final readonly class PageEditor
      */
     private function previewModal(SharedPreviewLink $sharedPreview): PageComponent
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::LONG, \IntlDateFormatter::SHORT, SiteTimeZone::NAME);
 
         return new PageComponent('Shared:Modal', [
             'id' => self::PREVIEW_MODAL,
@@ -246,7 +247,7 @@ final readonly class PageEditor
      */
     private function dates(PageResponse $page): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.pages.edit.dates', [
             '%created%' => $formatter->format($page->createdAt),

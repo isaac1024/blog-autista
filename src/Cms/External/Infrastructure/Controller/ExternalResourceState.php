@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\External\Infrastructure\Controller;
 
 use Cms\External\Application\ExternalResourceResponse;
+use Shared\Domain\SiteTimeZone;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -47,7 +48,7 @@ final readonly class ExternalResourceState
      */
     public function lastUpdate(ExternalResourceResponse $resource): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.externals.list.updated_at', ['%date%' => $formatter->format($resource->updatedAt)]);
     }

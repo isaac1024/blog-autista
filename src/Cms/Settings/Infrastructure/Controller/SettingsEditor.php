@@ -10,6 +10,7 @@ use Cms\Settings\Domain\MenuItem;
 use Cms\Settings\Domain\SiteName;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Shared\Infrastructure\Ui\SettingsState;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -43,7 +44,7 @@ final readonly class SettingsEditor
      */
     public function __invoke(SettingsResponse $settings): Page
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return CmsLayout::page(\sprintf('%s · CMS', $this->translator->trans('cms.settings.title')))
             ->withMain('Shared:PageTitle', [

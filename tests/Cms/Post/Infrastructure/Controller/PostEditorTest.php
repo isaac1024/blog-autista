@@ -76,7 +76,7 @@ final class PostEditorTest extends TestCase
             'id' => 'post-shared-preview-url',
             'label' => 'cms.posts.preview.url_label',
             'value' => self::PREVIEW,
-            'hint' => 'cms.posts.preview.url_hint(%expires%=7 de noviembre de 2026, 10:00)',
+            'hint' => 'cms.posts.preview.url_hint(%expires%=7 de noviembre de 2026, 11:00)',
             'copyLabel' => 'cms.posts.preview.copy',
             'copiedMessage' => 'cms.posts.preview.copied',
             'failedMessage' => 'cms.posts.preview.copy_failed',

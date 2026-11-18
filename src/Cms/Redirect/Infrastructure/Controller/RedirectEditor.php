@@ -8,6 +8,7 @@ use Cms\Redirect\Application\RedirectResponse;
 use Cms\Redirect\Domain\ResourceType;
 use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Cms\Shared\Infrastructure\Ui\RedirectNames;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -37,7 +38,7 @@ final readonly class RedirectEditor
      */
     public function __invoke(RedirectResponse $redirect): Page
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
         $names = ($this->redirectNames)([$redirect])[$redirect->id];
         $origin = $names['origin'];
 

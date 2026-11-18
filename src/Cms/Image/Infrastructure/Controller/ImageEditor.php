@@ -12,6 +12,7 @@ use Cms\Shared\Infrastructure\Publication\LastAddressPanel;
 use Cms\Shared\Infrastructure\Ui\ImageState;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Shared\Domain\RichText\RichText;
+use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Shared\Infrastructure\Ui\CmsLayout;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -51,7 +52,7 @@ final readonly class ImageEditor
      */
     public function __invoke(ImageResponse $image): Page
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->lastAddressPanel->onImage(CmsLayout::page(\sprintf(
             '%s · CMS',

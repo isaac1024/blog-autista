@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Shared\Infrastructure\Ui;
 
 use Cms\Author\Application\AuthorResponse;
+use Shared\Domain\SiteTimeZone;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -36,7 +37,7 @@ final readonly class AuthorState
      */
     public function lastUpdate(AuthorResponse $author): string
     {
-        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::MEDIUM, \IntlDateFormatter::NONE, SiteTimeZone::NAME);
 
         return $this->translator->trans('cms.authors.list.updated_at', ['%date%' => $formatter->format($author->updatedAt)]);
     }

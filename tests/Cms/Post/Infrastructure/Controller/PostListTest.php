@@ -87,6 +87,17 @@ final class PostListTest extends TestCase
         yield 'a draft, without an address yet' => [PostMother::publishable(), 'cms.posts.list.off_site', 'cms.posts.status.draft.label'];
     }
 
+    /**
+     * Saved late on the 7th by the clock of the database, which is already
+     * the 8th in Madrid, where the blog is edited.
+     */
+    public function testItDatesEachPostByTheDayOfMadrid(): void
+    {
+        $list = $this->list([PostMother::create(updatedAt: '2026-11-07 23:30:00')], '', 1, false);
+
+        PageComponents::one($list, 'Shared:ResourceRow', ['meta' => 'cms.posts.list.off_site · cms.posts.list.updated_at(%date%=8 nov 2026)']);
+    }
+
     #[DataProvider('pagination')]
     public function testItLeadsThroughThePagesOfTheSearch(string $search, int $number, bool $hasMore, ?string $previous, ?string $next): void
     {

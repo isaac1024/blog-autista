@@ -308,7 +308,7 @@ final class ExternalResourceEditorTest extends TestCase
         $url = ExternalResourceMother::VIDEO_URL;
 
         yield 'never checked' => [ExternalResourceMother::video(), 'cms.externals.check.available(%date%=cms.externals.check.never, %url%='.$url.')'];
-        yield 'checked gone' => [self::checked(Availability::Unavailable), 'cms.externals.check.unavailable(%date%=7 de noviembre de 2026, 10:00, %url%='.$url.')'];
+        yield 'checked gone' => [self::checked(Availability::Unavailable), 'cms.externals.check.unavailable(%date%=7 de noviembre de 2026, 11:00, %url%='.$url.')'];
     }
 
     private function edit(ExternalResource $resource): Page
