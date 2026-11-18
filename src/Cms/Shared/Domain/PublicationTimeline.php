@@ -2,21 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Cms\Page\Domain;
+namespace Cms\Shared\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * When a page was created, last changed, and first and last published.
+ * When something the CMS publishes, such as a page, a post or an image, was
+ * created, last changed, and first and last published.
  *
  * - The update date only moves when what an editor writes changes.
- * - The first publication date never moves once set: search engines know the
- *   page by it.
+ * - The first publication date never moves once set: search engines know a
+ *   content by it, and a post carries its day in its address.
  * - The last publication date is when the site last changed, which the site
- *   shows as the page's last update.
+ *   shows as the last update of a page or a post.
+ * - Published once, it has both; never published, neither.
  */
 #[ORM\Embeddable]
-final readonly class Timeline
+final readonly class PublicationTimeline
 {
     public function __construct(
         #[ORM\Column(name: 'created_at')]
@@ -29,7 +31,7 @@ final readonly class Timeline
         private ?\DateTimeImmutable $lastPublishedAt,
     ) {
         if ((null === $firstPublishedAt) !== (null === $lastPublishedAt)) {
-            throw InvalidPagePublication::incompleteDates();
+            throw InvalidPublicationTimeline::incompleteDates();
         }
     }
 

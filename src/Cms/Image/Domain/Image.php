@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Image\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
@@ -71,8 +72,8 @@ final class Image extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_image_version', nullable: true)]
         private ?ImageVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column(options: ['default' => 0])]
         private int $publicationRevision,
     ) {}
@@ -83,7 +84,7 @@ final class Image extends AggregateRoot
      */
     public static function create(string $id, string $alt): self
     {
-        $timeline = Timeline::start(Clock::now());
+        $timeline = PublicationTimeline::start(Clock::now());
         $imageId = new ImageId($id);
 
         return new self(
@@ -307,7 +308,7 @@ final class Image extends AggregateRoot
         return ImageStatus::Published === $this->status ? $this->published : null;
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

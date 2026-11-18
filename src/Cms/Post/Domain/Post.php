@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Post\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -126,8 +127,8 @@ final class Post extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_post_version', nullable: true)]
         private ?PostVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column]
         private int $publicationRevision,
         ?PostAddress $address,
@@ -160,7 +161,7 @@ final class Post extends AggregateRoot
             ),
             PostStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
             null,
         );
@@ -519,7 +520,7 @@ final class Post extends AggregateRoot
         return new PostAddress($section->slug(), $this->timeline->firstPublishedAt() ?? Clock::now(), $slug);
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

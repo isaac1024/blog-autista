@@ -62,9 +62,4 @@ final class InvalidPagePublication extends DomainError
     {
         return new self('A page linked from other pages, posts, image captions, author bios or the menus cannot be deleted.', 'errors.page.publication.linked_page', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('A page published once has both a first and a last publication date.', 'errors.page.publication.incomplete_dates', []);
-    }
 }

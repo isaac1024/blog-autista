@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Page\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
 use Cms\Shared\Domain\Slugger;
@@ -108,8 +109,8 @@ final class Page extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_page_version', nullable: true)]
         private ?PageVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column(options: ['default' => 0])]
         private int $publicationRevision,
     ) {
@@ -135,7 +136,7 @@ final class Page extends AggregateRoot
             ),
             PageStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
     }
@@ -161,7 +162,7 @@ final class Page extends AggregateRoot
             ),
             PageStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
     }
@@ -460,7 +461,7 @@ final class Page extends AggregateRoot
         return $this->status->versionOnSite($this->published);
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

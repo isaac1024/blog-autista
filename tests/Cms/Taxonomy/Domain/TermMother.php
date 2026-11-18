@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Taxonomy\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -12,7 +13,6 @@ use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermName;
 use Cms\Taxonomy\Domain\TermStatus;
 use Cms\Taxonomy\Domain\TermVersion;
-use Cms\Taxonomy\Domain\Timeline;
 use Shared\Tests\Domain\ClockMother;
 
 /**
@@ -53,7 +53,7 @@ final class TermMother
             self::version($name, $slug, $metaDescription, $robots),
             TermStatus::Draft,
             null,
-            new Timeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
             0,
         );
     }
@@ -81,7 +81,7 @@ final class TermMother
             self::version($name, $slug, $metaDescription, Robots::IndexFollow),
             TermStatus::Published,
             self::version($publishedName ?? $name, $publishedSlug ?? $slug, $metaDescription, Robots::IndexFollow),
-            new Timeline(
+            new PublicationTimeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),
                 ClockMother::now($firstPublishedAt),
@@ -107,7 +107,7 @@ final class TermMother
             self::version($name, $slug, self::META_DESCRIPTION, Robots::IndexFollow),
             TermStatus::Unpublished,
             self::version($name, $slug, self::META_DESCRIPTION, Robots::IndexFollow),
-            new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
             $publicationRevision,
         );
     }

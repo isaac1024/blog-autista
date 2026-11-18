@@ -42,9 +42,4 @@ final class InvalidImagePublication extends DomainError
     {
         return new self('An image in use cannot be deleted.', 'errors.image.publication.in_use', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('An image published once has both a first and a last publication date.', 'errors.image.publication.incomplete_dates', []);
-    }
 }

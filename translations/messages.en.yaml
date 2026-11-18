@@ -1516,6 +1516,8 @@ errors:
         malformed: '“%slug%” is not a valid address: use only lowercase letters without accents, digits and hyphens.'
         too_short: 'The address must have at least %min% characters.'
         too_long: 'The address can’t be longer than %max% characters.'
+    publication:
+        incomplete_dates: 'What was ever published has a first and a last publication date.'
     seo:
         description_too_long: 'The meta description can’t be longer than %max% characters.'
         empty_description: 'The meta description can’t be empty.'
@@ -1548,7 +1550,6 @@ errors:
             unique_page: 'This page is unique, so it can’t be unpublished.'
             published_page: 'A published page can’t be deleted: unpublish it first.'
             linked_page: 'Other pages, posts, image captions, author bios or the menus of the blog link to this one, so it can’t be deleted. Take those links out first.'
-            incomplete_dates: 'The publication dates of the page are incomplete.'
     term:
         not_found: 'Nothing is published at “%slug%”.'
         taxonomy:
@@ -1567,7 +1568,6 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_term: 'What is published can’t be deleted: unpublish it first.'
             used_term: 'Posts are filed here or contents link to it, so it can’t be deleted. Take it out of where it is used first.'
-            incomplete_dates: 'What was ever published has a first and a last publication date.'
             redirected: 'Redirects lead to this section or tag, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published section or tag keeps its address on the site.'
     author:
@@ -1592,7 +1592,6 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_author: 'A published author can’t be deleted: unpublish it first.'
             used_author: 'This author signs a post or contents link to them, so it can’t be deleted. Take it out of where it is used first.'
-            incomplete_dates: 'The publication dates of the author are incomplete.'
             redirected: 'Redirects lead to this author, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published author keeps its address on the site.'
     external:
@@ -1625,7 +1624,6 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_resource: 'A published resource cannot be deleted: unpublish it first.'
             used_resource: 'Texts or menus use this resource, so it cannot be deleted. Remove it from where it is used first.'
-            incomplete_dates: 'The publication dates of the resource are incomplete.'
     post:
         title:
             too_short: 'The title must have at least %min% characters.'
@@ -1654,7 +1652,6 @@ errors:
             not_published: 'Only a published post can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_post: 'A published post can’t be deleted: unpublish it first.'
-            incomplete_dates: 'The publication dates of the post are incomplete.'
             redirected: 'Redirects lead to this post, so it can’t be unpublished until they lead elsewhere.'
             address_on_site: 'A published post keeps its address on the site.'
             used_post: 'Other contents link to this post, so it can’t be deleted. Remove those links first.'
@@ -1672,7 +1669,6 @@ errors:
         publication:
             nothing_to_publish: 'The settings are published as they are: there is nothing to publish.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
-            incomplete_dates: 'The publication dates of the settings are incomplete.'
     image:
         alt:
             empty: 'The alternative text can’t be empty.'
@@ -1692,4 +1688,3 @@ errors:
             no_changes_to_discard: 'There are no unpublished changes to discard.'
             published_image: 'A published image can’t be deleted: unpublish it first.'
             in_use: 'This image is used in some page, post or author bio, or is the default image of the blog, so it can’t be deleted. Take it out of where it is used first.'
-            incomplete_dates: 'The publication dates of the image are incomplete.'

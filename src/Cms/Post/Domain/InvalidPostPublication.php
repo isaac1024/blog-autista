@@ -87,9 +87,4 @@ final class InvalidPostPublication extends DomainError
     {
         return new self('A published post cannot be deleted; unpublish it first.', 'errors.post.publication.published_post', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('A post published once has both a first and a last publication date.', 'errors.post.publication.incomplete_dates', []);
-    }
 }

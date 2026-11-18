@@ -52,9 +52,4 @@ final class InvalidTermPublication extends DomainError
     {
         return new self('A term posts are filed under cannot be deleted.', 'errors.term.publication.used_term', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('A term published once has both a first and a last publication date.', 'errors.term.publication.incomplete_dates', []);
-    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -82,8 +83,8 @@ final class Term extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_term_version', nullable: true)]
         private ?TermVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column]
         private int $publicationRevision,
     ) {
@@ -107,7 +108,7 @@ final class Term extends AggregateRoot
             ),
             TermStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
     }
@@ -328,7 +329,7 @@ final class Term extends AggregateRoot
         return TermStatus::Published === $this->status ? $this->published : null;
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

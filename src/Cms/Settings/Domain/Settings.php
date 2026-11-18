@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Settings\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
@@ -57,8 +58,8 @@ final class Settings extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_settings_version', nullable: true)]
         private ?SettingsVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column(options: ['default' => 0])]
         private int $publicationRevision,
     ) {
@@ -76,7 +77,7 @@ final class Settings extends AggregateRoot
             new SettingsVersion(new SiteName($name), null, null, Menu::empty(), Menu::empty()),
             SettingsStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
     }
@@ -208,7 +209,7 @@ final class Settings extends AggregateRoot
         return SettingsStatus::Published === $this->status ? $this->published : null;
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

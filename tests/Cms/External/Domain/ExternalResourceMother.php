@@ -14,7 +14,7 @@ use Cms\External\Domain\ResourceStatus;
 use Cms\External\Domain\ResourceTitle;
 use Cms\External\Domain\ResourceUrl;
 use Cms\External\Domain\ResourceVersion;
-use Cms\External\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
 
@@ -116,7 +116,7 @@ final class ExternalResourceMother
         ?ResourceVersion $published,
         Availability $availability,
     ): ExternalResource {
-        $timeline = Timeline::start(ClockMother::now());
+        $timeline = PublicationTimeline::start(ClockMother::now());
         $onSite = ResourceStatus::Draft === $status ? null : $published ?? $version;
 
         return new ExternalResource(

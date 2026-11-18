@@ -17,9 +17,4 @@ final class InvalidSettingsPublication extends DomainError
     {
         return new self('Only published settings with unpublished changes have changes to discard.', 'errors.settings.publication.no_changes_to_discard', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('Settings published once have both a first and a last publication date.', 'errors.settings.publication.incomplete_dates', []);
-    }
 }

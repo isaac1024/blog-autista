@@ -72,9 +72,4 @@ final class InvalidResourcePublication extends DomainError
     {
         return new self('A resource that texts or menus use cannot be deleted.', 'errors.external.publication.used_resource', []);
     }
-
-    public static function incompleteDates(): self
-    {
-        return new self('A resource published once has both a first and a last publication date.', 'errors.external.publication.incomplete_dates', []);
-    }
 }

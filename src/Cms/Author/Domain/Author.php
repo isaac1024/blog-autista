@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Author\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -109,8 +110,8 @@ final class Author extends AggregateRoot
          */
         #[ORM\Column(name: 'published_version', type: 'cms_author_version', nullable: true)]
         private ?AuthorVersion $published,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column]
         private int $publicationRevision,
     ) {
@@ -135,7 +136,7 @@ final class Author extends AggregateRoot
             ),
             AuthorStatus::Draft,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
     }
@@ -466,7 +467,7 @@ final class Author extends AggregateRoot
         return AuthorStatus::Published === $this->status ? $this->published : null;
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

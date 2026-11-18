@@ -11,7 +11,7 @@ use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsStatus;
 use Cms\Settings\Domain\SettingsVersion;
 use Cms\Settings\Domain\SiteName;
-use Cms\Settings\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Shared\Tests\Domain\ClockMother;
 
 /**
@@ -85,7 +85,7 @@ final class SettingsMother
             $version ?? self::version(),
             SettingsStatus::Draft,
             null,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
+            new PublicationTimeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
             0,
         );
     }
@@ -111,7 +111,7 @@ final class SettingsMother
             $version,
             SettingsStatus::Published,
             $published ?? $version,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
+            new PublicationTimeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
             $publicationRevision,
         );
     }

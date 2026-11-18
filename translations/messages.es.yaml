@@ -1516,6 +1516,8 @@ errors:
         malformed: '«%slug%» no es una dirección válida: usa solo minúsculas sin tildes, números y guiones.'
         too_short: 'La dirección debe tener al menos %min% caracteres.'
         too_long: 'La dirección no puede pasar de %max% caracteres.'
+    publication:
+        incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
     seo:
         description_too_long: 'La meta descripción no puede pasar de %max% caracteres.'
         empty_description: 'La meta descripción no puede estar vacía.'
@@ -1548,7 +1550,6 @@ errors:
             unique_page: 'Esta página es única, así que no se puede despublicar.'
             published_page: 'Una página publicada no se puede borrar: despublícala antes.'
             linked_page: 'Otras páginas, posts, pies de foto, biografías de autores o los menús del blog enlazan a esta, así que no se puede borrar. Quita antes esos enlaces.'
-            incomplete_dates: 'Las fechas de publicación de la página están incompletas.'
     term:
         not_found: 'No hay nada publicado en «%slug%».'
         taxonomy:
@@ -1567,7 +1568,6 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_term: 'No se puede borrar lo que está publicado: despublícalo antes.'
             used_term: 'Hay posts clasificados aquí o contenidos que lo enlazan, así que no se puede borrar. Quítalo antes de donde se use.'
-            incomplete_dates: 'Lo que se ha publicado alguna vez tiene fecha de primera y de última publicación.'
             redirected: 'Hay redirecciones que llevan aquí, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un término publicado conserva su dirección en la web.'
     author:
@@ -1592,7 +1592,6 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_author: 'Un autor publicado no se puede borrar: despublícalo antes.'
             used_author: 'Este autor firma algún post o hay contenidos que lo enlazan, así que no se puede borrar. Quítalo antes de donde se use.'
-            incomplete_dates: 'Las fechas de publicación del autor están incompletas.'
             redirected: 'Hay redirecciones que llevan a este autor, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un autor publicado conserva su dirección en la web.'
     external:
@@ -1625,7 +1624,6 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_resource: 'Un recurso publicado no se puede borrar: despublícalo antes.'
             used_resource: 'Hay textos o menús que usan este recurso, así que no se puede borrar. Quítalo antes de donde se use.'
-            incomplete_dates: 'Las fechas de publicación del recurso están incompletas.'
     post:
         title:
             too_short: 'El título debe tener al menos %min% caracteres.'
@@ -1654,7 +1652,6 @@ errors:
             not_published: 'Solo se puede despublicar un post publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_post: 'Un post publicado no se puede borrar: despublícalo antes.'
-            incomplete_dates: 'Las fechas de publicación del post están incompletas.'
             redirected: 'Hay redirecciones que llevan a este post, así que no se puede despublicar hasta que lleven a otro sitio.'
             address_on_site: 'Un post publicado conserva su dirección en la web.'
             used_post: 'Hay contenidos que enlazan a este post, así que no se puede borrar. Quita antes esos enlaces.'
@@ -1672,7 +1669,6 @@ errors:
         publication:
             nothing_to_publish: 'Los ajustes ya están publicados tal como están: no hay nada que publicar.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
-            incomplete_dates: 'Las fechas de publicación de los ajustes están incompletas.'
     image:
         alt:
             empty: 'El texto alternativo no puede estar vacío.'
@@ -1692,4 +1688,3 @@ errors:
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
             published_image: 'Una imagen publicada no se puede borrar: despublícala antes.'
             in_use: 'Esta imagen se usa en alguna página, post o biografía de autor, o es la imagen por defecto del blog, así que no se puede borrar. Quítala antes de donde se use.'
-            incomplete_dates: 'Las fechas de publicación de la imagen están incompletas.'

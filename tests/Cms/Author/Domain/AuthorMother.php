@@ -9,7 +9,7 @@ use Cms\Author\Domain\AuthorName;
 use Cms\Author\Domain\AuthorStatus;
 use Cms\Author\Domain\AuthorVersion;
 use Cms\Author\Domain\AvatarPath;
-use Cms\Author\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -72,7 +72,7 @@ final class AuthorMother
             self::version($name, $slug, $avatar, $bio, $metaDescription),
             AuthorStatus::Draft,
             null,
-            new Timeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
             0,
         );
     }
@@ -113,7 +113,7 @@ final class AuthorMother
             self::version($name, $slug, $avatar, $bio, $metaDescription),
             AuthorStatus::Published,
             self::version($publishedName ?? $name, $slug, $publishedAvatar ?? $avatar, $publishedBio ?? $bio, $metaDescription),
-            new Timeline(
+            new PublicationTimeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),
                 ClockMother::now($firstPublishedAt),
@@ -136,7 +136,7 @@ final class AuthorMother
             self::version(self::NAME, $slug, self::AVATAR, self::BIO, self::META_DESCRIPTION),
             AuthorStatus::Unpublished,
             self::version(self::NAME, $slug, self::AVATAR, self::BIO, self::META_DESCRIPTION),
-            new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
             $publicationRevision,
         );
     }

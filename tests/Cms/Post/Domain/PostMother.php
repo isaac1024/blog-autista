@@ -11,7 +11,7 @@ use Cms\Post\Domain\PostAddress;
 use Cms\Post\Domain\PostStatus;
 use Cms\Post\Domain\PostTitle;
 use Cms\Post\Domain\PostVersion;
-use Cms\Post\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -78,7 +78,7 @@ final class PostMother
             self::version($title, $slug, $section, $author, $tags, $openingImage, $content, $metaDescription),
             PostStatus::Draft,
             null,
-            new Timeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
             0,
             null,
         );
@@ -131,7 +131,7 @@ final class PostMother
             self::version($title, $slug, $section, $author, $tags, self::OPENING_IMAGE, $content, self::META_DESCRIPTION),
             PostStatus::Published,
             self::version($publishedTitle ?? $title, $slug, $section, $author, $tags, self::OPENING_IMAGE, $content, self::META_DESCRIPTION),
-            new Timeline(
+            new PublicationTimeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),
                 ClockMother::now($firstPublishedAt),
@@ -159,7 +159,7 @@ final class PostMother
             $version,
             PostStatus::Unpublished,
             $version,
-            new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now($firstPublishedAt), ClockMother::now($firstPublishedAt)),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now(), ClockMother::now($firstPublishedAt), ClockMother::now($firstPublishedAt)),
             $publicationRevision,
             $lastAddress ? new PostAddress(new Slug(TermMother::SLUG), ClockMother::now($firstPublishedAt), new Slug(self::SLUG)) : null,
         );

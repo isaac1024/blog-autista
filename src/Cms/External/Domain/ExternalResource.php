@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\External\Domain;
 
+use Cms\Shared\Domain\PublicationTimeline;
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
@@ -109,8 +110,8 @@ final class ExternalResource extends AggregateRoot
         private Availability $availability,
         #[ORM\Column(nullable: true)]
         private ?\DateTimeImmutable $checkedAt,
-        #[ORM\Embedded(class: Timeline::class, columnPrefix: false)]
-        private Timeline $timeline,
+        #[ORM\Embedded(class: PublicationTimeline::class, columnPrefix: false)]
+        private PublicationTimeline $timeline,
         #[ORM\Column]
         private int $publicationRevision,
     ) {
@@ -134,7 +135,7 @@ final class ExternalResource extends AggregateRoot
             null,
             Availability::Available,
             null,
-            Timeline::start(Clock::now()),
+            PublicationTimeline::start(Clock::now()),
             0,
         );
         $resource->keepImageRead($reading, $imageFetcher, $imageStorage);
@@ -435,7 +436,7 @@ final class ExternalResource extends AggregateRoot
         return $this->checkedAt;
     }
 
-    public function timeline(): Timeline
+    public function timeline(): PublicationTimeline
     {
         return $this->timeline;
     }

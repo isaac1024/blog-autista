@@ -9,7 +9,7 @@ use Cms\Image\Domain\Image;
 use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageStatus;
 use Cms\Image\Domain\ImageVersion;
-use Cms\Image\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
 
@@ -57,7 +57,7 @@ final class ImageMother
             self::path($id, $createdAt),
             ImageStatus::Draft,
             null,
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
+            new PublicationTimeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), null, null),
             0,
         );
     }
@@ -140,7 +140,7 @@ final class ImageMother
             self::path($id, $createdAt),
             $status,
             new ImageVersion(new Alt($publishedAlt), RichText::fromArray($publishedCaption)),
-            new Timeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
+            new PublicationTimeline(ClockMother::now($createdAt), ClockMother::now($updatedAt ?? $createdAt), ClockMother::now($firstPublishedAt), ClockMother::now($lastPublishedAt)),
             $publicationRevision,
         );
     }

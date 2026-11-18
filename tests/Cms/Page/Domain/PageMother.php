@@ -8,7 +8,7 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\PageVersion;
-use Cms\Page\Domain\Timeline;
+use Cms\Shared\Domain\PublicationTimeline;
 use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
@@ -70,7 +70,7 @@ final class PageMother
             self::version($type, $title, $slug, $content, $metaDescription, $robots),
             PageStatus::Draft,
             null,
-            new Timeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now($updatedAt), null, null),
             0,
         );
     }
@@ -139,7 +139,7 @@ final class PageMother
             self::version($type, $title, $slug, $content, $metaDescription, null),
             PageStatus::Published,
             self::version($type, $publishedTitle ?? $title, $slug, $publishedContent ?? $content, $publishedMetaDescription ?? $metaDescription, null),
-            new Timeline(
+            new PublicationTimeline(
                 ClockMother::now(),
                 ClockMother::now($updatedAt),
                 ClockMother::now($firstPublishedAt),
@@ -170,7 +170,7 @@ final class PageMother
             self::version(PageType::Standard, $title, $slug, $content, $metaDescription, null),
             PageStatus::Unpublished,
             self::version(PageType::Standard, $publishedTitle ?? $title, $slug, $content, $metaDescription, null),
-            new Timeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
+            new PublicationTimeline(ClockMother::now(), ClockMother::now(), ClockMother::now(), ClockMother::now()),
             $publicationRevision,
         );
     }
