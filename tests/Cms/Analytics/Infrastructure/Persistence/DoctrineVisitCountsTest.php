@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Analytics\Infrastructure\Persistence;
 
+use Cms\Analytics\Domain\ContentTotal;
 use Cms\Analytics\Domain\Count;
 use Cms\Analytics\Domain\Days;
 use Cms\Analytics\Domain\Dimension;
 use Cms\Analytics\Domain\Period;
+use Cms\Analytics\Domain\SeenContents;
 use Cms\Analytics\Domain\VisitCounts;
 use Cms\Tests\Analytics\Domain\CountMother;
 use Doctrine\DBAL\Connection;
@@ -63,17 +65,58 @@ final class DoctrineVisitCountsTest extends KernelTestCase
         yield 'the visits of the days not counted yet' => ['shared_visit', ['day', 'content_type', 'content_id', 'channel', 'source', 'device', 'country', 'reader']];
     }
 
+    /**
+     * Within the days, and never a content: those are added up apart.
+     */
     public function testItReadsTheCountsOfTheDaysAlreadyCountedWithinThem(): void
     {
         $this->counted('2026-11-01', 'site', '', 100, 100);
         $this->counted('2026-11-02', 'site', '', 10, 8);
+        $this->counted('2026-11-08', 'device', 'mobile', 6, 5);
         $this->counted('2026-11-08', 'page', CountMother::PAGE, 6, 5);
         $this->counted('2026-11-08', 'unknown', 'x', 1, 1);
 
         self::assertEquals([
             CountMother::create(day: '2026-11-02', views: 10, visitors: 8),
-            CountMother::create(day: '2026-11-08', dimension: Dimension::Page, value: CountMother::PAGE, views: 6, visitors: 5),
+            CountMother::create(day: '2026-11-08', dimension: Dimension::Device, value: 'mobile', views: 6, visitors: 5),
         ], self::sorted($this->visitCounts()->during(Days::endingYesterday(Period::Week))));
+    }
+
+    /**
+     * The contents add up over the days, those counted and those still
+     * kept, each kind apart even under one id; the most seen first, then by
+     * kind and id, as many as asked; and what every one adds up to.
+     */
+    public function testItAddsUpTheContentsAndKeepsTheMostSeen(): void
+    {
+        $this->counted('2026-11-01', 'post', CountMother::PAGE, 100, 100);
+        $this->counted('2026-11-02', 'page', CountMother::PAGE, 3, 2);
+        $this->counted('2026-11-04', 'page', CountMother::PAGE, 2, 2);
+        $this->counted('2026-11-02', 'post', CountMother::PAGE, 4, 4);
+        $this->counted('2026-11-03', 'term', self::OTHER_PAGE, 1, 1);
+        $this->counted('2026-11-03', 'author', self::OTHER_PAGE, 1, 1);
+        $this->counted('2026-11-03', 'device', 'mobile', 50, 50);
+        $this->counted('2026-11-03', 'unknown', 'x', 50, 50);
+        $this->kept('01a1b801-ce58-723d-8234-b76d9105f101', CountMother::PAGE, 'direct', null, 'a', 'mobile', null);
+        $this->kept('01a1b801-ce58-723d-8234-b76d9105f102', CountMother::PAGE, 'direct', null, 'a', 'mobile', null);
+        $this->kept('01a1b801-ce58-723d-8234-b76d9105f103', self::OTHER_PAGE, 'direct', null, 'b', 'mobile', null, day: '2026-11-09');
+
+        $week = Days::endingYesterday(Period::Week);
+
+        self::assertEquals(new SeenContents(
+            [new ContentTotal(Dimension::Page, CountMother::PAGE, 7, 5), new ContentTotal(Dimension::Post, CountMother::PAGE, 4, 4), new ContentTotal(Dimension::Author, self::OTHER_PAGE, 1, 1)],
+            4,
+            13,
+            11,
+        ), $this->visitCounts()->contentsDuring($week, 3));
+        self::assertEquals(new SeenContents([new ContentTotal(Dimension::Page, self::OTHER_PAGE, 1, 1)], 1, 1, 1), $this->visitCounts()->contentsDuring(Days::today(), 3));
+    }
+
+    public function testItTellsNoContentWhenNoneWasSeen(): void
+    {
+        $this->counted('2026-11-03', 'site', '', 5, 5);
+
+        self::assertEquals(new SeenContents([], 0, 0, 0), $this->visitCounts()->contentsDuring(Days::endingYesterday(Period::Week), 50));
     }
 
     /**
@@ -91,8 +134,6 @@ final class DoctrineVisitCountsTest extends KernelTestCase
 
         self::assertEquals(self::sorted([
             CountMother::create(day: '2026-11-05', views: 3, visitors: 2),
-            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: CountMother::PAGE, views: 2, visitors: 2),
-            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: self::OTHER_PAGE, views: 1, visitors: 1),
             CountMother::create(day: '2026-11-05', dimension: Dimension::Channel, value: 'search', views: 2, visitors: 2),
             CountMother::create(day: '2026-11-05', dimension: Dimension::Channel, value: 'internal', views: 1, visitors: 1),
             CountMother::create(day: '2026-11-05', dimension: Dimension::Source, value: 'google.es', views: 2, visitors: 2),
@@ -102,7 +143,6 @@ final class DoctrineVisitCountsTest extends KernelTestCase
         ]), self::sorted($this->visitCounts()->during(Days::endingYesterday(Period::Week))));
         self::assertEquals(self::sorted([
             CountMother::create(day: '2026-11-09'),
-            CountMother::create(day: '2026-11-09', dimension: Dimension::Page, value: self::OTHER_PAGE),
             CountMother::create(day: '2026-11-09', dimension: Dimension::Channel, value: 'direct'),
             CountMother::create(day: '2026-11-09', dimension: Dimension::Device, value: 'desktop'),
             CountMother::create(day: '2026-11-09', dimension: Dimension::Country),

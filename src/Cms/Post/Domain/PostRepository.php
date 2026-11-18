@@ -21,6 +21,16 @@ interface PostRepository
     public function find(PostId $id): ?Post;
 
     /**
+     * The title, as edited, of the posts among those given, by id, read
+     * without the rest of each; an id of none is left out.
+     *
+     * @param list<PostId> $ids
+     *
+     * @return array<string, string>
+     */
+    public function titlesOf(array $ids): array;
+
+    /**
      * The post on the site at the address.
      */
     public function findOnSiteAt(PostAddress $address): ?Post;

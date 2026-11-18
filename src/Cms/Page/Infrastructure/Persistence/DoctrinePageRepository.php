@@ -12,6 +12,7 @@ use Cms\Page\Domain\PageStatus;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Cms\Shared\Domain\Slug;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -59,6 +60,23 @@ final readonly class DoctrinePageRepository implements PageRepository
     public function find(PageId $id): ?Page
     {
         return $this->entityManager->find(Page::class, $id);
+    }
+
+    #[\Override]
+    public function titlesOf(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<array{id: string, title: string}> $rows */
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            'SELECT id, title FROM cms_page WHERE id IN (:ids)',
+            ['ids' => array_map(static fn (PageId $id): string => $id->value(), $ids)],
+            ['ids' => ArrayParameterType::STRING],
+        );
+
+        return array_column($rows, 'title', 'id');
     }
 
     #[\Override]

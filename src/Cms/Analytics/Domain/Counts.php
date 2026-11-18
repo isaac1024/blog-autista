@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Cms\Analytics\Domain;
 
 /**
- * What the site counted over some days, added up by what it counts.
+ * What the site counted over some days, added up by what it counts: the
+ * whole site and how readers came, never the contents, which are added up
+ * as they are read.
  *
  * - Readers are counted per day, so over many days they add up those of
  *   each day: one who came back counts again.
- * - Each breakdown comes most seen first, and by value among equals; the
- *   contents, of every kind together, by kind and id among equals.
+ * - Each breakdown comes most seen first, and by value among equals.
  * - The channels leave out the pages reached from within the site: they
  *   count entries to it.
  * - Sources with fewer entries than SMALLEST_SOURCE are grouped last under
@@ -31,28 +32,6 @@ final readonly class Counts
     public function site(): Total
     {
         return $this->totalsOf(Dimension::Site)[0] ?? new Total(null, 0, 0);
-    }
-
-    /**
-     * The pages, the posts, the sections and tags and the authors seen,
-     * all together.
-     *
-     * @return list<ContentTotal>
-     */
-    public function contents(): array
-    {
-        $contents = [];
-
-        foreach (Dimension::contents() as $kind) {
-            foreach ($this->totalsOf($kind) as $total) {
-                // A content is counted under its id, never under no value.
-                $contents[] = new ContentTotal($kind, $total->value ?? '', $total->views, $total->visitors);
-            }
-        }
-
-        usort($contents, static fn (ContentTotal $one, ContentTotal $other): int => [$other->views, $one->kind->value, $one->id] <=> [$one->views, $other->kind->value, $other->id]);
-
-        return $contents;
     }
 
     /**

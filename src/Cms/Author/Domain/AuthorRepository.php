@@ -22,6 +22,16 @@ interface AuthorRepository
     public function find(AuthorId $id): ?Author;
 
     /**
+     * The name, as edited, of the authors among those given, by id, read
+     * without the rest of each; an id of none is left out.
+     *
+     * @param list<AuthorId> $ids
+     *
+     * @return array<string, string>
+     */
+    public function namesOf(array $ids): array;
+
+    /**
      * The authors among those given; an id of no author is left out.
      *
      * @param list<AuthorId> $ids

@@ -125,6 +125,7 @@ cms:
             caption: 'Contents'
             name: 'Content'
             views: 'Views'
+            others: '{1}1 other content|]1,Inf[%count% other contents'
             deleted:
                 page: 'Deleted page'
                 post: 'Deleted post'

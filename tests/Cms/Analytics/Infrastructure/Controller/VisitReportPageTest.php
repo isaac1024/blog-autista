@@ -159,6 +159,33 @@ final class VisitReportPageTest extends TestCase
     }
 
     /**
+     * The contents not shown apart are told as one last line, by how many
+     * they are, with nothing under it.
+     */
+    public function testItTellsHowManyContentsTheLastLineGroups(): void
+    {
+        $report = $this->report(Period::Month, new VisitReport(
+            $this->summary(
+                views: 1,
+                contents: [new ReportRow('a', 'Un post', 'post', 4, 1), new ReportRow(null, null, null, 3, 2)],
+                otherContents: 120,
+            ),
+            [],
+            $this->summary(views: 0),
+            null,
+        ));
+
+        [$contents] = PageComponents::find($report, 'Shared:DataTable', []);
+        self::assertSame(
+            [
+                ['Un post', 'cms.analytics.contents.kinds.post', ['4', '1']],
+                ['cms.analytics.contents.others(%count%=120)', null, ['3', '2']],
+            ],
+            array_map(static fn (array $row): array => [$row['name'] ?? null, $row['meta'] ?? null, $row['figures'] ?? null], self::rows($contents)),
+        );
+    }
+
+    /**
      * Each row is named for what it counts: a page by its title, or as
      * deleted; channels and devices by their own names; the smallest sources
      * together; a country by its name in the language, or as unknown.
@@ -306,12 +333,13 @@ final class VisitReportPageTest extends TestCase
         int $views,
         int $visitors = 0,
         array $contents = [],
+        int $otherContents = 0,
         array $channels = [],
         array $sources = [],
         array $devices = [],
         array $countries = [],
     ): VisitSummary {
-        return new VisitSummary($views, $visitors, $contents, $channels, $sources, $devices, $countries);
+        return new VisitSummary($views, $visitors, $contents, $otherContents, $channels, $sources, $devices, $countries);
     }
 
     private function report(Period $period, VisitReport $report, string $locale = 'es'): Page

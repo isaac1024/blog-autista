@@ -23,6 +23,16 @@ interface PageRepository
     public function find(PageId $id): ?Page;
 
     /**
+     * The title, as edited, of the pages among those given, by id, read
+     * without the rest of each; an id of none is left out.
+     *
+     * @param list<PageId> $ids
+     *
+     * @return array<string, string>
+     */
+    public function titlesOf(array $ids): array;
+
+    /**
      * The pages among those given; an id of no page is left out.
      *
      * @param list<PageId> $ids

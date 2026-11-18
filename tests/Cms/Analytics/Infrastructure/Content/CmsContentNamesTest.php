@@ -59,6 +59,15 @@ final class CmsContentNamesTest extends KernelTestCase
     }
 
     /**
+     * With nothing that can be an id, none is looked for.
+     */
+    #[DataProvider('contentKinds')]
+    public function testItNamesNothingWithoutAnId(Dimension $kind): void
+    {
+        self::assertSame([], self::getContainer()->get(ContentNames::class)->namesOf($kind, ['sobre-mi']));
+    }
+
+    /**
      * @return iterable<string, array{Dimension, array<string, array{name: string, kind: string}>}>
      */
     public static function kinds(): iterable
@@ -71,5 +80,15 @@ final class CmsContentNamesTest extends KernelTestCase
         ]];
         yield 'the authors' => [Dimension::Author, ['01a1b801-ce58-723d-8234-b76d9105f021' => ['name' => 'Ana', 'kind' => 'author']]];
         yield 'what is no content' => [Dimension::Channel, []];
+    }
+
+    /**
+     * @return iterable<string, array{Dimension}>
+     */
+    public static function contentKinds(): iterable
+    {
+        foreach (Dimension::contents() as $kind) {
+            yield $kind->value => [$kind];
+        }
     }
 }

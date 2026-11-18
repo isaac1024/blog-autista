@@ -10,12 +10,14 @@ use Cms\Analytics\Domain\Counts;
 use Cms\Analytics\Domain\Days;
 use Cms\Analytics\Domain\Dimension;
 use Cms\Analytics\Domain\Period;
+use Cms\Analytics\Domain\SeenContents;
 use Cms\Analytics\Domain\Total;
 use Cms\Analytics\Domain\VisitCounts;
 
 /**
  * What the site counted of its visits over the period of the days given,
- * ending yesterday, and today so far.
+ * ending yesterday, and today so far. Of the contents, only the most seen
+ * are shown apart, and named; the rest add up in one last line.
  */
 final readonly class VisitReportFinder
 {
@@ -27,37 +29,44 @@ final readonly class VisitReportFinder
         $period = new Counts($visitCounts->during($days));
         $uncounted = $visitCounts->oldestUncountedDay();
         $views = $period->viewsByDay($days);
+        $today = Days::today();
 
         return new VisitReport(
-            self::summary($period, $contentNames),
+            self::summary($period, $visitCounts->contentsDuring($days, SeenContents::SHOWN_APART), $contentNames),
             array_map(static fn (string $day, int $views): DayViews => new DayViews($day, $views), array_keys($views), $views),
-            self::summary(new Counts($visitCounts->during(Days::today())), $contentNames),
+            self::summary(new Counts($visitCounts->during($today)), $visitCounts->contentsDuring($today, SeenContents::SHOWN_APART), $contentNames),
             null !== $uncounted && Days::isOverdue($uncounted) ? $uncounted : null,
         );
     }
 
-    private static function summary(Counts $counts, ContentNames $contentNames): VisitSummary
+    private static function summary(Counts $counts, SeenContents $seen, ContentNames $contentNames): VisitSummary
     {
         $site = $counts->site();
-        $contents = $counts->contents();
+        $contents = $seen->mostSeen;
+        $others = $seen->others();
+        $ids = [];
         $names = [];
 
-        foreach (Dimension::contents() as $kind) {
-            $ids = array_map(
-                static fn (ContentTotal $content): string => $content->id,
-                array_values(array_filter($contents, static fn (ContentTotal $content): bool => $kind === $content->kind)),
-            );
-            $names[$kind->value] = [] === $ids ? [] : $contentNames->namesOf($kind, $ids);
+        foreach ($contents as $content) {
+            $ids[$content->kind->value][] = $content->id;
         }
+
+        // Each kind is named at once, by the ids of its own.
+        foreach ($ids as $kind => $ofKind) {
+            $names[$kind] = $contentNames->namesOf(Dimension::from($kind), $ofKind);
+        }
+
+        $rows = array_map(static function (ContentTotal $content) use ($names): ReportRow {
+            $name = $names[$content->kind->value][$content->id] ?? null;
+
+            return new ReportRow($content->id, $name['name'] ?? null, $name['kind'] ?? $content->kind->value, $content->views, $content->visitors);
+        }, $contents);
 
         return new VisitSummary(
             $site->views,
             $site->visitors,
-            array_map(static function (ContentTotal $content) use ($names): ReportRow {
-                $name = $names[$content->kind->value][$content->id] ?? null;
-
-                return new ReportRow($content->id, $name['name'] ?? null, $name['kind'] ?? $content->kind->value, $content->views, $content->visitors);
-            }, $contents),
+            null === $others ? $rows : [...$rows, new ReportRow(null, null, null, $others->views, $others->visitors)],
+            $others->count ?? 0,
             array_map(self::row(...), $counts->channels()),
             array_map(self::row(...), $counts->sources()),
             array_map(self::row(...), $counts->devices()),

@@ -107,7 +107,7 @@ final readonly class VisitReportPage
     /**
      * The tables of a summary that have any row: today only its contents and
      * channels, the period every one. A content tells what kind it is under
-     * its name.
+     * its name; the line of those not shown apart, how many they are.
      *
      * @return list<PageComponent>
      */
@@ -117,8 +117,10 @@ final readonly class VisitReportPage
             ...$this->table(
                 'contents',
                 $summary->contents,
-                fn (ReportRow $row): string => $row->name ?? $this->trans('cms.analytics.contents.deleted.'.$row->kind),
-                fn (ReportRow $row): string => $this->trans('cms.analytics.contents.kinds.'.$row->kind),
+                fn (ReportRow $row): string => null === $row->kind
+                    ? $this->trans('cms.analytics.contents.others', ['%count%' => $summary->otherContents])
+                    : $row->name ?? $this->trans('cms.analytics.contents.deleted.'.$row->kind),
+                fn (ReportRow $row): ?string => null === $row->kind ? null : $this->trans('cms.analytics.contents.kinds.'.$row->kind),
             ),
             ...$this->table('channels', $summary->channels, fn (ReportRow $row): string => $this->trans('cms.analytics.channel.'.$row->value), null),
         ];
@@ -140,9 +142,9 @@ final readonly class VisitReportPage
     /**
      * The table of a breakdown, none when it has no row.
      *
-     * @param list<ReportRow>              $rows
-     * @param \Closure(ReportRow): string  $name
-     * @param ?\Closure(ReportRow): string $meta what is told under the name, if anything
+     * @param list<ReportRow>               $rows
+     * @param \Closure(ReportRow): string   $name
+     * @param ?\Closure(ReportRow): ?string $meta what is told under the name, if anything
      *
      * @return list<PageComponent>
      */

@@ -11,6 +11,7 @@ use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermSlugAlreadyTaken;
 use Cms\Taxonomy\Domain\TermStatus;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -58,6 +59,28 @@ final readonly class DoctrineTermRepository implements TermRepository
     public function find(TermId $id): ?Term
     {
         return $this->entityManager->find(Term::class, $id);
+    }
+
+    #[\Override]
+    public function namesOf(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<array{id: string, name: string, taxonomy: string}> $rows */
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            'SELECT id, name, taxonomy FROM cms_term WHERE id IN (:ids)',
+            ['ids' => array_map(static fn (TermId $id): string => $id->value(), $ids)],
+            ['ids' => ArrayParameterType::STRING],
+        );
+        $names = [];
+
+        foreach ($rows as $row) {
+            $names[$row['id']] = ['name' => $row['name'], 'taxonomy' => Taxonomy::fromValue($row['taxonomy'])];
+        }
+
+        return $names;
     }
 
     #[\Override]

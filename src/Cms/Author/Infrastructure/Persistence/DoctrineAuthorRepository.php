@@ -10,6 +10,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AuthorSlugAlreadyTaken;
 use Cms\Author\Domain\AuthorStatus;
 use Cms\Shared\Domain\Slug;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
@@ -56,6 +57,23 @@ final readonly class DoctrineAuthorRepository implements AuthorRepository
     public function find(AuthorId $id): ?Author
     {
         return $this->entityManager->find(Author::class, $id);
+    }
+
+    #[\Override]
+    public function namesOf(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<array{id: string, name: string}> $rows */
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            'SELECT id, name FROM cms_author WHERE id IN (:ids)',
+            ['ids' => array_map(static fn (AuthorId $id): string => $id->value(), $ids)],
+            ['ids' => ArrayParameterType::STRING],
+        );
+
+        return array_column($rows, 'name', 'id');
     }
 
     #[\Override]

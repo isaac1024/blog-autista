@@ -17,16 +17,18 @@ namespace Cms\Analytics\Application;
 final readonly class VisitSummary
 {
     /**
-     * @param list<ReportRow> $contents  pages, posts, sections and tags, and authors, most seen first; one deleted has no name
-     * @param list<ReportRow> $channels  most entries first, within the site left out
-     * @param list<ReportRow> $sources   most entries first, the smallest grouped last under no value
-     * @param list<ReportRow> $devices   most seen first
-     * @param list<ReportRow> $countries most seen first, an unknown one under no value
+     * @param list<ReportRow> $contents      pages, posts, sections and tags, and authors, the most seen first; one deleted has no name; those not shown apart grouped last under no value
+     * @param int             $otherContents how many contents the last line groups, none when there is no such line
+     * @param list<ReportRow> $channels      most entries first, within the site left out
+     * @param list<ReportRow> $sources       most entries first, the smallest grouped last under no value
+     * @param list<ReportRow> $devices       most seen first
+     * @param list<ReportRow> $countries     most seen first, an unknown one under no value
      */
     public function __construct(
         public int $views,
         public int $visitors,
         public array $contents,
+        public int $otherContents,
         public array $channels,
         public array $sources,
         public array $devices,

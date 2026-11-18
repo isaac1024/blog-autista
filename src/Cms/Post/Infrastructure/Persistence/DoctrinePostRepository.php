@@ -11,6 +11,7 @@ use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
 use Cms\Post\Domain\PostStatus;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -62,6 +63,23 @@ final readonly class DoctrinePostRepository implements PostRepository
     public function find(PostId $id): ?Post
     {
         return $this->entityManager->find(Post::class, $id);
+    }
+
+    #[\Override]
+    public function titlesOf(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var list<array{id: string, title: string}> $rows */
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            'SELECT id, title FROM cms_post WHERE id IN (:ids)',
+            ['ids' => array_map(static fn (PostId $id): string => $id->value(), $ids)],
+            ['ids' => ArrayParameterType::STRING],
+        );
+
+        return array_column($rows, 'title', 'id');
     }
 
     #[\Override]

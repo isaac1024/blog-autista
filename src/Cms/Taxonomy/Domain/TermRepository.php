@@ -22,6 +22,17 @@ interface TermRepository
     public function find(TermId $id): ?Term;
 
     /**
+     * The names, as edited, of the terms among those given, by id, with the
+     * taxonomy of each, read without the rest of each; an id of none is left
+     * out.
+     *
+     * @param list<TermId> $ids
+     *
+     * @return array<string, array{name: string, taxonomy: Taxonomy}>
+     */
+    public function namesOf(array $ids): array;
+
+    /**
      * The term of the taxonomy edited with the slug, or on the site with it.
      */
     public function findBySlug(Taxonomy $taxonomy, Slug $slug): ?Term;

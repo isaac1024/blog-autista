@@ -9,10 +9,12 @@ use Cms\Analytics\Application\ReportRow;
 use Cms\Analytics\Application\VisitReport;
 use Cms\Analytics\Application\VisitReportFinder;
 use Cms\Analytics\Domain\ContentNames;
+use Cms\Analytics\Domain\ContentTotal;
 use Cms\Analytics\Domain\Count;
 use Cms\Analytics\Domain\Days;
 use Cms\Analytics\Domain\Dimension;
 use Cms\Analytics\Domain\Period;
+use Cms\Analytics\Domain\SeenContents;
 use Cms\Analytics\Domain\VisitCounts;
 use Cms\Tests\Analytics\Domain\CountMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -44,18 +46,19 @@ final class VisitReportFinderTest extends TestCase
     }
 
     /**
-     * Pages, posts, sections and tags, and authors are reported together,
-     * most seen first, then by kind and id; each named, and told what it
-     * is, as the CMS keeps it; one deleted, by the kind it was counted as.
+     * Pages, posts, sections and tags, and authors are reported together, in
+     * the order they were counted in, most seen first; each named, and told
+     * what it is, as the CMS keeps it; one deleted, by the kind it was
+     * counted as.
      */
     public function testItReportsEveryKindOfContentTogether(): void
     {
-        $report = self::report([
-            CountMother::create(dimension: Dimension::Page, value: self::PAGE, views: 2, visitors: 2),
-            CountMother::create(dimension: Dimension::Post, value: self::POST, views: 5, visitors: 4),
-            CountMother::create(dimension: Dimension::Term, value: self::TAG, views: 2, visitors: 1),
-            CountMother::create(dimension: Dimension::Author, value: self::DELETED_PAGE, views: 2, visitors: 2),
-        ]);
+        $report = self::report([], contents: self::seen(
+            new ContentTotal(Dimension::Post, self::POST, 5, 4),
+            new ContentTotal(Dimension::Author, self::DELETED_PAGE, 2, 2),
+            new ContentTotal(Dimension::Page, self::PAGE, 2, 2),
+            new ContentTotal(Dimension::Term, self::TAG, 2, 1),
+        ));
 
         self::assertEquals([
             new ReportRow(self::POST, 'Un post', 'post', 5, 4),
@@ -63,25 +66,81 @@ final class VisitReportFinderTest extends TestCase
             new ReportRow(self::PAGE, 'Sobre mí', 'page', 2, 2),
             new ReportRow(self::TAG, 'Sueño', 'tag', 2, 1),
         ], $report->period->contents);
+        self::assertSame(0, $report->period->otherContents);
     }
 
     /**
-     * It reads the period ending yesterday, and today apart.
+     * The CMS is asked the names of each kind once, by the ids of that kind
+     * alone, and never of a kind none was seen of.
+     */
+    public function testItAsksTheNamesOfEachKindByItsOwnIds(): void
+    {
+        $visitCounts = self::createStub(VisitCounts::class);
+        $visitCounts->method('during')->willReturn([]);
+        $visitCounts->method('contentsDuring')->willReturnCallback(static fn (Days $days): SeenContents => $days->first() === $days->last() ? self::seen() : self::seen(
+            new ContentTotal(Dimension::Post, self::POST, 5, 4),
+            new ContentTotal(Dimension::Page, self::PAGE, 3, 2),
+            new ContentTotal(Dimension::Page, self::OTHER_PAGE, 2, 2),
+        ));
+        $asked = [];
+        $names = self::createStub(ContentNames::class);
+        $names->method('namesOf')->willReturnCallback(static function (Dimension $kind, array $ids) use (&$asked): array {
+            $asked[] = [$kind, $ids];
+
+            return [];
+        });
+
+        new VisitReportFinder(Period::Week->days())($visitCounts, $names);
+
+        self::assertSame([[Dimension::Post, [self::POST]], [Dimension::Page, [self::PAGE, self::OTHER_PAGE]]], $asked);
+    }
+
+    /**
+     * Only the most seen contents are shown apart: those left out add up in
+     * one last line under no value, and the report tells how many they are.
+     */
+    public function testItGroupsTheContentsNotShownApartInOneLine(): void
+    {
+        $report = self::report([], contents: new SeenContents(
+            [new ContentTotal(Dimension::Post, self::POST, 9, 7), new ContentTotal(Dimension::Page, self::PAGE, 4, 3)],
+            5,
+            20,
+            15,
+        ));
+
+        self::assertEquals([
+            new ReportRow(self::POST, 'Un post', 'post', 9, 7),
+            new ReportRow(self::PAGE, 'Sobre mí', 'page', 4, 3),
+            new ReportRow(null, null, null, 7, 5),
+        ], $report->period->contents);
+        self::assertSame(3, $report->period->otherContents);
+    }
+
+    /**
+     * It reads the period ending yesterday, and today apart, and of each
+     * as many contents as it shows apart.
      */
     public function testItReadsThePeriodEndingYesterdayAndTodayApart(): void
     {
         $asked = [];
+        $contentsAsked = [];
         $visitCounts = $this->createMock(VisitCounts::class);
         $visitCounts->expects(self::exactly(2))->method('during')->willReturnCallback(static function (Days $days) use (&$asked): array {
             $asked[] = [$days->first(), $days->last()];
 
             return [];
         });
+        $visitCounts->expects(self::exactly(2))->method('contentsDuring')->willReturnCallback(static function (Days $days, int $mostSeen) use (&$contentsAsked): SeenContents {
+            $contentsAsked[] = [$days->first(), $days->last(), $mostSeen];
+
+            return self::seen();
+        });
         $visitCounts->method('oldestUncountedDay')->willReturn(null);
 
         new VisitReportFinder(Period::Week->days())($visitCounts, self::titles());
 
         self::assertSame([['2026-11-02', '2026-11-08'], ['2026-11-09', '2026-11-09']], $asked);
+        self::assertSame([['2026-11-02', '2026-11-08', 50], ['2026-11-09', '2026-11-09', 50]], $contentsAsked);
     }
 
     public function testItAddsUpTheDaysOfThePeriod(): void
@@ -89,16 +148,12 @@ final class VisitReportFinderTest extends TestCase
         $report = self::report([
             CountMother::create(day: '2026-11-02', views: 10, visitors: 8),
             CountMother::create(day: '2026-11-05', views: 2, visitors: 2),
-            CountMother::create(day: '2026-11-02', dimension: Dimension::Page, value: self::PAGE, views: 6, visitors: 5),
-            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: self::PAGE, views: 2, visitors: 2),
-            CountMother::create(day: '2026-11-02', dimension: Dimension::Page, value: self::DELETED_PAGE, views: 4, visitors: 3),
             CountMother::create(day: '2026-11-02', dimension: Dimension::Device, value: 'mobile', views: 7, visitors: 6),
             CountMother::create(day: '2026-11-05', dimension: Dimension::Device, value: 'mobile', views: 2, visitors: 2),
             CountMother::create(day: '2026-11-02', dimension: Dimension::Device, value: 'desktop', views: 3, visitors: 2),
         ]);
 
         self::assertSame([12, 10], [$report->period->views, $report->period->visitors]);
-        self::assertEquals([new ReportRow(self::PAGE, 'Sobre mí', 'page', 8, 7), new ReportRow(self::DELETED_PAGE, null, 'page', 4, 3)], $report->period->contents);
         self::assertEquals([new ReportRow('mobile', null, null, 9, 8), new ReportRow('desktop', null, null, 3, 2)], $report->period->devices);
     }
 
@@ -183,7 +238,8 @@ final class VisitReportFinderTest extends TestCase
             CountMother::create(day: '2026-11-05', views: 2),
             // Two counts of one day add up.
             CountMother::create(day: '2026-11-05', views: 1),
-            CountMother::create(day: '2026-11-05', dimension: Dimension::Page, value: self::PAGE, views: 2),
+            // Another dimension adds no view to the days.
+            CountMother::create(day: '2026-11-05', dimension: Dimension::Device, value: 'mobile', views: 2),
         ]);
 
         self::assertEquals([
@@ -199,10 +255,12 @@ final class VisitReportFinderTest extends TestCase
 
     public function testItCountsTodayApart(): void
     {
-        $report = self::report([CountMother::create(views: 10, visitors: 8)], today: [
-            CountMother::create(day: '2026-11-09'),
-            CountMother::create(day: '2026-11-09', dimension: Dimension::Page, value: self::OTHER_PAGE),
-        ]);
+        $report = self::report(
+            [CountMother::create(views: 10, visitors: 8)],
+            today: [CountMother::create(day: '2026-11-09')],
+            contents: self::seen(new ContentTotal(Dimension::Page, self::PAGE, 10, 8)),
+            todayContents: self::seen(new ContentTotal(Dimension::Page, self::OTHER_PAGE, 1, 1)),
+        );
 
         self::assertSame([1, 1], [$report->today->views, $report->today->visitors]);
         self::assertEquals([new ReportRow(self::OTHER_PAGE, 'Otra página', 'page', 1, 1)], $report->today->contents);
@@ -212,7 +270,7 @@ final class VisitReportFinderTest extends TestCase
     {
         $report = self::report([]);
 
-        self::assertSame([0, 0, [], [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->contents, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
+        self::assertSame([0, 0, [], 0, [], [], [], []], [$report->period->views, $report->period->visitors, $report->period->contents, $report->period->otherContents, $report->period->channels, $report->period->sources, $report->period->devices, $report->period->countries]);
         self::assertCount(7, $report->days);
         self::assertNull($report->uncountedSince);
     }
@@ -268,6 +326,7 @@ final class VisitReportFinderTest extends TestCase
     {
         $visitCounts = $this->createMock(VisitCounts::class);
         $visitCounts->expects(self::never())->method('during');
+        $visitCounts->expects(self::never())->method('contentsDuring');
 
         self::assertTells('errors.analytics.unknown_period', ['%days%' => 14], static fn () => new VisitReportFinder(14)($visitCounts, self::titles()));
     }
@@ -276,14 +335,34 @@ final class VisitReportFinderTest extends TestCase
      * @param list<Count> $counts those of the period
      * @param list<Count> $today  those of today
      */
-    private static function report(array $counts, array $today = [], ?string $uncounted = null, Period $period = Period::Week): VisitReport
-    {
+    private static function report(
+        array $counts,
+        array $today = [],
+        ?string $uncounted = null,
+        Period $period = Period::Week,
+        ?SeenContents $contents = null,
+        ?SeenContents $todayContents = null,
+    ): VisitReport {
         $visitCounts = self::createStub(VisitCounts::class);
         // Today is the only run of days that ends where it begins.
         $visitCounts->method('during')->willReturnCallback(static fn (Days $days): array => $days->first() === $days->last() ? $today : $counts);
+        $visitCounts->method('contentsDuring')->willReturnCallback(static fn (Days $days): SeenContents => ($days->first() === $days->last() ? $todayContents : $contents) ?? self::seen());
         $visitCounts->method('oldestUncountedDay')->willReturn($uncounted);
 
         return new VisitReportFinder($period->days())($visitCounts, self::titles());
+    }
+
+    /**
+     * The contents seen, every one shown apart.
+     */
+    private static function seen(ContentTotal ...$contents): SeenContents
+    {
+        return new SeenContents(
+            array_values($contents),
+            \count($contents),
+            array_sum(array_map(static fn (ContentTotal $content): int => $content->views, $contents)),
+            array_sum(array_map(static fn (ContentTotal $content): int => $content->visitors, $contents)),
+        );
     }
 
     /**
