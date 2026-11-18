@@ -93,3 +93,24 @@ ErrorDocument 504 /error/504.html
         </If>
     </FilesMatch>
 </IfModule>
+
+# The compiled assets: stylesheets, scripts, fonts and images whose names
+# carry a hash of their content, so a file never changes and browsers keep
+# them for a year. Only the files Apache serves itself: an address under
+# /assets/ without a file goes to the front controller.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|woff2|svg|png|webp|ico|json)$">
+        <If "%{REQUEST_URI} =~ m#^/assets/#">
+            Header set Cache-Control "public, max-age=31536000, immutable"
+            Header set X-Content-Type-Options "nosniff"
+        </If>
+    </FilesMatch>
+</IfModule>
+
+# Text goes compressed, the pages PHP answers included; WebP and WOFF2 are
+# compressed already. Harmless if the server in front compresses too.
+<IfModule mod_filter.c>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/ld+json application/xml application/atom+xml image/svg+xml
+    </IfModule>
+</IfModule>

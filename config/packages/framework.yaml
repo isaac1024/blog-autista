@@ -3,7 +3,12 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # The sessions of the CMS live in the account, not where the php.ini of
+    # the shared hosting keeps those of every account; var/sessions outlives
+    # each deploy. Their files are swept as PHP does, now and then.
+    session:
+        save_path: '%kernel.project_dir%/var/sessions/%kernel.environment%'
+        gc_probability: 1
 
     #esi: true
     #fragments: true

@@ -266,6 +266,17 @@ images, from `public/media/`, under `/media/`.
   that would take longer than `web.post.search_time_limit` (1.5 s) asks for
   another word, and an address may search 20 times a minute (`web_search` in
   Redis), so a sweep of words can't take the 10 PHP processes.
+- The sessions of the CMS live in `var/sessions/prod`, in the account, not
+  where the php.ini of the hosting keeps those of every account: keep
+  `var/sessions` between deploys (upload over it, never replace `var/`), or
+  every deploy signs the editor out.
+- Compression and the cache of the assets, which `public/.htaccess` asks of
+  Apache: `curl -sI -H 'Accept-Encoding: gzip' https://<site>/` carries
+  `Content-Encoding: gzip` (or `br`, if Hetzner's nginx compresses first),
+  and `curl -sI https://<site>/assets/<a compiled file>` carries
+  `Cache-Control: public, max-age=31536000, immutable`. If the HTML comes
+  uncompressed, the PHP handler of the account skips the `.htaccess` filter:
+  ask Hetzner whether its nginx compresses.
 - HSTS: `curl -sI https://<site>/` and `curl -sI https://<cms>/login` each
   carry `Strict-Transport-Security: max-age=31536000` **once**. Nelmio sends it
   in `prod`; if Hetzner's nginx adds its own too, turn one of them off. And
@@ -284,7 +295,10 @@ images, from `public/media/`, under `/media/`.
   Apache for the site's host only, set in konsoleH (Einstellungen →
   Varnish-Konfiguration): "Nocache URLs" `^/v$`, so every visit reaches PHP,
   and "Strip URL Parameter" `utm_[a-z]+`, `fbclid` and `gclid`, so links shared
-  with a campaign don't split the cache (the page still reads them). Leave it
+  with a campaign don't split the cache (the page still reads them). Any
+  other parameter still reaches PHP, a copy per address: if the field takes
+  a negation, strip every parameter but `pagina` and `q` instead, which are
+  the only ones the site reads. Leave it
   off for the CMS host: Varnish strips the cookies it isn't told to keep, the
   CMS session among them. Nothing purges it: each page tells how long to keep
   it with `s-maxage`, 5 minutes for the home, pages, authors, sections and
