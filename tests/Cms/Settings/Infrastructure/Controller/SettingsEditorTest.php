@@ -146,16 +146,18 @@ final class SettingsEditorTest extends TestCase
             'key' => 'authors',
             'param' => 'name',
         ]);
-        foreach (['main_menu' => $mainMenu, 'footer_menu' => $footerMenu] as $menu => $items) {
+        // The main menu takes fewer entries, those the header holds in a row.
+        foreach (['main_menu' => [$mainMenu, 'main', 6], 'footer_menu' => [$footerMenu, 'footer', 8]] as $menu => [$items, $texts, $maxItems]) {
             PageComponents::one($form, 'Shared:MenuField', [
                 'name' => $menu,
+                'hint' => \sprintf('cms.settings.menus.%s.hint(%%max%%=%d)', $texts, $maxItems),
                 'items' => Menu::fromArray($items)->view(),
                 'targets' => new LinkTargets(new RouteNameUrlGenerator())(null),
-                'maxItems' => Menu::MAX_ITEMS,
+                'maxItems' => $maxItems,
                 'labelMaxLength' => MenuItem::LABEL_MAX_LENGTH,
             ]);
         }
-        PageComponents::one($form, 'Shared:Panel', ['description' => \sprintf('cms.settings.menus.description(%%max%%=%d)', Menu::MAX_ITEMS)]);
+        PageComponents::one($form, 'Shared:Panel', ['description' => 'cms.settings.menus.description']);
     }
 
     /**

@@ -19,6 +19,12 @@ final readonly class Menu
     public const int MAX_ITEMS = 8;
 
     /**
+     * The header of the site shows the main menu in one row, which holds no
+     * more entries than these.
+     */
+    public const int MAIN_MAX_ITEMS = 6;
+
+    /**
      * @param list<MenuItem> $items
      */
     public function __construct(private array $items)
@@ -67,6 +73,21 @@ final readonly class Menu
         }
 
         return new self($menu);
+    }
+
+    /**
+     * The main menu, from what a form submits or what is stored, as
+     * fromArray() takes it: no more entries than the header holds in a row.
+     *
+     * @param array<array-key, mixed> $items
+     */
+    public static function mainFromArray(array $items): self
+    {
+        if (\count($items) > self::MAIN_MAX_ITEMS) {
+            throw InvalidMenu::tooManyMainItems(self::MAIN_MAX_ITEMS);
+        }
+
+        return self::fromArray($items);
     }
 
     /**

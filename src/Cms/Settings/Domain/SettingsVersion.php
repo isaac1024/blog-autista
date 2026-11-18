@@ -49,7 +49,7 @@ final readonly class SettingsVersion
             new SiteName($name),
             '' === $defaultImage ? null : new ImageId($defaultImage),
             '' === $author ? null : new AuthorId($author),
-            Menu::fromArray($mainMenu),
+            Menu::mainFromArray($mainMenu),
             Menu::fromArray($footerMenu),
         );
     }

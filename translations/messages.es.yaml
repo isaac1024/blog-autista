@@ -435,13 +435,13 @@ cms:
             author_off_site: 'No está publicado: no se usa hasta que lo esté.'
         menus:
             title: 'Menús'
-            description: 'Lo que enlazan los menús de la web: páginas, posts, secciones, etiquetas, autores o recursos externos, como mucho %max% en cada uno. Lo que no esté publicado, o no esté disponible, no se muestra.'
+            description: 'Lo que enlazan los menús de la web: páginas, posts, secciones, etiquetas, autores o recursos externos. Lo que no esté publicado, o no esté disponible, no se muestra.'
             main:
                 label: 'Menú principal'
-                hint: 'Va en la cabecera de todas las páginas.'
+                hint: 'Va en la cabecera de todas las páginas, en una sola fila: como mucho %max% entradas.'
             footer:
                 label: 'Menú del pie'
-                hint: 'Va en el pie de todas las páginas, como el aviso legal o la política de privacidad.'
+                hint: 'Va en el pie de todas las páginas, como el aviso legal o la política de privacidad. Como mucho %max% entradas.'
         status:
             draft:
                 label: 'Borrador'
@@ -1663,7 +1663,8 @@ errors:
             too_long: 'El nombre del blog no puede pasar de %max% caracteres.'
         menu:
             malformed: 'El menú no tiene un formato válido. Recarga la página y vuelve a intentarlo.'
-            too_many_items: 'Un menú no puede tener más de %max% páginas.'
+            too_many_items: 'Un menú no puede tener más de %max% entradas.'
+            too_many_main_items: 'El menú principal no puede tener más de %max% entradas: la cabecera las muestra en una sola fila.'
             repeated_entry: 'Un menú no puede llevar dos veces al mismo contenido.'
             label_too_long: 'El texto de un enlace del menú no puede pasar de %max% caracteres.'
         publication:

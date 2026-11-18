@@ -435,13 +435,13 @@ cms:
             author_off_site: 'Not published: not used until it is.'
         menus:
             title: 'Menus'
-            description: 'What the menus of the site link: pages, posts, sections, tags, authors or external resources, at most %max% in each. What is not published, or not available, isn’t shown.'
+            description: 'What the menus of the site link: pages, posts, sections, tags, authors or external resources. What is not published, or not available, isn’t shown.'
             main:
                 label: 'Main menu'
-                hint: 'It goes in the header of every page.'
+                hint: 'It goes in the header of every page, in one row: %max% entries at most.'
             footer:
                 label: 'Footer menu'
-                hint: 'It goes in the footer of every page, such as the legal notice or the privacy policy.'
+                hint: 'It goes in the footer of every page, such as the legal notice or the privacy policy. %max% entries at most.'
         status:
             draft:
                 label: 'Draft'
@@ -1663,7 +1663,8 @@ errors:
             too_long: 'The name of the blog can’t exceed %max% characters.'
         menu:
             malformed: 'The menu isn’t in a valid format. Reload the page and try again.'
-            too_many_items: 'A menu can’t have more than %max% pages.'
+            too_many_items: 'A menu can’t have more than %max% entries.'
+            too_many_main_items: 'The main menu can’t have more than %max% entries: the header shows them in one row.'
             repeated_entry: 'A menu can’t lead to the same content twice.'
             label_too_long: 'The text of a menu link can’t exceed %max% characters.'
         publication:

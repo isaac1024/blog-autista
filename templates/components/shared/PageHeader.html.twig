@@ -1,22 +1,27 @@
 {#
     The bar on top of every page of the site, on the ground of the page and
-    set apart by a faint line. Small screens fold the menu under a button
-    that works without scripts, as a disclosure; wider ones show it in line.
+    set apart by a faint line. The menu folds under a button that works
+    without scripts, as a disclosure; menu.js shows it in line instead, in
+    one row, wherever it fits, as the width of the screen and the size of
+    the text allow, the search then told by its icon alone. The CMS keeps it
+    to six entries. The menu never takes the room of the name of the blog,
+    which breaks only where the bar can't hold it whole, as on a phone with
+    the biggest text.
     The link to the search of the site and the reading settings come last,
     at the end of the bar; small screens show the search as its icon alone.
 #}
 {% if brand or links is not empty or searchUrl %}
-<header class="relative border-b border-divider bg-bg">
+<header class="group/menu relative border-b border-divider bg-bg" data-menu>
     <a class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-30 focus:bg-accent focus:px-4 focus:py-3 focus:font-bold focus:text-on-accent" href="#main">{{ 'ui.skip_to_content'|trans }}</a>
-    <div class="mx-auto flex min-h-[4.5rem] w-full max-w-[72rem] items-center gap-x-10 gap-y-2 py-2 pr-[clamp(0.5rem,3vw,2rem)] pl-[clamp(1rem,4vw,2rem)]">
+    <div class="mx-auto flex min-h-[4.5rem] w-full max-w-[72rem] flex-wrap items-center gap-x-8 gap-y-2 py-2 pr-[clamp(0.5rem,3vw,2rem)] pl-[clamp(1rem,4vw,2rem)]">
 {% if brand %}
         <twig:Shared:Brand :brand="brand" :homeUrl="homeUrl" class="text-text" />
 {% endif %}
 {% if links is not empty %}
-        <nav class="hidden grow md:block" aria-label="{{ 'ui.primary_navigation'|trans }}">
-            <ul class="m-0 flex list-none flex-wrap gap-x-7 gap-y-1 p-0">
+        <nav class="hidden min-w-0 grow basis-0" data-menu-inline aria-label="{{ 'ui.primary_navigation'|trans }}">
+            <ul class="m-0 flex list-none gap-x-5 p-0">
 {% for link in links %}
-                <li><a class="inline-flex min-h-11 items-center text-text no-underline hover:text-accent hover:underline hover:decoration-[0.08em] hover:underline-offset-[0.25em]" href="{{ link.url }}">{{ link.label }}</a></li>
+                <li><a class="inline-flex min-h-11 items-center whitespace-nowrap text-text no-underline hover:text-accent hover:underline hover:decoration-[0.08em] hover:underline-offset-[0.25em]" href="{{ link.url }}">{{ link.label }}</a></li>
 {% endfor %}
             </ul>
         </nav>
@@ -25,12 +30,12 @@
 {% if searchUrl %}
             <a class="flex min-h-11 min-w-11 items-center justify-center gap-2 px-2 text-text no-underline hover:text-accent hover:underline hover:decoration-[0.08em] hover:underline-offset-[0.25em]" href="{{ searchUrl }}">
                 <svg class="size-[1.375rem] flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-                <span class="sr-only md:not-sr-only">{{ 'ui.search'|trans }}</span>
+                <span class="sr-only md:not-sr-only group-data-[menu=inline]/menu:sr-only">{{ 'ui.search'|trans }}</span>
             </a>
 {% endif %}
             <twig:Shared:ReadingSettings />
 {% if links is not empty %}
-            <details class="group md:hidden">
+            <details class="group" data-menu-folded>
                 <summary class="flex size-11 cursor-pointer list-none items-center justify-center text-text hover:text-accent group-open:bg-surface [&::-webkit-details-marker]:hidden">
                     <span class="sr-only">{{ 'ui.menu'|trans }}</span>
                     <svg class="size-6 group-open:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>

@@ -18,6 +18,11 @@ final class InvalidMenu extends DomainError
         return new self(\sprintf('A menu must not have more than %d entries.', $maxItems), 'errors.settings.menu.too_many_items', ['%max%' => $maxItems]);
     }
 
+    public static function tooManyMainItems(int $maxItems): self
+    {
+        return new self(\sprintf('The main menu must not have more than %d entries.', $maxItems), 'errors.settings.menu.too_many_main_items', ['%max%' => $maxItems]);
+    }
+
     public static function repeatedEntry(): self
     {
         return new self('A menu leads to each content once.', 'errors.settings.menu.repeated_entry', []);

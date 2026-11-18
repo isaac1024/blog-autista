@@ -147,6 +147,10 @@ final class SettingsUpdateControllerTest extends CmsWebTestCase
         yield 'blank name' => [['name' => ' '], ['key' => 'errors.settings.name.too_short', 'parameters' => ['%min%' => 2]]];
         yield 'missing name' => [[], ['key' => 'errors.settings.name.too_short', 'parameters' => ['%min%' => 2]]];
         yield 'image that is not an id' => [['name' => Mother::NAME, 'default_image' => 'rectangulo'], ['key' => 'errors.uuid.invalid', 'parameters' => ['%value%' => 'rectangulo']]];
+        yield 'a main menu longer than the header holds' => [
+            ['name' => Mother::NAME, 'main_menu' => array_map(static fn (int $page): array => ['page_id' => \sprintf('01a19e72-b07f-7d78-889c-fa4a14a4fc%02d', $page), 'label' => ''], range(1, 7))],
+            ['key' => 'errors.settings.menu.too_many_main_items', 'parameters' => ['%max%' => 6]],
+        ];
     }
 
     public function testItRespondsNotFoundWhileTheSettingsDoNotExist(): void

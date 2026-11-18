@@ -106,10 +106,10 @@ final readonly class SettingsEditor
                 ]),
                 new PageComponent('Shared:Panel', [
                     'title' => $this->translator->trans('cms.settings.menus.title'),
-                    'description' => $this->translator->trans('cms.settings.menus.description', ['%max%' => Menu::MAX_ITEMS]),
+                    'description' => $this->translator->trans('cms.settings.menus.description'),
                 ], [
-                    $this->menuField('main_menu', 'main', $settings->mainMenu),
-                    $this->menuField('footer_menu', 'footer', $settings->footerMenu),
+                    $this->menuField('main_menu', 'main', $settings->mainMenu, Menu::MAIN_MAX_ITEMS),
+                    $this->menuField('footer_menu', 'footer', $settings->footerMenu, Menu::MAX_ITEMS),
                 ]),
                 new PageComponent('Shared:ActionBar', [
                     'status' => $this->settingsState->description($settings),
@@ -127,20 +127,21 @@ final readonly class SettingsEditor
     }
 
     /**
-     * A menu field, with its texts under cms.settings.menus.{menu}.
+     * A menu field, with its texts under cms.settings.menus.{menu}, which
+     * tell how many entries it takes.
      *
      * @param list<array{type: string, id: string, label: ?string}> $items
      */
-    private function menuField(string $name, string $menu, array $items): PageComponent
+    private function menuField(string $name, string $menu, array $items, int $maxItems): PageComponent
     {
         return new PageComponent('Shared:MenuField', [
             'name' => $name,
             'id' => \sprintf('settings-%s-menu', $menu),
             'label' => $this->translator->trans(\sprintf('cms.settings.menus.%s.label', $menu)),
-            'hint' => $this->translator->trans(\sprintf('cms.settings.menus.%s.hint', $menu)),
+            'hint' => $this->translator->trans(\sprintf('cms.settings.menus.%s.hint', $menu), ['%max%' => $maxItems]),
             'items' => $items,
             'targets' => ($this->linkTargets)(null),
-            'maxItems' => Menu::MAX_ITEMS,
+            'maxItems' => $maxItems,
             'labelMaxLength' => MenuItem::LABEL_MAX_LENGTH,
         ]);
     }

@@ -54,7 +54,8 @@
     map. A page whose visits are counted tells the site once its reader sees
     it, with no cookie and nothing kept in the browser. A page that embeds
     resources of other sites loads them behind their facades once the reader
-    agrees, which their browser keeps.
+    agrees, which their browser keeps. Every page shows its main menu in line
+    wherever it fits.
 #}
 {% block javascripts %}
 {% if page.countedContent %}
@@ -63,4 +64,5 @@
 {% if page.frames is not empty %}
         <script type="module" src="{{ asset('external.js') }}"></script>
 {% endif %}
+        <script type="module" src="{{ asset('menu.js') }}"></script>
 {% endblock %}

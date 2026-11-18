@@ -91,7 +91,8 @@ final class SettingsUpdaterTest extends TestCase
             Mother::version(mainMenu: [Mother::item(Mother::PAGE), Mother::item(Mother::OTHER_PAGE)]),
         ];
         yield 'the same page in both menus' => [Mother::NAME, '', $footer, $footer, Mother::version(mainMenu: $footer, footerMenu: $footer)];
-        yield 'menus at their fullest' => [Mother::NAME, '', $full, $full, Mother::version(mainMenu: $full, footerMenu: $full)];
+        // The main menu holds the entries the header shows in a row, fewer.
+        yield 'menus at their fullest' => [Mother::NAME, '', \array_slice($full, 0, 6), $full, Mother::version(mainMenu: \array_slice($full, 0, 6), footerMenu: $full)];
         yield 'longest label with multibyte characters' => [
             Mother::NAME,
             '',
@@ -277,6 +278,23 @@ final class SettingsUpdaterTest extends TestCase
     }
 
     /**
+     * The footer takes more entries than the main menu, but no more than a
+     * menu holds.
+     */
+    public function testItSavesNoFooterMenuLongerThanAMenuHolds(): void
+    {
+        $repository = $this->createMock(SettingsRepository::class);
+        $repository->method('find')->willReturn(Mother::create());
+        $repository->expects(self::never())->method('save');
+        $nine = array_map(
+            static fn (int $page): array => Mother::item(\sprintf('01a19e72-b07f-7d78-889c-fa4a14a4fc%02d', $page)),
+            range(1, 9),
+        );
+
+        self::assertTells('errors.settings.menu.too_many_items', ['%max%' => 8], static fn () => (new SettingsUpdater(Mother::NAME, '', '', [], $nine))($repository, self::createStub(EventBus::class)));
+    }
+
+    /**
      * @return iterable<string, array{string, string, array<array-key, mixed>, string, array<string, int|string>}>
      */
     public static function invalidEdits(): iterable
@@ -290,7 +308,7 @@ final class SettingsUpdaterTest extends TestCase
         yield 'blank name' => [' ', '', [], 'errors.settings.name.too_short', ['%min%' => 2]];
         yield 'name one character too long' => [str_repeat('a', 61), '', [], 'errors.settings.name.too_long', ['%max%' => 60]];
         yield 'image that is not an id' => [$name, 'rectangulo', [], 'errors.uuid.invalid', ['%value%' => 'rectangulo']];
-        yield 'menu one entry too long' => [$name, '', $nine, 'errors.settings.menu.too_many_items', ['%max%' => 8]];
+        yield 'main menu one entry too long' => [$name, '', \array_slice($nine, 0, 7), 'errors.settings.menu.too_many_main_items', ['%max%' => 6]];
         yield 'menu with a page twice' => [$name, '', [Mother::item(), Mother::item(label: 'Otra vez')], 'errors.settings.menu.repeated_entry', []];
         yield 'label one character too long' => [$name, '', [Mother::item(label: str_repeat('a', 41))], 'errors.settings.menu.label_too_long', ['%max%' => 40]];
         yield 'entry without a page' => [$name, '', [['label' => 'Sobre mí']], 'errors.settings.menu.malformed', []];
