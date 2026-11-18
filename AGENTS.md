@@ -107,8 +107,8 @@ Tailwind's build is the CSS syntax gate; the W3C CSS3 validator cannot parse
 its modern output.
 
 The JavaScript tests are a pyramid. At its base, `node:test` under `tests/Unit/`
-covers the pure modules (`assets/form/`, `assets/image/`, `assets/rich_text/`,
-`assets/shared/`). Above them, the Stimulus controllers and `assets/web.js` run
+covers the pure modules (`assets/external/`, `assets/form/`, `assets/image/`,
+`assets/reading/`, `assets/rich_text/`, `assets/shared/`). Above them, the Stimulus controllers and `assets/web.js` run
 under `node:test` too, on happy-dom: `tests/Unit/support/dom.js` mounts a real
 Stimulus application on the markup their templates write, kept in
 `tests/Markup/`, and the tests act through its events, as a person would, never

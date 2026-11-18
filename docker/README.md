@@ -52,8 +52,8 @@ grants privileges to that user.
 | Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; the `worker` service consumes it in development (`docker compose logs -f worker`), cron in production |
 | Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`, plus tasks of a context such as `#[AsPeriodicTask]` on `Web\Analytics\Infrastructure\Scheduler\NightlyVisitCount`; consume with `messenger:consume scheduler_default` |
 | Visit counts | `symfony/rate-limiter` + Redis | The site counts its visits itself, with no third party: see [Visit counts](#visit-counts) |
-| Security | `symfony/security-bundle` | In-memory provider placeholder in `config/packages/security.yaml` |
-| Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Per-context components in `config/packages/twig_component.yaml` |
+| Security | `symfony/security-bundle` | The CMS has one administrator, read from `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD` by `Cms\Authentication\Infrastructure\Security\AdministratorUserProvider`; `form_login` in `config/packages/security.yaml` |
+| Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Every component lives in `Shared\Infrastructure\Twig\Components` (`Shared:` prefix, templates in `templates/components/shared/`); the contexts compose them |
 
 Doctrine mappings are declared per module (`src/Cms/Page/Domain`) and
 migrations live in
@@ -97,14 +97,15 @@ takes 60 visits a minute per reader.
 | Complexity and size | PHPMD | cyclomatic ≤ 10, NPath ≤ 200, methods ≤ 60 lines, parameters ≤ 6, classes ≤ 500 lines, WMC ≤ 50, coupling ≤ 20, inheritance depth ≤ 4, naming/clean-code guardrails |
 | Types and SOLID | PHPStan | level **max**, strict rules, Symfony + Doctrine + PHPUnit extensions |
 | Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
-| Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both |
+| Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both; Infrastructure → Application → Domain in every module; a module's infrastructure never uses another module's |
 | Tests | PHPUnit + ParaTest | in parallel, one database per process; random order, strict output, fail on risky/deprecation/notice/warning |
-| JavaScript static analysis | ESLint + TypeScript `checkJs` | recommended correctness rules and strict JSDoc checking on the pure/shared modules selected in `jsconfig.json`; no emitted build |
-| JavaScript tests | node:test + Playwright | pure logic units and real-browser controller interactions; isolated fixtures need neither Symfony nor a database |
+| JavaScript static analysis | ESLint + TypeScript `checkJs` | recommended correctness rules and strict JSDoc checking on every module under `assets/` but `assets/vendor` (`jsconfig.json`); no emitted build |
+| JavaScript tests | node:test + happy-dom + Playwright | pure modules, then the Stimulus controllers on happy-dom with the markup of `tests/Markup/`, then the wiring in Chromium; neither Symfony nor a database |
+| JavaScript mutation | Stryker | every module under `assets/` but the vendored ones; fails below 80 %, report in `var/mutation/js.html` |
 | Mutation | Infection | in parallel, one database per thread, the whole suite against each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
 
 ```bash
-composer check        # fast gate: style, Twig, PHPMD, PHPStan, PHPUnit
+composer check        # fast gate: style, Twig, PHPMD, PHPStan, schema, PHPUnit
 composer check:full   # check + mutation testing
 composer cs           # apply PHP coding style
 composer twig:cs      # apply Twig coding style
@@ -114,7 +115,11 @@ composer test         # PHPUnit in parallel (ParaTest)
 composer test:serial  # PHPUnit in a single process, handy to debug a failure
 npm run check:js      # ESLint + JSDoc types + JavaScript and browser tests
 npm run test:js       # JavaScript units + Playwright browser interactions
+npm run test:browser  # Playwright browser suite only
 npm run test:browser:install  # first time only: Chromium inside node_modules
+npm run mutation:js   # Stryker over assets/
+npm run check:js:full # check:js + mutation:js
+npm run ui:check      # HTML, contrast and Lighthouse of the running app
 composer infection    # mutation testing of the whole src/
 composer infection:diff  # mutation testing of the lines changed against master
 ```
@@ -133,8 +138,8 @@ Infection requires a coverage driver: the PHP image ships PCOV (development
 only), so run it inside the container, where the database is reachable:
 `docker compose exec -u www-data php composer infection`.
 
-Architecture rules live in `tests/Shared/Architecture/ContextIndependenceRules.php`
-and are registered in PHPStan with the `phpat.test` tag. Since selectors include
+Architecture rules live in `tests/Shared/Architecture/` (`ContextIndependenceRules`,
+`HexagonalArchitectureRules`, `ModuleIndependenceRules`) and are registered in PHPStan with the `phpat.test` tag. Since selectors include
 subnamespaces, the boundaries also apply to `Web\Tests` and `Cms\Tests`.
 `src/Shared/Infrastructure/Persistence/Doctrine/Migrations` is generated code and is excluded from PHPStan, PHPMD,
 PHP-CS-Fixer and Infection.
