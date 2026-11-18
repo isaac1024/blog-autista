@@ -39,7 +39,7 @@ final readonly class WebAddress
         }
 
         $scheme = strtolower($parts['scheme'] ?? '');
-        $host = strtolower($parts['host'] ?? '');
+        $host = self::asciiHost($parts['host'] ?? '');
 
         if (!\in_array($scheme, ['http', 'https'], true) || 1 !== preg_match('/^[a-z0-9-]+(\.[a-z0-9-]+)+$/', $host)) {
             return null;
@@ -97,6 +97,21 @@ final readonly class WebAddress
             $this->path,
             [] === $query ? '' : '?'.http_build_query($query, '', '&', \PHP_QUERY_RFC3986),
         );
+    }
+
+    /**
+     * A host as one is always kept and compared, however it was written: in
+     * lowercase ASCII, an international one in Punycode, as a browser shows
+     * it in Unicode, and without the dot that may close a full name. Empty
+     * when it can't be the name of a host.
+     */
+    private static function asciiHost(string $host): string
+    {
+        $name = str_ends_with($host, '.') ? substr($host, 0, -1) : $host;
+        $ascii = '' === $name ? false : idn_to_ascii($name, \IDNA_DEFAULT, \INTL_IDNA_VARIANT_UTS46);
+
+        // UTS46 maps it to lowercase too.
+        return false === $ascii ? '' : $ascii;
     }
 
     /**

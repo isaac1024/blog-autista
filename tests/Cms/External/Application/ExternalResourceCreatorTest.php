@@ -107,6 +107,9 @@ final class ExternalResourceCreatorTest extends TestCase
         yield 'over HTTP on the port of HTTPS' => ['http://example.org:443/', 'http://example.org:443/'];
         yield 'over HTTPS on the port of HTTP' => ['https://example.org:80/', 'https://example.org:80/'];
         yield 'with what tracks who shared it' => ['https://example.org/?id=7&utm_source=red&fbclid=x', 'https://example.org/?id=7'];
+        yield 'of an international domain, as a browser shows it' => ['https://www.Ñandú.es/a', 'https://www.xn--and-6ma2c.es/a'];
+        yield 'of an international domain, in Punycode' => ['https://xn--and-6ma2c.es/a', 'https://xn--and-6ma2c.es/a'];
+        yield 'of a full name, closed by a dot' => ['https://Example.com./x', 'https://example.com/x'];
     }
 
     /**
@@ -253,6 +256,9 @@ final class ExternalResourceCreatorTest extends TestCase
         yield 'one with a password and no user' => ['https://:secreto@example.org/', 'errors.external.url.not_an_address', []];
         yield 'one with spaces within' => ['https://example.org/una noticia', 'errors.external.url.not_an_address', []];
         yield 'one of a host without a domain' => ['https://localhost/', 'errors.external.url.not_an_address', []];
+        yield 'one of a host that is a dot alone' => ['https://./', 'errors.external.url.not_an_address', []];
+        yield 'one of a host in Punycode that spells nothing' => ['https://xn--zz.es/', 'errors.external.url.not_an_address', []];
+        yield 'one of a name longer than a label of a domain can be' => ['https://'.str_repeat('a', 64).'.es/', 'errors.external.url.not_an_address', []];
         yield 'one of a host no domain can be' => ['https://exa_mple.org/', 'errors.external.url.not_an_address', []];
         yield 'one of a domain followed by what no host can have' => ['https://example.org_x/', 'errors.external.url.not_an_address', []];
         yield 'one with a space of another script within' => ["https://example.org/una\u{00A0}noticia", 'errors.external.url.not_an_address', []];
