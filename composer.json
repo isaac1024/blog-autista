@@ -14,9 +14,9 @@
         "ext-mbstring": "*",
         "ext-pdo_mysql": "*",
         "ext-redis": "*",
-        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/doctrine-bundle": "^3.4.2",
         "doctrine/doctrine-migrations-bundle": "^4.0",
-        "doctrine/orm": "^3.7",
+        "doctrine/orm": "^3.8",
         "imagine/imagine": "^1.5",
         "nelmio/security-bundle": "^3.9",
         "symfony/apache-pack": "^1.0",
@@ -38,31 +38,31 @@
         "symfony/scheduler": "8.1.*",
         "symfony/security-bundle": "8.1.*",
         "symfony/serializer": "8.1.*",
-        "symfony/stimulus-bundle": "^3.6",
+        "symfony/stimulus-bundle": "^3.7",
         "symfony/translation": "8.1.*",
         "symfony/twig-bundle": "8.1.*",
         "symfony/uid": "8.1.*",
-        "symfony/ux-twig-component": "^3.6",
+        "symfony/ux-twig-component": "^3.7",
         "symfony/yaml": "8.1.*",
         "symfonycasts/tailwind-bundle": "^1.0"
     },
     "require-dev": {
-        "brianium/paratest": "^7.27",
-        "dama/doctrine-test-bundle": "^8.7",
-        "friendsofphp/php-cs-fixer": "^3.95",
-        "infection/infection": "^0.35.8",
+        "brianium/paratest": "^7.29",
+        "dama/doctrine-test-bundle": "^8.8",
+        "friendsofphp/php-cs-fixer": "^3.95.32",
+        "infection/infection": "^0.35.12",
         "phpat/phpat": "^0.12.5",
         "phpmd/phpmd": "^3.0",
-        "phpstan/phpstan": "^2.3",
-        "phpstan/phpstan-doctrine": "^2.1",
-        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan": "^2.3.6",
+        "phpstan/phpstan-doctrine": "^2.1.2",
+        "phpstan/phpstan-phpunit": "^2.1.2",
         "phpstan/phpstan-strict-rules": "^2.1",
         "phpstan/phpstan-symfony": "^2.1",
-        "phpunit/phpunit": "^13.4",
+        "phpunit/phpunit": "^13.4.7",
         "shipmonk/dead-code-detector": "^1.4",
         "symfony/browser-kit": "8.1.*",
         "symfony/css-selector": "8.1.*",
-        "vincentlanglet/twig-cs-fixer": "^4.1"
+        "vincentlanglet/twig-cs-fixer": "^4.1.2"
     },
     "config": {
         "allow-plugins": {
@@ -133,7 +133,12 @@
             "Composer\\Config::disableProcessTimeout",
             "XDEBUG_MODE=coverage infection --with-uncovered --git-diff-lines --git-diff-base=master"
         ],
+        "audit:all": [
+            "@composer audit",
+            "bin/console importmap:audit"
+        ],
         "check": [
+            "@audit:all",
             "@cs:check",
             "@twig:cs:check",
             "@complexity",

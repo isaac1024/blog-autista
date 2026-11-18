@@ -1,7 +1,10 @@
 # AGENTS.md
 
 This is a Symfony project. Check `composer.json` for the exact Symfony/PHP version
-in use, and read `symfony.lock` to see which recipes ran.
+in use, and read `symfony.lock` to see which recipes ran. Symfony is followed minor by minor
+(8.1, 8.2, 8.3…) as each comes out, within its support window, not held to
+an LTS: move the `8.1.*` constraints to the next minor once it is released,
+with `composer check` and the full mutation runs green.
 
 ## Stack
 
@@ -176,7 +179,7 @@ running app shows a broken import.
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
 superset). `composer cs` fixes PHP style and `composer twig:cs` fixes Twig style;
-`composer check` runs the whole gate (style, phpmd, phpstan, schema validation, tests).
+`composer check` runs the whole gate (security audit of Composer and of the import map, style, phpmd, phpstan, schema validation, tests).
 
 ## Discover, don't guess
 
