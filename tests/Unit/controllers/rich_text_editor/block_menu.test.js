@@ -24,7 +24,6 @@ const fromButton = async (editor) => {
 test('the button opens the menu at the current kind, and takes the focus to it', async () => {
     const editor = await open();
     const button = editor.target('blockType');
-    let position = null;
     button.getBoundingClientRect = () => ({ top: 100, bottom: 140, left: 30, right: 200, width: 170, height: 40 });
 
     await fromButton(editor);
@@ -41,8 +40,7 @@ test('the button opens the menu at the current kind, and takes the focus to it',
         ['content-menu-1', 'option', 'rich-text-menu-option'],
     ]);
     assert.equal(menu.getAttribute('aria-activedescendant'), 'content-menu-0');
-    position = [menu.style.top, menu.style.left];
-    assert.deepEqual(position, ['148px', '30px']);
+    assert.deepEqual([menu.style.top, menu.style.left], ['148px', '30px']);
 });
 
 test('the menu opens at the kind the cursor is in', async () => {
