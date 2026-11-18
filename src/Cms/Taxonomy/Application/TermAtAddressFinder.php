@@ -16,10 +16,17 @@ use Shared\Domain\DomainError;
  */
 final readonly class TermAtAddressFinder
 {
+    private Taxonomy $taxonomy;
+
+    /**
+     * @param string $taxonomy one of the Taxonomy values, such as TermResponse::SECTION
+     */
     public function __construct(
-        private Taxonomy $taxonomy,
+        string $taxonomy,
         private string $slug,
-    ) {}
+    ) {
+        $this->taxonomy = Taxonomy::fromValue($taxonomy);
+    }
 
     public function onSite(TermRepository $termRepository): ?TermResponse
     {

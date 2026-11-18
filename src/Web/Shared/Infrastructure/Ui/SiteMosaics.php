@@ -9,7 +9,6 @@ use Shared\Infrastructure\Twig\Components\PostCards;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Web\Post\Application\LatestPostsFinder;
 use Web\Post\Domain\PostRepository;
-use Web\Post\Domain\PostSelection;
 
 /**
  * The cards of the posts each mosaic of a text shows, as the site paints
@@ -35,7 +34,7 @@ final readonly class SiteMosaics
 
         foreach ($content->mosaics() as $mosaic) {
             $mosaics[$mosaic->key()] ??= $this->postCardsComponent->cards(($this->postCards)(
-                new LatestPostsFinder(new PostSelection($mosaic->sectionId(), $mosaic->authorId(), $mosaic->tagIds()), $mosaic->limit())($this->postRepository),
+                new LatestPostsFinder($mosaic->sectionId(), $mosaic->authorId(), $mosaic->tagIds(), $mosaic->limit())($this->postRepository),
             ));
         }
 

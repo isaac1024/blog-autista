@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
 use Cms\Taxonomy\Application\TermsOfTaxonomyByIdFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,7 +29,7 @@ final class TermLookupController extends AbstractController
         $ids = array_values(array_filter(explode(',', $ids), static fn (string $id): bool => '' !== $id));
 
         return new JsonResponse([
-            'terms' => array_map($this->pickedTerm, new TermsOfTaxonomyByIdFinder(Taxonomy::fromValue($taxonomy->taxonomy()), $ids)($termRepository)),
+            'terms' => array_map($this->pickedTerm, new TermsOfTaxonomyByIdFinder($taxonomy->taxonomy(), $ids)($termRepository)),
         ]);
     }
 }

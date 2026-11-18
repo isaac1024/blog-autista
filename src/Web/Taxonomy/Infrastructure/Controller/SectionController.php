@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\Routing\Attribute\Route;
 use Web\Post\Application\PostsPageNotFound;
-use Web\Post\Domain\PostSelection;
 use Web\Taxonomy\Application\TermFinder;
 use Web\Taxonomy\Application\TermNotFound;
 use Web\Taxonomy\Domain\Taxonomy;
@@ -42,7 +41,7 @@ final class SectionController extends AbstractController
         }
 
         try {
-            $page = ($this->publishedTerm)($term, 'web_section', PostSelection::ofSection($term->id), $pagina);
+            $page = ($this->publishedTerm)($term, 'web_section', $pagina);
         } catch (PostsPageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

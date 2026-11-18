@@ -10,7 +10,7 @@ use Web\External\Application\ExternalResourceSaver;
 use Web\External\Domain\CmsExternalResourcePublished;
 use Web\External\Domain\ExternalResourceRepository;
 use Web\External\Domain\ImageCopies;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each external resource the CMS publishes.

@@ -9,7 +9,7 @@ use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Page\Application\PageRemover;
 use Web\Page\Domain\CmsPageUnpublished;
 use Web\Page\Domain\PageRepository;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Takes off the site each page the CMS unpublishes.

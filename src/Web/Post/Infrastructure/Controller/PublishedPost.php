@@ -65,7 +65,7 @@ final readonly class PublishedPost
         // now leads to, if any; otherwise by the name it had, as text.
         $terms = $this->terms([$post->sectionId, ...$post->tagIds]);
         $section = $terms[$post->sectionId] ?? null;
-        $section = Taxonomy::Section->value === $section?->taxonomy ? $section : null;
+        $section = true === $section?->isSection() ? $section : null;
         $author = $this->author($post->authorId);
 
         $tags = $this->tags($post->tagIds, $terms);
@@ -180,7 +180,7 @@ final readonly class PublishedPost
         foreach ($ids as $id) {
             $tag = $terms[$id] ?? null;
 
-            if (Taxonomy::Tag->value === $tag?->taxonomy) {
+            if (true === $tag?->isTag()) {
                 $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
             }
         }

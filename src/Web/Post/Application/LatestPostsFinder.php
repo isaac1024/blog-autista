@@ -14,10 +14,21 @@ use Web\Post\Domain\PostSelection;
  */
 final readonly class LatestPostsFinder
 {
+    private PostSelection $selection;
+
+    /**
+     * @param ?string      $sectionId the section the posts are under, none for any
+     * @param ?string      $authorId  who signs them, none for anyone
+     * @param list<string> $tagIds    any of them, none for every post
+     */
     public function __construct(
-        private PostSelection $selection,
+        ?string $sectionId,
+        ?string $authorId,
+        array $tagIds,
         private int $limit,
-    ) {}
+    ) {
+        $this->selection = new PostSelection($sectionId, $authorId, $tagIds);
+    }
 
     /**
      * @return list<PostCardResponse>

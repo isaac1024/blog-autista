@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
-use Cms\Post\Domain\PostSelection;
 use Cms\Shared\Infrastructure\Ui\CmsPostCards;
 use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Application\TermResponse;
@@ -51,10 +50,9 @@ final readonly class PreviewTerm
                 $canonical,
             ),
             $term->name,
-            ($this->postCards)(
-                TaxonomySegment::Sections === $taxonomy ? new PostSelection($term->id, null, []) : new PostSelection(null, null, [$term->id]),
-                self::POSTS,
-            ),
+            TaxonomySegment::Sections === $taxonomy
+                ? ($this->postCards)($term->id, null, [], self::POSTS)
+                : ($this->postCards)(null, null, [$term->id], self::POSTS),
             null,
         );
     }

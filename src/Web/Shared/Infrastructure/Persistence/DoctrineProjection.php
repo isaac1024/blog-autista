@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Web\Projection\Infrastructure;
+namespace Web\Shared\Infrastructure\Persistence;
 
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Domain\Event\RevisedReceivedEvent;
 use Shared\Infrastructure\Persistence\Doctrine\TransactionRollback;
-use Web\Projection\Domain\Projection;
-use Web\Projection\Domain\ProjectionCheckpoint;
+use Web\Shared\Domain\Projection;
+use Web\Shared\Domain\ProjectionCheckpoint;
 
 /**
  * Applies the projection change and records its revision in one transaction,

@@ -16,7 +16,7 @@ use Cms\Post\Domain\TagId;
 use Cms\Shared\Domain\Slug;
 use Cms\Taxonomy\Application\TermExistenceChecker;
 use Cms\Taxonomy\Application\TermOnSiteFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermRepository;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
@@ -35,7 +35,7 @@ final readonly class CmsClassifiers implements Classifiers
     #[\Override]
     public function isSection(SectionId $id): bool
     {
-        return new TermExistenceChecker(Taxonomy::Section, $id->value())($this->termRepository);
+        return new TermExistenceChecker(TermResponse::SECTION, $id->value())($this->termRepository);
     }
 
     #[\Override]
@@ -47,13 +47,13 @@ final readonly class CmsClassifiers implements Classifiers
     #[\Override]
     public function isTag(TagId $id): bool
     {
-        return new TermExistenceChecker(Taxonomy::Tag, $id->value())($this->termRepository);
+        return new TermExistenceChecker(TermResponse::TAG, $id->value())($this->termRepository);
     }
 
     #[\Override]
     public function sectionOnSite(SectionId $id): ?SectionOnSite
     {
-        $section = new TermOnSiteFinder(Taxonomy::Section, $id->value())($this->termRepository);
+        $section = new TermOnSiteFinder(TermResponse::SECTION, $id->value())($this->termRepository);
 
         return null === $section ? null : new SectionOnSite($section->name, new Slug($section->slug));
     }

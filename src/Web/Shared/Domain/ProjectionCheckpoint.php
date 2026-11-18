@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Web\Projection\Domain;
+namespace Web\Shared\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 

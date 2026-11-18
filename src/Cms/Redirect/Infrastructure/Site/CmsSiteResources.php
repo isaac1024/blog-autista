@@ -8,18 +8,15 @@ use Cms\Author\Application\AuthorAtAddressFinder;
 use Cms\Author\Application\AuthorResponse;
 use Cms\Author\Application\AuthorsFinder;
 use Cms\Author\Domain\AuthorRepository;
-use Cms\Author\Domain\AuthorStatus;
 use Cms\Image\Application\ImageAtPathFinder;
 use Cms\Image\Application\ImageResponse;
 use Cms\Image\Application\ImagesFinder;
 use Cms\Image\Domain\ImageRepository;
-use Cms\Image\Domain\ImageStatus;
 use Cms\Page\Application\PageAtAddressFinder;
 use Cms\Page\Application\PageLastAddressFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PagesFinder;
 use Cms\Page\Domain\PageRepository;
-use Cms\Page\Domain\PageStatus;
 use Cms\Post\Application\PostAddressesFinder;
 use Cms\Post\Application\PostAddressResponse;
 use Cms\Post\Application\PostAtAddressFinder;
@@ -27,7 +24,6 @@ use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostsFinder;
 use Cms\Post\Domain\Classifiers;
 use Cms\Post\Domain\PostRepository;
-use Cms\Post\Domain\PostStatus;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\ResourceType;
 use Cms\Redirect\Domain\SiteResources;
@@ -35,9 +31,7 @@ use Cms\Redirect\Domain\Source;
 use Cms\Taxonomy\Application\TermAtAddressFinder;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
-use Cms\Taxonomy\Domain\TermStatus;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /**
@@ -71,11 +65,11 @@ final readonly class CmsSiteResources implements SiteResources
     public function isOnSite(Resource $resource): bool
     {
         return match ($resource->type()) {
-            ResourceType::Page => PageStatus::Published->value === (new PagesFinder([$resource->id()])($this->pageRepository)[0] ?? null)?->status,
-            ResourceType::Image => ImageStatus::Published->value === (new ImagesFinder([$resource->id()])($this->imageRepository)[0] ?? null)?->status,
-            ResourceType::Post => PostStatus::Published->value === (new PostsFinder([$resource->id()])($this->postRepository)[0] ?? null)?->status,
-            ResourceType::Term => TermStatus::Published->value === $this->term($resource)?->status,
-            ResourceType::Author => AuthorStatus::Published->value === $this->author($resource)?->status,
+            ResourceType::Page => true === (new PagesFinder([$resource->id()])($this->pageRepository)[0] ?? null)?->isPublished(),
+            ResourceType::Image => true === (new ImagesFinder([$resource->id()])($this->imageRepository)[0] ?? null)?->isPublished(),
+            ResourceType::Post => true === (new PostsFinder([$resource->id()])($this->postRepository)[0] ?? null)?->isPublished(),
+            ResourceType::Term => true === $this->term($resource)?->isPublished(),
+            ResourceType::Author => true === $this->author($resource)?->isPublished(),
         };
     }
 
@@ -85,7 +79,7 @@ final readonly class CmsSiteResources implements SiteResources
         $imagePath = $source->imagePath();
 
         if (null !== $imagePath) {
-            return ImageStatus::Published->value === $this->imageAt($imagePath)?->status;
+            return true === $this->imageAt($imagePath)?->isPublished();
         }
 
         $route = $this->siteRoutes->match($source->value());
@@ -98,7 +92,7 @@ final readonly class CmsSiteResources implements SiteResources
         // other address of the site always answers.
         return match ($route->kind) {
             SiteRoute::PAGE => null !== new PageAtAddressFinder($route->parameter('slug'))->onSite($this->pageRepository),
-            SiteRoute::SECTION, SiteRoute::TAG => null !== new TermAtAddressFinder(Taxonomy::fromValue($route->kind), $route->parameter('slug'))->onSite($this->termRepository),
+            SiteRoute::SECTION, SiteRoute::TAG => null !== new TermAtAddressFinder($route->kind, $route->parameter('slug'))->onSite($this->termRepository),
             SiteRoute::AUTHOR => null !== new AuthorAtAddressFinder($route->parameter('slug'))->onSite($this->authorRepository),
             SiteRoute::POST => null !== $this->postAt($route)->onSite($this->postRepository),
             default => true,
@@ -138,14 +132,14 @@ final readonly class CmsSiteResources implements SiteResources
         if (null !== $imagePath) {
             $image = $this->imageAt($imagePath);
 
-            return ImageStatus::Unpublished->value === $image?->status ? Resource::image($image->id) : null;
+            return true === $image?->isUnpublished() ? Resource::image($image->id) : null;
         }
 
         $route = $this->siteRoutes->match($source->value());
 
         return match ($route?->kind) {
             SiteRoute::PAGE => self::resourceOf(ResourceType::Page, new PageAtAddressFinder($route->parameter('slug'))->lastOffSite($this->pageRepository)?->id),
-            SiteRoute::SECTION, SiteRoute::TAG => self::resourceOf(ResourceType::Term, new TermAtAddressFinder(Taxonomy::fromValue($route->kind), $route->parameter('slug'))->lastOffSite($this->termRepository)?->id),
+            SiteRoute::SECTION, SiteRoute::TAG => self::resourceOf(ResourceType::Term, new TermAtAddressFinder($route->kind, $route->parameter('slug'))->lastOffSite($this->termRepository)?->id),
             SiteRoute::AUTHOR => self::resourceOf(ResourceType::Author, new AuthorAtAddressFinder($route->parameter('slug'))->lastOffSite($this->authorRepository)?->id),
             SiteRoute::POST => self::resourceOf(ResourceType::Post, $this->postAt($route)->lastOffSite($this->postRepository)?->id),
             default => null,
@@ -170,7 +164,7 @@ final readonly class CmsSiteResources implements SiteResources
     {
         $image = new ImagesFinder([$resource->id()])($this->imageRepository)[0] ?? null;
 
-        return null === $image || (!$next && ImageStatus::Draft->value === $image->status) ? null : Source::ofImage($image->path);
+        return null === $image || (!$next && $image->isDraft()) ? null : Source::ofImage($image->path);
     }
 
     private function lastPageAddress(Resource $resource): ?Source

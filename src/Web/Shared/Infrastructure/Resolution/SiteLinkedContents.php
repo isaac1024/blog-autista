@@ -27,7 +27,6 @@ use Web\Post\Domain\PostRepository;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
-use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
 /**
@@ -121,7 +120,7 @@ final readonly class SiteLinkedContents
     private function terms(array $ids): array
     {
         return array_map(function (TermResponse $term): array {
-            $kind = Taxonomy::Section->value === $term->taxonomy ? 'section' : 'tag';
+            $kind = $term->isSection() ? 'section' : 'tag';
 
             return [
                 'url' => $this->urlGenerator->generate('web_'.$kind, ['slug' => $term->slug]),

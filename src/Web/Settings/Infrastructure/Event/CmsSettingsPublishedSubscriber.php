@@ -6,10 +6,10 @@ namespace Web\Settings\Infrastructure\Event;
 
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
-use Web\Projection\Domain\Projection;
 use Web\Settings\Application\SettingsSaver;
 use Web\Settings\Domain\CmsSettingsPublished;
 use Web\Settings\Domain\SettingsRepository;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each version of the settings the CMS publishes.

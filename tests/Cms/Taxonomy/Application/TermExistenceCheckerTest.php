@@ -24,8 +24,8 @@ final class TermExistenceCheckerTest extends TestCase
             ->with(self::equalTo(TermIdMother::create()))
             ->willReturnOnConsecutiveCalls(TermMother::create(), TermMother::create(taxonomy: Taxonomy::Tag), null);
 
-        self::assertTrue(new TermExistenceChecker(Taxonomy::Section, TermIdMother::DEFAULT_VALUE)($repository));
-        self::assertFalse(new TermExistenceChecker(Taxonomy::Section, TermIdMother::DEFAULT_VALUE)($repository));
-        self::assertFalse(new TermExistenceChecker(Taxonomy::Section, TermIdMother::DEFAULT_VALUE)($repository));
+        self::assertTrue(new TermExistenceChecker(Taxonomy::Section->value, TermIdMother::DEFAULT_VALUE)($repository));
+        self::assertFalse(new TermExistenceChecker(Taxonomy::Section->value, TermIdMother::DEFAULT_VALUE)($repository));
+        self::assertFalse(new TermExistenceChecker(Taxonomy::Section->value, TermIdMother::DEFAULT_VALUE)($repository));
     }
 }

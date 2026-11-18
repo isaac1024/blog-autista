@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Author\Application;
 
 use Cms\Author\Domain\Author;
+use Cms\Author\Domain\AuthorStatus;
 
 /**
  * Read model of an author handed to the adapters, so they don't touch the
@@ -69,5 +70,13 @@ final readonly class AuthorResponse
             $author->canBeUnpublished(),
             $author->canBeDeleted(),
         );
+    }
+
+    /**
+     * Whether it is on the site now.
+     */
+    public function isPublished(): bool
+    {
+        return AuthorStatus::Published->value === $this->status;
     }
 }

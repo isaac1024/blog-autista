@@ -20,7 +20,7 @@ final class TermAtAddressFinderTest extends TestCase
         $repository = $this->createMock(TermRepository::class);
         $repository->expects(self::once())->method('findOnSiteBySlug')->with(Taxonomy::Tag, self::equalTo(SlugMother::create(TermMother::SLUG)))->willReturn($term);
 
-        self::assertEquals(TermResponse::fromTerm($term), new TermAtAddressFinder(Taxonomy::Tag, TermMother::SLUG)->onSite($repository));
+        self::assertEquals(TermResponse::fromTerm($term), new TermAtAddressFinder(Taxonomy::Tag->value, TermMother::SLUG)->onSite($repository));
     }
 
     public function testItFindsTheTermOffTheSiteWhoseLastAddressItWas(): void
@@ -29,15 +29,15 @@ final class TermAtAddressFinderTest extends TestCase
         $repository = $this->createMock(TermRepository::class);
         $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(Taxonomy::Section, self::equalTo(SlugMother::create(TermMother::SLUG)))->willReturn($term);
 
-        self::assertEquals(TermResponse::fromTerm($term), new TermAtAddressFinder(Taxonomy::Section, TermMother::SLUG)->lastOffSite($repository));
+        self::assertEquals(TermResponse::fromTerm($term), new TermAtAddressFinder(Taxonomy::Section->value, TermMother::SLUG)->lastOffSite($repository));
     }
 
     public function testItFindsNoneWhereNoTermIs(): void
     {
         $repository = self::createStub(TermRepository::class);
 
-        self::assertNull(new TermAtAddressFinder(Taxonomy::Section, TermMother::SLUG)->onSite($repository));
-        self::assertNull(new TermAtAddressFinder(Taxonomy::Section, TermMother::SLUG)->lastOffSite($repository));
+        self::assertNull(new TermAtAddressFinder(Taxonomy::Section->value, TermMother::SLUG)->onSite($repository));
+        self::assertNull(new TermAtAddressFinder(Taxonomy::Section->value, TermMother::SLUG)->lastOffSite($repository));
     }
 
     public function testItFindsNoneAtWhatIsNoAddress(): void
@@ -46,7 +46,7 @@ final class TermAtAddressFinderTest extends TestCase
         $repository->expects(self::never())->method('findOnSiteBySlug');
         $repository->expects(self::never())->method('findOffSiteByLastSiteSlug');
 
-        self::assertNull(new TermAtAddressFinder(Taxonomy::Section, 'Vida Diaria')->onSite($repository));
-        self::assertNull(new TermAtAddressFinder(Taxonomy::Section, 'Vida Diaria')->lastOffSite($repository));
+        self::assertNull(new TermAtAddressFinder(Taxonomy::Section->value, 'Vida Diaria')->onSite($repository));
+        self::assertNull(new TermAtAddressFinder(Taxonomy::Section->value, 'Vida Diaria')->lastOffSite($repository));
     }
 }

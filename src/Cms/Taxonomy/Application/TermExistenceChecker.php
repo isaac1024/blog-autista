@@ -13,10 +13,17 @@ use Cms\Taxonomy\Domain\TermRepository;
  */
 final readonly class TermExistenceChecker
 {
+    private Taxonomy $taxonomy;
+
+    /**
+     * @param string $taxonomy one of the Taxonomy values, such as TermResponse::SECTION
+     */
     public function __construct(
-        private Taxonomy $taxonomy,
+        string $taxonomy,
         private string $id,
-    ) {}
+    ) {
+        $this->taxonomy = Taxonomy::fromValue($taxonomy);
+    }
 
     public function __invoke(TermRepository $termRepository): bool
     {

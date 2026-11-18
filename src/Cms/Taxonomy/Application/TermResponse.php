@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Application;
 
+use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
+use Cms\Taxonomy\Domain\TermStatus;
 
 /**
  * Read model of a term handed to the adapters, so they don't touch the
@@ -16,6 +18,12 @@ use Cms\Taxonomy\Domain\Term;
  */
 final readonly class TermResponse
 {
+    /**
+     * The taxonomies a term is of, as its finders take them.
+     */
+    public const string SECTION = Taxonomy::Section->value;
+    public const string TAG = Taxonomy::Tag->value;
+
     /**
      * @param string  $taxonomy              one of the Taxonomy values
      * @param ?string $slug                  null while it is left without one
@@ -66,5 +74,13 @@ final readonly class TermResponse
             $term->canBeUnpublished(),
             $term->canBeDeleted(),
         );
+    }
+
+    /**
+     * Whether it is on the site now.
+     */
+    public function isPublished(): bool
+    {
+        return TermStatus::Published->value === $this->status;
     }
 }

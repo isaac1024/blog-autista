@@ -23,7 +23,7 @@ use Cms\Relation\Application\UsersFinder;
 use Cms\Relation\Domain\RelationRepository;
 use Cms\Taxonomy\Application\TermFinder;
 use Cms\Taxonomy\Application\TermNotFound;
-use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Criteria\InvalidCriteria;
 use Shared\Infrastructure\Ui\ListPagination;
@@ -96,8 +96,8 @@ final class RelationListController extends AbstractController
             RelationSegment::Pages => new PageFinder($id)($this->pageRepository)->title,
             RelationSegment::Images => new ImageFinder($id)($this->imageRepository)->alt,
             RelationSegment::Posts => new PostFinder($id)($this->postRepository)->title,
-            RelationSegment::Sections => new TermFinder(Taxonomy::Section->value, $id)($this->termRepository)->name,
-            RelationSegment::Tags => new TermFinder(Taxonomy::Tag->value, $id)($this->termRepository)->name,
+            RelationSegment::Sections => new TermFinder(TermResponse::SECTION, $id)($this->termRepository)->name,
+            RelationSegment::Tags => new TermFinder(TermResponse::TAG, $id)($this->termRepository)->name,
             RelationSegment::Authors => new AuthorFinder($id)($this->authorRepository)->name,
             RelationSegment::Externals => new ExternalResourceFinder($id)($this->externalRepository)->title,
         };

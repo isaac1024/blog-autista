@@ -7,7 +7,7 @@ namespace Web\Taxonomy\Infrastructure\Event;
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Shared\Infrastructure\Event\EventRetry;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 use Web\Taxonomy\Application\TermSaver;
 use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\SlugTaken;

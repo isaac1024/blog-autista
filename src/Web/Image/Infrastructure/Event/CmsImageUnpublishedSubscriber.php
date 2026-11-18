@@ -10,7 +10,7 @@ use Web\Image\Application\ImageRemover;
 use Web\Image\Domain\CmsImageUnpublished;
 use Web\Image\Domain\ImageRepository;
 use Web\Image\Domain\ImageVariants;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Takes off the site each image the CMS unpublishes.

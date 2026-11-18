@@ -17,7 +17,15 @@ use Shared\Domain\Criteria\OrderDirection;
  */
 final readonly class TermsOfTaxonomyFinder
 {
-    public function __construct(private Taxonomy $taxonomy) {}
+    private Taxonomy $taxonomy;
+
+    /**
+     * @param string $taxonomy one of the Taxonomy values, such as TermResponse::SECTION
+     */
+    public function __construct(string $taxonomy)
+    {
+        $this->taxonomy = Taxonomy::fromValue($taxonomy);
+    }
 
     /**
      * @return list<TermResponse>

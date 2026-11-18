@@ -16,7 +16,6 @@ use Web\Page\Application\SearchPageFinder;
 use Web\Page\Domain\PageRepository;
 use Web\Post\Application\LatestPostsFinder;
 use Web\Post\Domain\PostRepository;
-use Web\Post\Domain\PostSelection;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Shared\Infrastructure\Ui\SiteSearch;
@@ -70,7 +69,7 @@ final readonly class SiteErrorResponse
                 $path,
                 null === $search?->slug ? null : ['url' => $this->urlGenerator->generate('web_page', ['slug' => $search->slug]), 'parameter' => SiteSearch::PARAMETER],
                 $failed ? [] : $this->postCardsComponent->cards(($this->sitePostCards)(
-                    new LatestPostsFinder(new PostSelection(null, null, []), self::LATEST)($this->postRepository),
+                    new LatestPostsFinder(null, null, [], self::LATEST)($this->postRepository),
                 )),
             ));
         });

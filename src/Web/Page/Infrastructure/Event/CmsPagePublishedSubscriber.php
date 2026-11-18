@@ -11,7 +11,7 @@ use Web\Page\Application\PageSaver;
 use Web\Page\Domain\CmsPagePublished;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\SlugTaken;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each page the CMS publishes.

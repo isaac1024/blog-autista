@@ -9,9 +9,9 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Post\Application\PostFinder;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Domain\PostRepository;
+use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsOfTaxonomyByIdFinder;
 use Cms\Taxonomy\Application\TermsOfTaxonomyFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
@@ -56,9 +56,9 @@ final class PostEditController extends AbstractController
 
         return $this->pageRenderer->render(($this->postEditor)(
             $post,
-            new TermsOfTaxonomyFinder(Taxonomy::Section)($termRepository),
+            new TermsOfTaxonomyFinder(TermResponse::SECTION)($termRepository),
             new AllAuthorsFinder()($authorRepository),
-            new TermsOfTaxonomyByIdFinder(Taxonomy::Tag, $post->tagIds)($termRepository),
+            new TermsOfTaxonomyByIdFinder(TermResponse::TAG, $post->tagIds)($termRepository),
             $previewUrl,
             $expiresAt,
         ));

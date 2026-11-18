@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Taxonomy\Application;
 
+use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\Term;
 
 /**
@@ -12,6 +13,12 @@ use Web\Taxonomy\Domain\Term;
  */
 final readonly class TermResponse
 {
+    /**
+     * The taxonomies a term is of, as its finders take them.
+     */
+    public const string SECTION = Taxonomy::Section->value;
+    public const string TAG = Taxonomy::Tag->value;
+
     /**
      * @param string  $taxonomy        one of the Taxonomy values
      * @param ?string $metaDescription null when there is none
@@ -36,5 +43,15 @@ final readonly class TermResponse
             $term->metaDescription(),
             $term->robots()->value,
         );
+    }
+
+    public function isSection(): bool
+    {
+        return self::SECTION === $this->taxonomy;
+    }
+
+    public function isTag(): bool
+    {
+        return self::TAG === $this->taxonomy;
     }
 }

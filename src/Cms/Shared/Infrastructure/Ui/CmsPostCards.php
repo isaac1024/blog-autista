@@ -10,11 +10,9 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Post\Application\LatestPostsOnSiteFinder;
 use Cms\Post\Application\PostOnSiteCardResponse;
 use Cms\Post\Domain\PostRepository;
-use Cms\Post\Domain\PostSelection;
 use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Taxonomy\Application\TermOnSiteResponse;
 use Cms\Taxonomy\Application\TermsOnSiteFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Infrastructure\Ui\PostAddressUrl;
@@ -41,17 +39,21 @@ final readonly class CmsPostCards
     ) {}
 
     /**
+     * @param ?string      $sectionId the section the posts are under, none for any
+     * @param ?string      $authorId  who signs them, none for anyone
+     * @param list<string> $tagIds    any of them, none for every post
+     *
      * @return list<CardPost>
      */
-    public function __invoke(PostSelection $selection, int $limit): array
+    public function __invoke(?string $sectionId, ?string $authorId, array $tagIds, int $limit): array
     {
-        $posts = new LatestPostsOnSiteFinder($selection, $limit)($this->postRepository);
+        $posts = new LatestPostsOnSiteFinder($sectionId, $authorId, $tagIds, $limit)($this->postRepository);
         $images = new ReferenceResolver('image', array_values(array_unique(array_filter(array_map(static fn (PostOnSiteCardResponse $post): ?string => $post->openingImageId, $posts), static fn (?string $id): bool => null !== $id))), null)(
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
         $sections = array_map(
-            static fn (TermOnSiteResponse $term): ?string => Taxonomy::Section->value === $term->taxonomy ? $term->name : null,
+            static fn (TermOnSiteResponse $term): ?string => $term->isSection() ? $term->name : null,
             new TermsOnSiteFinder(array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts))($this->termRepository),
         );
 

@@ -59,6 +59,22 @@ Symfony:
   A contract test on the side that reads (`tests/Web/Redirect`,
   `tests/Cms/Analytics`) fails when the columns it reads change. No other
   table is read across contexts.
+- Within a context, a module reaches another through its Application layer
+  (its finders, use cases and `*Response`), never through its Domain, whose
+  rules are its own: an Infrastructure class may name a Domain class of
+  another module only if it is a port (an interface, such as a repository,
+  which that module's use cases take) or one of the contracts below. A use
+  case takes primitives and builds its own value objects, as
+  `LatestPostsFinder(?string $sectionId, ?string $authorId, array $tagIds,
+  int $limit)` builds its `PostSelection`; a response tells what a caller
+  needs to know of its domain, as `TermResponse::isSection()` or
+  `PageResponse::isPublished()`. The contracts, the public API of a module's
+  domain: `Cms\Redirect\Domain\{SiteResources, Resource, ResourceType,
+  RedirectId, InvalidRedirect, IncomingDecision}`, which every module that
+  publishes implements or uses to retire its contents, and
+  `Cms\Relation\Domain\ResourceType`. PHPat holds this
+  (`tests/Shared/Architecture/ModuleIndependenceRules.php`); a new contract is
+  added there and here.
 
 Three specifics worth spelling out, because they are easy to get wrong:
 

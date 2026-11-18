@@ -7,7 +7,6 @@ namespace Cms\Shared\Infrastructure\Resolution;
 use Cms\Author\Application\AuthorOnSiteResponse;
 use Cms\Author\Application\AuthorsOnSiteFinder;
 use Cms\Author\Domain\AuthorRepository;
-use Cms\Author\Domain\AvatarFile;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageOnSiteResponse;
@@ -20,7 +19,6 @@ use Cms\Shared\Infrastructure\Http\AvatarUrl;
 use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
 use Cms\Taxonomy\Application\TermOnSiteResponse;
 use Cms\Taxonomy\Application\TermsOnSiteFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Clock;
 use Shared\Domain\Redirect\ReferenceResolver;
@@ -112,7 +110,7 @@ final readonly class CmsLinkedContents
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
             ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, $this->posts(...)),
             ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => array_map(function (TermOnSiteResponse $term): array {
-                $kind = Taxonomy::Section->value === $term->taxonomy ? 'section' : 'tag';
+                $kind = $term->isSection() ? 'section' : 'tag';
 
                 return ['url' => $this->urlGenerator->generate('web_'.$kind, ['slug' => $term->slug]), 'title' => $term->name, 'related' => self::related($kind, $term->metaDescription, null, null, null)];
             }, new TermsOnSiteFinder($ids)($this->termRepository))),
@@ -149,7 +147,7 @@ final readonly class CmsLinkedContents
                     'post',
                     $post->excerpt,
                     null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
-                    Taxonomy::Section->value === $section?->taxonomy ? $section->name : null,
+                    true === $section?->isSection() ? $section->name : null,
                     $post->firstPublishedAt,
                 ),
             ];
@@ -171,8 +169,8 @@ final readonly class CmsLinkedContents
             $avatar = null === $author->avatar ? null : [
                 'src' => ($this->avatarUrl)($author->id, $author->avatar, Clock::now()->add(new \DateInterval(self::AVATAR_VALIDITY))),
                 'srcset' => '',
-                'width' => AvatarFile::SIZE,
-                'height' => AvatarFile::SIZE,
+                'width' => AuthorOnSiteResponse::AVATAR_SIZE,
+                'height' => AuthorOnSiteResponse::AVATAR_SIZE,
             ];
 
             return [

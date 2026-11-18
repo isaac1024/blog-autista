@@ -10,7 +10,7 @@ use Web\External\Application\ExternalResourceRemover;
 use Web\External\Domain\CmsExternalResourceUnpublished;
 use Web\External\Domain\ExternalResourceRepository;
 use Web\External\Domain\ImageCopies;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Takes off the site each external resource the CMS unpublishes.

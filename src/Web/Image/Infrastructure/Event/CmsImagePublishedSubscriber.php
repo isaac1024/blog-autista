@@ -10,7 +10,7 @@ use Web\Image\Application\ImageSaver;
 use Web\Image\Domain\CmsImagePublished;
 use Web\Image\Domain\ImageRepository;
 use Web\Image\Domain\ImageVariants;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each image the CMS publishes.

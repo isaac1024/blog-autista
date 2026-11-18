@@ -18,6 +18,7 @@ use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\TargetAddresses;
 use Web\Taxonomy\Application\TermOnSiteFinder;
+use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -93,13 +94,13 @@ final readonly class SiteTargetAddresses implements TargetAddresses
      */
     private function termAddress(string $id): ?string
     {
-        $section = new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository);
+        $section = new TermOnSiteFinder(TermResponse::SECTION, $id)($this->termRepository);
 
         if (null !== $section) {
             return $this->urlGenerator->generate('web_section', ['slug' => $section->slug]);
         }
 
-        $tag = new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository);
+        $tag = new TermOnSiteFinder(TermResponse::TAG, $id)($this->termRepository);
 
         return null === $tag ? null : $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]);
     }

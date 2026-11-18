@@ -10,7 +10,7 @@ use Web\Author\Application\AuthorRemover;
 use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\AvatarCopies;
 use Web\Author\Domain\CmsAuthorUnpublished;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Takes off the site each author the CMS unpublishes.

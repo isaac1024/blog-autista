@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Image\Application;
 
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageStatus;
 
 /**
  * An image as the CMS shows it.
@@ -53,5 +54,29 @@ final readonly class ImageResponse
             $image->canBeUnpublished(),
             $image->canBeDeleted(),
         );
+    }
+
+    /**
+     * Whether it is on the site now.
+     */
+    public function isPublished(): bool
+    {
+        return ImageStatus::Published->value === $this->status;
+    }
+
+    /**
+     * Whether it was never on the site, so it has no address yet.
+     */
+    public function isDraft(): bool
+    {
+        return ImageStatus::Draft->value === $this->status;
+    }
+
+    /**
+     * Whether it was on the site and was taken off it.
+     */
+    public function isUnpublished(): bool
+    {
+        return ImageStatus::Unpublished->value === $this->status;
     }
 }

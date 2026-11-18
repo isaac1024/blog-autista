@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Cms\Post\Infrastructure\Controller;
 
 use Cms\Author\Application\AuthorResponse;
-use Cms\Author\Domain\AuthorStatus;
 use Cms\Post\Application\PostResponse;
 use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostStatus;
@@ -19,7 +18,6 @@ use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Shared\Infrastructure\Ui\PostState;
 use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
-use Cms\Taxonomy\Domain\TermStatus;
 use Shared\Domain\Clock;
 use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\RichText\TiptapRichText;
@@ -347,11 +345,11 @@ final readonly class PostEditor
         ], [
             $this->selectField('section', $post->sectionId ?? '', array_map(fn (TermResponse $section): array => [
                 'value' => $section->id,
-                'label' => $this->optionLabel($section->name, TermStatus::Published->value === $section->status, $this->termState->label($section)),
+                'label' => $this->optionLabel($section->name, $section->isPublished(), $this->termState->label($section)),
             ], $sections)),
             $this->selectField('author', $post->authorId ?? '', array_map(fn (AuthorResponse $author): array => [
                 'value' => $author->id,
-                'label' => $this->optionLabel($author->name, AuthorStatus::Published->value === $author->status, $this->authorState->label($author)),
+                'label' => $this->optionLabel($author->name, $author->isPublished(), $this->authorState->label($author)),
             ], $authors)),
             new PageComponent('Shared:TermsField', [
                 'name' => 'tags',
@@ -362,7 +360,7 @@ final readonly class PostEditor
                     'id' => $tag->id,
                     'name' => $tag->name,
                     'status' => $this->termState->label($tag),
-                    'note' => TermStatus::Published->value === $tag->status ? '' : $this->translator->trans('cms.posts.classification.tag_off_site'),
+                    'note' => $tag->isPublished() ? '' : $this->translator->trans('cms.posts.classification.tag_off_site'),
                 ], $tags),
                 'searchUrl' => $this->urlGenerator->generate('cms_terms_search', ['taxonomy' => 'tags']),
                 'offSite' => $this->translator->trans('cms.posts.classification.tag_off_site'),

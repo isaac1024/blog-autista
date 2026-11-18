@@ -7,7 +7,7 @@ namespace Web\Sitemap\Infrastructure\Event;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 use Web\Sitemap\Application\ImageEntriesToucher;
 use Web\Sitemap\Domain\CmsImagePublished;
 use Web\Sitemap\Domain\CmsImageUnpublished;

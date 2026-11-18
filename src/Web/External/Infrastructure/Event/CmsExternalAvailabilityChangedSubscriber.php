@@ -10,7 +10,7 @@ use Web\External\Application\AvailabilityChanger;
 use Web\External\Domain\CmsExternalResourceAvailabilityChanged;
 use Web\External\Domain\ExternalResourceRepository;
 use Web\External\Domain\ImageCopies;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Paints, or stops painting, each external resource whose availability the CMS checked.

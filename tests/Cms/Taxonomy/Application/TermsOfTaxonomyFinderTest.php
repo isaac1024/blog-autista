@@ -39,7 +39,7 @@ final class TermsOfTaxonomyFinderTest extends TestCase
         $tags = [TaxonomyFilter::equalTo(Taxonomy::Tag)];
         $byName = new Order('name', OrderDirection::Ascending);
 
-        self::assertEquals(array_map(TermResponse::fromTerm(...), [...$first, ...$last]), new TermsOfTaxonomyFinder(Taxonomy::Tag)($repository));
+        self::assertEquals(array_map(TermResponse::fromTerm(...), [...$first, ...$last]), new TermsOfTaxonomyFinder(Taxonomy::Tag->value)($repository));
         self::assertEquals([
             new Criteria(limit: Criteria::MAX_LIMIT, filters: $tags, order: $byName, offset: 0),
             new Criteria(limit: Criteria::MAX_LIMIT, filters: $tags, order: $byName, offset: Criteria::MAX_LIMIT),
@@ -51,6 +51,6 @@ final class TermsOfTaxonomyFinderTest extends TestCase
         $repository = $this->createMock(TermRepository::class);
         $repository->expects(self::once())->method('matching')->willReturn([]);
 
-        self::assertSame([], new TermsOfTaxonomyFinder(Taxonomy::Section)($repository));
+        self::assertSame([], new TermsOfTaxonomyFinder(Taxonomy::Section->value)($repository));
     }
 }

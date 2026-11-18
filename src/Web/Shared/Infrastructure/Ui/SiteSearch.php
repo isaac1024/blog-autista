@@ -11,7 +11,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Web\Post\Application\PostSearcher;
 use Web\Post\Domain\PostRepository;
-use Web\Post\Domain\SearchTerms;
 
 /**
  * Adds to the page that searches the site its search: the field, then what
@@ -46,7 +45,7 @@ final readonly class SiteSearch
         $page = $this->form($page, $slug, $text);
 
         if ($found->tooShort) {
-            return $page->withMain('Shared:Notice', ['message' => $this->translator->trans('site.search.too_short', ['%min%' => SearchTerms::MIN_LENGTH])]);
+            return $page->withMain('Shared:Notice', ['message' => $this->translator->trans('site.search.too_short', ['%min%' => PostSearcher::MIN_WORD_LENGTH])]);
         }
 
         if ($found->tooBroad) {

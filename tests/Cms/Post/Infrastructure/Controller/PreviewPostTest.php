@@ -83,6 +83,16 @@ final class PreviewPostTest extends TestCase
     }
 
     /**
+     * What is a section is no tag, though it is among the tags of the post.
+     */
+    public function testItLeadsToNoSectionAsATag(): void
+    {
+        $page = $this->preview(PostMother::publishable(tags: [PostMother::SECTION, PostMother::TAG]), onSite: true);
+
+        PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Sensorialidad', 'url' => '/tag/sensorialidad.html']]]);
+    }
+
+    /**
      * The opening image saved is previewed as the site would paint it while
      * it is on the site, and the preview is shared with it.
      */

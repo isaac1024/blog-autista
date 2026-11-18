@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Author\Application;
 
 use Cms\Author\Domain\Author;
+use Cms\Author\Domain\AvatarFile;
 
 /**
  * An author as the site shows it: its name, the slug it is addressed by,
@@ -13,6 +14,11 @@ use Cms\Author\Domain\Author;
  */
 final readonly class AuthorOnSiteResponse
 {
+    /**
+     * The side, in pixels, of the square file of an avatar.
+     */
+    public const int AVATAR_SIZE = AvatarFile::SIZE;
+
     public function __construct(
         public string $id,
         public string $name,

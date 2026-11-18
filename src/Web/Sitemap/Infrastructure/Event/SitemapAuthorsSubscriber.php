@@ -8,7 +8,7 @@ use Shared\Domain\Clock;
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 use Web\Sitemap\Application\EntryPlacer;
 use Web\Sitemap\Application\EntryRemover;
 use Web\Sitemap\Domain\CmsAuthorPublished;

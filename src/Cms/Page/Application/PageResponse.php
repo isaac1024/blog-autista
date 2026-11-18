@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Page\Application;
 
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageStatus;
 
 /**
  * Read model of a page handed to the adapters, so they don't touch the aggregate.
@@ -71,5 +72,13 @@ final readonly class PageResponse
             $page->canBeUnpublished(),
             $page->canBeDeleted(),
         );
+    }
+
+    /**
+     * Whether it is on the site now.
+     */
+    public function isPublished(): bool
+    {
+        return PageStatus::Published->value === $this->status;
     }
 }

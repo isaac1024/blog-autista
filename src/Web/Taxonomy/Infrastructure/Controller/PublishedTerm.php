@@ -12,7 +12,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Web\Post\Application\PostLister;
 use Web\Post\Domain\PostRepository;
-use Web\Post\Domain\PostSelection;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Shared\Infrastructure\Ui\SiteRobots;
@@ -40,9 +39,10 @@ final readonly class PublishedTerm
     /**
      * @param string $route the route of the pages of the term, such as web_section
      */
-    public function __invoke(TermResponse $term, string $route, PostSelection $selection, int $page): Page
+    public function __invoke(TermResponse $term, string $route, int $page): Page
     {
-        $posts = new PostLister($selection, $page)($this->postRepository);
+        // A section lists the posts under it; a tag, those labelled with it.
+        $posts = $term->isSection() ? new PostLister($term->id, null, [], $page)($this->postRepository) : new PostLister(null, null, [$term->id], $page)($this->postRepository);
         $parameters = ['slug' => $term->slug];
         $title = ListPagination::FIRST_PAGE === $page ? $term->name : $this->translator->trans('site.posts.page_title', ['%name%' => $term->name, '%page%' => $page]);
         $canonical = $this->pagination->siteUrl($route, $parameters, $page, UrlGeneratorInterface::ABSOLUTE_URL);

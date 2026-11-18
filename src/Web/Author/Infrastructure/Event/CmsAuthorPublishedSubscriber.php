@@ -12,7 +12,7 @@ use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\AvatarCopies;
 use Web\Author\Domain\CmsAuthorPublished;
 use Web\Author\Domain\SlugTaken;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each author the CMS publishes.

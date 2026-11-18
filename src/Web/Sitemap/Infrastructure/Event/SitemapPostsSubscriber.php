@@ -9,7 +9,7 @@ use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Shared\Infrastructure\Ui\PostAddressUrl;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 use Web\Sitemap\Application\PostEntryPlacer;
 use Web\Sitemap\Application\PostEntryRemover;
 use Web\Sitemap\Domain\CmsPostPublished;

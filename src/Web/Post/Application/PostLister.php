@@ -16,10 +16,21 @@ final readonly class PostLister
 {
     public const int PAGE_SIZE = 20;
 
+    private PostSelection $selection;
+
+    /**
+     * @param ?string      $sectionId the section the posts are under, none for any
+     * @param ?string      $authorId  who signs them, none for anyone
+     * @param list<string> $tagIds    any of them, none for every post
+     */
     public function __construct(
-        private PostSelection $selection,
+        ?string $sectionId,
+        ?string $authorId,
+        array $tagIds,
         private int $page,
-    ) {}
+    ) {
+        $this->selection = new PostSelection($sectionId, $authorId, $tagIds);
+    }
 
     public function __invoke(PostRepository $postRepository): PostsPageResponse
     {

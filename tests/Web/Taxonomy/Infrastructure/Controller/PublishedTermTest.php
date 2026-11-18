@@ -73,7 +73,7 @@ final class PublishedTermTest extends TestCase
             new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects),
             new ListPagination($translator, $urlGenerator),
             $translator,
-        )(TermResponse::fromTerm($term), 'web_tag', PostSelection::ofTag(self::TERM), 1);
+        )(TermResponse::fromTerm($term), 'web_tag', 1);
         ComponentContracts::assertHonoured($page);
 
         self::assertSame(['type' => 'term', 'id' => self::TERM], $page->countedContent);
@@ -100,10 +100,11 @@ final class PublishedTermTest extends TestCase
         $posts = array_map(PostCardMother::of(...), $posts);
         $postRepository = $this->createMock(PostRepository::class);
         $postRepository->expects(self::exactly(2))->method('listed')->willReturnCallback(
-            static fn (PostSelection $selection, int $offset, int $limit): array => \array_slice($posts, $offset, $limit),
+            // A tag lists the posts labelled with it.
+            static fn (PostSelection $selection, int $offset, int $limit): array => [self::TERM] === $selection->tagIds && null === $selection->sectionId ? \array_slice($posts, $offset, $limit) : [],
         );
 
-        $first = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', PostSelection::ofTag(self::TERM), 1);
+        $first = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', 1);
         ComponentContracts::assertHonoured($first);
 
         self::assertSame('Sueño', $first->title);
@@ -114,7 +115,7 @@ final class PublishedTermTest extends TestCase
         self::assertSame(['url' => '/vida-diaria/2026/11/07/entrada-0.html', 'title' => 'Entrada 0', 'excerpt' => 'Qué cambió el primer día con tapones.', 'section' => 'Vida diaria'], array_intersect_key($cards[0], array_flip(['url', 'title', 'excerpt', 'section'])));
         PageComponents::one($first, 'Shared:Pagination', ['previousUrl' => null, 'nextUrl' => '/tag/sueno.html?pagina=2']);
 
-        $second = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', PostSelection::ofTag(self::TERM), 2);
+        $second = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', 2);
 
         self::assertSame('site.posts.page_title(%name%=Sueño, %page%=2)', $second->title);
         self::assertSame(RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2', $second->canonical);
@@ -152,7 +153,7 @@ final class PublishedTermTest extends TestCase
         $postRepository = self::createStub(PostRepository::class);
         $postRepository->method('listed')->willReturn([]);
 
-        $page = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', PostSelection::ofTag(self::TERM), 1);
+        $page = $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', 1);
 
         PageComponents::one($page, 'Shared:Notice', ['message' => 'site.posts.empty']);
         self::assertSame([], PageComponents::find($page, 'Shared:PostCards', []));
@@ -169,7 +170,7 @@ final class PublishedTermTest extends TestCase
 
         $this->expectException(PostsPageNotFound::class);
 
-        $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', PostSelection::ofTag(self::TERM), 2);
+        $this->publishedTerm($postRepository)(TermResponse::fromTerm(self::term()), 'web_tag', 2);
     }
 
     private function publishedTerm(PostRepository $postRepository): PublishedTerm

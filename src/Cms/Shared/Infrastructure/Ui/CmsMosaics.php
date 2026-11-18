@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Shared\Infrastructure\Ui;
 
-use Cms\Post\Domain\PostSelection;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Twig\Components\PostCards;
 use Shared\Infrastructure\Ui\PostCardsComponent;
@@ -32,7 +31,7 @@ final readonly class CmsMosaics
 
         foreach ($content->mosaics() as $mosaic) {
             $mosaics[$mosaic->key()] ??= $this->postCardsComponent->cards(
-                ($this->postCards)(new PostSelection($mosaic->sectionId(), $mosaic->authorId(), $mosaic->tagIds()), $mosaic->limit()),
+                ($this->postCards)($mosaic->sectionId(), $mosaic->authorId(), $mosaic->tagIds(), $mosaic->limit()),
             );
         }
 

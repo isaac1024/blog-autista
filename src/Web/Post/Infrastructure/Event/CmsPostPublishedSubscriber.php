@@ -11,7 +11,7 @@ use Web\Post\Application\PostSaver;
 use Web\Post\Domain\AddressTaken;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\PostRepository;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Puts on the site each post the CMS publishes.

@@ -33,7 +33,7 @@ final class TermsOfTaxonomyByIdFinderTest extends TestCase
 
         self::assertEquals(
             [TermResponse::fromTerm($tag)],
-            new TermsOfTaxonomyByIdFinder(Taxonomy::Tag, [TermIdMother::DEFAULT_VALUE, 'etiqueta', self::MISSING, self::OTHER])($repository),
+            new TermsOfTaxonomyByIdFinder(Taxonomy::Tag->value, [TermIdMother::DEFAULT_VALUE, 'etiqueta', self::MISSING, self::OTHER])($repository),
         );
     }
 }

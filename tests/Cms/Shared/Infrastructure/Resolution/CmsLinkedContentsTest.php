@@ -122,4 +122,26 @@ final class CmsLinkedContentsTest extends KernelTestCase
             self::AUTHOR => ['kind' => 'author', 'summary' => AuthorMother::META_DESCRIPTION, 'image' => ['src' => $avatar['src'], 'srcset' => '', 'width' => 400, 'height' => 400], 'section' => null, 'published' => null],
         ], $related);
     }
+
+    /**
+     * A post whose section is off the site, or is a tag, shows no section on
+     * its card.
+     */
+    public function testACardOfAPostShowsNoSectionThatIsNotOneOnTheSite(): void
+    {
+        $posts = self::getContainer()->get(PostRepository::class);
+        $posts->save(PostMother::published(id: '01a1b801-ce58-723d-8234-b76d9105b004', slug: 'sin-seccion', section: '01a1b801-ce58-723d-8234-b76d9105b0ff'));
+        $posts->save(PostMother::published(id: '01a1b801-ce58-723d-8234-b76d9105b005', slug: 'con-etiqueta', section: self::TAG));
+        $content = RichText::fromArray(['version' => 1, 'blocks' => [
+            ['type' => 'paragraph', 'text' => [
+                ['text' => 'uno', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105b004'],
+                ['text' => 'otro', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105b005'],
+            ]],
+        ]]);
+
+        self::assertSame([null, null], array_values(array_map(
+            static fn (array $linked): mixed => \is_array($linked['related'] ?? null) && \array_key_exists('section', $linked['related']) ? $linked['related']['section'] : 'no card',
+            self::getContainer()->get(CmsLinkedContents::class)($content, [], null),
+        )));
+    }
 }

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Cms\Post\Infrastructure\Controller;
 
 use Cms\Author\Application\AuthorOnSiteFinder;
+use Cms\Author\Application\AuthorOnSiteResponse;
 use Cms\Author\Application\AuthorsFinder;
 use Cms\Author\Domain\AuthorRepository;
-use Cms\Author\Domain\AvatarFile;
 use Cms\Image\Application\ImageOnSiteResponse;
 use Cms\Image\Application\ImagesOnSiteFinder;
 use Cms\Image\Domain\ImageRepository;
@@ -16,10 +16,10 @@ use Cms\Shared\Infrastructure\Http\AvatarUrl;
 use Cms\Shared\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Shared\Infrastructure\Ui\PreviewLayout;
-use Cms\Taxonomy\Application\TermOnSiteFinder;
 use Cms\Taxonomy\Application\TermOnSiteResponse;
+use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsOfTaxonomyByIdFinder;
-use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Application\TermsOnSiteFinder;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Clock;
 use Shared\Domain\Redirect\ReferenceResolver;
@@ -112,13 +112,13 @@ final readonly class PreviewPost
      */
     private function section(?string $id): array
     {
-        $onSite = null === $id ? null : $this->terms(Taxonomy::Section, [$id])[$id] ?? null;
+        $onSite = null === $id ? null : $this->terms(TermResponse::SECTION, [$id])[$id] ?? null;
 
         if (null !== $onSite) {
             return ['name' => $onSite->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $onSite->slug])];
         }
 
-        $saved = null === $id ? [] : new TermsOfTaxonomyByIdFinder(Taxonomy::Section, [$id])($this->termRepository);
+        $saved = null === $id ? [] : new TermsOfTaxonomyByIdFinder(TermResponse::SECTION, [$id])($this->termRepository);
 
         return ['name' => $saved[0]->name ?? '', 'url' => null];
     }
@@ -156,7 +156,7 @@ final readonly class PreviewPost
                 'avatar' => null === $onSite->avatar ? null : [
                     'src' => ($this->avatarUrl)($onSite->id, $onSite->avatar, Clock::now()->add(new \DateInterval(self::AVATAR_VALIDITY))),
                     'srcset' => '',
-                    'size' => AvatarFile::SIZE,
+                    'size' => AuthorOnSiteResponse::AVATAR_SIZE,
                     'alt' => $onSite->name,
                 ],
             ];
@@ -179,7 +179,7 @@ final readonly class PreviewPost
     {
         $tags = [];
 
-        foreach ($this->terms(Taxonomy::Tag, $ids) as $tag) {
+        foreach ($this->terms(TermResponse::TAG, $ids) as $tag) {
             $tags[$tag->slug] = ['name' => $tag->name, 'url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug])];
         }
 
@@ -188,29 +188,21 @@ final readonly class PreviewPost
 
     /**
      * The terms of the taxonomy among those given, in order, as they are on
-     * the site, keyed by the id given; one off the site, as the term of the
-     * taxonomy its address now leads to.
+     * the site, read at once, keyed by the id given; one off the site, as the
+     * term of the taxonomy its address now leads to.
      *
+     * @param string       $taxonomy TermResponse::SECTION or TermResponse::TAG
      * @param list<string> $ids
      *
      * @return array<string, TermOnSiteResponse>
      */
-    private function terms(Taxonomy $taxonomy, array $ids): array
+    private function terms(string $taxonomy, array $ids): array
     {
         $resolved = new ReferenceResolver('term', $ids, null)(
-            function (array $ids) use ($taxonomy): array {
-                $terms = [];
-
-                foreach ($ids as $id) {
-                    $term = new TermOnSiteFinder($taxonomy, $id)($this->termRepository);
-
-                    if (null !== $term) {
-                        $terms[$id] = $term;
-                    }
-                }
-
-                return $terms;
-            },
+            fn (array $ids): array => array_filter(
+                new TermsOnSiteFinder($ids)($this->termRepository),
+                static fn (TermOnSiteResponse $term): bool => $taxonomy === $term->taxonomy,
+            ),
             $this->redirectsByOrigin,
         );
         $terms = [];

@@ -15,7 +15,7 @@ use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Taxonomy\Application\TermOnSiteFinder;
-use Web\Taxonomy\Domain\Taxonomy;
+use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Domain\TermRepository;
 
 /**
@@ -40,8 +40,8 @@ final readonly class SitePublishedContents implements PublishedContents
         return match ($content->type()) {
             ContentType::Page => [] !== new PagesOnSiteFinder([$id])($this->pageRepository),
             ContentType::Post => null !== new PostOnSiteFinder($id)($this->postRepository),
-            ContentType::Term => null !== new TermOnSiteFinder(Taxonomy::Section->value, $id)($this->termRepository)
-                || null !== new TermOnSiteFinder(Taxonomy::Tag->value, $id)($this->termRepository),
+            ContentType::Term => null !== new TermOnSiteFinder(TermResponse::SECTION, $id)($this->termRepository)
+                || null !== new TermOnSiteFinder(TermResponse::TAG, $id)($this->termRepository),
             ContentType::Author => null !== new AuthorOnSiteFinder($id)($this->authorRepository),
         };
     }

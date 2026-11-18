@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Web\Tests\Projection\Infrastructure;
+namespace Web\Tests\Shared\Infrastructure\Persistence;
 
 use Doctrine\DBAL\Connection;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 
 /**

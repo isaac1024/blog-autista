@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cms\Post\Application;
 
 use Cms\Post\Domain\Post;
+use Cms\Post\Domain\PostStatus;
 
 /**
  * Read model of a post handed to the adapters, so they don't touch the
@@ -86,5 +87,13 @@ final readonly class PostResponse
             $post->canBeUnpublished(),
             $post->canBeDeleted(),
         );
+    }
+
+    /**
+     * Whether it is on the site now.
+     */
+    public function isPublished(): bool
+    {
+        return PostStatus::Published->value === $this->status;
     }
 }

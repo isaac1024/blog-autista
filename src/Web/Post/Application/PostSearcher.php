@@ -15,6 +15,11 @@ use Web\Post\Domain\SearchTooBroad;
  */
 final readonly class PostSearcher
 {
+    /**
+     * How long a word must be to be searched, as the search tells the reader.
+     */
+    public const int MIN_WORD_LENGTH = SearchTerms::MIN_LENGTH;
+
     public function __construct(
         private string $text,
         private int $page,

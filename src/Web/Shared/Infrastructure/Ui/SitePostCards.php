@@ -16,7 +16,6 @@ use Web\Post\Application\PostCardResponse;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
-use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\TermRepository;
 
 /**
@@ -49,7 +48,7 @@ final readonly class SitePostCards
         );
         $sections = array_filter(
             new TermsOnSiteFinder(array_map(static fn (PostCardResponse $post): string => $post->sectionId, $posts))($this->termRepository),
-            static fn (TermResponse $term): bool => Taxonomy::Section->value === $term->taxonomy,
+            static fn (TermResponse $term): bool => $term->isSection(),
         );
 
         return array_map(fn (PostCardResponse $post): array => [

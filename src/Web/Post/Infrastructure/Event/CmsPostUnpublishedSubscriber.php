@@ -9,7 +9,7 @@ use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Post\Application\PostRemover;
 use Web\Post\Domain\CmsPostUnpublished;
 use Web\Post\Domain\PostRepository;
-use Web\Projection\Domain\Projection;
+use Web\Shared\Domain\Projection;
 
 /**
  * Takes off the site each post the CMS unpublishes.

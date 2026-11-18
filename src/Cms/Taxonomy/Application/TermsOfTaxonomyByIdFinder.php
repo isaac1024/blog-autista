@@ -15,13 +15,18 @@ use Shared\Domain\DomainError;
  */
 final readonly class TermsOfTaxonomyByIdFinder
 {
+    private Taxonomy $taxonomy;
+
     /**
+     * @param string       $taxonomy one of the Taxonomy values, such as TermResponse::SECTION
      * @param list<string> $ids
      */
     public function __construct(
-        private Taxonomy $taxonomy,
+        string $taxonomy,
         private array $ids,
-    ) {}
+    ) {
+        $this->taxonomy = Taxonomy::fromValue($taxonomy);
+    }
 
     /**
      * @return list<TermResponse>

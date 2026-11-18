@@ -19,6 +19,11 @@ final readonly class TermOnSiteResponse
         public string $taxonomy,
     ) {}
 
+    public function isSection(): bool
+    {
+        return TermResponse::SECTION === $this->taxonomy;
+    }
+
     /**
      * The term as it is on the site, none while it is off it.
      */
