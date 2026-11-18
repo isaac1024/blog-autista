@@ -19,12 +19,12 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Publishes a page as it is saved. When that changes the redirects, it asks
@@ -41,7 +41,6 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PagePublishController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly RedirectRepository $redirectRepository,
         private readonly SiteResources $siteResources,
         private readonly MutualExclusion $mutualExclusion,
@@ -49,10 +48,9 @@ final class PagePublishController extends AbstractController
     ) {}
 
     #[Route('/pages/{id}/publish', name: 'cms_pages_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_pages_publish')]
     public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus): Response
     {
-        $this->csrf->assertValid($request);
-
         $resource = Resource::page($id);
         $outlook = PublicationRequest::outlook($request);
 

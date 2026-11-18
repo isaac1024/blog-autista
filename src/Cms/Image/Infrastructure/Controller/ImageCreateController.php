@@ -10,12 +10,12 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Uploads an image, cropped and encoded by the browser, with its alternative
@@ -24,10 +24,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ImageCreateController extends AbstractController
 {
     #[Route('/images', name: 'cms_images_create', methods: ['POST'])]
-    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_images_create')]
+    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         $image = $request->files->get('image');
         $id = ImageId::random()->value();
 

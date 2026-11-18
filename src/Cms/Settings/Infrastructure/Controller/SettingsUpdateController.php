@@ -9,19 +9,18 @@ use Cms\Settings\Application\SettingsUpdater;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class SettingsUpdateController extends AbstractController
 {
     #[Route('/settings', name: 'cms_settings_update', methods: ['POST'])]
-    public function __invoke(Request $request, SettingsRepository $settingsRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_settings_update')]
+    public function __invoke(Request $request, SettingsRepository $settingsRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         try {
             new SettingsUpdater(
                 $request->request->getString('name'),

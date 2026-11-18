@@ -20,12 +20,12 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Publishes an author as it is saved. When that changes the redirects, it
@@ -42,7 +42,6 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class AuthorPublishController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly RedirectRepository $redirectRepository,
         private readonly SiteResources $siteResources,
         private readonly MutualExclusion $mutualExclusion,
@@ -50,10 +49,9 @@ final class AuthorPublishController extends AbstractController
     ) {}
 
     #[Route('/authors/{id}/publish', name: 'cms_authors_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_authors_publish')]
     public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
     {
-        $this->csrf->assertValid($request);
-
         $resource = Resource::author($id);
         $outlook = PublicationRequest::outlook($request);
 

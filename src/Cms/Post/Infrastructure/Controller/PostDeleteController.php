@@ -10,12 +10,11 @@ use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostUsage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Deletes a post off the site, then goes back to the list of posts.
@@ -23,10 +22,9 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PostDeleteController extends AbstractController
 {
     #[Route('/posts/{id}/delete', name: 'cms_posts_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, PostUsage $postUsage, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_posts_delete')]
+    public function __invoke(string $id, PostRepository $postRepository, EventBus $eventBus, PostUsage $postUsage): Response
     {
-        $csrf->assertValid($request);
-
         try {
             new PostDeleter($id)($postRepository, $eventBus, $postUsage);
         } catch (PostNotFound $exception) {

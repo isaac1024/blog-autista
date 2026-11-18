@@ -18,12 +18,12 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Takes a term off the site with what the editor chose for its addresses.
@@ -37,7 +37,6 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class TermUnpublishController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly RedirectRepository $redirectRepository,
         private readonly SiteResources $siteResources,
         private readonly MutualExclusion $mutualExclusion,
@@ -45,10 +44,9 @@ final class TermUnpublishController extends AbstractController
     ) {}
 
     #[Route('/{taxonomy}/{id}/unpublish', name: 'cms_terms_unpublish', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_terms_unpublish')]
     public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus, TermRedirects $termRedirects): Response
     {
-        $this->csrf->assertValid($request);
-
         $parameters = ['taxonomy' => $taxonomy->value, 'id' => $id];
 
         try {

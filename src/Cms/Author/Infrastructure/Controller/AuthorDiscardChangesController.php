@@ -10,12 +10,11 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Goes back to the editor, which shows the author as it is on the site again.
@@ -23,10 +22,9 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class AuthorDiscardChangesController extends AbstractController
 {
     #[Route('/authors/{id}/discard', name: 'cms_authors_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_authors_discard')]
+    public function __invoke(string $id, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
     {
-        $csrf->assertValid($request);
-
         try {
             new AuthorChangesDiscarder($id)($authorRepository, $eventBus, $avatarStorage);
         } catch (AuthorNotFound $exception) {

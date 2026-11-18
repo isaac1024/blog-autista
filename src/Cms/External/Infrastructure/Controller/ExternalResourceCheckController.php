@@ -11,12 +11,11 @@ use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Checks whether the address of an external resource still leads to it,
@@ -26,17 +25,15 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ExternalResourceCheckController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly EventBus $eventBus,
         private readonly ResourceReader $reader,
         private readonly ResourceImageStorage $imageStorage,
     ) {}
 
     #[Route('/externals/{id}/check', name: 'cms_externals_check', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository): Response
+    #[IsCsrfTokenValid('cms_externals_check')]
+    public function __invoke(string $id, ExternalResourceRepository $resourceRepository): Response
     {
-        $this->csrf->assertValid($request);
-
         try {
             $outcome = new ExternalResourceChecker($id)($resourceRepository, $this->eventBus, $this->reader, $this->imageStorage);
         } catch (ExternalResourceNotFound $exception) {

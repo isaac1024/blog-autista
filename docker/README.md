@@ -52,7 +52,7 @@ grants privileges to that user.
 | Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; the `worker` service consumes it in development (`docker compose logs -f worker`), cron in production |
 | Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`, plus tasks of a context such as `#[AsPeriodicTask]` on `Web\Analytics\Infrastructure\Scheduler\NightlyVisitCount`; consume with `messenger:consume scheduler_default` |
 | Visit counts | `symfony/rate-limiter` + Redis | The site counts its visits itself, with no third party: see [Visit counts](#visit-counts) |
-| Security | `symfony/security-bundle` | The CMS has one administrator, read from `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD` by `Cms\Authentication\Infrastructure\Security\AdministratorUserProvider`; `form_login` in `config/packages/security.yaml` |
+| Security | `symfony/security-bundle` | The CMS has one administrator, read from `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` (the hash, kept in the secrets vault in production) by `Cms\Authentication\Infrastructure\Security\AdministratorUserProvider`; `form_login` in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Every component lives in `Shared\Infrastructure\Twig\Components` (`Shared:` prefix, templates in `templates/components/shared/`); the contexts compose them |
 
 Doctrine mappings are declared per module (`src/Cms/Page/Domain`) and
@@ -223,10 +223,24 @@ images, from `public/media/`, under `/media/`.
 - `APP_SECRET`: random and non-empty, for example `php -r 'echo bin2hex(random_bytes(32));'`.
   `.env` leaves it empty on purpose, and the CMS refuses to authenticate with
   an empty one.
-- `CMS_USER_IDENTIFIER` and a strong `CMS_USER_PASSWORD`. The CMS refuses
-  the development password `admin` in production. Both checks run when the
-  CMS first needs the administrator, on the first request to its host, not
-  when the app boots, so open the CMS right after deploying.
+- `CMS_USER_IDENTIFIER` in `.env.local`, and the hash of a strong password,
+  never the password, in the secrets vault of production. Once, make the keys
+  of the vault and keep the private one only on the account (the recipe of
+  `.gitignore` leaves it out of the repository):
+
+  ```bash
+  bin/console secrets:generate-keys --env=prod
+  bin/console security:hash-password   # type the password; copy the hash
+  bin/console secrets:set CMS_USER_PASSWORD_HASH --env=prod   # paste the hash
+  ```
+
+  Commit `config/secrets/prod/` but `prod.decrypt.private.php`, which goes to
+  the account by hand. To change the password, hash a new one and `secrets:set`
+  it again. Leave `CMS_USER_PASSWORD_HASH` out of `.env.local`: a value there
+  would hide the vault's. The CMS refuses the hash of the development
+  password, `admin`, in production. Both checks run when the CMS first needs
+  the administrator, on the first request to its host, not when the app
+  boots, so open the CMS right after deploying.
 - `WEB_HOST`, `CMS_HOST`, `DEFAULT_URI`, `DATABASE_URL`,
   `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN` and
   `REDIS_URL` with the real values, in `.env.local` on the account. Clear the
@@ -249,7 +263,7 @@ images, from `public/media/`, under `/media/`.
   for the event that frees it: the site tries again a minute later, up to the
   three retries of `async`. If it still lands in `failed`, the event that
   frees the address failed first: retry that one, then the page.
-- Changing `CMS_USER_PASSWORD` or `CMS_USER_IDENTIFIER` signs out every CMS
+- Changing the password or `CMS_USER_IDENTIFIER` signs out every CMS
   session. Changing `APP_SECRET` does too, and also invalidates every preview
   link already handed out: rotate it only when needed, and say so to whoever
   holds a preview link.

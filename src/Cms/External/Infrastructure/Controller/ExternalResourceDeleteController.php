@@ -11,12 +11,11 @@ use Cms\External\Domain\ExternalResourceUsage;
 use Cms\External\Domain\ResourceImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Deletes an external resource off the site that nothing uses, with its
@@ -25,17 +24,15 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ExternalResourceDeleteController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly EventBus $eventBus,
         private readonly ResourceImageStorage $imageStorage,
         private readonly ExternalResourceUsage $usage,
     ) {}
 
     #[Route('/externals/{id}/delete', name: 'cms_externals_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository): Response
+    #[IsCsrfTokenValid('cms_externals_delete')]
+    public function __invoke(string $id, ExternalResourceRepository $resourceRepository): Response
     {
-        $this->csrf->assertValid($request);
-
         try {
             new ExternalResourceDeleter($id)($resourceRepository, $this->eventBus, $this->imageStorage, $this->usage);
         } catch (ExternalResourceNotFound $exception) {

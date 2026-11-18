@@ -18,12 +18,12 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
 use Shared\Domain\Transaction;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Takes an image off the site with what the editor chose for its addresses.
@@ -37,7 +37,6 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ImageUnpublishController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly RedirectRepository $redirectRepository,
         private readonly SiteResources $siteResources,
         private readonly MutualExclusion $mutualExclusion,
@@ -45,10 +44,9 @@ final class ImageUnpublishController extends AbstractController
     ) {}
 
     #[Route('/images/{id}/unpublish', name: 'cms_images_unpublish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_images_unpublish')]
     public function __invoke(string $id, Request $request, ImageRepository $imageRepository, EventBus $eventBus, ImageRedirects $imageRedirects): Response
     {
-        $this->csrf->assertValid($request);
-
         try {
             new ResourceRetirement(
                 RedirectId::random()->value(),

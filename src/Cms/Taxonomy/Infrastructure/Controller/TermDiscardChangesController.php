@@ -9,12 +9,11 @@ use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Goes back to the editor, which shows the term as it is on the site again.
@@ -22,10 +21,9 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class TermDiscardChangesController extends AbstractController
 {
     #[Route('/{taxonomy}/{id}/discard', name: 'cms_terms_discard', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_terms_discard')]
+    public function __invoke(TaxonomySegment $taxonomy, string $id, TermRepository $termRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         try {
             new TermChangesDiscarder($taxonomy->taxonomy(), $id)($termRepository, $eventBus);
         } catch (TermNotFound $exception) {

@@ -11,22 +11,19 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Shared\Domain\DomainError;
 use Shared\Domain\MutualExclusion;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class RedirectUpdateController extends AbstractController
 {
-    public function __construct(private readonly CsrfRequestGuard $csrf) {}
-
     #[Route('/redirects/{id}', name: 'cms_redirects_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_redirects_update')]
     public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
     {
-        $this->csrf->assertValid($request);
-
         try {
             new RedirectRetargeter($id, RedirectTargetField::target(RedirectTargetField::fromRequest($request, '')))($redirectRepository, $siteResources, $mutualExclusion);
         } catch (RedirectNotFound $exception) {

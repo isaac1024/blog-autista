@@ -10,19 +10,18 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class AuthorCreateController extends AbstractController
 {
     #[Route('/authors', name: 'cms_authors_create', methods: ['POST'])]
-    public function __invoke(Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_authors_create')]
+    public function __invoke(Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
     {
-        $csrf->assertValid($request);
-
         $id = AuthorId::random()->value();
 
         try {

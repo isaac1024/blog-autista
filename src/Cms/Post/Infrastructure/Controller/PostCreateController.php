@@ -9,11 +9,11 @@ use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Creates a post from its title, then opens its editor.
@@ -21,10 +21,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PostCreateController extends AbstractController
 {
     #[Route('/posts', name: 'cms_posts_create', methods: ['POST'])]
-    public function __invoke(Request $request, PostRepository $postRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_posts_create')]
+    public function __invoke(Request $request, PostRepository $postRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         $id = PostId::random()->value();
 
         try {

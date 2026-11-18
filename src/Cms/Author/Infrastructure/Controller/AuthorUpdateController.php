@@ -10,7 +10,6 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -18,15 +17,16 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class AuthorUpdateController extends AbstractController
 {
     public function __construct(private readonly TiptapRichText $tiptapRichText) {}
 
     #[Route('/authors/{id}', name: 'cms_authors_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_authors_update')]
+    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
     {
-        $csrf->assertValid($request);
         $avatar = $request->files->get('avatar');
 
         try {

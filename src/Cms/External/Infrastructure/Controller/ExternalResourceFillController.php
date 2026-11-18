@@ -12,12 +12,11 @@ use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Fills an external resource from its saved address anew, back to its
@@ -26,7 +25,6 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class ExternalResourceFillController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly EventBus $eventBus,
         private readonly ResourceReader $reader,
         private readonly ResourceImageFetcher $imageFetcher,
@@ -34,10 +32,9 @@ final class ExternalResourceFillController extends AbstractController
     ) {}
 
     #[Route('/externals/{id}/fill', name: 'cms_externals_fill', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository): Response
+    #[IsCsrfTokenValid('cms_externals_fill')]
+    public function __invoke(string $id, ExternalResourceRepository $resourceRepository): Response
     {
-        $this->csrf->assertValid($request);
-
         try {
             $read = new ExternalResourceFiller($id)($resourceRepository, $this->eventBus, $this->reader, $this->imageFetcher, $this->imageStorage);
         } catch (ExternalResourceNotFound $exception) {

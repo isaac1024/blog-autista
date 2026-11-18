@@ -19,6 +19,26 @@ nelmio_security:
             - 'no-referrer'
             - 'strict-origin-when-cross-origin'
 
+    # Neither host uses the camera, the microphone, the location of the reader,
+    # payments nor USB devices, nor lets a frame of another site ask for them;
+    # what the frames of the widgets ask, such as fullscreen, stays theirs.
+    permissions_policy:
+        enabled: true
+        policies:
+            camera: []
+            microphone: []
+            geolocation: []
+            payment: []
+            usb: []
+
+    # A page opened from another site, or that opens one, never reaches the
+    # other's window: neither host needs window.opener, nor do the widgets.
+    cross_origin_isolation:
+        enabled: true
+        paths:
+            '^/':
+                coop: 'same-origin'
+
     # Only the site's own code runs. The CMS's import map, its one inline
     # script, carries the nonce of the request; the public site has none, so
     # its policy is the same on every page and Varnish caches it as it is.

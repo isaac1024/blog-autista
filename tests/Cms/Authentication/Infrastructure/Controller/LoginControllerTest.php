@@ -65,8 +65,8 @@ final class LoginControllerTest extends CmsWebTestCase
         $client->request('GET', 'http://cms.blogautista.localhost/pages');
         self::assertResponseIsSuccessful();
 
-        // Each request boots the kernel again, which reads the new password.
-        $previous = self::changePassword('new-password');
+        // Each request boots the kernel again, which reads the hash of the new password.
+        $previous = self::changePasswordHash(password_hash('new-password', \PASSWORD_BCRYPT, ['cost' => 4]));
 
         try {
             $client->request('GET', 'http://cms.blogautista.localhost/pages');
@@ -78,7 +78,7 @@ final class LoginControllerTest extends CmsWebTestCase
             $this->signIn($client, 'new-password');
             self::assertResponseRedirects('http://cms.blogautista.localhost/pages');
         } finally {
-            self::changePassword($previous);
+            self::changePasswordHash($previous);
         }
     }
 
@@ -89,13 +89,13 @@ final class LoginControllerTest extends CmsWebTestCase
     }
 
     /**
-     * @return string the password it replaces
+     * @return string the hash it replaces
      */
-    private static function changePassword(string $password): string
+    private static function changePasswordHash(string $hash): string
     {
-        $previous = $_SERVER['CMS_USER_PASSWORD'];
+        $previous = $_SERVER['CMS_USER_PASSWORD_HASH'];
         \assert(\is_string($previous));
-        $_SERVER['CMS_USER_PASSWORD'] = $_ENV['CMS_USER_PASSWORD'] = $password;
+        $_SERVER['CMS_USER_PASSWORD_HASH'] = $_ENV['CMS_USER_PASSWORD_HASH'] = $hash;
 
         return $previous;
     }

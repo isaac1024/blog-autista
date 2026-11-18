@@ -12,12 +12,12 @@ use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Creates an external resource from its address, read there, and goes on
@@ -26,7 +26,6 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ExternalResourceCreateController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         private readonly EventBus $eventBus,
         private readonly ResourceReader $reader,
         private readonly ResourceImageFetcher $imageFetcher,
@@ -36,10 +35,9 @@ final class ExternalResourceCreateController extends AbstractController
     ) {}
 
     #[Route('/externals', name: 'cms_externals_create', methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_externals_create')]
     public function __invoke(Request $request, ExternalResourceRepository $resourceRepository): Response
     {
-        $this->csrf->assertValid($request);
-
         $id = ExternalResourceId::random()->value();
 
         try {

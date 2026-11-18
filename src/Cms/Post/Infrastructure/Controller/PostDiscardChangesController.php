@@ -9,12 +9,11 @@ use Cms\Post\Application\PostNotFound;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 /**
  * Goes back to the editor, which shows the post as it is on the site again.
@@ -22,10 +21,9 @@ use Symfony\Component\Routing\Requirement\Requirement;
 final class PostDiscardChangesController extends AbstractController
 {
     #[Route('/posts/{id}/discard', name: 'cms_posts_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_posts_discard')]
+    public function __invoke(string $id, PostRepository $postRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         try {
             new PostChangesDiscarder($id)($postRepository, $eventBus);
         } catch (PostNotFound $exception) {

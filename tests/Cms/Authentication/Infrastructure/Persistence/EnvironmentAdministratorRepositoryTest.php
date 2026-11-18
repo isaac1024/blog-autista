@@ -8,8 +8,6 @@ use Cms\Authentication\Domain\Administrator;
 use Cms\Authentication\Infrastructure\Persistence\EnvironmentAdministratorRepository;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactory;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 final class EnvironmentAdministratorRepositoryTest extends TestCase
 {
@@ -38,7 +36,7 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
     #[DataProvider('incompleteCredentials')]
     public function testItRefusesToStartWithIncompleteCredentials(string $identifier, string $password): void
     {
-        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_IDENTIFIER and CMS_USER_PASSWORD must not be empty.'));
+        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_IDENTIFIER and CMS_USER_PASSWORD_HASH must not be empty.'));
 
         $this->repository($identifier, $password);
     }
@@ -51,7 +49,7 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
     public static function incompleteCredentials(): iterable
     {
         yield 'no identifier' => ['', 'secret'];
-        yield 'no password' => ['admin', ''];
+        yield 'no hash of a password' => ['admin', ''];
     }
 
     public function testItRejectsAnIdentifierMadeOfWhitespace(): void
@@ -63,7 +61,7 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
         $repository->findByIdentifier('   ');
     }
 
-    public function testItChangesTheCredentialsVersionWhenThePasswordChanges(): void
+    public function testItChangesTheCredentialsVersionWhenTheHashOfThePasswordChanges(): void
     {
         $before = $this->repository('admin', 'secret')->credentialsVersion('admin');
         $after = $this->repository('admin', 'new-secret')->credentialsVersion('admin');
@@ -90,23 +88,33 @@ final class EnvironmentAdministratorRepositoryTest extends TestCase
         $this->repository('admin', 'secret', appSecret: '');
     }
 
-    public function testItRefusesTheDevelopmentPasswordInProduction(): void
+    /**
+     * Production refuses the hashes of the development password that .env.dev
+     * and .env.test hold, and takes any other.
+     */
+    #[DataProvider('developmentHashes')]
+    public function testItRefusesTheDevelopmentPasswordInProduction(string $hash): void
     {
-        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_PASSWORD must not use the development default in production.'));
+        self::assertNotNull($this->repository('admin', password_hash('a strong one', \PASSWORD_BCRYPT, ['cost' => 4]), environment: 'prod')->findByIdentifier('admin'));
+        // Elsewhere, it is the password to sign in with.
+        self::assertNotNull($this->repository('admin', $hash, environment: 'dev')->findByIdentifier('admin'));
 
-        $this->repository('admin', 'admin', environment: 'prod');
+        $this->expectExceptionObject(new \InvalidArgumentException('CMS_USER_PASSWORD_HASH must not hash the development password in production.'));
+
+        $this->repository('admin', $hash, environment: 'prod');
     }
 
-    private function repository(string $identifier, string $password, string $appSecret = 'test-app-secret', string $environment = 'test'): EnvironmentAdministratorRepository
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function developmentHashes(): iterable
     {
-        return new EnvironmentAdministratorRepository(
-            $identifier,
-            $password,
-            new PasswordHasherFactory([
-                PasswordAuthenticatedUserInterface::class => ['algorithm' => 'plaintext'],
-            ]),
-            $appSecret,
-            $environment,
-        );
+        yield 'that of development' => ['$2y$13$BVXccXGxMfru5Fr7EfMhGuNjQbibjpz3geft3C/VW0n32g2qeBcOO'];
+        yield 'that of the tests' => ['$2y$04$6qennMPep9vsjkS7KyHYKupBTN9S3l1ciCHx9zuLTwg7YDOclIj3S'];
+    }
+
+    private function repository(string $identifier, string $passwordHash, string $appSecret = 'test-app-secret', string $environment = 'test'): EnvironmentAdministratorRepository
+    {
+        return new EnvironmentAdministratorRepository($identifier, $passwordHash, $appSecret, $environment);
     }
 }

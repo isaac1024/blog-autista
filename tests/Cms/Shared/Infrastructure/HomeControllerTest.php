@@ -32,7 +32,7 @@ final class HomeControllerTest extends CmsWebTestCase
         $client = self::createLoginClient();
 
         $client->request('GET', 'http://cms.blogautista.localhost/login');
-        $client->submitForm('Sign in', ['_username' => 'admin', '_password' => $_SERVER['CMS_USER_PASSWORD']]);
+        $client->submitForm('Sign in', ['_username' => 'admin', '_password' => 'admin']);
 
         self::assertResponseRedirects('http://cms.blogautista.localhost/posts');
     }

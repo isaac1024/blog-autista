@@ -9,19 +9,18 @@ use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class TermCreateController extends AbstractController
 {
     #[Route('/{taxonomy}', name: 'cms_terms_create', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT], methods: ['POST'])]
-    public function __invoke(TaxonomySegment $taxonomy, Request $request, TermRepository $termRepository, EventBus $eventBus, CsrfRequestGuard $csrf): Response
+    #[IsCsrfTokenValid('cms_terms_create')]
+    public function __invoke(TaxonomySegment $taxonomy, Request $request, TermRepository $termRepository, EventBus $eventBus): Response
     {
-        $csrf->assertValid($request);
-
         $id = TermId::random()->value();
 
         try {

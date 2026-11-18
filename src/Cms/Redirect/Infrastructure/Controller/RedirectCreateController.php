@@ -11,26 +11,24 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
 use Shared\Domain\DomainError;
 use Shared\Domain\MutualExclusion;
-use Shared\Infrastructure\Http\CsrfRequestGuard;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class RedirectCreateController extends AbstractController
 {
     public function __construct(
-        private readonly CsrfRequestGuard $csrf,
         #[Autowire(env: 'WEB_HOST')]
         private readonly string $webHost,
     ) {}
 
     #[Route('/redirects', name: 'cms_redirects_create', methods: ['POST'])]
+    #[IsCsrfTokenValid('cms_redirects_create')]
     public function __invoke(Request $request, RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
     {
-        $this->csrf->assertValid($request);
-
         $id = RedirectId::random()->value();
         $source = $request->request->getString('source');
 
