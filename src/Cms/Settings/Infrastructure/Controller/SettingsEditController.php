@@ -7,8 +7,10 @@ namespace Cms\Settings\Infrastructure\Controller;
 use Cms\Settings\Application\SettingsFinder;
 use Cms\Settings\Application\SettingsNotFound;
 use Cms\Settings\Domain\SettingsRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -20,10 +22,11 @@ final class SettingsEditController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly SettingsEditor $settingsEditor,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/settings', name: 'cms_settings', methods: ['GET'])]
-    public function __invoke(SettingsRepository $settingsRepository): Response
+    public function __invoke(SettingsRepository $settingsRepository, Request $request): Response
     {
         try {
             $settings = new SettingsFinder()($settingsRepository);
@@ -31,6 +34,6 @@ final class SettingsEditController extends AbstractController
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }
 
-        return $this->pageRenderer->render(($this->settingsEditor)($settings));
+        return $this->pageRenderer->render(KeptEdit::onto(($this->settingsEditor)($settings), $this->keptEdit->taken($request)));
     }
 }

@@ -7,6 +7,7 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\PageRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\Transaction;
@@ -20,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class PageUpdateController extends AbstractController
 {
-    public function __construct(private readonly TiptapRichText $tiptapRichText) {}
+    public function __construct(private readonly TiptapRichText $tiptapRichText, private readonly KeptEdit $keptEdit) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_pages_update')]
@@ -39,6 +40,8 @@ final class PageUpdateController extends AbstractController
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_pages_edit', ['id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

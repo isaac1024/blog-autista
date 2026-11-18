@@ -86,6 +86,18 @@ final readonly class Page
         return $this->copy(footer: [...$this->footer, new PageComponent($component, $props, $children)]);
     }
 
+    /**
+     * The page with each component of its main region, and each of their
+     * children, as the given function turns it: children first, so it gets
+     * a component with its children already turned.
+     *
+     * @param \Closure(PageComponent): PageComponent $turn
+     */
+    public function withMainMapped(\Closure $turn): self
+    {
+        return $this->copy(main: self::mapped($this->main, $turn));
+    }
+
     public function withMainClass(string $mainClass): self
     {
         return $this->copy(mainClass: $mainClass);
@@ -322,6 +334,20 @@ final readonly class Page
                 'tags' => $tags,
             ],
             $this->feed,
+        );
+    }
+
+    /**
+     * @param list<PageComponent>                    $components
+     * @param \Closure(PageComponent): PageComponent $turn
+     *
+     * @return list<PageComponent>
+     */
+    private static function mapped(array $components, \Closure $turn): array
+    {
+        return array_map(
+            static fn (PageComponent $component): PageComponent => $turn(new PageComponent($component->name, $component->props, self::mapped($component->children, $turn))),
+            $components,
         );
     }
 

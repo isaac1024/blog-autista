@@ -18,8 +18,10 @@ use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 
 /**
  * Saving, publishing, unpublishing, discarding and deleting posts, as the
@@ -108,6 +110,26 @@ final class PostChangesControllersTest extends PostControllerTestCase
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.post.classification.unknown_section', 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($post, $this->storedPost($post));
+    }
+
+    /**
+     * What was written goes back to the editor with why it was refused, for
+     * that editor alone, once.
+     */
+    public function testItKeepsWhatWasSentForTheEditorItGoesBackToOnce(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = PostIdMother::random()->value();
+        $this->savePost(PostMother::create(id: $id));
+        $form = ['title' => 'Un título que no se guardó'] + self::form([PostMother::TAG]);
+
+        $this->post($client, 'cms_posts_update', self::HOST.'/posts/'.$id, $form);
+        $kept = self::kept($client);
+        $client->request('GET', self::HOST.'/posts/'.$id);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([['editor' => '/posts/'.$id, 'fields' => $form]], $kept);
+        self::assertSame([], self::kept($client));
     }
 
     public function testItPublishesThePostAtTheAddressOfItsSectionAndTellsTheSite(): void
@@ -315,6 +337,19 @@ final class PostChangesControllersTest extends PostControllerTestCase
 
         self::assertNotNull(self::getContainer()->get(TermRepository::class)->find(new TermId(PostMother::SECTION)));
         self::assertNotNull(self::getContainer()->get(AuthorRepository::class)->find(new AuthorId(PostMother::AUTHOR)));
+    }
+
+    /**
+     * What waits in the session for the editor the next page opens.
+     *
+     * @return array<mixed>
+     */
+    private static function kept(KernelBrowser $client): array
+    {
+        $flashes = $client->getRequest()->getSession()->getBag('flashes');
+        self::assertInstanceOf(FlashBagInterface::class, $flashes);
+
+        return $flashes->peek('kept_edit');
     }
 
     /**

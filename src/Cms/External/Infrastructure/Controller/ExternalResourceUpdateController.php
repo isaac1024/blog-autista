@@ -8,6 +8,7 @@ use Cms\External\Application\ExternalResourceNotFound;
 use Cms\External\Application\ExternalResourceUpdater;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceImageStorage;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\Transaction;
@@ -20,6 +21,8 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class ExternalResourceUpdateController extends AbstractController
 {
+    public function __construct(private readonly KeptEdit $keptEdit) {}
+
     #[Route('/externals/{id}', name: 'cms_externals_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_externals_update')]
     public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage): Response
@@ -38,6 +41,8 @@ final class ExternalResourceUpdateController extends AbstractController
         } catch (ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_externals_edit', ['id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

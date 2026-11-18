@@ -70,11 +70,11 @@ export const unsavedChanges = () => `
     </form>
 `;
 
-export const actionBar = ({ status = 'Draft: not on the site' } = {}) => `
+export const actionBar = ({ status = 'Draft: not on the site', kept = false } = {}) => `
     <form id="edit">
         <label for="title">Title</label>
         <input id="title" name="title" value="First">
-        <div data-controller="action-bar unsaved-form" data-unsaved-form-unsaved-value="Unsaved changes"
+        <div data-controller="action-bar unsaved-form" data-unsaved-form-unsaved-value="Unsaved changes"${kept ? ' data-unsaved-form-kept-value="true"' : ''}
             data-action="input@document->unsaved-form#check change@document->unsaved-form#check submit@document->unsaved-form#send beforeunload@window->unsaved-form#leave">
             ${status === null ? '' : `<p aria-live="polite" data-unsaved-form-target="status">${status}</p>`}
             <button type="submit">Save</button>

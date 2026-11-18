@@ -9,6 +9,7 @@ use Cms\Post\Application\PostUpdater;
 use Cms\Post\Domain\Classifiers;
 use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\Transaction;
@@ -29,6 +30,7 @@ final class PostUpdateController extends AbstractController
         private readonly TiptapRichText $tiptapRichText,
         private readonly Classifiers $classifiers,
         private readonly PostImages $postImages,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/posts/{id}', name: 'cms_posts_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
@@ -52,6 +54,8 @@ final class PostUpdateController extends AbstractController
         } catch (PostNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_posts_edit', ['id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

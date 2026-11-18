@@ -7,10 +7,12 @@ namespace Cms\Page\Infrastructure\Controller;
 use Cms\Page\Application\PageFinder;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\PageRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -30,10 +32,11 @@ final class PageEditController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly PageEditor $pageEditor,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/pages/{id}', name: 'cms_pages_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(string $id, PageRepository $pageRepository, SignedUrls $signedUrls): Response
+    public function __invoke(string $id, PageRepository $pageRepository, SignedUrls $signedUrls, Request $request): Response
     {
         try {
             $page = new PageFinder($id)($pageRepository);
@@ -48,6 +51,6 @@ final class PageEditController extends AbstractController
             $expiresAt,
         );
 
-        return $this->pageRenderer->render(($this->pageEditor)($page, $sharedPreview));
+        return $this->pageRenderer->render(KeptEdit::onto(($this->pageEditor)($page, $sharedPreview), $this->keptEdit->taken($request)));
     }
 }

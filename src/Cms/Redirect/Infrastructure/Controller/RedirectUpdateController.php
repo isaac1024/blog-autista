@@ -9,6 +9,7 @@ use Cms\Redirect\Application\RedirectRetargeter;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
 use Cms\Shared\Infrastructure\Publication\RedirectTargetField;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\DomainError;
 use Shared\Domain\MutualExclusion;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,6 +21,8 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class RedirectUpdateController extends AbstractController
 {
+    public function __construct(private readonly KeptEdit $keptEdit) {}
+
     #[Route('/redirects/{id}', name: 'cms_redirects_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_redirects_update')]
     public function __invoke(string $id, Request $request, RedirectRepository $redirectRepository, SiteResources $siteResources, MutualExclusion $mutualExclusion): Response
@@ -29,6 +32,8 @@ final class RedirectUpdateController extends AbstractController
         } catch (RedirectNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_redirects_edit', ['id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

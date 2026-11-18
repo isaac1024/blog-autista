@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Application\TermUpdater;
 use Cms\Taxonomy\Domain\TermRepository;
@@ -19,6 +20,8 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class TermUpdateController extends AbstractController
 {
+    public function __construct(private readonly KeptEdit $keptEdit) {}
+
     #[Route('/{taxonomy}/{id}', name: 'cms_terms_update', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_terms_update')]
     public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): Response
@@ -35,6 +38,8 @@ final class TermUpdateController extends AbstractController
         } catch (TermNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_terms_edit', ['taxonomy' => $taxonomy->value, 'id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

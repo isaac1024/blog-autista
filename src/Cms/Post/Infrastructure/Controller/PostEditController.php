@@ -9,6 +9,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Post\Application\PostFinder;
 use Cms\Post\Application\PostNotFound;
 use Cms\Post\Domain\PostRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsOfTaxonomyByIdFinder;
 use Cms\Taxonomy\Application\TermsOfTaxonomyFinder;
@@ -17,6 +18,7 @@ use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -36,10 +38,11 @@ final class PostEditController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly PostEditor $postEditor,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/posts/{id}', name: 'cms_posts_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(string $id, PostRepository $postRepository, TermRepository $termRepository, AuthorRepository $authorRepository, SignedUrls $signedUrls): Response
+    public function __invoke(string $id, PostRepository $postRepository, TermRepository $termRepository, AuthorRepository $authorRepository, SignedUrls $signedUrls, Request $request): Response
     {
         try {
             $post = new PostFinder($id)($postRepository);
@@ -54,13 +57,17 @@ final class PostEditController extends AbstractController
             $expiresAt,
         );
 
-        return $this->pageRenderer->render(($this->postEditor)(
+        $kept = $this->keptEdit->taken($request);
+        // The tags sent and refused, in their order, named as the CMS knows them.
+        $tags = \is_array($kept['tags'] ?? null) ? array_values(array_filter($kept['tags'], \is_string(...))) : $post->tagIds;
+
+        return $this->pageRenderer->render(KeptEdit::onto(($this->postEditor)(
             $post,
             new TermsOfTaxonomyFinder(TermResponse::SECTION)($termRepository),
             new AllAuthorsFinder()($authorRepository),
-            new TermsOfTaxonomyByIdFinder(TermResponse::TAG, $post->tagIds)($termRepository),
+            new TermsOfTaxonomyByIdFinder(TermResponse::TAG, $tags)($termRepository),
             $previewUrl,
             $expiresAt,
-        ));
+        ), $kept));
     }
 }

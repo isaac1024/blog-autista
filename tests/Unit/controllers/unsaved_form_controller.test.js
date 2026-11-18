@@ -69,3 +69,12 @@ test('a bar without a status still asks before leaving changes behind', async ()
 
     assert.equal(leaveAsks(), true);
 });
+
+test('a form back with what was sent and refused holds changes from the start, until it is sent', async () => {
+    const { status, send, leaveAsks } = await open({ kept: true });
+    const atFirst = [status(), leaveAsks()];
+
+    send('edit');
+
+    assert.deepEqual([atFirst, leaveAsks()], [['Unsaved changes', true], false]);
+});

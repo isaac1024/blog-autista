@@ -11,6 +11,11 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * scrolls, so saving never needs a trip to the end of a long page. A status
  * next to them tells what they act on, such as whether the page is on the
  * site.
+ *
+ * A flag here is a presentation option of a prop, not a sign of a method
+ * doing two jobs.
+ *
+ * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
  */
 #[AsTwigComponent]
 final class ActionBar
@@ -23,11 +28,18 @@ final class ActionBar
     public ?string $status = null;
 
     /**
+     * Whether the form holds what was sent and refused, not what is saved:
+     * it holds changes not saved from the start.
+     */
+    public bool $kept = false;
+
+    /**
      * @param list<\Shared\Infrastructure\Ui\Page\PageComponent> $children
      */
-    public function mount(array $children = [], ?string $status = null): void
+    public function mount(array $children = [], ?string $status = null, bool $kept = false): void
     {
         $this->children = $children;
         $this->status = $status;
+        $this->kept = $kept;
     }
 }

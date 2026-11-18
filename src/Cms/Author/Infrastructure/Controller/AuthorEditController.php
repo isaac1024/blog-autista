@@ -7,10 +7,12 @@ namespace Cms\Author\Infrastructure\Controller;
 use Cms\Author\Application\AuthorFinder;
 use Cms\Author\Application\AuthorNotFound;
 use Cms\Author\Domain\AuthorRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -30,10 +32,11 @@ final class AuthorEditController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly AuthorEditor $authorEditor,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/authors/{id}', name: 'cms_authors_edit', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(string $id, AuthorRepository $authorRepository, SignedUrls $signedUrls): Response
+    public function __invoke(string $id, AuthorRepository $authorRepository, SignedUrls $signedUrls, Request $request): Response
     {
         try {
             $author = new AuthorFinder($id)($authorRepository);
@@ -48,6 +51,6 @@ final class AuthorEditController extends AbstractController
             $expiresAt,
         );
 
-        return $this->pageRenderer->render(($this->authorEditor)($author, $previewUrl, $expiresAt));
+        return $this->pageRenderer->render(KeptEdit::onto(($this->authorEditor)($author, $previewUrl, $expiresAt), $this->keptEdit->taken($request)));
     }
 }

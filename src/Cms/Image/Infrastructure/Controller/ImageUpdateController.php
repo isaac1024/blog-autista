@@ -7,6 +7,7 @@ namespace Cms\Image\Infrastructure\Controller;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Application\ImageUpdater;
 use Cms\Image\Domain\ImageRepository;
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\Transaction;
@@ -20,7 +21,7 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 
 final class ImageUpdateController extends AbstractController
 {
-    public function __construct(private readonly TiptapRichText $tiptapRichText) {}
+    public function __construct(private readonly TiptapRichText $tiptapRichText, private readonly KeptEdit $keptEdit) {}
 
     #[Route('/images/{id}', name: 'cms_images_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_images_update')]
@@ -36,6 +37,8 @@ final class ImageUpdateController extends AbstractController
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {
+            // What was written goes back to the editor with why it was refused.
+            $this->keptEdit->keep($request, $this->generateUrl('cms_images_edit', ['id' => $id]));
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Infrastructure\Controller;
 
+use Cms\Shared\Infrastructure\Ui\KeptEdit;
 use Cms\Taxonomy\Application\TermFinder;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Domain\TermRepository;
@@ -11,6 +12,7 @@ use Shared\Domain\Clock;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -30,10 +32,11 @@ final class TermEditController extends AbstractController
     public function __construct(
         private readonly PageRenderer $pageRenderer,
         private readonly TermEditor $termEditor,
+        private readonly KeptEdit $keptEdit,
     ) {}
 
     #[Route('/{taxonomy}/{id}', name: 'cms_terms_edit', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, TermRepository $termRepository, SignedUrls $signedUrls): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, TermRepository $termRepository, SignedUrls $signedUrls, Request $request): Response
     {
         try {
             $term = new TermFinder($taxonomy->taxonomy(), $id)($termRepository);
@@ -48,6 +51,6 @@ final class TermEditController extends AbstractController
             $expiresAt,
         );
 
-        return $this->pageRenderer->render(($this->termEditor)($taxonomy, $term, $previewUrl, $expiresAt));
+        return $this->pageRenderer->render(KeptEdit::onto(($this->termEditor)($taxonomy, $term, $previewUrl, $expiresAt), $this->keptEdit->taken($request)));
     }
 }

@@ -1,5 +1,5 @@
 {% import 'shared/render_component.html.twig' as renderer %}
-<div class="sticky bottom-0 z-10 data-unstuck:static -mx-[clamp(1rem,4vw,2.5rem)] flex flex-wrap items-center justify-end gap-3 border-t border-divider bg-bg px-[clamp(1rem,4vw,2.5rem)] py-4" data-controller="action-bar unsaved-form" data-unsaved-form-unsaved-value="{{ 'ui.unsaved'|trans }}" data-action="input@document->unsaved-form#check change@document->unsaved-form#check submit@document->unsaved-form#send beforeunload@window->unsaved-form#leave">
+<div class="sticky bottom-0 z-10 data-unstuck:static -mx-[clamp(1rem,4vw,2.5rem)] flex flex-wrap items-center justify-end gap-3 border-t border-divider bg-bg px-[clamp(1rem,4vw,2.5rem)] py-4" data-controller="action-bar unsaved-form" data-unsaved-form-unsaved-value="{{ 'ui.unsaved'|trans }}"{% if kept %} data-unsaved-form-kept-value="true"{% endif %} data-action="input@document->unsaved-form#check change@document->unsaved-form#check submit@document->unsaved-form#send beforeunload@window->unsaved-form#leave">
 {% if status %}
     <p class="m-0 mr-auto min-w-0 basis-full text-[1rem] text-muted sm:basis-auto" aria-live="polite" data-unsaved-form-target="status">{{ status }}</p>
 {% endif %}
