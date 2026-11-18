@@ -6,6 +6,7 @@ namespace Web\Shared\Infrastructure\Ui;
 
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -27,6 +28,12 @@ final readonly class SiteSearch
      * The query parameter that holds what is searched.
      */
     public const string PARAMETER = 'q';
+
+    /**
+     * The id of the heading of the results, where the form leads the reader
+     * once they search: the browser takes them, and their next Tab, there.
+     */
+    public const string RESULTS = 'resultados';
 
     public function __construct(
         private PostRepository $postRepository,
@@ -60,9 +67,12 @@ final readonly class SiteSearch
             return $page->withMain('Shared:Notice', ['message' => $this->translator->trans('site.search.none', ['%text%' => trim($text)])]);
         }
 
-        $cards = ($this->postCardsComponent)(($this->postCards)($found->posts), 2, false);
+        $cards = ($this->postCardsComponent)(($this->postCards)($found->posts), 3, false);
+        $heading = $this->translator->trans('site.search.results', ['%text%' => trim($text)]);
 
         return $page
+            // Set as the headings of a text are, as that of the page above it is.
+            ->withMain('Shared:Prose', [], [new PageComponent('Shared:ContentHeading', ['level' => 2, 'text' => [['href' => null, 'runs' => [['text' => $heading, 'bold' => false]]]], 'anchor' => self::RESULTS])])
             ->withMain($cards->name, $cards->props)
             ->withMain('Shared:Pagination', $this->pagination->site('web_page', ['slug' => $slug, self::PARAMETER => $text], $number, $found->hasMore));
     }
@@ -81,7 +91,7 @@ final readonly class SiteSearch
     private function form(Page $page, string $slug, string $text): Page
     {
         return $page->withMain('Shared:SearchForm', [
-            'action' => $this->pagination->siteUrl('web_page', ['slug' => $slug], ListPagination::FIRST_PAGE, UrlGeneratorInterface::ABSOLUTE_PATH),
+            'action' => $this->pagination->siteUrl('web_page', ['slug' => $slug], ListPagination::FIRST_PAGE, UrlGeneratorInterface::ABSOLUTE_PATH).'#'.self::RESULTS,
             'name' => self::PARAMETER,
             'id' => 'site-search',
             'label' => $this->translator->trans('site.search.label'),

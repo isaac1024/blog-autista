@@ -50,9 +50,10 @@ final class SiteSearchTest extends TestCase
         $page = $this->search($postRepository, ' Ruido, metro y RUIDO ', 1);
         ComponentContracts::assertHonoured($page);
 
-        PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html', 'name' => 'q', 'value' => ' Ruido, metro y RUIDO ']);
+        PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html#resultados', 'name' => 'q', 'value' => ' Ruido, metro y RUIDO ']);
+        PageComponents::one($page, 'Shared:ContentHeading', ['level' => 2, 'text' => [['href' => null, 'runs' => [['text' => 'site.search.results(%text%=Ruido, metro y RUIDO)', 'bold' => false]]]], 'anchor' => 'resultados']);
         /** @var list<array<string, mixed>> $cards */
-        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => false, 'lead' => true])->props['cards'];
+        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 3, 'wide' => false, 'lead' => true])->props['cards'];
         self::assertCount(20, $cards);
         self::assertSame('Entrada 1', $cards[0]['title']);
         PageComponents::one($page, 'Shared:Pagination', ['previousUrl' => null, 'nextUrl' => '/buscar.html?q=+Ruido%2C+metro+y+RUIDO+&pagina=2']);
@@ -121,7 +122,7 @@ final class SiteSearchTest extends TestCase
 
         $page = self::siteSearch($postRepository, $urlGenerator, $translator)->limited(Page::create('Buscar'), 'buscar', 'ruido');
 
-        PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html', 'value' => 'ruido']);
+        PageComponents::one($page, 'Shared:SearchForm', ['action' => '/buscar.html#resultados', 'value' => 'ruido']);
         PageComponents::one($page, 'Shared:Notice', ['message' => 'site.search.too_many']);
     }
 

@@ -102,13 +102,16 @@ final readonly class PostList
     private function row(PostResponse $post): PageComponent
     {
         $url = $this->postUrl->onSite($post);
+        // The site's own path: a URL of another host comes whole, which a
+        // narrow row would break into lines of host.
+        $path = null === $url ? null : (string) parse_url($url, \PHP_URL_PATH);
 
         return new PageComponent('Shared:ResourceRow', [
             'title' => $post->title,
             'url' => $this->urlGenerator->generate('cms_posts_edit', ['id' => $post->id]),
             'meta' => \sprintf(
                 '%s · %s',
-                $url ?? $this->translator->trans('cms.posts.list.off_site'),
+                $path ?? $this->translator->trans('cms.posts.list.off_site'),
                 $this->postState->lastUpdate($post),
             ),
             'status' => $this->postState->label($post),

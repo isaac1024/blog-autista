@@ -107,7 +107,8 @@ final readonly class AuthorList
             'url' => $this->urlGenerator->generate('cms_authors_edit', ['id' => $author->id]),
             'meta' => \sprintf(
                 '%s · %s',
-                null === $slug ? $this->translator->trans('cms.authors.list.no_slug') : $this->urlGenerator->generate('web_author', ['slug' => $slug]),
+                // The site's own path, without the host its URL comes with.
+                null === $slug ? $this->translator->trans('cms.authors.list.no_slug') : (string) parse_url($this->urlGenerator->generate('web_author', ['slug' => $slug]), \PHP_URL_PATH),
                 $this->authorState->lastUpdate($author),
             ),
             'status' => $this->authorState->label($author),
