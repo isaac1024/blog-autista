@@ -133,6 +133,7 @@ export const richTextEditor = ({
             data-rich-text-editor-block-options-value='${JSON.stringify(blockOptions)}'
             data-rich-text-editor-moved-up-value="Block moved up"
             data-rich-text-editor-moved-down-value="Block moved down"
+            data-rich-text-editor-table-label-value="Table"
             data-rich-text-editor-section-moved-up-value="Section moved up"
             data-rich-text-editor-section-moved-down-value="Section moved down"
             data-rich-text-editor-features-value='${JSON.stringify(features)}'

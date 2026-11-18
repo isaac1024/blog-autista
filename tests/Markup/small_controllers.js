@@ -1,7 +1,7 @@
 /*
  * The markup of the small form controllers, with the attributes their Twig
  * templates write: character_count.html.twig, CopyField, SearchPreview,
- * FormTextarea and FormButton.
+ * FormTextarea, FormButton and ActionBar.
  */
 
 export const characterCount = (value = '') => `
@@ -67,5 +67,14 @@ export const unsavedChanges = () => `
             <span id="edit-unsaved" role="status" data-unsaved-changes-target="hint" hidden>Save first</span>
             <button type="submit" aria-describedby="edit-unsaved" data-unsaved-changes-target="button" data-action="unsaved-changes#hold">Publish</button>
         </span>
+    </form>
+`;
+
+export const actionBar = () => `
+    <form>
+        <div data-controller="action-bar">
+            <p>Draft: not on the site</p>
+            <button type="submit">Save</button>
+        </div>
     </form>
 `;

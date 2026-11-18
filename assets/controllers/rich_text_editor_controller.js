@@ -8,7 +8,7 @@ import { Heading } from '@tiptap/extension-heading';
 import { Bold } from '@tiptap/extension-bold';
 import { Blockquote } from '@tiptap/extension-blockquote';
 import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
-import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table';
+import { Table, TableRow, TableHeader, TableCell, TableView } from '@tiptap/extension-table';
 import { Placeholder, UndoRedo } from '@tiptap/extensions';
 import { BlockMover } from '../rich_text/block_mover.js';
 import { ControlsShortcut } from '../rich_text/controls_shortcut.js';
@@ -214,6 +214,7 @@ import { Search } from '../shared/search.js';
  * @property {boolean} hasWidgetLabelsValue
  * @property {MosaicLabels} mosaicLabelsValue
  * @property {boolean} hasMosaicLabelsValue
+ * @property {string} tableLabelValue
  */
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
@@ -298,6 +299,7 @@ export default class extends BaseController {
         pageLabels: Object,
         widgetLabels: Object,
         mosaicLabels: Object,
+        tableLabel: String,
     };
 
     connect() {
@@ -1460,9 +1462,26 @@ export default class extends BaseController {
         }
 
         if (blocks.includes('table')) {
+            const label = this.tableLabelValue;
+
+            /*
+             * The box of a table, which scrolls sideways when the table is
+             * wider than the editor, is reached by the keyboard and named, as
+             * the site's own tables are, so its hidden columns can be read.
+             */
+            class ScrollingTableView extends TableView {
+                /** @param {ConstructorParameters<typeof TableView>} args */
+                constructor(...args) {
+                    super(...args);
+                    this.dom.tabIndex = 0;
+                    this.dom.setAttribute('role', 'region');
+                    this.dom.setAttribute('aria-label', label);
+                }
+            }
+
             extensions.push(
                 // Columns keep a readable width; a table wider than the screen scrolls sideways.
-                Table.configure({ resizable: false, cellMinWidth: 144 }),
+                Table.configure({ resizable: false, cellMinWidth: 144, View: ScrollingTableView }),
                 TableRow,
                 TableHeader.extend({ content: 'paragraph' }),
                 TableCell.extend({ content: 'paragraph' }),
