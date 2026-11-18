@@ -106,13 +106,6 @@ Three specifics worth spelling out, because they are easy to get wrong:
 - `.env` is committed and holds defaults only. Real secrets belong in `.env.local`
   (git-ignored) or the secrets vault (`bin/console secrets:set`), read via
   `%env(...)%`.
-- Configuration stays in Symfony's dotfiles (`.env`, `.env.dev`, `.env.test`,
-  `.env.local`), not in environment variables set by Docker alone: the
-  shared hosting can't set real variables for its cron jobs, and the tests
-  and the tools run on the host read the same files. A variable Docker sets
-  overrides them, so an `env_file` may tune one machine, but never sets a
-  secret the vault holds, such as `CMS_USER_PASSWORD_HASH`: a value outside
-  the vault hides it.
 
 ## Testing
 
