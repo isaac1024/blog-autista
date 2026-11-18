@@ -13,18 +13,20 @@ interface SitemapRepository
     public function entry(string $resourceId): ?SitemapEntry;
 
     /**
-     * @param list<string> $resourceIds
-     *
-     * @return list<SitemapEntry>
+     * The entries of the posts that open with the image changed at the
+     * moment given, and so did their files. Each keeps when it last changed,
+     * the latest of the two: it never moves back.
      */
-    public function entries(array $resourceIds): array;
+    public function touchEntriesWithImage(string $imageId, \DateTimeImmutable $moment): void;
 
     /**
-     * The entries of the posts that open with the image.
+     * The entries of the resources given changed at the moment, as the lists
+     * of a section or a tag do, and so did their files; each keeps the
+     * latest of the two. A resource with no entry changes nothing.
      *
-     * @return list<SitemapEntry>
+     * @param list<string> $resourceIds
      */
-    public function entriesWithImage(string $imageId): array;
+    public function touchEntries(array $resourceIds, \DateTimeImmutable $moment): void;
 
     public function saveEntry(SitemapEntry $entry): void;
 

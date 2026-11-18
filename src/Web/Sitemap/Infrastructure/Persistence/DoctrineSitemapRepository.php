@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Web\Sitemap\Infrastructure\Persistence;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Query;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Web\Sitemap\Domain\SitemapEntry;
 use Web\Sitemap\Domain\SitemapFile;
@@ -30,38 +31,16 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
         return $this->entityManager->find(SitemapEntry::class, $resourceId);
     }
 
-    /**
-     * Locked while changed, as the entries of a section or a tag every post
-     * filed under it touches.
-     */
     #[\Override]
-    public function entries(array $resourceIds): array
+    public function touchEntriesWithImage(string $imageId, \DateTimeImmutable $moment): void
     {
-        if ([] === $resourceIds) {
-            return [];
-        }
-
-        /** @var Query<null, SitemapEntry> $query */
-        $query = $this->entityManager->createQueryBuilder()
-            ->select('entry')
-            ->from(SitemapEntry::class, 'entry')
-            ->where('entry.resourceId IN (:ids)')
-            // Always in the same order, so two changes never lock them crosswise.
-            ->orderBy('entry.resourceId')
-            ->setParameter('ids', $resourceIds)
-            ->getQuery();
-
-        if ($this->isChanging()) {
-            $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
-        }
-
-        return $query->getResult();
+        $this->touch('e.image_id = :image', ['image' => $imageId], [], $moment);
     }
 
     #[\Override]
-    public function entriesWithImage(string $imageId): array
+    public function touchEntries(array $resourceIds, \DateTimeImmutable $moment): void
     {
-        return $this->entityManager->getRepository(SitemapEntry::class)->findBy(['imageId' => $imageId]);
+        $this->touch('e.resource_id IN (:ids)', ['ids' => $resourceIds], ['ids' => ArrayParameterType::STRING], $moment);
     }
 
     #[\Override]
@@ -139,6 +118,35 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             'SELECT DISTINCT e.image_id FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file AND e.image_id IS NOT NULL AND i.id IS NULL',
             ['file' => $file],
         ));
+    }
+
+    /**
+     * Moves the entries that match, and their files, to the moment, never
+     * back, in two statements however many they are. The files go first, as
+     * placing an entry locks its file before the entry, so two changes never
+     * lock them crosswise. The statements go past the entities read: none
+     * read in the same change is one they move, as a post touches the entries
+     * of its section and tags, never its own, and their files, never that of
+     * its year.
+     *
+     * @param array<string, mixed>              $parameters
+     * @param array<string, ArrayParameterType> $types
+     */
+    private function touch(string $matching, array $parameters, array $types, \DateTimeImmutable $moment): void
+    {
+        $connection = $this->entityManager->getConnection();
+        $touching = ['moment' => $moment] + $parameters;
+        $touchingTypes = ['moment' => Types::DATETIME_IMMUTABLE] + $types;
+        // With no entry or no file, the statements change nothing: an empty list is sent as NULL.
+        /** @var list<string> $files */
+        $files = $connection->fetchFirstColumn('SELECT DISTINCT e.file FROM web_sitemap_entry e WHERE '.$matching, $parameters, $types);
+
+        $connection->executeStatement(
+            'UPDATE web_sitemap_file SET lastmod = GREATEST(lastmod, :moment) WHERE name IN (:files) ORDER BY name',
+            ['moment' => $moment, 'files' => $files],
+            ['moment' => Types::DATETIME_IMMUTABLE, 'files' => ArrayParameterType::STRING],
+        );
+        $connection->executeStatement('UPDATE web_sitemap_entry e SET e.lastmod = GREATEST(e.lastmod, :moment) WHERE '.$matching, $touching, $touchingTypes);
     }
 
     /**

@@ -23,15 +23,6 @@ final readonly class TermsToucher
 
     public function __invoke(SitemapRepository $repository): void
     {
-        foreach ($repository->entries(array_values(array_unique($this->termIds))) as $entry) {
-            $entry->touch($this->moment);
-            $repository->saveEntry($entry);
-            $file = $repository->file($entry->file());
-
-            if (null !== $file) {
-                $file->touched($this->moment);
-                $repository->saveFile($file);
-            }
-        }
+        $repository->touchEntries($this->termIds, $this->moment);
     }
 }

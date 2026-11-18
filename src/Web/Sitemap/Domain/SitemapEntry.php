@@ -56,15 +56,6 @@ final class SitemapEntry
         $this->termIds = $termIds;
     }
 
-    /**
-     * What it lists changed, as a section or a tag does when one of its
-     * posts is published or taken off the site.
-     */
-    public function touch(\DateTimeImmutable $moment): void
-    {
-        $this->lastmod = max($this->lastmod, $moment);
-    }
-
     public function file(): string
     {
         return $this->file;

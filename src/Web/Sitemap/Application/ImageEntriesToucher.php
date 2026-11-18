@@ -20,15 +20,6 @@ final readonly class ImageEntriesToucher
 
     public function __invoke(SitemapRepository $repository): void
     {
-        foreach ($repository->entriesWithImage($this->imageId) as $entry) {
-            $entry->touch($this->moment);
-            $repository->saveEntry($entry);
-            $file = $repository->file($entry->file());
-
-            if (null !== $file) {
-                $file->touched($this->moment);
-                $repository->saveFile($file);
-            }
-        }
+        $repository->touchEntriesWithImage($this->imageId, $this->moment);
     }
 }
