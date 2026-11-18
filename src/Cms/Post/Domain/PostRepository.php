@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Post\Domain;
 
+use Cms\Shared\Domain\Slug;
 use Shared\Domain\Criteria\Criteria;
 
 /**
@@ -54,6 +55,15 @@ interface PostRepository
      * @return list<Post>
      */
     public function matching(Criteria $criteria): array;
+
+    /**
+     * The posts on the site whose address carries the slug of a section,
+     * counted by the section they are under there: a post keeps the slug its
+     * section had when it was published.
+     *
+     * @return array<string, int> by the id of the section
+     */
+    public function onSiteUnderSectionSlug(Slug $slug): array;
 
     /**
      * The latest posts on the site of the selection, newest first by the day

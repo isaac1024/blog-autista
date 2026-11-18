@@ -7,6 +7,7 @@ namespace Cms\Tests\Taxonomy\Application;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Application\TermPublisher;
 use Cms\Taxonomy\Domain\InvalidTermPublication;
+use Cms\Taxonomy\Domain\PostsUnderSectionSlugs;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermPublished;
@@ -20,11 +21,13 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\DomainErrorAssertions;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class TermPublisherTest extends TestCase
 {
     use ClockSensitiveTrait;
+    use DomainErrorAssertions;
 
     private const string BEFORE = '2026-10-01 09:00:00';
 
@@ -41,7 +44,7 @@ final class TermPublisherTest extends TestCase
         $repository->method('find')->willReturn($term);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new TermPublisher($term->taxonomy()->value, $term->id()->value())($repository, self::createStub(EventBus::class));
+        new TermPublisher($term->taxonomy()->value, $term->id()->value())($repository, self::createStub(EventBus::class), self::postsUnder([]));
     }
 
     /**
@@ -91,7 +94,7 @@ final class TermPublisherTest extends TestCase
                 ] === $event->toPrimitives(),
         ));
 
-        new TermPublisher('tag', TermIdMother::DEFAULT_VALUE)($repository, $eventBus);
+        new TermPublisher('tag', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, self::postsUnder([]));
     }
 
     #[DataProvider('unpublishableTerms')]
@@ -105,7 +108,7 @@ final class TermPublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        new TermPublisher('section', $term->id()->value())($repository, $eventBus);
+        new TermPublisher('section', $term->id()->value())($repository, $eventBus, self::postsUnder([]));
     }
 
     /**
@@ -131,7 +134,7 @@ final class TermPublisherTest extends TestCase
         $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(Taxonomy::Section, self::equalTo(SlugMother::create(TermMother::SLUG)))->willReturn($former);
         $repository->expects(self::exactly(2))->method('save');
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
 
         self::assertNull($former->lastSiteSlug());
     }
@@ -144,7 +147,7 @@ final class TermPublisherTest extends TestCase
         $repository->method('findOffSiteByLastSiteSlug')->willReturn($term);
         $repository->expects(self::once())->method('save');
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
 
         self::assertSame(TermMother::SLUG, $term->lastSiteSlug()?->value());
     }
@@ -156,6 +159,50 @@ final class TermPublisherTest extends TestCase
 
         $this->expectExceptionObject(TermNotFound::withId('section', TermIdMother::DEFAULT_VALUE));
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
+    }
+
+    /**
+     * A section never takes the slug posts of another section on the site
+     * still carry in their addresses; it may take the one its own posts
+     * carry, and a tag any, as no post carries a tag in its address.
+     */
+    public function testItNeverPublishesASectionAtTheAddressOfThePostsOfAnother(): void
+    {
+        $other = '01a1b801-ce58-723d-8234-b76d9105f0aa';
+        $section = TermMother::create(metaDescription: TermMother::META_DESCRIPTION);
+        $repository = $this->createMock(TermRepository::class);
+        $repository->method('find')->willReturn($section);
+        $repository->expects(self::never())->method('save');
+
+        self::assertTells(
+            'errors.term.publication.slug_of_posts_of_another_section',
+            ['%slug%' => TermMother::SLUG],
+            static fn () => new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([TermIdMother::DEFAULT_VALUE => 3, $other => 1])),
+        );
+    }
+
+    public function testItPublishesASectionAtTheAddressOfItsOwnPostsAndATagAnywhere(): void
+    {
+        foreach ([[Taxonomy::Section, [TermIdMother::DEFAULT_VALUE => 3]], [Taxonomy::Tag, ['01a1b801-ce58-723d-8234-b76d9105f0aa' => 1]]] as [$taxonomy, $posts]) {
+            $repository = $this->createMock(TermRepository::class);
+            $repository->method('find')->willReturn(TermMother::create(taxonomy: $taxonomy, metaDescription: TermMother::META_DESCRIPTION));
+            $repository->expects(self::once())->method('save');
+
+            new TermPublisher($taxonomy->value, TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder($posts));
+        }
+    }
+
+    /**
+     * The posts on the site under any slug of a section, by section.
+     *
+     * @param array<string, int> $counted
+     */
+    private static function postsUnder(array $counted): PostsUnderSectionSlugs
+    {
+        $posts = self::createStub(PostsUnderSectionSlugs::class);
+        $posts->method('countedBySection')->willReturn($counted);
+
+        return $posts;
     }
 }

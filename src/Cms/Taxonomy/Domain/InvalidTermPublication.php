@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Domain;
 
+use Cms\Shared\Domain\Slug;
 use Shared\Domain\DomainError;
 
 final class InvalidTermPublication extends DomainError
@@ -16,6 +17,11 @@ final class InvalidTermPublication extends DomainError
     public static function withoutMetaDescription(): self
     {
         return new self('A term cannot be published without a meta description.', 'errors.term.publication.without_meta_description', []);
+    }
+
+    public static function slugOfPostsOfAnotherSection(Slug $slug): self
+    {
+        return new self(\sprintf('Posts of another section on the site carry "%s" in their addresses.', $slug->value()), 'errors.term.publication.slug_of_posts_of_another_section', ['%slug%' => $slug->value()]);
     }
 
     public static function nothingToPublish(): self

@@ -10,6 +10,7 @@ use Cms\Post\Domain\PostAddressTaken;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
 use Cms\Post\Domain\TitleFilter;
+use Cms\Shared\Domain\Slug;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
 use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
@@ -96,6 +97,27 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertSame($newer, $this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, PostMother::SLUG))?->id()->value());
         self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, '2026-11-08 10:00:00', PostMother::SLUG)));
         self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, 'en-el-sitio')));
+    }
+
+    /**
+     * Only the posts on the site under the slug count, by the section each
+     * is under there, whatever section it is under as edited.
+     */
+    public function testItCountsThePostsOnTheSiteUnderASectionSlugBySection(): void
+    {
+        $other = '01a1b801-ce58-723d-8234-b76d9105f0aa';
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'uno', sectionSlug: 'vida-diaria'));
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'dos', sectionSlug: 'vida-diaria'));
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'tres', section: $other, sectionSlug: 'vida-diaria'));
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'cuatro', sectionSlug: 'otra'));
+        $this->repository()->save(PostMother::create(id: PostIdMother::random()->value(), slug: 'borrador'));
+
+        $counted = $this->repository()->onSiteUnderSectionSlug(new Slug('vida-diaria'));
+        ksort($counted);
+        $expected = [PostMother::SECTION => 2, $other => 1];
+        ksort($expected);
+        self::assertSame($expected, $counted);
+        self::assertSame([], $this->repository()->onSiteUnderSectionSlug(new Slug('nadie')));
     }
 
     public function testItLetsDraftsShareTheirSlug(): void

@@ -11,6 +11,7 @@ use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
 use Cms\Post\Domain\PostStatus;
+use Cms\Shared\Domain\Slug;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
@@ -131,6 +132,22 @@ final readonly class DoctrinePostRepository implements PostRepository
     public function matching(Criteria $criteria): array
     {
         return new DoctrineCriteriaConverter(self::CRITERIA_FIELDS)->matching($this->entityManager, Post::class, 'post', $criteria);
+    }
+
+    /**
+     * Read through the index of the addresses on the site, which starts with
+     * the slug of the section.
+     */
+    #[\Override]
+    public function onSiteUnderSectionSlug(Slug $slug): array
+    {
+        /** @var array<string, int|string> $counts */
+        $counts = $this->entityManager->getConnection()->fetchAllKeyValue(
+            "SELECT JSON_VALUE(p.published_version, '$.section_id'), COUNT(*) FROM cms_post p WHERE p.status = 'published' AND p.published_section_slug = :slug GROUP BY 1",
+            ['slug' => $slug->value()],
+        );
+
+        return array_map(intval(...), $counts);
     }
 
     /**

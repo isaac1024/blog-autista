@@ -8,8 +8,10 @@ use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\Resource;
 use Cms\Redirect\Domain\SiteResources;
+use Cms\Taxonomy\Application\PostsLeftBehindCounter;
 use Cms\Taxonomy\Application\TermFinder;
 use Cms\Taxonomy\Application\TermNotFound;
+use Cms\Taxonomy\Domain\PostsUnderSectionSlugs;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Infrastructure\Ui\Page\PageRenderer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -39,7 +41,7 @@ final class TermPublishFormController extends AbstractController
     ) {}
 
     #[Route('/{taxonomy}/{id}/publish', name: 'cms_terms_publish_form', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['GET'])]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, PostsUnderSectionSlugs $postsUnderSectionSlugs): Response
     {
         try {
             $term = new TermFinder($taxonomy->taxonomy(), $id)($termRepository);
@@ -55,6 +57,8 @@ final class TermPublishFormController extends AbstractController
 
         $saved = $request->getSession()->remove(\sprintf(self::SAVED, $id));
 
-        return $this->pageRenderer->render(($this->termPublishForm)($taxonomy, $term, $outlook, \is_array($saved) ? $saved : []));
+        $leftBehind = new PostsLeftBehindCounter($taxonomy->taxonomy(), $id)($termRepository, $postsUnderSectionSlugs);
+
+        return $this->pageRenderer->render(($this->termPublishForm)($taxonomy, $term, $outlook, \is_array($saved) ? $saved : [], $leftBehind));
     }
 }

@@ -14,6 +14,7 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Shared\Infrastructure\Publication\PublicationRequest;
 use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Application\TermPublisher;
+use Cms\Taxonomy\Domain\PostsUnderSectionSlugs;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
@@ -49,7 +50,7 @@ final class TermPublishController extends AbstractController
 
     #[Route('/{taxonomy}/{id}/publish', name: 'cms_terms_publish', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_terms_publish')]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus, PostsUnderSectionSlugs $postsUnderSectionSlugs): Response
     {
         $resource = Resource::term($id);
         $outlook = PublicationRequest::outlook($request);
@@ -67,8 +68,8 @@ final class TermPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($taxonomy, $id, $termRepository, $eventBus): void {
-                    new TermPublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus);
+                static function () use ($taxonomy, $id, $termRepository, $eventBus, $postsUnderSectionSlugs): void {
+                    new TermPublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $postsUnderSectionSlugs);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (TermNotFound $exception) {
