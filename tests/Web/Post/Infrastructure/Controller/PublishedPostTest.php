@@ -12,6 +12,7 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
+use Shared\Infrastructure\Ui\WebLayout;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Infrastructure\Routing\RouteNameUrlGenerator;
 use Shared\Tests\Infrastructure\Translation\CatalogueTranslator;
@@ -237,6 +238,35 @@ final class PublishedPostTest extends TestCase
         yield 'published again the same day' => [['last_published_at' => ClockMother::now('2026-11-07 21:00:00 UTC')->format(\DATE_ATOM)], false, '7 de noviembre de 2026'];
         yield 'published again on the next day of Madrid' => [['last_published_at' => ClockMother::now('2026-11-07 23:30:00 UTC')->format(\DATE_ATOM)], true, '8 de noviembre de 2026'];
         yield 'published again days later' => [['last_published_at' => ClockMother::now('2026-11-20 10:00:00')->format(\DATE_ATOM)], true, '20 de noviembre de 2026'];
+    }
+
+    /**
+     * A post of three parts or more lists them, by their headings of the
+     * second level, after who signs it and before its text, which it lays
+     * beside on large screens; each part ends with a way back to the list.
+     * One of fewer parts lists none.
+     */
+    public function testItListsThePartsOfAPostOfThreeOrMore(): void
+    {
+        $heading = static fn (int $level, string $text): array => ['type' => 'heading', 'level' => $level, 'text' => [['text' => $text]]];
+        $paragraph = ['type' => 'paragraph', 'text' => [['text' => 'Texto.']]];
+        $content = static fn (array ...$blocks): array => ['content' => ['version' => 1, 'blocks' => $blocks]];
+
+        $page = $this->compose([], changes: $content($paragraph, $heading(2, 'Uno'), $paragraph, $heading(3, 'Dentro'), $heading(2, 'Dos'), $heading(2, 'Tres'), $paragraph));
+
+        self::assertSame(['Shared:PostHeader', 'Shared:PostContents', 'Shared:Prose'], array_map(static fn (PageComponent $component): string => $component->name, $page->main));
+        PageComponents::one($page, 'Shared:PostContents', ['entries' => [['anchor' => 'uno', 'text' => 'Uno'], ['anchor' => 'dos', 'text' => 'Dos'], ['anchor' => 'tres', 'text' => 'Tres']]]);
+        self::assertSame(
+            ['Shared:ContentParagraph', 'Shared:ContentHeading', 'Shared:ContentParagraph', 'Shared:ContentHeading', 'Shared:PostContentsLink', 'Shared:ContentHeading', 'Shared:PostContentsLink', 'Shared:ContentHeading', 'Shared:ContentParagraph', 'Shared:PostContentsLink'],
+            array_map(static fn (PageComponent $component): string => $component->name, PageComponents::one($page, 'Shared:Prose', [])->children),
+        );
+        self::assertSame(WebLayout::CONTENTS_MAIN_CLASS, $page->mainClass);
+
+        $short = $this->compose([], changes: $content($heading(2, 'Uno'), $heading(2, 'Dos'), $heading(3, 'Tres')));
+
+        self::assertSame([], PageComponents::find($short, 'Shared:PostContents', []));
+        self::assertSame([], PageComponents::find($short, 'Shared:PostContentsLink', []));
+        self::assertSame(WebLayout::MAIN_CLASS, $short->mainClass);
     }
 
     /**

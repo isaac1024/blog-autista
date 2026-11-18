@@ -206,7 +206,7 @@ final class RichTextComponentsTest extends TestCase
 
         self::assertSame(
             [
-                ['Shared:ContentHeading', ['level' => 2]],
+                ['Shared:ContentHeading', ['level' => 2, 'anchor' => 'titulo']],
                 ['Shared:ContentQuote', ['source' => 'Alguien']],
                 ['Shared:ContentList', ['ordered' => true]],
                 ['Shared:ContentList', ['ordered' => false]],
@@ -223,6 +223,32 @@ final class RichTextComponentsTest extends TestCase
      * A widget whose page isn't on the site, or an image off it, leaves out
      * only itself: the rest of the content is still painted.
      */
+    /**
+     * Each heading is anchored by the words of its text, as an address reads
+     * them: two of one text never share one, nor does one take an anchor the
+     * page gives something else, such as its contents; one with no word is a
+     * part.
+     */
+    public function testItAnchorsEveryHeadingByItsWords(): void
+    {
+        $heading = static fn (int $level, string $text): array => ['type' => 'heading', 'level' => $level, 'text' => [['text' => $text, 'marks' => ['bold']]]];
+        $components = new RichTextComponents()(RichText::fromArray(['version' => 1, 'blocks' => [
+            $heading(2, ' Qué es la comunicación aumentativa '),
+            ['type' => 'paragraph', 'text' => [['text' => 'Texto']]],
+            $heading(3, 'Qué es la comunicación aumentativa'),
+            $heading(2, 'Índice'),
+            $heading(2, '¿…?'),
+            $heading(2, str_repeat('palabra ', 12)),
+            // Cut at the same length whatever signs come before the words.
+            $heading(2, '¿'.str_repeat('palabra ', 12)),
+        ]]), [], [], []);
+
+        self::assertSame(
+            ['que-es-la-comunicacion-aumentativa', 'que-es-la-comunicacion-aumentativa-2', 'indice-2', 'apartado', substr(str_repeat('palabra-', 10), 0, 79), substr(str_repeat('palabra-', 10), 0, 79).'-2'],
+            array_values(array_map(static fn (PageComponent $component): mixed => $component->props['anchor'], array_filter($components, static fn (PageComponent $component): bool => 'Shared:ContentHeading' === $component->name))),
+        );
+    }
+
     public function testItPaintsTheRestOfTheContentAfterWhatItLeavesOut(): void
     {
         $components = new RichTextComponents()(RichText::fromArray(['version' => 1, 'blocks' => [

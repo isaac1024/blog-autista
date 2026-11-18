@@ -1,2 +1,2 @@
 {% import 'shared/inline_text.html.twig' as inline %}
-<h{{ level }}>{{ inline.render(text) }}</h{{ level }}>
+<h{{ level }}{% if anchor %} id="{{ anchor }}"{% endif %}>{{ inline.render(text) }}</h{{ level }}>

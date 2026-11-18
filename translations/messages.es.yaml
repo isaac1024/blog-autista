@@ -1152,6 +1152,9 @@ site:
         title: 'Algo ha fallado en el blog'
         message: 'No es culpa tuya. Vuelve a intentarlo dentro de un rato.'
     post:
+        contents:
+            title: 'En este texto'
+            back: 'Volver al índice'
         breadcrumbs: 'Migas de pan'
         home: 'Inicio'
         reading: '{1}1 minuto de lectura|]1,Inf[%count% minutos de lectura'

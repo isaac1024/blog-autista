@@ -30,6 +30,13 @@ final class WebLayout
      */
     public const string WIDE_MAIN_CLASS = 'mx-auto flex w-full max-w-[72rem] flex-col gap-8 px-[clamp(1rem,4vw,2rem)] py-[clamp(2rem,6vw,4rem)]';
 
+    /**
+     * The column of a post with its contents: the column of reading, and,
+     * from large screens, the contents in a column beside it, every other
+     * part of the post in the first one.
+     */
+    public const string CONTENTS_MAIN_CLASS = self::MAIN_CLASS.' lg:grid lg:max-w-[72rem] lg:grid-cols-[minmax(0,42rem)_17.5rem] lg:justify-center lg:gap-x-18 lg:*:col-start-1';
+
     public static function page(string $title, SiteChrome $chrome): Page
     {
         $page = Page::create($title)

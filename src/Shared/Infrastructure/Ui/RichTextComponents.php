@@ -51,11 +51,12 @@ final readonly class RichTextComponents
     {
         $links = array_map(static fn (array $page): string => $page['url'], $pages);
         $components = [];
+        $anchors = HeadingAnchors::byBlock($content);
         // The titles of the cards of a mosaic are headings one level below
         // the last one before it, as the outline of the page goes.
         $headingLevel = 1;
 
-        foreach ($content->blocks() as $block) {
+        foreach ($content->blocks() as $index => $block) {
             if ($block instanceof Heading) {
                 $headingLevel = $block->level();
             }
@@ -90,7 +91,7 @@ final readonly class RichTextComponents
                 continue;
             }
 
-            $components[] = self::block($block, $links);
+            $components[] = self::block($block, $links, $anchors[$index] ?? null);
         }
 
         return self::leading($components);
@@ -193,7 +194,7 @@ final readonly class RichTextComponents
     /**
      * @param array<string, string> $links
      */
-    private static function block(Block $block, array $links): PageComponent
+    private static function block(Block $block, array $links, ?string $anchor): PageComponent
     {
         $runs = static fn (InlineText $text): array => self::runs($text, $links);
 
@@ -201,6 +202,7 @@ final readonly class RichTextComponents
             $block instanceof Heading => new PageComponent('Shared:ContentHeading', [
                 'level' => $block->level(),
                 'text' => $runs($block->text()),
+                'anchor' => $anchor,
             ]),
             $block instanceof Paragraph => new PageComponent('Shared:ContentParagraph', [
                 'text' => $runs($block->text()),

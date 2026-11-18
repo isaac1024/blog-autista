@@ -7,13 +7,16 @@ namespace Shared\Infrastructure\Ui;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\SiteTimeZone;
 use Shared\Infrastructure\Ui\Page\Page;
+use Shared\Infrastructure\Ui\Page\PageComponent;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Composes a post as the site serves it, and as the CMS previews it: its
  * section, its title, who signs it, when it was published and how long it
  * takes to read, the image it opens with, its content, and its tags. It is
- * shared as a post, with its opening image.
+ * shared as a post, with its opening image. A post of three parts or more,
+ * by its headings of the second level, lists them before its text, and on
+ * small screens each part ends with a way back to that list.
  *
  * It always dates the post by when it was last published, the day of Madrid
  * the site keeps, and says it was updated when that day isn't the one it
@@ -67,6 +70,13 @@ final readonly class SitePostPage
 
         // A post shows no mosaic of posts.
         $prose = ($this->richTextComponents)($content, $images, $pages, []);
+        $contents = HeadingAnchors::contents($content);
+        $listed = \count($contents) >= HeadingAnchors::CONTENTS_FROM;
+
+        if ($listed) {
+            $prose = self::withWaysBack($prose);
+            $layout = $layout->withMainClass(WebLayout::CONTENTS_MAIN_CLASS);
+        }
 
         if (null !== $opening) {
             array_unshift($prose, $this->richTextComponents->opening($opening, $pages));
@@ -83,10 +93,40 @@ final readonly class SitePostPage
                 'readingMinutes' => $readingMinutes,
                 'section' => $section,
                 'author' => $author,
-            ])
+            ]);
+
+        if ($listed) {
+            $page = $page->withMain('Shared:PostContents', ['entries' => $contents]);
+        }
+
+        $page = $page
             ->withMain('Shared:Prose', [], $prose)
             ->withFrames(SitePage::frames($content, $pages));
 
         return [] === $tags ? $page : $page->withMain('Shared:PostTags', ['tags' => $tags]);
+    }
+
+    /**
+     * The text with a way back to the contents at the end of each part: before
+     * each heading of the second level but the first, and at its end.
+     *
+     * @param list<PageComponent> $prose
+     *
+     * @return list<PageComponent>
+     */
+    private static function withWaysBack(array $prose): array
+    {
+        $withWaysBack = [];
+        $parts = 0;
+
+        foreach ($prose as $component) {
+            if ('Shared:ContentHeading' === $component->name && 2 === $component->props['level'] && $parts++ > 0) {
+                $withWaysBack[] = new PageComponent('Shared:PostContentsLink', []);
+            }
+
+            $withWaysBack[] = $component;
+        }
+
+        return [...$withWaysBack, new PageComponent('Shared:PostContentsLink', [])];
     }
 }

@@ -1152,6 +1152,9 @@ site:
         title: 'Something went wrong on the blog'
         message: 'It isn’t your fault. Try again in a while.'
     post:
+        contents:
+            title: 'In this text'
+            back: 'Back to the contents'
         breadcrumbs: 'Breadcrumbs'
         home: 'Home'
         reading: '{1}1 minute read|]1,Inf[%count% minutes read'

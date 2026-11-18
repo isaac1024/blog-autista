@@ -1,0 +1,16 @@
+{#
+    The contents of a post, each part a link to its heading. On small screens
+    they come between who signs the post and the image it opens with, between
+    two faint lines; from large ones, in a column beside the text, under a
+    line of the accent, which stays in view as the text scrolls.
+#}
+<div class="lg:col-start-2! lg:row-span-2 lg:row-start-2">
+    <nav class="m-0 grid gap-2.5 border-y border-divider py-[1.125rem] lg:sticky lg:top-6 lg:gap-3 lg:border-t-[3px] lg:border-b-0 lg:border-t-accent lg:pt-4 lg:pb-0" id="{{ constant('Shared\\Infrastructure\\Twig\\Components\\PostContents::ANCHOR') }}" aria-labelledby="post-contents-title">
+        <h2 class="m-0 text-base font-bold" id="post-contents-title">{{ 'site.post.contents.title'|trans }}</h2>
+        <ol class="m-0 grid list-decimal gap-2 ps-6 leading-snug marker:text-muted lg:gap-2.5 lg:ps-[1.375rem]">
+{% for entry in entries %}
+            <li><a class="text-accent underline decoration-[0.06em] underline-offset-[0.2em] hover:text-accent-strong hover:decoration-[0.12em]" href="#{{ entry.anchor }}">{{ entry.text }}</a></li>
+{% endfor %}
+        </ol>
+    </nav>
+</div>
