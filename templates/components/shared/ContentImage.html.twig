@@ -5,7 +5,7 @@
     screens it takes the whole width of the screen, past the margins of the
     page, and its caption keeps them.
 #}
-<figure class="m-0 -mx-[clamp(1rem,4vw,2rem)] grid gap-2.5 sm:mx-0">
+<figure class="m-0 -mx-[clamp(1rem,4vw,2rem)] grid grid-cols-[minmax(0,1fr)] gap-2.5 sm:mx-0">
     <img class="block h-auto w-full bg-surface" src="{{ src }}" srcset="{{ srcset }}" sizes="(min-width: 44rem) 42rem, 100vw" width="{{ width }}" height="{{ height }}" alt="{{ alt }}"{% if opening %} fetchpriority="high"{% elseif not lead %} loading="lazy" decoding="async"{% endif %}>
 {% if caption is not empty %}
     <figcaption class="px-[clamp(1rem,4vw,2rem)] text-base leading-normal text-muted sm:px-0">{{ inline.render(caption) }}</figcaption>

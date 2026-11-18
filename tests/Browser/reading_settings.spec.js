@@ -15,7 +15,7 @@ const root = (page) => page.evaluate(() => ({ ...document.documentElement.datase
 
 test('changes the text and the theme at once and finds them again on the next page', async ({ page }) => {
     await loadPage(page, PAGE);
-    const toggle = page.getByRole('button', { name: 'Ajustes de lectura' });
+    const toggle = page.getByRole('button', { name: 'Aa Lectura' });
 
     await toggle.click();
     await page.getByRole('button', { name: 'Texto más grande' }).click();

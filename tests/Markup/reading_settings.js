@@ -4,9 +4,10 @@
  */
 
 export const readingSettings = () => `
-    <div class="relative hidden scripted:block" data-reading>
-        <button type="button" aria-expanded="false" aria-controls="reading-settings" aria-label="Ajustes de lectura" data-reading-toggle>
-            <span aria-hidden="true">Aa</span>
+    <div class="hidden scripted:block" data-reading>
+        <button type="button" aria-expanded="false" aria-controls="reading-settings" data-reading-toggle>
+            <span>Aa</span>
+            <span class="sr-only md:not-sr-only">Lectura</span>
         </button>
         <div id="reading-settings" role="group" aria-labelledby="reading-settings-title" data-reading-panel hidden>
             <p id="reading-settings-title">Ajustes de lectura</p>

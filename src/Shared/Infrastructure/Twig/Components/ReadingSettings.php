@@ -14,9 +14,10 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final class ReadingSettings
 {
     /**
-     * The side of the button the panel lines up with from md up: "end" for
-     * a button at the end of a bar, "start" for one at the start of a
-     * sidebar. Below md it lines up with the end, where the button sits.
+     * Where the button sits: "end" for the end of the site's header, whose
+     * panel lines up with the end of the bar's content; "start" for the
+     * start of the CMS's sidebar, whose panel opens under the button from md
+     * up. Below that, both take the width of their bar.
      */
     public string $align = 'end';
 }
