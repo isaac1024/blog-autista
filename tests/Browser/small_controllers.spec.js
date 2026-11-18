@@ -1,4 +1,4 @@
-import { characterCount, copyField, searchPreview, singleLine, unsavedChanges } from '../Markup/small_controllers.js';
+import { actionBar, characterCount, copyField, searchPreview, singleLine, unsavedChanges } from '../Markup/small_controllers.js';
 import { expect, loadController, test } from './support/test.js';
 
 test.describe('character count', () => {
@@ -124,5 +124,23 @@ test.describe('unsaved changes', () => {
 
         await expect(page.getByText('Save first')).toBeHidden();
         await expect(button).toHaveAttribute('aria-disabled', 'false');
+    });
+});
+
+test.describe('unsaved form', () => {
+    test('leaving a form with changes not saved asks first, and staying keeps them', async ({ page }) => {
+        await loadController(page, 'unsaved-form', actionBar());
+        await page.getByLabel('Title').fill('Second');
+        await expect(page.getByText('Unsaved changes')).toBeVisible();
+
+        let asked = '';
+        page.once('dialog', async (dialog) => {
+            asked = dialog.type();
+            await dialog.dismiss();
+        });
+        await page.goto('http://blogautista.test/elsewhere').catch(() => {});
+
+        expect(asked).toBe('beforeunload');
+        await expect(page.getByLabel('Title')).toHaveValue('Second');
     });
 });

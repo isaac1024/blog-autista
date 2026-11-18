@@ -40,7 +40,7 @@ const open = async () => {
     page.document.body.innerHTML = actionBar();
     await settle();
     const told = () => page.document.documentElement.style.getPropertyValue('--action-bar-height');
-    const unstuck = () => page.document.querySelector('[data-controller="action-bar"]')?.hasAttribute('data-unstuck');
+    const unstuck = () => page.document.querySelector('[data-controller~="action-bar"]')?.hasAttribute('data-unstuck');
 
     return {
         told,
@@ -50,7 +50,7 @@ const open = async () => {
             resized.forEach((tell) => tell());
         },
         remove: async () => {
-            page.document.querySelector('[data-controller="action-bar"]')?.remove();
+            page.document.querySelector('[data-controller~="action-bar"]')?.remove();
             await settle();
         },
     };

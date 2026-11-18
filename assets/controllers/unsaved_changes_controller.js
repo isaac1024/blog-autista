@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import { snapshot } from '../form/snapshot.js';
 
 /**
  * @typedef {object} Properties
@@ -40,15 +41,10 @@ export default class extends BaseController {
         }
     }
 
-    /*
-     * The form's fields as it would submit them, those joining it from
-     * outside included.
-     */
+    /* The form it waits for, as it would submit it. */
     snapshot() {
         const form = document.getElementById(this.formValue);
-        // Without the form there is nothing to save.
-        const fields = form instanceof HTMLFormElement ? [...new FormData(form)].map(([name, value]) => [name, String(value)]) : [];
 
-        return new URLSearchParams(fields).toString();
+        return snapshot(form instanceof HTMLFormElement ? form : null);
     }
 }

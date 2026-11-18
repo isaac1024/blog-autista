@@ -1180,6 +1180,7 @@ site:
 ui:
     search: 'Buscar'
     skip_to_content: 'Saltar al contenido'
+    unsaved: 'Hay cambios sin guardar.'
     menu: 'Menú'
     reading:
         toggle: 'Ajustes de lectura'
