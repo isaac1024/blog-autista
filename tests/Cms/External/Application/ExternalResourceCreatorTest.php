@@ -27,6 +27,7 @@ use Shared\Domain\External\ImageShape;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceCreatorTest extends TestCase
@@ -71,7 +72,7 @@ final class ExternalResourceCreatorTest extends TestCase
         }), self::identicalTo($file));
         $storage->expects(self::never())->method('delete');
 
-        self::assertTrue(new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, $fetcher, $storage));
+        self::assertTrue(new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, $fetcher, $storage));
     }
 
     /**
@@ -92,7 +93,7 @@ final class ExternalResourceCreatorTest extends TestCase
             return ReadingMother::video();
         });
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, $written, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, $written, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
 
         self::assertSame($read, $asked);
     }
@@ -128,7 +129,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $reader = self::createStub(ResourceReader::class);
         $reader->method('read')->willReturn($reading);
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -155,7 +156,7 @@ final class ExternalResourceCreatorTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::ownSite());
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, 'https://blogautista.es/sobre-mi.html', 'WWW.BlogAutista.ES')(self::createStub(ExternalResourceRepository::class), self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, 'https://blogautista.es/sobre-mi.html', 'WWW.BlogAutista.ES')(self::createStub(ExternalResourceRepository::class), self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItKeepsAnAddressAsLongAsOneCanBe(): void
@@ -167,7 +168,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $reader = self::createStub(ResourceReader::class);
         $reader->method('read')->willReturn(new Reading(ResourceKind::Article, null, null, 'Una noticia', null, null, [], [], true));
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -185,7 +186,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $reader = self::createStub(ResourceReader::class);
         $reader->method('read')->willReturn(new Reading(ResourceKind::Article, null, null, 'Una noticia', null, null, ['publisher' => 'El Medio'], [], true));
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
 
         self::assertInstanceOf(ExternalResource::class, $saved);
         $published = self::createStub(ExternalResourceRepository::class);
@@ -193,7 +194,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with(self::callback(static fn (ExternalResourcePublished $event): bool => 1 === $event->revision()));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($published, $eventBus, self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($published, $eventBus, new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItTellsWhenTheAddressCouldNotBeReached(): void
@@ -204,7 +205,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $reader = self::createStub(ResourceReader::class);
         $reader->method('read')->willReturn(ReadingMother::video(images: [], reached: false));
 
-        self::assertFalse(new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class)));
+        self::assertFalse(new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class)));
     }
 
     /**
@@ -226,7 +227,7 @@ final class ExternalResourceCreatorTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, $fetcher, $storage);
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, $fetcher, $storage);
     }
 
     /**
@@ -240,7 +241,7 @@ final class ExternalResourceCreatorTest extends TestCase
         $reader = $this->createMock(ResourceReader::class);
         $reader->expects(self::never())->method('read');
 
-        self::assertTells($key, $parameters, static fn () => new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class)));
+        self::assertTells($key, $parameters, static fn () => new ExternalResourceCreator(ExternalResourceMother::ID, $url, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class)));
     }
 
     /**
@@ -273,7 +274,7 @@ final class ExternalResourceCreatorTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::ownSite());
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, 'https://blogautista.es/sobre-mi.html', self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, 'https://blogautista.es/sobre-mi.html', self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItRefusesAnAddressAnotherResourceHasWithoutReadingIt(): void
@@ -287,6 +288,30 @@ final class ExternalResourceCreatorTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::taken($holder));
 
-        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * Telling what it uses fails, so nothing is saved, and the image kept
+     * for it is removed, as when saving fails.
+     */
+    public function testItRemovesTheImageKeptWhenTellingFails(): void
+    {
+        $failure = new \RuntimeException('A subscriber failed.');
+        $repository = self::createStub(ExternalResourceRepository::class);
+        $repository->method('findByUrl')->willReturn(null);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willThrowException($failure);
+        $reader = self::createStub(ResourceReader::class);
+        $reader->method('read')->willReturn(ReadingMother::video());
+        $fetcher = self::createStub(ResourceImageFetcher::class);
+        $fetcher->method('fetch')->willReturn($this->landscapeImageFile());
+        $storage = $this->createMock(ResourceImageStorage::class);
+        $storage->expects(self::once())->method('save');
+        $storage->expects(self::once())->method('delete');
+
+        $this->expectExceptionObject($failure);
+
+        new ExternalResourceCreator(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, self::OWN_HOST)($repository, $eventBus, new RecordingTransaction(), $reader, $fetcher, $storage);
     }
 }

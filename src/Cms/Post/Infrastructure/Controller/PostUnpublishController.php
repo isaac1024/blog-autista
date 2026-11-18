@@ -53,8 +53,8 @@ final class PostUnpublishController extends AbstractController
                 Resource::post($id),
                 RetirementRequest::address($request),
                 RetirementRequest::incoming($request),
-                static function () use ($id, $postRepository, $eventBus, $postRedirects): void {
-                    new PostUnpublisher($id)($postRepository, $eventBus, $postRedirects);
+                function () use ($id, $postRepository, $eventBus, $postRedirects): void {
+                    new PostUnpublisher($id)($postRepository, $eventBus, $this->transaction, $postRedirects);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PostNotFound $exception) {

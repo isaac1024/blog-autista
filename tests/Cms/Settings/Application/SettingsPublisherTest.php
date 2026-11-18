@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class SettingsPublisherTest extends TestCase
@@ -40,7 +41,7 @@ final class SettingsPublisherTest extends TestCase
         $repository->method('find')->willReturn($settings);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        (new SettingsPublisher())($repository, self::createStub(EventBus::class));
+        (new SettingsPublisher())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -71,7 +72,7 @@ final class SettingsPublisherTest extends TestCase
             Mother::version(defaultImage: Mother::IMAGE, mainMenu: $main, footerMenu: $footer),
         ));
 
-        (new SettingsPublisher())($repository, $this->eventBusCollecting($told));
+        (new SettingsPublisher())($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.published', SettingsIdMother::DEFAULT_VALUE, [
@@ -98,7 +99,7 @@ final class SettingsPublisherTest extends TestCase
             Mother::version(defaultImage: Mother::IMAGE, mainMenu: [Mother::item()]),
         ));
 
-        (new SettingsPublisher())($repository, $this->eventBusCollecting($told));
+        (new SettingsPublisher())($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
@@ -115,7 +116,7 @@ final class SettingsPublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells('errors.settings.publication.nothing_to_publish', [], static fn () => (new SettingsPublisher())($repository, $eventBus));
+        self::assertTells('errors.settings.publication.nothing_to_publish', [], static fn () => (new SettingsPublisher())($repository, $eventBus, new RecordingTransaction()));
     }
 
     public function testItFailsWhileTheSettingsDoNotExist(): void
@@ -125,6 +126,6 @@ final class SettingsPublisherTest extends TestCase
 
         $this->expectExceptionObject(SettingsNotFound::create());
 
-        (new SettingsPublisher())($repository, self::createStub(EventBus::class));
+        (new SettingsPublisher())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

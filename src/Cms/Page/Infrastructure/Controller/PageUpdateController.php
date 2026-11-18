@@ -9,6 +9,7 @@ use Cms\Page\Application\PageUpdater;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,7 +24,7 @@ final class PageUpdateController extends AbstractController
 
     #[Route('/pages/{id}', name: 'cms_pages_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_pages_update')]
-    public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
             new PageUpdater(
@@ -34,7 +35,7 @@ final class PageUpdateController extends AbstractController
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($pageRepository, $eventBus);
+            )($pageRepository, $eventBus, $transaction);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

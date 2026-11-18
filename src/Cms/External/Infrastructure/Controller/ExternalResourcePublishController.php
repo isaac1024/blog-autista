@@ -10,6 +10,7 @@ use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -23,10 +24,10 @@ final class ExternalResourcePublishController extends AbstractController
 {
     #[Route('/externals/{id}/publish', name: 'cms_externals_publish', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_externals_publish')]
-    public function __invoke(string $id, ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceImageStorage $imageStorage): Response
+    public function __invoke(string $id, ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage): Response
     {
         try {
-            new ExternalResourcePublisher($id)($resourceRepository, $eventBus, $imageStorage);
+            new ExternalResourcePublisher($id)($resourceRepository, $eventBus, $transaction, $imageStorage);
         } catch (ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

@@ -8,6 +8,7 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageSlugAvailability;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Saves everything edited on an existing page: its title, slug, content and
@@ -28,13 +29,13 @@ final readonly class PageUpdater
         private string $robots,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
 
         $page->edit($this->title, $this->slug, $this->content, $this->metaDescription, $this->robots);
 
         new PageSlugAvailability($page)($pageRepository);
-        $page->save($pageRepository, $eventBus);
+        $page->save($pageRepository, $eventBus, $transaction);
     }
 }

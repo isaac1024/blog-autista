@@ -21,6 +21,7 @@ use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
 use Shared\Domain\SiteTimeZone;
+use Shared\Domain\Transaction;
 
 /**
  * A post of the blog, filed under a section, signed by an author and
@@ -382,19 +383,22 @@ final class Post extends AggregateRoot
     /**
      * Saves the post, then tells the rest of the system what happened to it
      * since it was loaded. It takes its events before saving, so the saved
-     * post holds none, and none is told twice.
+     * post holds none, and none is told twice. Both happen in one
+     * transaction: what a subscriber told at once fails to do undoes the save.
      */
-    public function save(PostRepository $postRepository, EventBus $eventBus): void
+    public function save(PostRepository $postRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $events = $this->pullDomainEvents();
-        $postRepository->save($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($postRepository, $eventBus, $events): void {
+            $postRepository->save($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     /**
      * Deletes a post off the site that nothing links to.
      */
-    public function delete(PostRepository $postRepository, EventBus $eventBus, PostUsage $postUsage): void
+    public function delete(PostRepository $postRepository, EventBus $eventBus, Transaction $transaction, PostUsage $postUsage): void
     {
         if (PostStatus::Published === $this->status) {
             throw InvalidPostPublication::publishedPost();
@@ -408,8 +412,10 @@ final class Post extends AggregateRoot
         $this->recordResourcesUsed($this->resourcesUsed(), ['images' => [], 'pages' => [], 'posts' => [], 'terms' => [], 'authors' => [], 'externals' => []]);
 
         $events = $this->pullDomainEvents();
-        $postRepository->delete($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($postRepository, $eventBus, $events): void {
+            $postRepository->delete($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     public function id(): PostId

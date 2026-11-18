@@ -11,6 +11,7 @@ use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +33,7 @@ final class PostUpdateController extends AbstractController
 
     #[Route('/posts/{id}', name: 'cms_posts_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_posts_update')]
-    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, Request $request, PostRepository $postRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
             new PostUpdater(
@@ -47,7 +48,7 @@ final class PostUpdateController extends AbstractController
                 $this->tiptapRichText->toStored($request->request->getString('content')),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($postRepository, $eventBus, $this->classifiers, $this->postImages);
+            )($postRepository, $eventBus, $transaction, $this->classifiers, $this->postImages);
         } catch (PostNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

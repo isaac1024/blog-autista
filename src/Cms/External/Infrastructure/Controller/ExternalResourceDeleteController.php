@@ -11,6 +11,7 @@ use Cms\External\Domain\ExternalResourceUsage;
 use Cms\External\Domain\ResourceImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -25,6 +26,7 @@ final class ExternalResourceDeleteController extends AbstractController
 {
     public function __construct(
         private readonly EventBus $eventBus,
+        private readonly Transaction $transaction,
         private readonly ResourceImageStorage $imageStorage,
         private readonly ExternalResourceUsage $usage,
     ) {}
@@ -34,7 +36,7 @@ final class ExternalResourceDeleteController extends AbstractController
     public function __invoke(string $id, ExternalResourceRepository $resourceRepository): Response
     {
         try {
-            new ExternalResourceDeleter($id)($resourceRepository, $this->eventBus, $this->imageStorage, $this->usage);
+            new ExternalResourceDeleter($id)($resourceRepository, $this->eventBus, $this->transaction, $this->imageStorage, $this->usage);
         } catch (ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

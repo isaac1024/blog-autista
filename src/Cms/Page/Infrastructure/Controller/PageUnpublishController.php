@@ -53,8 +53,8 @@ final class PageUnpublishController extends AbstractController
                 Resource::page($id),
                 RetirementRequest::address($request),
                 RetirementRequest::incoming($request),
-                static function () use ($id, $pageRepository, $eventBus, $pageRedirects): void {
-                    new PageUnpublisher($id)($pageRepository, $eventBus, $pageRedirects);
+                function () use ($id, $pageRepository, $eventBus, $pageRedirects): void {
+                    new PageUnpublisher($id)($pageRepository, $eventBus, $this->transaction, $pageRedirects);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PageNotFound $exception) {

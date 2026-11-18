@@ -12,6 +12,7 @@ use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Cms\External\Domain\ResourceUrl;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates an external resource from its address, reading what it is and
@@ -31,7 +32,7 @@ final readonly class ExternalResourceCreator
     /**
      * Whether what it is and tells could be read, as the reading said.
      */
-    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceReader $reader, ResourceImageFetcher $imageFetcher, ResourceImageStorage $imageStorage): bool
+    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceReader $reader, ResourceImageFetcher $imageFetcher, ResourceImageStorage $imageStorage): bool
     {
         $url = new ResourceUrl($this->url);
 
@@ -47,7 +48,7 @@ final readonly class ExternalResourceCreator
 
         $reading = $reader->read($url);
         $resource = ExternalResource::create($this->id, $url, $reading, $imageFetcher, $imageStorage);
-        $resource->save($resourceRepository, $eventBus, $imageStorage);
+        $resource->save($resourceRepository, $eventBus, $transaction, $imageStorage);
 
         return $reading->reached;
     }

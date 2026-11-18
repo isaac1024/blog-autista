@@ -9,6 +9,7 @@ use Cms\Settings\Application\SettingsNotFound;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,10 +19,10 @@ final class SettingsDiscardChangesController extends AbstractController
 {
     #[Route('/settings/discard', name: 'cms_settings_discard', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_settings_discard')]
-    public function __invoke(SettingsRepository $settingsRepository, EventBus $eventBus): Response
+    public function __invoke(SettingsRepository $settingsRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
-            new SettingsChangesDiscarder()($settingsRepository, $eventBus);
+            new SettingsChangesDiscarder()($settingsRepository, $eventBus, $transaction);
         } catch (SettingsNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

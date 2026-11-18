@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 
 final class ImageDeleterTest extends TestCase
@@ -45,7 +46,7 @@ final class ImageDeleterTest extends TestCase
                 $steps[] = 'file';
             });
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class), new RecordingTransaction());
 
         self::assertSame(['image', 'file'], $steps);
     }
@@ -74,7 +75,7 @@ final class ImageDeleterTest extends TestCase
                 && ['page_ids' => []] === $event->toPrimitives(),
         ));
 
-        (new ImageDeleter($id))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus);
+        (new ImageDeleter($id))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus, new RecordingTransaction());
     }
 
     public function testItKeepsTheFileWhenTheImageCannotBeDeleted(): void
@@ -88,7 +89,7 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItDeletesNothingWhileTheImageIsOnTheSite(): void
@@ -99,7 +100,7 @@ final class ImageDeleterTest extends TestCase
         $storage = $this->createMock(ImageStorage::class);
         $storage->expects(self::never())->method('delete');
 
-        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class)));
+        self::assertTells('errors.image.publication.published_image', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, self::usage(false), self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     /**
@@ -115,7 +116,7 @@ final class ImageDeleterTest extends TestCase
         $usage = $this->createMock(ImageUsage::class);
         $usage->expects(self::once())->method('isInUse')->with(self::equalTo(ImageIdMother::create()))->willReturn(true);
 
-        self::assertTells('errors.image.publication.in_use', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, $usage, self::createStub(EventBus::class)));
+        self::assertTells('errors.image.publication.in_use', [], static fn () => (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, $storage, $usage, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void
@@ -125,7 +126,30 @@ final class ImageDeleterTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), self::createStub(EventBus::class));
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), self::createStub(EventBus::class), new RecordingTransaction());
+    }
+
+    /**
+     * Deleting it and telling it uses nothing any longer happen within one
+     * transaction, so a subscriber told at once that fails undoes the
+     * deletion.
+     */
+    public function testItDeletesTheImageAndTellsItLinksToNothingWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(ImageMother::create());
+        $repository->method('delete')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus, $transaction);
+
+        self::assertSame([true, true], $within);
     }
 
     private static function usage(bool $inUse): ImageUsage

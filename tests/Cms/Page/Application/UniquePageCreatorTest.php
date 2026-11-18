@@ -24,6 +24,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class UniquePageCreatorTest extends TestCase
@@ -55,7 +56,7 @@ final class UniquePageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository, self::createStub(EventBus::class));
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, $title))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -91,7 +92,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new UniquePageCreator($id, $type, $title))($repository, self::createStub(EventBus::class));
+        (new UniquePageCreator($id, $type, $title))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -123,7 +124,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(UniquePageAlreadyExists::ofType(PageType::from($type)));
 
-        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository, self::createStub(EventBus::class));
+        (new UniquePageCreator(PageIdMother::random()->value(), $type, 'Otra página'))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -150,7 +151,7 @@ final class UniquePageCreatorTest extends TestCase
 
         $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, self::createStub(EventBus::class));
+        (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, 'contact', 'Contacto'))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -162,6 +163,7 @@ final class UniquePageCreatorTest extends TestCase
         self::assertTells($key, $parameters, static fn () => (new UniquePageCreator(PageIdMother::DEFAULT_VALUE, $type, 'Sobre mí'))(
             self::createStub(PageRepository::class),
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -182,6 +184,7 @@ final class UniquePageCreatorTest extends TestCase
         self::assertTells('errors.page.unique_already_exists', ['%type%' => 'home'], static fn () => (new UniquePageCreator(PageIdMother::random()->value(), 'home', 'Otra página'))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 }

@@ -19,6 +19,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -61,7 +62,7 @@ final class ImageUpdaterTest extends TestCase
                 updatedAt: ClockMother::NOW,
             )));
 
-        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -105,7 +106,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(self::image($id, $stored)));
 
-        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -128,7 +129,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(self::image($id, null)));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItMovesWhenTheImageLastChangedWhenOnlyTheCaptionChanges(): void
@@ -141,7 +142,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(ImageMother::create(id: $id, caption: $caption, createdAt: self::BEFORE, updatedAt: ClockMother::NOW)));
 
-        (new ImageUpdater($id, ImageMother::ALT, $caption))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, ImageMother::ALT, $caption))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItMovesWhenTheImageLastChangedWhenOnlyTheAlternativeTextChanges(): void
@@ -153,7 +154,7 @@ final class ImageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(ImageMother::create(id: $id, alt: 'Otro texto', createdAt: self::BEFORE, updatedAt: ClockMother::NOW)));
 
-        (new ImageUpdater($id, 'Otro texto', Text::EMPTY))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, 'Otro texto', Text::EMPTY))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -171,7 +172,7 @@ final class ImageUpdaterTest extends TestCase
         $repository->method('find')->willReturn(self::image($id, null));
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, $parameters, static fn () => (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class)));
+        self::assertTells($key, $parameters, static fn () => (new ImageUpdater($id, $alt, $caption))($repository, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     /**
@@ -214,7 +215,7 @@ final class ImageUpdaterTest extends TestCase
                 && ['page_ids' => [self::LINKED]] === $event->toPrimitives(),
         ));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus);
+        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -233,7 +234,7 @@ final class ImageUpdaterTest extends TestCase
                 && ['post_ids' => [], 'term_ids' => [self::LINKED], 'author_ids' => [], 'external_ids' => []] === $event->toPrimitives(),
         ));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Sueño', 'marks' => ['link'], 'term_id' => self::LINKED]]])))($repository, $eventBus);
+        (new ImageUpdater($id, ImageMother::ALT, Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Sueño', 'marks' => ['link'], 'term_id' => self::LINKED]]])))($repository, $eventBus, new RecordingTransaction());
     }
 
     public function testItTellsNothingWhenTheCaptionLinksToTheSamePages(): void
@@ -244,7 +245,7 @@ final class ImageUpdaterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        (new ImageUpdater($id, 'Otro texto alternativo', Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus);
+        (new ImageUpdater($id, 'Otro texto alternativo', Text::stored(['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::LINKED]]])))($repository, $eventBus, new RecordingTransaction());
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void
@@ -256,7 +257,7 @@ final class ImageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId($id));
 
-        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater($id, ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -267,7 +268,29 @@ final class ImageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('image-id'));
 
-        (new ImageUpdater('image-id', ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class));
+        (new ImageUpdater('image-id', ImageMother::ALT, Text::EMPTY))($repository, self::createStub(EventBus::class), new RecordingTransaction());
+    }
+
+    /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesTheImageAndTellsWhatItLinksToWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(ImageMother::create());
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        (new ImageUpdater(ImageIdMother::DEFAULT_VALUE, 'Otro texto', Text::EMPTY))($repository, $eventBus, $transaction);
+
+        self::assertSame([true, true], $within);
     }
 
     /**

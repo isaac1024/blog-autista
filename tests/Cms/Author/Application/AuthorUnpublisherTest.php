@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
@@ -58,7 +59,7 @@ final class AuthorUnpublisherTest extends TestCase
         $storage = $this->createMock(AvatarStorage::class);
         $storage->expects(self::never())->method('delete');
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage, self::createStub(AuthorRedirects::class));
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), $storage, self::createStub(AuthorRedirects::class));
     }
 
     /**
@@ -74,7 +75,7 @@ final class AuthorUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::redirected());
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), $redirects);
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class), $redirects);
     }
 
     #[DataProvider('authorsOffTheSite')]
@@ -86,7 +87,7 @@ final class AuthorUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::notPublished());
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
     }
 
     /**
@@ -105,7 +106,7 @@ final class AuthorUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(AuthorNotFound::withId(AuthorIdMother::DEFAULT_VALUE));
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
     }
 
     /**
@@ -126,7 +127,7 @@ final class AuthorUnpublisherTest extends TestCase
         $repository = self::createStub(AuthorRepository::class);
         $repository->method('find')->willReturn($subject);
 
-        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
+        new AuthorUnpublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorRedirects::class));
 
         self::assertSame([
             [AuthorContentsLinked::eventName(), ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]],

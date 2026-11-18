@@ -14,6 +14,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class TermChangesDiscarderTest extends TestCase
@@ -32,7 +33,7 @@ final class TermChangesDiscarderTest extends TestCase
         $repository->method('find')->willReturn(TermMother::published(name: 'Día a día', publishedName: TermMother::NAME, updatedAt: '2026-10-01 09:00:00'));
         $repository->expects(self::once())->method('save')->with(self::equalTo(TermMother::published()));
 
-        new TermChangesDiscarder('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermChangesDiscarder('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     #[DataProvider('termsWithoutChanges')]
@@ -44,7 +45,7 @@ final class TermChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidTermPublication::noChangesToDiscard());
 
-        new TermChangesDiscarder('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new TermChangesDiscarder('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**

@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class AuthorCreatorTest extends TestCase
@@ -34,7 +35,7 @@ final class AuthorCreatorTest extends TestCase
         $repository = $this->createMock(AuthorRepository::class);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, $name)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, $name)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -60,7 +61,7 @@ final class AuthorCreatorTest extends TestCase
         $repository = $this->createMock(AuthorRepository::class);
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, $parameters, static fn () => new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, $name)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class)));
+        self::assertTells($key, $parameters, static fn () => new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, $name)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class)));
     }
 
     /**
@@ -79,6 +80,6 @@ final class AuthorCreatorTest extends TestCase
         $repository->method('findBySlug')->willReturn(AuthorMother::create(id: AuthorIdMother::random()->value(), slug: 'isaac-abreu'));
         $repository->expects(self::never())->method('save');
 
-        self::assertTells('errors.author.slug.taken', ['%slug%' => 'isaac-abreu'], static fn () => new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, 'Isaac Abreu')($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class)));
+        self::assertTells('errors.author.slug.taken', ['%slug%' => 'isaac-abreu'], static fn () => new AuthorCreator(AuthorIdMother::DEFAULT_VALUE, 'Isaac Abreu')($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class)));
     }
 }

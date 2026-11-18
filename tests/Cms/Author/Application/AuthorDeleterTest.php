@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -49,7 +50,7 @@ final class AuthorDeleterTest extends TestCase
 
         $this->expectExceptionObject(AuthorNotFound::withId(AuthorIdMother::DEFAULT_VALUE));
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
     }
 
     /**
@@ -74,7 +75,7 @@ final class AuthorDeleterTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof AuthorImagesUsed && ['image_ids' => []] === $event->toPrimitives()),
         );
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $storage, self::createStub(AuthorUsage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), $storage, self::createStub(AuthorUsage::class));
 
         self::assertEqualsCanonicalizing([AuthorMother::AVATAR, AuthorMother::OTHER_AVATAR], $deleted);
     }
@@ -88,7 +89,7 @@ final class AuthorDeleterTest extends TestCase
             self::callback(static fn (DomainEvent $event): bool => $event instanceof AuthorPagesLinked && ['page_ids' => []] === $event->toPrimitives()),
         );
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
     }
 
     /**
@@ -122,7 +123,49 @@ final class AuthorDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::publishedAuthor());
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage, self::createStub(AuthorUsage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage, self::createStub(AuthorUsage::class));
+    }
+
+    /**
+     * Deleting it and telling it uses nothing any longer happen within one
+     * transaction, so a subscriber told at once that fails undoes the
+     * deletion.
+     */
+    public function testItDeletesTheAuthorAndTellsItUsesNothingWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create());
+        $repository->method('delete')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, $transaction, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
+
+        self::assertSame([true, true], $within);
+    }
+
+    /**
+     * When telling it uses nothing fails, the author stays, and its avatars
+     * with it.
+     */
+    public function testItKeepsTheAvatarsWhenTellingFails(): void
+    {
+        $failure = new \RuntimeException('A subscriber failed.');
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create(avatar: AuthorMother::AVATAR));
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willThrowException($failure);
+        $storage = $this->createMock(AvatarStorage::class);
+        $storage->expects(self::never())->method('delete');
+
+        $this->expectExceptionObject($failure);
+
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), $storage, self::createStub(AuthorUsage::class));
     }
 
     /**
@@ -142,7 +185,7 @@ final class AuthorDeleterTest extends TestCase
             }
         });
 
-        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
+        new AuthorDeleter(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class), self::createStub(AuthorUsage::class));
 
         return $told;
     }

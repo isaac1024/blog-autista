@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PostCreatorTest extends TestCase
@@ -30,7 +31,7 @@ final class PostCreatorTest extends TestCase
         $repository = $this->createMock(PostRepository::class);
         $repository->expects(self::once())->method('save')->with(self::equalTo(PostMother::create()));
 
-        new PostCreator(PostIdMother::DEFAULT_VALUE, '  Mi primer   día sin ruido ')($repository, self::createStub(EventBus::class));
+        new PostCreator(PostIdMother::DEFAULT_VALUE, '  Mi primer   día sin ruido ')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItNeverCreatesAPostWithATitleTooShort(): void
@@ -38,6 +39,6 @@ final class PostCreatorTest extends TestCase
         $repository = $this->createMock(PostRepository::class);
         $repository->expects(self::never())->method('save');
 
-        self::assertTells('errors.post.title.too_short', ['%min%' => 3], static fn () => new PostCreator(PostIdMother::DEFAULT_VALUE, 'No')($repository, self::createStub(EventBus::class)));
+        self::assertTells('errors.post.title.too_short', ['%min%' => 3], static fn () => new PostCreator(PostIdMother::DEFAULT_VALUE, 'No')($repository, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 }

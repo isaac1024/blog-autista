@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PostChangesDiscarderTest extends TestCase
@@ -32,12 +33,12 @@ final class PostChangesDiscarderTest extends TestCase
         $repository = $this->repository(PostMother::published(title: 'Después', publishedTitle: PostMother::TITLE, updatedAt: '2026-10-01 09:00:00'));
         $repository->expects(self::once())->method('save')->with(self::equalTo(PostMother::published()));
 
-        new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItHasNoChangesToDiscardOnAPostAsItIsOnTheSite(): void
     {
-        self::assertTells('errors.post.publication.no_changes_to_discard', [], static fn () => new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::published()), self::createStub(EventBus::class)));
+        self::assertTells('errors.post.publication.no_changes_to_discard', [], static fn () => new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::published()), self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     public function testItThrowsWhenThePostDoesNotExist(): void
@@ -47,7 +48,7 @@ final class PostChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(PostNotFound::withId(PostIdMother::DEFAULT_VALUE));
 
-        new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class));
+        new PostChangesDiscarder(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**

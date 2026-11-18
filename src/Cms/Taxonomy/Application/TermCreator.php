@@ -9,6 +9,7 @@ use Cms\Taxonomy\Domain\Term;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermSlugAvailability;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates a term of a taxonomy from the submitted name, deriving its slug
@@ -22,11 +23,11 @@ final readonly class TermCreator
         private string $name,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $term = Term::create($this->id, Taxonomy::fromValue($this->taxonomy), $this->name);
 
         new TermSlugAvailability($term)($termRepository);
-        $term->save($termRepository, $eventBus);
+        $term->save($termRepository, $eventBus, $transaction);
     }
 }

@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class SettingsChangesDiscarderTest extends TestCase
@@ -40,7 +41,7 @@ final class SettingsChangesDiscarderTest extends TestCase
             Mother::published(createdAt: self::BEFORE, updatedAt: ClockMother::NOW),
         ));
 
-        (new SettingsChangesDiscarder())($repository, self::createStub(EventBus::class));
+        (new SettingsChangesDiscarder())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -55,7 +56,7 @@ final class SettingsChangesDiscarderTest extends TestCase
             Mother::version(mainMenu: [Mother::item(Mother::PAGE)]),
         ));
 
-        (new SettingsChangesDiscarder())($repository, $this->eventBusCollecting($told));
+        (new SettingsChangesDiscarder())($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
@@ -73,6 +74,7 @@ final class SettingsChangesDiscarderTest extends TestCase
         self::assertTells('errors.settings.publication.no_changes_to_discard', [], static fn () => (new SettingsChangesDiscarder())(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -92,6 +94,6 @@ final class SettingsChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(SettingsNotFound::create());
 
-        (new SettingsChangesDiscarder())($repository, self::createStub(EventBus::class));
+        (new SettingsChangesDiscarder())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

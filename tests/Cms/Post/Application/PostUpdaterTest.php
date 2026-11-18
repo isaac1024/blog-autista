@@ -25,6 +25,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -275,6 +276,28 @@ final class PostUpdaterTest extends TestCase
     }
 
     /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesThePostAndTellsWhatItUsesWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(PostRepository::class);
+        $repository->method('find')->willReturn(PostMother::create());
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        new PostUpdater(PostIdMother::DEFAULT_VALUE, PostMother::TITLE, PostMother::SLUG, '', '', [], '', RichTextMother::EMPTY, '', 'index,follow')($repository, $eventBus, $transaction, new InMemoryClassifiers(), new InMemoryPostImages());
+
+        self::assertSame([true, true], $within);
+    }
+
+    /**
      * @param list<string>            $tags
      * @param array<array-key, mixed> $content
      *
@@ -297,6 +320,7 @@ final class PostUpdaterTest extends TestCase
         new PostUpdater(PostIdMother::DEFAULT_VALUE, $title, $slug, $section, $author, $tags, $openingImage, $content, $metaDescription, 'index,follow')(
             $repository,
             $eventBus,
+            new RecordingTransaction(),
             $classifiers ?? new InMemoryClassifiers(),
             $images ?? new InMemoryPostImages(drafts: [self::IMAGE]),
         );

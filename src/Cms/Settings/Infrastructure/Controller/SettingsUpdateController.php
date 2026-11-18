@@ -9,6 +9,7 @@ use Cms\Settings\Application\SettingsUpdater;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,7 +20,7 @@ final class SettingsUpdateController extends AbstractController
 {
     #[Route('/settings', name: 'cms_settings_update', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_settings_update')]
-    public function __invoke(Request $request, SettingsRepository $settingsRepository, EventBus $eventBus): Response
+    public function __invoke(Request $request, SettingsRepository $settingsRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
             new SettingsUpdater(
@@ -29,7 +30,7 @@ final class SettingsUpdateController extends AbstractController
                 // Each entry posts its fields under its position, in order.
                 $request->request->all('main_menu'),
                 $request->request->all('footer_menu'),
-            )($settingsRepository, $eventBus);
+            )($settingsRepository, $eventBus, $transaction);
         } catch (SettingsNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

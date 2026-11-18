@@ -21,6 +21,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceCheckerTest extends TestCase
@@ -55,7 +56,7 @@ final class ExternalResourceCheckerTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with(self::equalTo(new ExternalResourceAvailabilityChanged(ExternalResourceMother::ID, false, 2)));
 
-        self::assertSame($outcome, new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, $reader, self::createStub(ResourceImageStorage::class)));
+        self::assertSame($outcome, new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), $reader, self::createStub(ResourceImageStorage::class)));
     }
 
     public function testItTellsTheSiteNothingOfAResourceNotOnIt(): void
@@ -72,7 +73,7 @@ final class ExternalResourceCheckerTest extends TestCase
             self::assertSame([], $events);
         });
 
-        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, $reader, self::createStub(ResourceImageStorage::class));
+        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), $reader, self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -93,7 +94,7 @@ final class ExternalResourceCheckerTest extends TestCase
             self::assertSame([], $events);
         });
 
-        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, $reader, self::createStub(ResourceImageStorage::class));
+        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), $reader, self::createStub(ResourceImageStorage::class));
     }
 
     public function testItThrowsWhenTheResourceDoesNotExist(): void
@@ -103,6 +104,6 @@ final class ExternalResourceCheckerTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceReader::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceChecker(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceReader::class), self::createStub(ResourceImageStorage::class));
     }
 }

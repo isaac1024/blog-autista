@@ -9,6 +9,7 @@ use Cms\Taxonomy\Application\TermUpdater;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +21,7 @@ final class TermUpdateController extends AbstractController
 {
     #[Route('/{taxonomy}/{id}', name: 'cms_terms_update', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_terms_update')]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, Request $request, TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
             new TermUpdater(
@@ -30,7 +31,7 @@ final class TermUpdateController extends AbstractController
                 $request->request->getString('slug'),
                 $request->request->getString('meta_description'),
                 $request->request->getString('robots'),
-            )($termRepository, $eventBus);
+            )($termRepository, $eventBus, $transaction);
         } catch (TermNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

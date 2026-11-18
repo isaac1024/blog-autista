@@ -6,6 +6,7 @@ namespace Cms\Taxonomy\Application;
 
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Throws away what was edited on a published term since it was published,
@@ -18,12 +19,12 @@ final readonly class TermChangesDiscarder
         private string $id,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $term = new TermOfTaxonomy($this->taxonomy, $this->id)($termRepository);
 
         $term->discardChanges();
 
-        $term->save($termRepository, $eventBus);
+        $term->save($termRepository, $eventBus, $transaction);
     }
 }

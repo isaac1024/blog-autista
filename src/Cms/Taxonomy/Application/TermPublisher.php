@@ -7,6 +7,7 @@ namespace Cms\Taxonomy\Application;
 use Cms\Taxonomy\Domain\PostsUnderSectionSlugs;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Puts the version last saved of a term on the site, for the first time or in
@@ -22,12 +23,12 @@ final readonly class TermPublisher
         private string $id,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus, PostsUnderSectionSlugs $postsUnderSectionSlugs): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction, PostsUnderSectionSlugs $postsUnderSectionSlugs): void
     {
         $term = new TermOfTaxonomy($this->taxonomy, $this->id)($termRepository);
 
         $term->publish($postsUnderSectionSlugs);
-        $term->save($termRepository, $eventBus);
+        $term->save($termRepository, $eventBus, $transaction);
 
         // Its address is its last from now on, not that of a term off the
         // site that last had it.
@@ -36,7 +37,7 @@ final readonly class TermPublisher
 
         if (null !== $former && !$former->id()->equals($term->id())) {
             $former->loseLastAddress();
-            $former->save($termRepository, $eventBus);
+            $former->save($termRepository, $eventBus, $transaction);
         }
     }
 }

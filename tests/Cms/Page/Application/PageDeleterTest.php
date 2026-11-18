@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 
 final class PageDeleterTest extends TestCase
@@ -37,7 +38,7 @@ final class PageDeleterTest extends TestCase
             ->method('delete')
             ->with(self::identicalTo($page));
 
-        (new PageDeleter($id))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     #[DataProvider('uniquePages')]
@@ -49,7 +50,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(UniquePageCannotBeDeleted::ofType($page->type()));
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     /**
@@ -71,7 +72,7 @@ final class PageDeleterTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::once())->method('delete')->with(self::identicalTo($page));
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     public function testItNeverDeletesAPublishedPage(): void
@@ -83,7 +84,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPagePublication::publishedPage());
 
-        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter($page->id()->value()))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -95,7 +96,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageDeleter($id))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter($id))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -106,7 +107,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class), self::unused());
+        (new PageDeleter('page-id'))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::unused());
     }
 
     /**
@@ -124,7 +125,7 @@ final class PageDeleterTest extends TestCase
                 && ['image_ids' => []] === $event->toPrimitives(),
         ));
 
-        (new PageDeleter($id))($repository, $eventBus, self::unused());
+        (new PageDeleter($id))($repository, $eventBus, new RecordingTransaction(), self::unused());
     }
 
     public function testItTellsNothingWhenThePageDeletedEmbedsNoImage(): void
@@ -134,7 +135,7 @@ final class PageDeleterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::unused());
+        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction(), self::unused());
     }
 
     public function testItNeverDeletesAPageOtherPagesLinkTo(): void
@@ -153,7 +154,7 @@ final class PageDeleterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPagePublication::linkedPage());
 
-        (new PageDeleter($page->id()->value()))($repository, $eventBus, $pageUsage);
+        (new PageDeleter($page->id()->value()))($repository, $eventBus, new RecordingTransaction(), $pageUsage);
     }
 
     /**
@@ -171,7 +172,30 @@ final class PageDeleterTest extends TestCase
                 && ['page_ids' => []] === $event->toPrimitives(),
         ));
 
-        (new PageDeleter($id))($repository, $eventBus, self::unused());
+        (new PageDeleter($id))($repository, $eventBus, new RecordingTransaction(), self::unused());
+    }
+
+    /**
+     * Deleting it and telling it uses nothing any longer happen within one
+     * transaction, so a subscriber told at once that fails undoes the
+     * deletion.
+     */
+    public function testItDeletesThePageAndTellsItUsesNothingWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::unpublished());
+        $repository->method('delete')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, $transaction, self::unused());
+
+        self::assertSame([true, true], $within);
     }
 
     /**

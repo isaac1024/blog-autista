@@ -20,6 +20,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ImageUnpublisherTest extends TestCase
@@ -44,7 +45,7 @@ final class ImageUnpublisherTest extends TestCase
         // It keeps the version it had on the site.
         $repository->expects(self::once())->method('save')->with(self::equalTo(ImageMother::unpublished()));
 
-        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), self::createStub(ImageRedirects::class));
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ImageRedirects::class));
     }
 
     public function testItTellsTheSiteToTakeItOff(): void
@@ -59,7 +60,7 @@ final class ImageUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        (new ImageUnpublisher($id))($repository, $eventBus, self::createStub(ImageRedirects::class));
+        (new ImageUnpublisher($id))($repository, $eventBus, new RecordingTransaction(), self::createStub(ImageRedirects::class));
     }
 
     #[DataProvider('imagesOffTheSite')]
@@ -71,7 +72,7 @@ final class ImageUnpublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells('errors.image.publication.not_published', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(ImageRedirects::class)));
+        self::assertTells('errors.image.publication.not_published', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction(), self::createStub(ImageRedirects::class)));
     }
 
     /**
@@ -95,7 +96,7 @@ final class ImageUnpublisherTest extends TestCase
         $imageRedirects = $this->createMock(ImageRedirects::class);
         $imageRedirects->expects(self::once())->method('isTargeted')->with(self::equalTo($image->id()))->willReturn(true);
 
-        self::assertTells('errors.image.publication.redirected', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), $imageRedirects));
+        self::assertTells('errors.image.publication.redirected', [], static fn () => (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction(), $imageRedirects));
     }
 
     public function testItFailsWhenTheImageDoesNotExist(): void
@@ -105,7 +106,7 @@ final class ImageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), self::createStub(ImageRedirects::class));
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ImageRedirects::class));
     }
 
     /**
@@ -126,7 +127,7 @@ final class ImageUnpublisherTest extends TestCase
         $repository = self::createStub(ImageRepository::class);
         $repository->method('find')->willReturn($subject);
 
-        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(ImageRedirects::class));
+        (new ImageUnpublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction(), self::createStub(ImageRedirects::class));
 
         self::assertSame([
             [ImagePagesLinked::eventName(), ['page_ids' => []]],

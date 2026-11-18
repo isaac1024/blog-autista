@@ -8,6 +8,7 @@ use Cms\Settings\Domain\Settings;
 use Cms\Settings\Domain\SettingsAlreadyExist;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates the settings of the site, failing when they already exist.
@@ -19,7 +20,7 @@ final readonly class SettingsCreator
         private string $name,
     ) {}
 
-    public function __invoke(SettingsRepository $settingsRepository, EventBus $eventBus): void
+    public function __invoke(SettingsRepository $settingsRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $settings = Settings::create($this->id, $this->name);
 
@@ -27,6 +28,6 @@ final readonly class SettingsCreator
             throw SettingsAlreadyExist::create();
         }
 
-        $settings->save($settingsRepository, $eventBus);
+        $settings->save($settingsRepository, $eventBus, $transaction);
     }
 }

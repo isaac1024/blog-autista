@@ -19,6 +19,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -42,7 +43,7 @@ final class PageChangesDiscarderTest extends TestCase
         $repository->method('find')->willReturn(PageMother::published(id: $id, title: 'Quién soy', publishedTitle: 'Sobre mí', updatedAt: self::BEFORE));
         $repository->expects(self::once())->method('save')->with(self::equalTo(PageMother::published(id: $id, title: 'Sobre mí')));
 
-        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class));
+        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     #[DataProvider('pagesWithoutChanges')]
@@ -54,7 +55,7 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidPagePublication::noChangesToDiscard());
 
-        (new PageChangesDiscarder($page->id()->value()))($repository, self::createStub(EventBus::class));
+        (new PageChangesDiscarder($page->id()->value()))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -75,14 +76,14 @@ final class PageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class));
+        (new PageChangesDiscarder($id))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class));
+        (new PageChangesDiscarder('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItTellsTheImagesThePageEmbedsOnceItsChangesAreDiscarded(): void
@@ -102,7 +103,7 @@ final class PageChangesDiscarderTest extends TestCase
                 && ['image_ids' => ['01a1b801-ce58-723d-8234-b76d9105d002']] === $event->toPrimitives(),
         ));
 
-        new PageChangesDiscarder($id)($repository, $eventBus);
+        new PageChangesDiscarder($id)($repository, $eventBus, new RecordingTransaction());
     }
 
     public function testItTellsThePagesThePageLinksToOnceItsChangesAreDiscarded(): void
@@ -122,6 +123,6 @@ final class PageChangesDiscarderTest extends TestCase
                 && ['page_ids' => ['01a1b801-ce58-723d-8234-b76d9105e002']] === $event->toPrimitives(),
         ));
 
-        new PageChangesDiscarder($id)($repository, $eventBus);
+        new PageChangesDiscarder($id)($repository, $eventBus, new RecordingTransaction());
     }
 }

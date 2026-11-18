@@ -9,6 +9,7 @@ use Cms\Taxonomy\Application\TermNotFound;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,10 +23,10 @@ final class TermDiscardChangesController extends AbstractController
 {
     #[Route('/{taxonomy}/{id}/discard', name: 'cms_terms_discard', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT, 'id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_terms_discard')]
-    public function __invoke(TaxonomySegment $taxonomy, string $id, TermRepository $termRepository, EventBus $eventBus): Response
+    public function __invoke(TaxonomySegment $taxonomy, string $id, TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
-            new TermChangesDiscarder($taxonomy->taxonomy(), $id)($termRepository, $eventBus);
+            new TermChangesDiscarder($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $transaction);
         } catch (TermNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

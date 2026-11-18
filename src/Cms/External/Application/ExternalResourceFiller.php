@@ -10,6 +10,7 @@ use Cms\External\Domain\ResourceImageFetcher;
 use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Fills the version being edited of an external resource from its address
@@ -22,13 +23,13 @@ final readonly class ExternalResourceFiller
     /**
      * Whether the resource could be read; when it couldn't, nothing changed.
      */
-    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceReader $reader, ResourceImageFetcher $imageFetcher, ResourceImageStorage $imageStorage): bool
+    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceReader $reader, ResourceImageFetcher $imageFetcher, ResourceImageStorage $imageStorage): bool
     {
         $resource = $resourceRepository->find(new ExternalResourceId($this->id)) ?? throw ExternalResourceNotFound::withId($this->id);
 
         $reading = $reader->read($resource->version()->url());
         $resource->fill($reading, $imageFetcher, $imageStorage);
-        $resource->save($resourceRepository, $eventBus, $imageStorage);
+        $resource->save($resourceRepository, $eventBus, $transaction, $imageStorage);
 
         return $reading->reached;
     }

@@ -16,6 +16,7 @@ use Cms\Tests\Author\Domain\AuthorMother;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
@@ -44,7 +45,7 @@ final class AuthorChangesDiscarderTest extends TestCase
         $storage = $this->createMock(AvatarStorage::class);
         $storage->expects(self::once())->method('delete')->with(self::equalTo(new AvatarPath(AuthorMother::OTHER_AVATAR)));
 
-        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage);
+        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage);
     }
 
     public function testItRefusesToDiscardWithoutChanges(): void
@@ -55,7 +56,7 @@ final class AuthorChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidAuthorPublication::noChangesToDiscard());
 
-        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     public function testItThrowsWhenTheAuthorDoesNotExist(): void
@@ -65,6 +66,6 @@ final class AuthorChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(AuthorNotFound::withId(AuthorIdMother::DEFAULT_VALUE));
 
-        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorChangesDiscarder(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 }

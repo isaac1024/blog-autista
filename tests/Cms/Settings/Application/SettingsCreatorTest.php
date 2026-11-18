@@ -15,6 +15,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class SettingsCreatorTest extends TestCase
@@ -39,7 +40,7 @@ final class SettingsCreatorTest extends TestCase
             SettingsMother::create(SettingsMother::version(name: $expected)),
         ));
 
-        (new SettingsCreator(SettingsIdMother::DEFAULT_VALUE, $name))($repository, self::createStub(EventBus::class));
+        (new SettingsCreator(SettingsIdMother::DEFAULT_VALUE, $name))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -63,7 +64,7 @@ final class SettingsCreatorTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(null);
 
-        (new SettingsCreator(SettingsIdMother::DEFAULT_VALUE, SettingsMother::NAME))($repository, $this->eventBusCollecting($told));
+        (new SettingsCreator(SettingsIdMother::DEFAULT_VALUE, SettingsMother::NAME))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([], $told);
     }
@@ -77,6 +78,7 @@ final class SettingsCreatorTest extends TestCase
         self::assertTells('errors.settings.already_exist', [], static fn () => (new SettingsCreator(SettingsIdMother::random()->value(), 'Otro nombre'))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -93,6 +95,7 @@ final class SettingsCreatorTest extends TestCase
         self::assertTells($key, $parameters, static fn () => (new SettingsCreator(SettingsIdMother::DEFAULT_VALUE, $name))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -115,6 +118,6 @@ final class SettingsCreatorTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('settings-id'));
 
-        (new SettingsCreator('settings-id', SettingsMother::NAME))($repository, self::createStub(EventBus::class));
+        (new SettingsCreator('settings-id', SettingsMother::NAME))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

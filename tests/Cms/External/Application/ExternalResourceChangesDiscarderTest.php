@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceChangesDiscarderTest extends TestCase
@@ -43,7 +44,7 @@ final class ExternalResourceChangesDiscarderTest extends TestCase
         $storage = $this->createMock(ResourceImageStorage::class);
         $storage->expects(self::once())->method('delete')->with(self::equalTo(new ResourceImagePath(ExternalResourceMother::OTHER_IMAGE)));
 
-        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $storage);
+        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage);
     }
 
     public function testItRefusesAResourceWithoutChangesToDiscard(): void
@@ -54,7 +55,7 @@ final class ExternalResourceChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourcePublication::noChangesToDiscard());
 
-        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItThrowsWhenTheResourceDoesNotExist(): void
@@ -64,6 +65,6 @@ final class ExternalResourceChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceChangesDiscarder(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 }

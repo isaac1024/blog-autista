@@ -9,6 +9,7 @@ use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,12 +20,12 @@ final class TermCreateController extends AbstractController
 {
     #[Route('/{taxonomy}', name: 'cms_terms_create', requirements: ['taxonomy' => TaxonomySegment::REQUIREMENT], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_terms_create')]
-    public function __invoke(TaxonomySegment $taxonomy, Request $request, TermRepository $termRepository, EventBus $eventBus): Response
+    public function __invoke(TaxonomySegment $taxonomy, Request $request, TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         $id = TermId::random()->value();
 
         try {
-            new TermCreator($id, $taxonomy->taxonomy(), $request->request->getString('name'))($termRepository, $eventBus);
+            new TermCreator($id, $taxonomy->taxonomy(), $request->request->getString('name'))($termRepository, $eventBus, $transaction);
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

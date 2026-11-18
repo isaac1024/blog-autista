@@ -12,6 +12,7 @@ use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +28,7 @@ final class ExternalResourceCreateController extends AbstractController
 {
     public function __construct(
         private readonly EventBus $eventBus,
+        private readonly Transaction $transaction,
         private readonly ResourceReader $reader,
         private readonly ResourceImageFetcher $imageFetcher,
         private readonly ResourceImageStorage $imageStorage,
@@ -41,7 +43,7 @@ final class ExternalResourceCreateController extends AbstractController
         $id = ExternalResourceId::random()->value();
 
         try {
-            $read = new ExternalResourceCreator($id, $request->request->getString('url'), $this->webHost)($resourceRepository, $this->eventBus, $this->reader, $this->imageFetcher, $this->imageStorage);
+            $read = new ExternalResourceCreator($id, $request->request->getString('url'), $this->webHost)($resourceRepository, $this->eventBus, $this->transaction, $this->reader, $this->imageFetcher, $this->imageStorage);
         } catch (DomainError $error) {
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);
             $holder = $error->parameters()['%id%'] ?? '';

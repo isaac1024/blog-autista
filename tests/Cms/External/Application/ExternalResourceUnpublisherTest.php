@@ -15,6 +15,7 @@ use Cms\External\Domain\ResourceStatus;
 use Cms\Tests\External\Domain\ExternalResourceMother;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
+use Shared\Tests\Domain\RecordingTransaction;
 
 final class ExternalResourceUnpublisherTest extends TestCase
 {
@@ -28,7 +29,7 @@ final class ExternalResourceUnpublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with(self::equalTo(new ExternalResourceUnpublished(ExternalResourceMother::ID, 2)));
 
-        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, $eventBus, self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItRefusesAResourceNotOnTheSite(): void
@@ -39,7 +40,7 @@ final class ExternalResourceUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourcePublication::notPublished());
 
-        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItThrowsWhenTheResourceDoesNotExist(): void
@@ -49,6 +50,6 @@ final class ExternalResourceUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUnpublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 }

@@ -9,6 +9,7 @@ use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\InvalidResourceUrl;
 use Cms\External\Domain\ResourceImageStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Saves everything edited on an existing external resource: its address,
@@ -29,7 +30,7 @@ final readonly class ExternalResourceUpdater
         private array $details,
     ) {}
 
-    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceImageStorage $imageStorage): void
+    public function __invoke(ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage): void
     {
         $resource = $resourceRepository->find(new ExternalResourceId($this->id)) ?? throw ExternalResourceNotFound::withId($this->id);
 
@@ -40,6 +41,6 @@ final readonly class ExternalResourceUpdater
             throw InvalidResourceUrl::taken($holder->id()->value());
         }
 
-        $resource->save($resourceRepository, $eventBus, $imageStorage);
+        $resource->save($resourceRepository, $eventBus, $transaction, $imageStorage);
     }
 }

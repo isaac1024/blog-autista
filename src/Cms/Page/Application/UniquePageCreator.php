@@ -11,6 +11,7 @@ use Cms\Page\Domain\PageSlugAvailability;
 use Cms\Page\Domain\PageType;
 use Cms\Page\Domain\UniquePageAlreadyExists;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates one of the unique pages of the site, failing when it already exists.
@@ -23,7 +24,7 @@ final readonly class UniquePageCreator
         private string $title,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $type = PageType::tryFrom($this->type) ?? throw InvalidPageType::unknown($this->type);
         $page = Page::createUnique($this->id, $type, $this->title);
@@ -33,6 +34,6 @@ final readonly class UniquePageCreator
         }
 
         new PageSlugAvailability($page)($pageRepository);
-        $page->save($pageRepository, $eventBus);
+        $page->save($pageRepository, $eventBus, $transaction);
     }
 }

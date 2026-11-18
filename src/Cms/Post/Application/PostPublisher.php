@@ -11,6 +11,7 @@ use Cms\Post\Domain\PostImages;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\MutualExclusion;
+use Shared\Domain\Transaction;
 
 /**
  * Puts the version last saved of a post on the site, for the first time or
@@ -29,6 +30,7 @@ final readonly class PostPublisher
     public function __invoke(
         PostRepository $postRepository,
         EventBus $eventBus,
+        Transaction $transaction,
         Classifiers $classifiers,
         PostImages $postImages,
         MutualExclusion $mutualExclusion,
@@ -39,9 +41,9 @@ final readonly class PostPublisher
         $address = $post->publishedAddress();
         $keys = null === $address ? [] : ['post-address:'.$address->key()];
 
-        $mutualExclusion->run($keys, static function () use ($post, $address, $postRepository, $eventBus): void {
+        $mutualExclusion->run($keys, static function () use ($post, $address, $postRepository, $eventBus, $transaction): void {
             new PostAddressAvailability($post, $address)($postRepository);
-            $post->save($postRepository, $eventBus);
+            $post->save($postRepository, $eventBus, $transaction);
 
             // Its address is its last from now on, not that of a post off
             // the site that last had it.
@@ -49,7 +51,7 @@ final readonly class PostPublisher
 
             if (null !== $former && !$former->id()->equals($post->id())) {
                 $former->loseLastAddress();
-                $former->save($postRepository, $eventBus);
+                $former->save($postRepository, $eventBus, $transaction);
             }
         });
     }

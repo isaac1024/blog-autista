@@ -23,6 +23,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -248,7 +249,7 @@ final class AuthorUpdaterTest extends TestCase
             ['type' => 'image', 'id' => self::IMAGE],
             ['type' => 'image', 'id' => $first],
             ['type' => 'paragraph', 'text' => [['text' => 'Otra', 'marks' => ['link'], 'page_id' => self::PAGE], ['text' => ' y otra', 'marks' => ['link'], 'page_id' => $page]]],
-        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        ), '', 'index,follow', null)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class));
 
         self::assertSame([['image_ids' => [$first, self::IMAGE]], ['page_ids' => [$page, self::PAGE]]], $told);
     }
@@ -282,7 +283,7 @@ final class AuthorUpdaterTest extends TestCase
         new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
             ['type' => 'image', 'id' => self::IMAGE],
             ['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::PAGE]]],
-        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        ), '', 'index,follow', null)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -306,7 +307,7 @@ final class AuthorUpdaterTest extends TestCase
                 ['text' => ' y Ana', 'marks' => ['link'], 'author_id' => self::OTHER_AUTHOR],
                 ['text' => ' y un vídeo', 'marks' => ['link'], 'external_id' => self::PAGE],
             ]],
-        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        ), '', 'index,follow', null)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -327,7 +328,7 @@ final class AuthorUpdaterTest extends TestCase
         new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
             ['type' => 'mosaic', 'limit' => 6, 'section_id' => null, 'author_id' => AuthorIdMother::DEFAULT_VALUE, 'tag_ids' => [self::PAGE]],
             ['type' => 'mosaic', 'limit' => 6, 'section_id' => null, 'author_id' => self::OTHER_AUTHOR, 'tag_ids' => []],
-        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        ), '', 'index,follow', null)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     public function testItThrowsWhenTheAuthorDoesNotExist(): void
@@ -338,6 +339,53 @@ final class AuthorUpdaterTest extends TestCase
         $this->expectExceptionObject(AuthorNotFound::withId(AuthorIdMother::DEFAULT_VALUE));
 
         self::update($repository, self::createStub(AvatarStorage::class));
+    }
+
+    /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesTheAuthorAndTellsWhatItUsesWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create());
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, 'Isaac', AuthorMother::SLUG, RichTextMother::EMPTY, '', 'index,follow', null)($repository, $eventBus, $transaction, self::createStub(AvatarStorage::class));
+
+        self::assertSame([true, true], $within);
+    }
+
+    /**
+     * When telling what changed fails, nothing is saved, so the avatar kept
+     * for it is removed again, as when saving fails.
+     */
+    public function testItRemovesTheNewAvatarWhenTellingFails(): void
+    {
+        $failure = new \RuntimeException('A subscriber failed.');
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create(avatar: AuthorMother::AVATAR));
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willThrowException($failure);
+        $storage = $this->createMock(AvatarStorage::class);
+        $kept = null;
+        $storage->method('save')->willReturnCallback(static function (AvatarPath $path) use (&$kept): void {
+            $kept = $path;
+        });
+        $storage->expects(self::once())->method('delete')->willReturnCallback(static function (AvatarPath $path) use (&$kept): void {
+            self::assertEquals($kept, $path);
+        });
+
+        $this->expectExceptionObject($failure);
+
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::EMPTY, '', 'index,follow', AvatarFileMother::path())($repository, $eventBus, new RecordingTransaction(), $storage);
     }
 
     /**
@@ -353,6 +401,6 @@ final class AuthorUpdaterTest extends TestCase
         string $robots = 'index,follow',
         ?string $avatar = null,
     ): void {
-        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, $name, $slug, $bio, $metaDescription, $robots, $avatar)($repository, self::createStub(EventBus::class), $storage);
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, $name, $slug, $bio, $metaDescription, $robots, $avatar)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage);
     }
 }

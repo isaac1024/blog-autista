@@ -18,6 +18,7 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class SettingsUpdaterTest extends TestCase
@@ -58,7 +59,7 @@ final class SettingsUpdaterTest extends TestCase
             Mother::create($expected, createdAt: self::BEFORE, updatedAt: ClockMother::NOW),
         ));
 
-        (new SettingsUpdater($name, $image, '', $mainMenu, $footerMenu))($repository, self::createStub(EventBus::class));
+        (new SettingsUpdater($name, $image, '', $mainMenu, $footerMenu))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -113,6 +114,7 @@ final class SettingsUpdaterTest extends TestCase
         (new SettingsUpdater(' '.Mother::NAME.' ', Mother::IMAGE, '', [['page_id' => Mother::PAGE, 'label' => ' Sobre mí ']], []))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         );
     }
 
@@ -131,7 +133,7 @@ final class SettingsUpdaterTest extends TestCase
             '',
             [Mother::item(Mother::OTHER_PAGE), Mother::item(Mother::PAGE)],
             [Mother::item(Mother::PAGE)],
-        ))($repository, $this->eventBusCollecting($told));
+        ))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => [Mother::IMAGE]]],
@@ -155,7 +157,7 @@ final class SettingsUpdaterTest extends TestCase
         ], [
             ['term_id' => self::TERM, 'label' => null],
             ['author_id' => self::AUTHOR, 'label' => null],
-        ]))($repository, $this->eventBusCollecting($told));
+        ]))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.contents_linked', SettingsIdMother::DEFAULT_VALUE, ['post_ids' => [self::POST], 'term_ids' => [self::TERM], 'author_ids' => [self::AUTHOR], 'external_ids' => [self::EXTERNAL]]],
@@ -173,7 +175,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository->method('find')->willReturn(Mother::create());
         $repository->expects(self::once())->method('save')->with(self::callback(static fn (Settings $settings): bool => self::AUTHOR === $settings->author()?->value()));
 
-        (new SettingsUpdater(Mother::NAME, '', self::AUTHOR, [], []))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, '', self::AUTHOR, [], []))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.contents_linked', SettingsIdMother::DEFAULT_VALUE, ['post_ids' => [], 'term_ids' => [], 'author_ids' => [self::AUTHOR], 'external_ids' => []]],
@@ -188,7 +190,7 @@ final class SettingsUpdaterTest extends TestCase
 
         $this->expectException(DomainError::class);
 
-        (new SettingsUpdater(Mother::NAME, '', 'isaac', [], []))($repository, self::createStub(EventBus::class));
+        (new SettingsUpdater(Mother::NAME, '', 'isaac', [], []))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItTellsItUsesNoImageNorPageOnceTheyAreRemoved(): void
@@ -197,7 +199,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::create(Mother::version(defaultImage: Mother::IMAGE, footerMenu: [Mother::item()])));
 
-        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => []]],
@@ -220,6 +222,7 @@ final class SettingsUpdaterTest extends TestCase
         (new SettingsUpdater('Otro nombre', Mother::IMAGE, '', [Mother::item(Mother::OTHER_PAGE, 'Otra'), Mother::item(Mother::PAGE)], []))(
             $repository,
             $this->eventBusCollecting($told),
+            new RecordingTransaction(),
         );
 
         self::assertSame([], $told);
@@ -236,7 +239,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::published($published));
 
-        (new SettingsUpdater(Mother::NAME, Mother::OTHER_IMAGE, '', [], [Mother::item(Mother::PAGE)]))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, Mother::OTHER_IMAGE, '', [], [Mother::item(Mother::PAGE)]))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([
             ['cms.settings.images_used', SettingsIdMother::DEFAULT_VALUE, ['image_ids' => [Mother::IMAGE, Mother::OTHER_IMAGE]]],
@@ -253,7 +256,7 @@ final class SettingsUpdaterTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn(Mother::published(Mother::version(), $published));
 
-        (new SettingsUpdater(Mother::NAME, Mother::IMAGE, '', [Mother::item()], []))($repository, $this->eventBusCollecting($told));
+        (new SettingsUpdater(Mother::NAME, Mother::IMAGE, '', [Mother::item()], []))($repository, $this->eventBusCollecting($told), new RecordingTransaction());
 
         self::assertSame([], $told);
     }
@@ -274,7 +277,7 @@ final class SettingsUpdaterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells($key, $parameters, static fn () => (new SettingsUpdater($name, $image, '', $mainMenu, []))($repository, $eventBus));
+        self::assertTells($key, $parameters, static fn () => (new SettingsUpdater($name, $image, '', $mainMenu, []))($repository, $eventBus, new RecordingTransaction()));
     }
 
     /**
@@ -291,7 +294,7 @@ final class SettingsUpdaterTest extends TestCase
             range(1, 9),
         );
 
-        self::assertTells('errors.settings.menu.too_many_items', ['%max%' => 8], static fn () => (new SettingsUpdater(Mother::NAME, '', '', [], $nine))($repository, self::createStub(EventBus::class)));
+        self::assertTells('errors.settings.menu.too_many_items', ['%max%' => 8], static fn () => (new SettingsUpdater(Mother::NAME, '', '', [], $nine))($repository, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     /**
@@ -329,6 +332,28 @@ final class SettingsUpdaterTest extends TestCase
 
         $this->expectExceptionObject(SettingsNotFound::create());
 
-        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, self::createStub(EventBus::class));
+        (new SettingsUpdater(Mother::NAME, '', '', [], []))($repository, self::createStub(EventBus::class), new RecordingTransaction());
+    }
+
+    /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesTheSettingsAndTellsWhatTheyUseWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(SettingsRepository::class);
+        $repository->method('find')->willReturn(Mother::create());
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        (new SettingsUpdater('Otro nombre', '', '', [], []))($repository, $eventBus, $transaction);
+
+        self::assertSame([true, true], $within);
     }
 }

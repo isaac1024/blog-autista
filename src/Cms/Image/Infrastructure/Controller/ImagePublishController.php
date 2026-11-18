@@ -46,8 +46,8 @@ final class ImagePublishController extends AbstractController
                 Resource::image($id),
                 PreviousAddressDecision::keep(),
                 null,
-                static function () use ($id, $imageRepository, $eventBus): void {
-                    new ImagePublisher($id)($imageRepository, $eventBus);
+                function () use ($id, $imageRepository, $eventBus): void {
+                    new ImagePublisher($id)($imageRepository, $eventBus, $this->transaction);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (ImageNotFound $exception) {

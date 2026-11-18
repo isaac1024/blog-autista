@@ -76,8 +76,8 @@ final class PostPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($id, $postRepository, $eventBus, $classifiers, $postImages, $mutualExclusion): void {
-                    new PostPublisher($id)($postRepository, $eventBus, $classifiers, $postImages, $mutualExclusion);
+                function () use ($id, $postRepository, $eventBus, $classifiers, $postImages, $mutualExclusion): void {
+                    new PostPublisher($id)($postRepository, $eventBus, $this->transaction, $classifiers, $postImages, $mutualExclusion);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PostNotFound $exception) {

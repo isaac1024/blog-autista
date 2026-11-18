@@ -11,6 +11,7 @@ use Cms\Author\Domain\AuthorUsage;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,10 +25,10 @@ final class AuthorDeleteController extends AbstractController
 {
     #[Route('/authors/{id}/delete', name: 'cms_authors_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_authors_delete')]
-    public function __invoke(string $id, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): Response
+    public function __invoke(string $id, AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): Response
     {
         try {
-            new AuthorDeleter($id)($authorRepository, $eventBus, $avatarStorage, $authorUsage);
+            new AuthorDeleter($id)($authorRepository, $eventBus, $transaction, $avatarStorage, $authorUsage);
         } catch (AuthorNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

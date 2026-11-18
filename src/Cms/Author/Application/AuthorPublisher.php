@@ -8,6 +8,7 @@ use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Puts the version last saved of an author on the site, for the first time or
@@ -18,12 +19,12 @@ final readonly class AuthorPublisher
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): void
     {
         $author = $authorRepository->find(new AuthorId($this->id)) ?? throw AuthorNotFound::withId($this->id);
 
         $author->publish();
-        $author->save($authorRepository, $eventBus, $avatarStorage);
+        $author->save($authorRepository, $eventBus, $transaction, $avatarStorage);
 
         // Its address is its last from now on, not that of an author off the
         // site that last had it.
@@ -32,7 +33,7 @@ final readonly class AuthorPublisher
 
         if (null !== $former && !$former->id()->equals($author->id())) {
             $former->loseLastAddress();
-            $former->save($authorRepository, $eventBus, $avatarStorage);
+            $former->save($authorRepository, $eventBus, $transaction, $avatarStorage);
         }
     }
 }

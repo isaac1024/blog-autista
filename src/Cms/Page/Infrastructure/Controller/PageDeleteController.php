@@ -10,6 +10,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageUsage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,10 +21,10 @@ final class PageDeleteController extends AbstractController
 {
     #[Route('/pages/{id}/delete', name: 'cms_pages_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_pages_delete')]
-    public function __invoke(string $id, PageRepository $pageRepository, EventBus $eventBus, PageUsage $pageUsage): Response
+    public function __invoke(string $id, PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction, PageUsage $pageUsage): Response
     {
         try {
-            new PageDeleter($id)($pageRepository, $eventBus, $pageUsage);
+            new PageDeleter($id)($pageRepository, $eventBus, $transaction, $pageUsage);
         } catch (PageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

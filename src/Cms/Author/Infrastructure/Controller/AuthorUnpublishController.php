@@ -54,8 +54,8 @@ final class AuthorUnpublishController extends AbstractController
                 Resource::author($id),
                 RetirementRequest::address($request),
                 RetirementRequest::incoming($request),
-                static function () use ($id, $authorRepository, $eventBus, $avatarStorage, $authorRedirects): void {
-                    new AuthorUnpublisher($id)($authorRepository, $eventBus, $avatarStorage, $authorRedirects);
+                function () use ($id, $authorRepository, $eventBus, $avatarStorage, $authorRedirects): void {
+                    new AuthorUnpublisher($id)($authorRepository, $eventBus, $this->transaction, $avatarStorage, $authorRedirects);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (AuthorNotFound $exception) {

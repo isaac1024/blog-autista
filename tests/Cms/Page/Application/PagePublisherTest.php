@@ -23,6 +23,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
@@ -47,7 +48,7 @@ final class PagePublisherTest extends TestCase
         $repository->method('find')->willReturn($page);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class));
+        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -91,7 +92,7 @@ final class PagePublisherTest extends TestCase
             $saved[] = [$page->id()->value(), $page->lastSiteSlug()?->value()];
         });
 
-        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class));
+        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class), new RecordingTransaction());
 
         self::assertSame([[$page->id()->value(), 'sobre-mi'], ['01a19e72-b07f-7d78-889c-fa4a14a4fb96', null]], $saved);
     }
@@ -107,7 +108,7 @@ final class PagePublisherTest extends TestCase
         $repository->method('findOffSiteByLastSiteSlug')->willReturn($page);
         $repository->expects(self::once())->method('save');
 
-        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class));
+        new PagePublisher($page->id()->value())($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItTellsTheSiteWhatToServe(): void
@@ -140,7 +141,7 @@ final class PagePublisherTest extends TestCase
                 ] === $event->toPrimitives(),
         ));
 
-        new PagePublisher($id)($repository, $eventBus);
+        new PagePublisher($id)($repository, $eventBus, new RecordingTransaction());
     }
 
     #[DataProvider('unpublishablePages')]
@@ -154,7 +155,7 @@ final class PagePublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        new PagePublisher($page->id()->value())($repository, $eventBus);
+        new PagePublisher($page->id()->value())($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -196,14 +197,14 @@ final class PagePublisherTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        new PagePublisher($id)($repository, self::createStub(EventBus::class));
+        new PagePublisher($id)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        new PagePublisher('sobre-mi')(self::createStub(PageRepository::class), self::createStub(EventBus::class));
+        new PagePublisher('sobre-mi')(self::createStub(PageRepository::class), self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -229,7 +230,7 @@ final class PagePublisherTest extends TestCase
             self::isInstanceOf(PagePublished::class),
         );
 
-        new PagePublisher($id)($repository, $eventBus);
+        new PagePublisher($id)($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -255,6 +256,6 @@ final class PagePublisherTest extends TestCase
             self::isInstanceOf(PagePublished::class),
         );
 
-        new PagePublisher($id)($repository, $eventBus);
+        new PagePublisher($id)($repository, $eventBus, new RecordingTransaction());
     }
 }

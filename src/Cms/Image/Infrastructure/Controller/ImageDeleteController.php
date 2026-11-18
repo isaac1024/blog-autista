@@ -11,6 +11,7 @@ use Cms\Image\Domain\ImageStorage;
 use Cms\Image\Domain\ImageUsage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -21,10 +22,10 @@ final class ImageDeleteController extends AbstractController
 {
     #[Route('/images/{id}/delete', name: 'cms_images_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_images_delete')]
-    public function __invoke(string $id, ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus): Response
+    public function __invoke(string $id, ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
-            new ImageDeleter($id)($imageRepository, $imageStorage, $imageUsage, $eventBus);
+            new ImageDeleter($id)($imageRepository, $imageStorage, $imageUsage, $eventBus, $transaction);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

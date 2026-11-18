@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class TermCreatorTest extends TestCase
@@ -35,7 +36,7 @@ final class TermCreatorTest extends TestCase
         $repository = $this->createMock(TermRepository::class);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new TermCreator(TermIdMother::DEFAULT_VALUE, $taxonomy, $name)($repository, self::createStub(EventBus::class));
+        new TermCreator(TermIdMother::DEFAULT_VALUE, $taxonomy, $name)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -62,7 +63,7 @@ final class TermCreatorTest extends TestCase
         $repository = $this->createMock(TermRepository::class);
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, $parameters, static fn () => new TermCreator(TermIdMother::DEFAULT_VALUE, $taxonomy, $name)($repository, self::createStub(EventBus::class)));
+        self::assertTells($key, $parameters, static fn () => new TermCreator(TermIdMother::DEFAULT_VALUE, $taxonomy, $name)($repository, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     /**
@@ -88,7 +89,7 @@ final class TermCreatorTest extends TestCase
         );
         $repository->expects(self::never())->method('save');
 
-        self::assertTells('errors.term.slug.taken', ['%slug%' => 'vida-diaria'], static fn () => new TermCreator(TermIdMother::DEFAULT_VALUE, 'tag', 'Vida diaria')($repository, self::createStub(EventBus::class)));
+        self::assertTells('errors.term.slug.taken', ['%slug%' => 'vida-diaria'], static fn () => new TermCreator(TermIdMother::DEFAULT_VALUE, 'tag', 'Vida diaria')($repository, self::createStub(EventBus::class), new RecordingTransaction()));
     }
 
     /**
@@ -102,7 +103,7 @@ final class TermCreatorTest extends TestCase
         );
         $repository->expects(self::once())->method('save');
 
-        new TermCreator(TermIdMother::DEFAULT_VALUE, 'section', 'Vida diaria')($repository, self::createStub(EventBus::class));
+        new TermCreator(TermIdMother::DEFAULT_VALUE, 'section', 'Vida diaria')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItTellsNothingOfADraft(): void
@@ -110,6 +111,6 @@ final class TermCreatorTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        new TermCreator(TermIdMother::DEFAULT_VALUE, 'section', 'Vida diaria')(self::createStub(TermRepository::class), $eventBus);
+        new TermCreator(TermIdMother::DEFAULT_VALUE, 'section', 'Vida diaria')(self::createStub(TermRepository::class), $eventBus, new RecordingTransaction());
     }
 }

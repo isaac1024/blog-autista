@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceFillerTest extends TestCase
@@ -58,7 +59,7 @@ final class ExternalResourceFillerTest extends TestCase
         }));
         $storage->expects(self::once())->method('delete')->with(self::equalTo(new ResourceImagePath(ExternalResourceMother::IMAGE)));
 
-        self::assertTrue(new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $reader, $fetcher, $storage));
+        self::assertTrue(new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, $fetcher, $storage));
     }
 
     public function testItLeavesTheResourceAsItWasWhenTheAddressCouldNotBeReached(): void
@@ -71,7 +72,7 @@ final class ExternalResourceFillerTest extends TestCase
         $fetcher = $this->createMock(ResourceImageFetcher::class);
         $fetcher->expects(self::never())->method('fetch');
 
-        self::assertFalse(new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $reader, $fetcher, self::createStub(ResourceImageStorage::class)));
+        self::assertFalse(new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, $fetcher, self::createStub(ResourceImageStorage::class)));
     }
 
     public function testItRefusesWhatTheAddressTellsOfAnotherKindOfResource(): void
@@ -84,7 +85,7 @@ final class ExternalResourceFillerTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::anotherKind());
 
-        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItRefusesWhatTheAddressTellsOfTheSameKindByAnotherProvider(): void
@@ -97,7 +98,7 @@ final class ExternalResourceFillerTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::anotherKind());
 
-        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $reader, self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItThrowsWhenTheResourceDoesNotExist(): void
@@ -107,6 +108,6 @@ final class ExternalResourceFillerTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceReader::class), self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceFiller(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceReader::class), self::createStub(ResourceImageFetcher::class), self::createStub(ResourceImageStorage::class));
     }
 }

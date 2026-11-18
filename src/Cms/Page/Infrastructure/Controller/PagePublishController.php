@@ -66,8 +66,8 @@ final class PagePublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($id, $pageRepository, $eventBus): void {
-                    new PagePublisher($id)($pageRepository, $eventBus);
+                function () use ($id, $pageRepository, $eventBus): void {
+                    new PagePublisher($id)($pageRepository, $eventBus, $this->transaction);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (PageNotFound $exception) {

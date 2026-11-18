@@ -11,6 +11,7 @@ use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceImageStorage;
 use Cms\External\Domain\ResourceReader;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -26,6 +27,7 @@ final class ExternalResourceCheckController extends AbstractController
 {
     public function __construct(
         private readonly EventBus $eventBus,
+        private readonly Transaction $transaction,
         private readonly ResourceReader $reader,
         private readonly ResourceImageStorage $imageStorage,
     ) {}
@@ -35,7 +37,7 @@ final class ExternalResourceCheckController extends AbstractController
     public function __invoke(string $id, ExternalResourceRepository $resourceRepository): Response
     {
         try {
-            $outcome = new ExternalResourceChecker($id)($resourceRepository, $this->eventBus, $this->reader, $this->imageStorage);
+            $outcome = new ExternalResourceChecker($id)($resourceRepository, $this->eventBus, $this->transaction, $this->reader, $this->imageStorage);
         } catch (ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         }

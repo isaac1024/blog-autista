@@ -10,6 +10,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -23,10 +24,10 @@ final class AuthorDiscardChangesController extends AbstractController
 {
     #[Route('/authors/{id}/discard', name: 'cms_authors_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_authors_discard')]
-    public function __invoke(string $id, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
+    public function __invoke(string $id, AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): Response
     {
         try {
-            new AuthorChangesDiscarder($id)($authorRepository, $eventBus, $avatarStorage);
+            new AuthorChangesDiscarder($id)($authorRepository, $eventBus, $transaction, $avatarStorage);
         } catch (AuthorNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

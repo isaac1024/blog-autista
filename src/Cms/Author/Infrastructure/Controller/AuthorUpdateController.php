@@ -10,6 +10,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Shared\Infrastructure\RichText\TiptapRichText;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -25,7 +26,7 @@ final class AuthorUpdateController extends AbstractController
 
     #[Route('/authors/{id}', name: 'cms_authors_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_authors_update')]
-    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
+    public function __invoke(string $id, Request $request, AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): Response
     {
         $avatar = $request->files->get('avatar');
 
@@ -40,7 +41,7 @@ final class AuthorUpdateController extends AbstractController
                 $request->request->getString('robots'),
                 // The avatar is only replaced when a new one comes.
                 $avatar instanceof UploadedFile && $avatar->isValid() ? $avatar->getPathname() : null,
-            )($authorRepository, $eventBus, $avatarStorage);
+            )($authorRepository, $eventBus, $transaction, $avatarStorage);
         } catch (AuthorNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

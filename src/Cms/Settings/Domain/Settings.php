@@ -10,6 +10,7 @@ use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\LinkType;
+use Shared\Domain\Transaction;
 
 /**
  * The settings of the site: the name of the blog, the image it is shared
@@ -162,13 +163,17 @@ final class Settings extends AggregateRoot
     /**
      * Saves the settings, then tells the rest of the system what happened to
      * them since they were loaded. They take their events before saving, so
-     * the saved settings hold none, and none is told twice.
+     * the saved settings hold none, and none is told twice. Both happen in
+     * one transaction: what a subscriber told at once fails to do undoes the
+     * save.
      */
-    public function save(SettingsRepository $settingsRepository, EventBus $eventBus): void
+    public function save(SettingsRepository $settingsRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $events = $this->pullDomainEvents();
-        $settingsRepository->save($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($settingsRepository, $eventBus, $events): void {
+            $settingsRepository->save($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     public function name(): SiteName

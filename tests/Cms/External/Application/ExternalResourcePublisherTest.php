@@ -20,6 +20,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourcePublisherTest extends TestCase
@@ -57,7 +58,7 @@ final class ExternalResourcePublisherTest extends TestCase
             1,
         )));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -73,7 +74,7 @@ final class ExternalResourcePublisherTest extends TestCase
             ->method('save')
             ->with(self::callback(static fn (ExternalResource $resource): bool => Availability::Available === $resource->availability()));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -90,7 +91,7 @@ final class ExternalResourcePublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with(self::callback(static fn (ExternalResourcePublished $event): bool => false === $event->toPrimitives()['available']));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -106,7 +107,7 @@ final class ExternalResourcePublisherTest extends TestCase
         $storage = $this->createMock(ResourceImageStorage::class);
         $storage->expects(self::once())->method('delete')->with(self::equalTo(new ResourceImagePath(ExternalResourceMother::OTHER_IMAGE)));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), $storage);
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage);
     }
 
     /**
@@ -119,7 +120,7 @@ final class ExternalResourcePublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with(self::callback(static fn (ExternalResourcePublished $event): bool => [null, null, 'social_post', 'bluesky'] === [$event->toPrimitives()['image'], $event->toPrimitives()['image_shape'], $event->toPrimitives()['kind'], $event->toPrimitives()['provider']]));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, $eventBus, new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     #[DataProvider('unpublishableResources')]
@@ -129,7 +130,7 @@ final class ExternalResourcePublisherTest extends TestCase
         $repository->method('find')->willReturn($resource);
         $repository->expects(self::never())->method('save');
 
-        self::assertTells($key, [], static fn () => new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class)));
+        self::assertTells($key, [], static fn () => new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class)));
     }
 
     /**
@@ -156,6 +157,6 @@ final class ExternalResourcePublisherTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourcePublisher(ExternalResourceMother::ID)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 }

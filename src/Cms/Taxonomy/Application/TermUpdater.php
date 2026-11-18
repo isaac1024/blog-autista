@@ -7,6 +7,7 @@ namespace Cms\Taxonomy\Application;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Taxonomy\Domain\TermSlugAvailability;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Saves everything edited on an existing term: its name, slug and search
@@ -24,13 +25,13 @@ final readonly class TermUpdater
         private string $robots,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $term = new TermOfTaxonomy($this->taxonomy, $this->id)($termRepository);
 
         $term->edit($this->name, $this->slug, $this->metaDescription, $this->robots);
 
         new TermSlugAvailability($term)($termRepository);
-        $term->save($termRepository, $eventBus);
+        $term->save($termRepository, $eventBus, $transaction);
     }
 }

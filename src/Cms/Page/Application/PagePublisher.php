@@ -7,6 +7,7 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Puts the version last saved of a page on the site, for the first time or in
@@ -20,12 +21,12 @@ final readonly class PagePublisher
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
 
         $page->publish();
-        $page->save($pageRepository, $eventBus);
+        $page->save($pageRepository, $eventBus, $transaction);
 
         // Its address is its last from now on, not that of a page off the
         // site that last had it.
@@ -34,7 +35,7 @@ final readonly class PagePublisher
 
         if (null !== $former && !$former->id()->equals($page->id())) {
             $former->loseLastAddress();
-            $former->save($pageRepository, $eventBus);
+            $former->save($pageRepository, $eventBus, $transaction);
         }
     }
 }

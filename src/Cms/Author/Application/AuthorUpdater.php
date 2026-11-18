@@ -10,6 +10,7 @@ use Cms\Author\Domain\AuthorSlugAvailability;
 use Cms\Author\Domain\AvatarFile;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Saves everything edited on an existing author: its name, slug, bio and
@@ -36,7 +37,7 @@ final readonly class AuthorUpdater
         private ?string $avatar,
     ) {}
 
-    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): void
     {
         $author = $authorRepository->find(new AuthorId($this->id)) ?? throw AuthorNotFound::withId($this->id);
 
@@ -48,6 +49,6 @@ final readonly class AuthorUpdater
             $author->replaceAvatar(new AvatarFile($this->avatar), $avatarStorage);
         }
 
-        $author->save($authorRepository, $eventBus, $avatarStorage);
+        $author->save($authorRepository, $eventBus, $transaction, $avatarStorage);
     }
 }

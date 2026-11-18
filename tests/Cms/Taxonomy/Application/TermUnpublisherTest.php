@@ -16,6 +16,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
+use Shared\Tests\Domain\RecordingTransaction;
 
 final class TermUnpublisherTest extends TestCase
 {
@@ -25,7 +26,7 @@ final class TermUnpublisherTest extends TestCase
         $repository->method('find')->willReturn(TermMother::published());
         $repository->expects(self::once())->method('save')->with(self::equalTo(TermMother::unpublished()));
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(TermRedirects::class));
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(TermRedirects::class));
     }
 
     public function testItTellsTheSiteToTakeItOff(): void
@@ -40,7 +41,7 @@ final class TermUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(TermRedirects::class));
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(TermRedirects::class));
     }
 
     /**
@@ -56,7 +57,7 @@ final class TermUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidTermPublication::redirected());
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $redirects);
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $redirects);
     }
 
     #[DataProvider('termsOffTheSite')]
@@ -68,7 +69,7 @@ final class TermUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidTermPublication::notPublished());
 
-        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(TermRedirects::class));
+        new TermUnpublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(TermRedirects::class));
     }
 
     /**

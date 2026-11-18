@@ -55,8 +55,8 @@ final class TermUnpublishController extends AbstractController
                 Resource::term($id),
                 RetirementRequest::address($request),
                 RetirementRequest::incoming($request),
-                static function () use ($taxonomy, $id, $termRepository, $eventBus, $termRedirects): void {
-                    new TermUnpublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $termRedirects);
+                function () use ($taxonomy, $id, $termRepository, $eventBus, $termRedirects): void {
+                    new TermUnpublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $this->transaction, $termRedirects);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (TermNotFound $exception) {

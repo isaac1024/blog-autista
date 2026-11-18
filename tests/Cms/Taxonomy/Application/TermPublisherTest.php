@@ -22,6 +22,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class TermPublisherTest extends TestCase
@@ -44,7 +45,7 @@ final class TermPublisherTest extends TestCase
         $repository->method('find')->willReturn($term);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new TermPublisher($term->taxonomy()->value, $term->id()->value())($repository, self::createStub(EventBus::class), self::postsUnder([]));
+        new TermPublisher($term->taxonomy()->value, $term->id()->value())($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder([]));
     }
 
     /**
@@ -94,7 +95,7 @@ final class TermPublisherTest extends TestCase
                 ] === $event->toPrimitives(),
         ));
 
-        new TermPublisher('tag', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, self::postsUnder([]));
+        new TermPublisher('tag', TermIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::postsUnder([]));
     }
 
     #[DataProvider('unpublishableTerms')]
@@ -108,7 +109,7 @@ final class TermPublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        new TermPublisher('section', $term->id()->value())($repository, $eventBus, self::postsUnder([]));
+        new TermPublisher('section', $term->id()->value())($repository, $eventBus, new RecordingTransaction(), self::postsUnder([]));
     }
 
     /**
@@ -134,7 +135,7 @@ final class TermPublisherTest extends TestCase
         $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(Taxonomy::Section, self::equalTo(SlugMother::create(TermMother::SLUG)))->willReturn($former);
         $repository->expects(self::exactly(2))->method('save');
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder([]));
 
         self::assertNull($former->lastSiteSlug());
     }
@@ -147,7 +148,7 @@ final class TermPublisherTest extends TestCase
         $repository->method('findOffSiteByLastSiteSlug')->willReturn($term);
         $repository->expects(self::once())->method('save');
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder([]));
 
         self::assertSame(TermMother::SLUG, $term->lastSiteSlug()?->value());
     }
@@ -159,7 +160,7 @@ final class TermPublisherTest extends TestCase
 
         $this->expectExceptionObject(TermNotFound::withId('section', TermIdMother::DEFAULT_VALUE));
 
-        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([]));
+        new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder([]));
     }
 
     /**
@@ -178,7 +179,7 @@ final class TermPublisherTest extends TestCase
         self::assertTells(
             'errors.term.publication.slug_of_posts_of_another_section',
             ['%slug%' => TermMother::SLUG],
-            static fn () => new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder([TermIdMother::DEFAULT_VALUE => 3, $other => 1])),
+            static fn () => new TermPublisher('section', TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder([TermIdMother::DEFAULT_VALUE => 3, $other => 1])),
         );
     }
 
@@ -189,7 +190,7 @@ final class TermPublisherTest extends TestCase
             $repository->method('find')->willReturn(TermMother::create(taxonomy: $taxonomy, metaDescription: TermMother::META_DESCRIPTION));
             $repository->expects(self::once())->method('save');
 
-            new TermPublisher($taxonomy->value, TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::postsUnder($posts));
+            new TermPublisher($taxonomy->value, TermIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::postsUnder($posts));
         }
     }
 

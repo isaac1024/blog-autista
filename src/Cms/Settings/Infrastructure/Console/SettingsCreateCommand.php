@@ -9,6 +9,7 @@ use Cms\Settings\Domain\SettingsId;
 use Cms\Settings\Domain\SettingsRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,6 +24,7 @@ final readonly class SettingsCreateCommand
     public function __construct(
         private SettingsRepository $settingsRepository,
         private EventBus $eventBus,
+        private Transaction $transaction,
     ) {}
 
     public function __invoke(
@@ -31,7 +33,7 @@ final readonly class SettingsCreateCommand
         string $name,
     ): int {
         try {
-            new SettingsCreator(SettingsId::random()->value(), $name)($this->settingsRepository, $this->eventBus);
+            new SettingsCreator(SettingsId::random()->value(), $name)($this->settingsRepository, $this->eventBus, $this->transaction);
         } catch (DomainError $error) {
             $style->error($error->getMessage());
 

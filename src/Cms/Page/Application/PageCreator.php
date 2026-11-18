@@ -8,6 +8,7 @@ use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageSlugAvailability;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates a page from the submitted title, deriving its slug from it.
@@ -19,11 +20,11 @@ final readonly class PageCreator
         private string $title,
     ) {}
 
-    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $page = Page::create($this->id, $this->title);
 
         new PageSlugAvailability($page)($pageRepository);
-        $page->save($pageRepository, $eventBus);
+        $page->save($pageRepository, $eventBus, $transaction);
     }
 }

@@ -20,6 +20,7 @@ use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
+use Shared\Domain\Transaction;
 
 /**
  * An author of the blog, the name posts are signed with, which needn't be
@@ -319,11 +320,11 @@ final class Author extends AggregateRoot
     /**
      * Saves the author, then tells the rest of the system what happened to it
      * since it was loaded, and removes the avatars neither version has any
-     * longer. When saving fails, the avatars kept since it was loaded are
-     * removed instead, and the ones left stay: the author saved still has
-     * them.
+     * longer. When saving or telling fails, the avatars kept since it was
+     * loaded are removed instead, and the ones left stay: the author saved
+     * still has them.
      */
-    public function save(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function save(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): void
     {
         $events = $this->pullDomainEvents();
         $kept = $this->keptAvatars;
@@ -332,7 +333,11 @@ final class Author extends AggregateRoot
         $this->leftAvatars = [];
 
         try {
-            $authorRepository->save($this);
+            // What a subscriber told at once fails to do undoes the save.
+            $transaction->run(function () use ($authorRepository, $eventBus, $events): void {
+                $authorRepository->save($this);
+                $eventBus->publish(...$events);
+            });
         } catch (\Throwable $exception) {
             foreach ($kept as $avatar) {
                 $avatarStorage->delete($avatar);
@@ -344,14 +349,12 @@ final class Author extends AggregateRoot
         foreach ($left as $avatar) {
             $avatarStorage->delete($avatar);
         }
-
-        $eventBus->publish(...$events);
     }
 
     /**
      * Deletes an author off the site that signs no post, with its avatars.
      */
-    public function delete(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): void
+    public function delete(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage, AuthorUsage $authorUsage): void
     {
         if (AuthorStatus::Published === $this->status) {
             throw InvalidAuthorPublication::publishedAuthor();
@@ -377,13 +380,15 @@ final class Author extends AggregateRoot
         }
 
         $events = $this->pullDomainEvents();
-        $authorRepository->delete($this);
+        $transaction->run(function () use ($authorRepository, $eventBus, $events): void {
+            $authorRepository->delete($this);
+            $eventBus->publish(...$events);
+        });
 
+        // Only once it is gone for good, so no author is left without its avatars.
         foreach ($this->avatars() as $avatar) {
             $avatarStorage->delete($avatar);
         }
-
-        $eventBus->publish(...$events);
     }
 
     public function id(): AuthorId

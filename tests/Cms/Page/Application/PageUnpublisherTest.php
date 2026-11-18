@@ -23,6 +23,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageUnpublisherTest extends TestCase
@@ -54,7 +55,7 @@ final class PageUnpublisherTest extends TestCase
                 && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        (new PageUnpublisher($id))($repository, $eventBus, self::createStub(PageRedirects::class));
+        (new PageUnpublisher($id))($repository, $eventBus, new RecordingTransaction(), self::createStub(PageRedirects::class));
     }
 
     /**
@@ -76,7 +77,7 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageUnpublisher($page->id()->value()))($repository, $eventBus, self::createStub(PageRedirects::class));
+        (new PageUnpublisher($page->id()->value()))($repository, $eventBus, new RecordingTransaction(), self::createStub(PageRedirects::class));
     }
 
     /**
@@ -112,7 +113,7 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidPagePublication::redirected());
 
-        (new PageUnpublisher($page->id()->value()))($repository, self::createStub(EventBus::class), $pageRedirects);
+        (new PageUnpublisher($page->id()->value()))($repository, self::createStub(EventBus::class), new RecordingTransaction(), $pageRedirects);
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -123,14 +124,14 @@ final class PageUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        (new PageUnpublisher($id))($repository, self::createStub(EventBus::class), self::createStub(PageRedirects::class));
+        (new PageUnpublisher($id))($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(PageRedirects::class));
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
     {
         $this->expectExceptionObject(InvalidUuid::withValue('sobre-mi'));
 
-        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class), self::createStub(PageRedirects::class));
+        (new PageUnpublisher('sobre-mi'))(self::createStub(PageRepository::class), self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(PageRedirects::class));
     }
 
     /**
@@ -151,7 +152,7 @@ final class PageUnpublisherTest extends TestCase
         $repository = self::createStub(PageRepository::class);
         $repository->method('find')->willReturn($subject);
 
-        (new PageUnpublisher(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, self::createStub(PageRedirects::class));
+        (new PageUnpublisher(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction(), self::createStub(PageRedirects::class));
 
         self::assertSame([
             [PageContentsLinked::eventName(), ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []]],

@@ -20,6 +20,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\External\ResourceKind;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ExternalResourceUpdaterTest extends TestCase
@@ -50,7 +51,7 @@ final class ExternalResourceUpdaterTest extends TestCase
             && $resource->checked()->equals(ExternalResourceMother::version(ResourceKind::Video, ExternalResourceMother::VIDEO_URL, ExternalResourceMother::VIDEO, 'Un vídeo', [], ExternalResourceMother::IMAGE))
             && ClockMother::now(self::SAVED_AT)->format(\DATE_ATOM) === $resource->timeline()->updatedAt()->format(\DATE_ATOM)));
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, self::OTHER_VIDEO_URL, 'Otro título', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, self::OTHER_VIDEO_URL, 'Otro título', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -66,7 +67,7 @@ final class ExternalResourceUpdaterTest extends TestCase
         $repository->method('findByUrl')->willReturn(null);
         $repository->expects(self::once())->method('save')->with(self::callback(static fn (ExternalResource $resource): bool => $availability === $resource->availability()));
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, $url, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, $url, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -87,7 +88,7 @@ final class ExternalResourceUpdaterTest extends TestCase
         $repository->method('findByUrl')->willReturn(ExternalResourceMother::video());
         $repository->expects(self::once())->method('save');
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, 'Otro título', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, 'Otro título', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItRefusesAnAddressAnotherResourceHas(): void
@@ -100,7 +101,7 @@ final class ExternalResourceUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::taken($holder));
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, self::OTHER_VIDEO_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, self::OTHER_VIDEO_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItRefusesAnAddressOfAnotherKindOfResource(): void
@@ -111,7 +112,7 @@ final class ExternalResourceUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidResourceUrl::anotherKind());
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::ARTICLE_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -126,7 +127,7 @@ final class ExternalResourceUpdaterTest extends TestCase
         $repository->expects(self::never())->method('save');
         $fields += ['url' => $resource->version()->url()->value(), 'title' => 'Un título', 'summary' => '', 'details' => []];
 
-        self::assertTells($key, $parameters, static fn () => new ExternalResourceUpdater(ExternalResourceMother::ID, $fields['url'], $fields['title'], $fields['summary'], 'es', $fields['details'])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class)));
+        self::assertTells($key, $parameters, static fn () => new ExternalResourceUpdater(ExternalResourceMother::ID, $fields['url'], $fields['title'], $fields['summary'], 'es', $fields['details'])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class)));
     }
 
     /**
@@ -170,7 +171,7 @@ final class ExternalResourceUpdaterTest extends TestCase
         $repository->expects(self::once())->method('save')->with(self::callback(static fn (ExternalResource $resource): bool => $saved === array_intersect_key(['title' => $resource->version()->title()->value(), 'summary' => $resource->version()->summary()] + $resource->version()->details()->toArray(), $saved)));
         $fields += ['title' => 'Un estudio', 'summary' => '', 'details' => []];
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::STUDY_URL, $fields['title'], $fields['summary'], 'en', $fields['details'])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::STUDY_URL, $fields['title'], $fields['summary'], 'en', $fields['details'])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     /**
@@ -197,7 +198,7 @@ final class ExternalResourceUpdaterTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('"xx" is not a language of the resources.');
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::STUDY_URL, 'Un estudio', '', 'xx', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::STUDY_URL, 'Un estudio', '', 'xx', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
     }
 
     public function testItThrowsWhenTheResourceDoesNotExist(): void
@@ -207,6 +208,28 @@ final class ExternalResourceUpdaterTest extends TestCase
 
         $this->expectExceptionObject(ExternalResourceNotFound::withId(ExternalResourceMother::ID));
 
-        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), self::createStub(ResourceImageStorage::class));
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, 'Un vídeo', '', 'es', [])($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(ResourceImageStorage::class));
+    }
+
+    /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesTheResourceAndTellsWhatChangedWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(ExternalResourceRepository::class);
+        $repository->method('find')->willReturn(ExternalResourceMother::video());
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        new ExternalResourceUpdater(ExternalResourceMother::ID, ExternalResourceMother::VIDEO_URL, 'Otro título', '', 'es', [])($repository, $eventBus, $transaction, self::createStub(ResourceImageStorage::class));
+
+        self::assertSame([true, true], $within);
     }
 }

@@ -22,6 +22,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PageCreatorTest extends TestCase
@@ -44,7 +45,7 @@ final class PageCreatorTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class));
+        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -87,7 +88,7 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class));
+        (new PageCreator($id, $title))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -118,7 +119,7 @@ final class PageCreatorTest extends TestCase
 
         $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('sobre-mi')));
 
-        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, self::createStub(EventBus::class));
+        (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -130,6 +131,7 @@ final class PageCreatorTest extends TestCase
         self::assertTells($key, $parameters, static fn () => (new PageCreator(PageIdMother::DEFAULT_VALUE, $title))(
             self::createStub(PageRepository::class),
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -154,6 +156,7 @@ final class PageCreatorTest extends TestCase
         self::assertTells('errors.page.slug.taken', ['%slug%' => 'sobre-mi'], static fn () => (new PageCreator(PageIdMother::DEFAULT_VALUE, 'Sobre mí'))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 }

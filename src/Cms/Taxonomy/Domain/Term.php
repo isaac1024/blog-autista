@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\AggregateRoot;
 use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * A term of a taxonomy, such as a section or a tag, identified by its id and
@@ -258,13 +259,16 @@ final class Term extends AggregateRoot
     /**
      * Saves the term, then tells the rest of the system what happened to it
      * since it was loaded. It takes its events before saving, so the saved
-     * term holds none, and none is told twice.
+     * term holds none, and none is told twice. Both happen in one
+     * transaction: what a subscriber told at once fails to do undoes the save.
      */
-    public function save(TermRepository $termRepository, EventBus $eventBus): void
+    public function save(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $events = $this->pullDomainEvents();
-        $termRepository->save($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($termRepository, $eventBus, $events): void {
+            $termRepository->save($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     /**

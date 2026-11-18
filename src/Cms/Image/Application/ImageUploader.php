@@ -9,6 +9,7 @@ use Cms\Image\Domain\ImageFile;
 use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Adds an image to the library from the file uploaded and its alternative
@@ -25,8 +26,8 @@ final readonly class ImageUploader
         private string $file,
     ) {}
 
-    public function __invoke(ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus): void
+    public function __invoke(ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus, Transaction $transaction): void
     {
-        Image::create($this->id, $this->alt)->upload(new ImageFile($this->file), $imageStorage, $imageRepository, $eventBus);
+        Image::create($this->id, $this->alt)->upload(new ImageFile($this->file), $imageStorage, $imageRepository, $eventBus, $transaction);
     }
 }

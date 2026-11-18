@@ -9,6 +9,7 @@ use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,12 +20,12 @@ final class PageCreateController extends AbstractController
 {
     #[Route('/pages', name: 'cms_pages_create', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_pages_create')]
-    public function __invoke(Request $request, PageRepository $pageRepository, EventBus $eventBus): Response
+    public function __invoke(Request $request, PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         $id = PageId::random()->value();
 
         try {
-            new PageCreator($id, $request->request->getString('title'))($pageRepository, $eventBus);
+            new PageCreator($id, $request->request->getString('title'))($pageRepository, $eventBus, $transaction);
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

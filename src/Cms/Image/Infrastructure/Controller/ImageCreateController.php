@@ -10,6 +10,7 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Image\Domain\ImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,7 +26,7 @@ final class ImageCreateController extends AbstractController
 {
     #[Route('/images', name: 'cms_images_create', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_images_create')]
-    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus): Response
+    public function __invoke(Request $request, ImageRepository $imageRepository, ImageStorage $imageStorage, EventBus $eventBus, Transaction $transaction): Response
     {
         $image = $request->files->get('image');
         $id = ImageId::random()->value();
@@ -36,7 +37,7 @@ final class ImageCreateController extends AbstractController
                 $request->request->getString('alt'),
                 // The domain refuses an image without its file.
                 $image instanceof UploadedFile && $image->isValid() ? $image->getPathname() : '',
-            )($imageRepository, $imageStorage, $eventBus);
+            )($imageRepository, $imageStorage, $eventBus, $transaction);
         } catch (DomainError $error) {
             // Told in the library, where the upload was made.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

@@ -21,6 +21,7 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 /**
@@ -46,7 +47,7 @@ final class AuthorPublisherTest extends TestCase
         $repository->method('find')->willReturn($author);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -84,7 +85,7 @@ final class AuthorPublisherTest extends TestCase
                 ] === $event->toPrimitives(),
         ));
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -98,7 +99,7 @@ final class AuthorPublisherTest extends TestCase
         $storage = $this->createMock(AvatarStorage::class);
         $storage->expects(self::once())->method('delete')->with(self::equalTo(new AvatarPath(AuthorMother::AVATAR)));
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $storage);
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $storage);
     }
 
     #[DataProvider('unpublishableAuthors')]
@@ -110,7 +111,7 @@ final class AuthorPublisherTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 
     /**
@@ -137,7 +138,7 @@ final class AuthorPublisherTest extends TestCase
         $repository->expects(self::once())->method('findOffSiteByLastSiteSlug')->with(self::equalTo(SlugMother::create(AuthorMother::SLUG)))->willReturn($former);
         $repository->expects(self::exactly(2))->method('save');
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
 
         self::assertNull($former->lastSiteSlug());
     }
@@ -150,7 +151,7 @@ final class AuthorPublisherTest extends TestCase
         $repository->method('findOffSiteByLastSiteSlug')->willReturn($author);
         $repository->expects(self::once())->method('save');
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
 
         self::assertSame(AuthorMother::SLUG, $author->lastSiteSlug()?->value());
     }
@@ -162,6 +163,6 @@ final class AuthorPublisherTest extends TestCase
 
         $this->expectExceptionObject(AuthorNotFound::withId(AuthorIdMother::DEFAULT_VALUE));
 
-        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(AvatarStorage::class));
+        new AuthorPublisher(AuthorIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(AvatarStorage::class));
     }
 }

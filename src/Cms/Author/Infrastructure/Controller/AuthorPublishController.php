@@ -67,8 +67,8 @@ final class AuthorPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($id, $authorRepository, $eventBus, $avatarStorage): void {
-                    new AuthorPublisher($id)($authorRepository, $eventBus, $avatarStorage);
+                function () use ($id, $authorRepository, $eventBus, $avatarStorage): void {
+                    new AuthorPublisher($id)($authorRepository, $eventBus, $this->transaction, $avatarStorage);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (AuthorNotFound $exception) {

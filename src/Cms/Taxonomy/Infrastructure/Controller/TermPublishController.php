@@ -68,8 +68,8 @@ final class TermPublishController extends AbstractController
                 $resource,
                 PublicationRequest::previous($request, $resource),
                 $outlook ?? '',
-                static function () use ($taxonomy, $id, $termRepository, $eventBus, $postsUnderSectionSlugs): void {
-                    new TermPublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $postsUnderSectionSlugs);
+                function () use ($taxonomy, $id, $termRepository, $eventBus, $postsUnderSectionSlugs): void {
+                    new TermPublisher($taxonomy->taxonomy(), $id)($termRepository, $eventBus, $this->transaction, $postsUnderSectionSlugs);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (TermNotFound $exception) {

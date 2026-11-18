@@ -18,6 +18,7 @@ use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -42,7 +43,7 @@ final class ImagePublisherTest extends TestCase
         $repository->method('find')->willReturn($image);
         $repository->expects(self::once())->method('save')->with(self::equalTo($expected));
 
-        (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -77,7 +78,7 @@ final class ImagePublisherTest extends TestCase
                 && ['alt' => 'Otro texto', 'caption' => $caption, 'path' => '2026/11/'.$id.'.webp', 'revision' => 2] === $event->toPrimitives(),
         ));
 
-        (new ImagePublisher($id))($repository, $eventBus);
+        (new ImagePublisher($id))($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -92,7 +93,7 @@ final class ImagePublisherTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::never())->method('publish');
 
-        self::assertTells($key, $parameters, static fn () => (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus));
+        self::assertTells($key, $parameters, static fn () => (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction()));
     }
 
     /**
@@ -111,7 +112,7 @@ final class ImagePublisherTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImagePublisher(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -121,6 +122,6 @@ final class ImagePublisherTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('image-id'));
 
-        (new ImagePublisher('image-id'))($repository, self::createStub(EventBus::class));
+        (new ImagePublisher('image-id'))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

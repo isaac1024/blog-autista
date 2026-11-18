@@ -18,6 +18,7 @@ use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\Mark;
 use Shared\Domain\RichText\RichText;
 use Shared\Domain\RichText\RichTextFeatures;
+use Shared\Domain\Transaction;
 
 /**
  * A CMS page, identified by its id and addressed by its slug, except the home
@@ -349,20 +350,23 @@ final class Page extends AggregateRoot
     /**
      * Saves the page, then tells the rest of the system what happened to it
      * since it was loaded. It takes its events before saving, so the saved
-     * page holds none, and none is told twice.
+     * page holds none, and none is told twice. Both happen in one
+     * transaction: what a subscriber told at once fails to do undoes the save.
      */
-    public function save(PageRepository $pageRepository, EventBus $eventBus): void
+    public function save(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $events = $this->pullDomainEvents();
-        $pageRepository->save($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($pageRepository, $eventBus, $events): void {
+            $pageRepository->save($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     /**
      * Deletes a generic page off the site, unless other pages link to it;
      * unique pages stay for good.
      */
-    public function delete(PageRepository $pageRepository, EventBus $eventBus, PageUsage $pageUsage): void
+    public function delete(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction, PageUsage $pageUsage): void
     {
         if ($this->type->isUnique()) {
             throw UniquePageCannotBeDeleted::ofType($this->type);
@@ -392,8 +396,10 @@ final class Page extends AggregateRoot
         }
 
         $events = $this->pullDomainEvents();
-        $pageRepository->delete($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($pageRepository, $eventBus, $events): void {
+            $pageRepository->delete($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     public function id(): PageId

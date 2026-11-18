@@ -11,6 +11,7 @@ use Shared\Domain\Clock;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\RichText\LinkedContents;
 use Shared\Domain\RichText\RichText;
+use Shared\Domain\Transaction;
 
 /**
  * An image of the library: a 16:9 crop, 1200 by 675 pixels, as WebP, cropped
@@ -220,12 +221,12 @@ final class Image extends AggregateRoot
      * the file kept is removed. Only a process dying between both could leave
      * a file behind, never an image pointing at a missing file.
      */
-    public function upload(ImageFile $file, ImageStorage $imageStorage, ImageRepository $imageRepository, EventBus $eventBus): void
+    public function upload(ImageFile $file, ImageStorage $imageStorage, ImageRepository $imageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $imageStorage->save($this->path, $file);
 
         try {
-            $this->save($imageRepository, $eventBus);
+            $this->save($imageRepository, $eventBus, $transaction);
         } catch (\Throwable $exception) {
             $imageStorage->delete($this->path);
 
@@ -236,13 +237,16 @@ final class Image extends AggregateRoot
     /**
      * Saves the image, then tells the rest of the system what happened to it
      * since it was loaded. It takes its events before saving, so the saved
-     * image holds none, and none is told twice.
+     * image holds none, and none is told twice. Both happen in one
+     * transaction: what a subscriber told at once fails to do undoes the save.
      */
-    public function save(ImageRepository $imageRepository, EventBus $eventBus): void
+    public function save(ImageRepository $imageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $events = $this->pullDomainEvents();
-        $imageRepository->save($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($imageRepository, $eventBus, $events): void {
+            $imageRepository->save($this);
+            $eventBus->publish(...$events);
+        });
     }
 
     /**
@@ -250,7 +254,7 @@ final class Image extends AggregateRoot
      * failure there could leave a file behind, never an image pointing at a
      * missing file.
      */
-    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus): void
+    public function delete(ImageRepository $imageRepository, ImageStorage $imageStorage, ImageUsage $imageUsage, EventBus $eventBus, Transaction $transaction): void
     {
         if (ImageStatus::Published === $this->status) {
             throw InvalidImagePublication::publishedImage();
@@ -270,8 +274,10 @@ final class Image extends AggregateRoot
         }
 
         $events = $this->pullDomainEvents();
-        $imageRepository->delete($this);
-        $eventBus->publish(...$events);
+        $transaction->run(function () use ($imageRepository, $eventBus, $events): void {
+            $imageRepository->delete($this);
+            $eventBus->publish(...$events);
+        });
         $imageStorage->delete($this->path);
     }
 

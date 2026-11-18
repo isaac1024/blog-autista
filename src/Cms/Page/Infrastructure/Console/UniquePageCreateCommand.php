@@ -10,6 +10,7 @@ use Cms\Page\Domain\PageRepository;
 use Cms\Page\Domain\PageType;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -24,6 +25,7 @@ final readonly class UniquePageCreateCommand
     public function __construct(
         private PageRepository $pageRepository,
         private EventBus $eventBus,
+        private Transaction $transaction,
     ) {}
 
     public function __invoke(
@@ -34,7 +36,7 @@ final readonly class UniquePageCreateCommand
         string $title,
     ): int {
         try {
-            new UniquePageCreator(PageId::random()->value(), $type, $title)($this->pageRepository, $this->eventBus);
+            new UniquePageCreator(PageId::random()->value(), $type, $title)($this->pageRepository, $this->eventBus, $this->transaction);
         } catch (DomainError $error) {
             $style->error($error->getMessage());
 

@@ -34,6 +34,7 @@ use Shared\Domain\InvalidUuid;
 use Shared\Domain\RichText\InvalidRichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -64,7 +65,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class));
+        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -103,7 +104,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class));
+        self::updater($id, $title, $slug)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -137,7 +138,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content)));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -183,7 +184,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Quién soy', 'quien-soy', $content)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -308,7 +309,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -342,7 +343,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject($error);
 
-        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Quién soy', 'quien-soy', metaDescription: $metaDescription, robots: $robots)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -368,7 +369,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(PageSlugAlreadyTaken::bySlug(SlugMother::create('contacto')));
 
-        self::updater($id, 'Sobre mí', 'contacto')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'contacto')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesThePageWhenTheSlugIsAlreadyItsOwn(): void
@@ -382,7 +383,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Quién soy', slug: 'sobre-mi')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Quién soy', 'sobre-mi')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesTheHomePageWithTheEditedTitleAndStillNoSlug(): void
@@ -394,7 +395,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::home(id: $id, title: 'Inicio')));
 
-        self::updater($id, 'Inicio', '')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Inicio', '')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesNothingWhenTheHomePageIsGivenASlug(): void
@@ -406,7 +407,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPageSlug::onHome('inicio'));
 
-        self::updater($id, 'Inicio', 'inicio')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Inicio', 'inicio')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesNothingWhenTheHomePageEditIsInvalid(): void
@@ -418,7 +419,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidPageTitle::tooShort(PageTitle::MIN_LENGTH));
 
-        self::updater($id, 'Sí', '')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sí', '')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesAUniquePageWithTheEditedTitleAndSlugKeepingItsType(): void
@@ -430,7 +431,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Escríbeme', slug: 'escribeme', type: PageType::Contact)));
 
-        self::updater($id, 'Escríbeme', 'escribeme')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Escríbeme', 'escribeme')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesAPageLeftWithoutASlug(): void
@@ -443,7 +444,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Contacto', slug: '', type: PageType::Contact)));
 
-        self::updater($id, 'Contacto', '')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Contacto', '')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -473,7 +474,7 @@ final class PageUpdaterTest extends TestCase
                 updatedAt: $updatedAt,
             )));
 
-        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository, self::createStub(EventBus::class));
+        self::updater($id, $title, 'sobre-mi', $content, $metaDescription)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -497,7 +498,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::published(id: $id, title: 'Quién soy', slug: 'sobre-mi', publishedTitle: 'Sobre mí')));
 
-        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Quién soy', 'sobre-mi', PageMother::CONTENT, PageMother::META_DESCRIPTION)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesAPublishedPageWithoutWhatItNeedsToBePublishedAgain(): void
@@ -517,7 +518,7 @@ final class PageUpdaterTest extends TestCase
                 publishedMetaDescription: PageMother::META_DESCRIPTION,
             )));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', Text::EMPTY, '')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::EMPTY, '')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItThrowsWhenThePageDoesNotExist(): void
@@ -529,7 +530,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(PageNotFound::withId($id));
 
-        self::updater($id, 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItRejectsAnIdThatIsNotAUuid(): void
@@ -540,7 +541,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidUuid::withValue('page-id'));
 
-        self::updater('page-id', 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class));
+        self::updater('page-id', 'Quién soy', 'quien-soy')($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -557,6 +558,7 @@ final class PageUpdaterTest extends TestCase
         self::assertTells($key, $parameters, static fn () => self::updater($id, 'Quién soy', 'quien-soy', $content, $metaDescription, $robots)(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -600,7 +602,7 @@ final class PageUpdaterTest extends TestCase
             ->method('save')
             ->with(self::equalTo(PageMother::create(id: $id, title: 'Sobre mí', slug: 'sobre-mi', content: $content)));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', $content)($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesNothingWhenAnImageIsEmbeddedWithoutItsId(): void
@@ -612,7 +614,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidRichText::malformed('blocks[0].id', 'a string'));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image']))($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image']))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesNothingWhenAnImageIsEmbeddedByAnythingButItsId(): void
@@ -624,7 +626,7 @@ final class PageUpdaterTest extends TestCase
 
         $this->expectExceptionObject(InvalidRichText::malformed('blocks[0].id', 'the id of an image'));
 
-        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image', 'id' => 'foto.webp']))($repository, self::createStub(EventBus::class));
+        self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image', 'id' => 'foto.webp']))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -646,6 +648,7 @@ final class PageUpdaterTest extends TestCase
         self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d003'], ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d001'], ['type' => 'image', 'id' => '01a1b801-ce58-723d-8234-b76d9105d002']), PageMother::META_DESCRIPTION)(
             $repository,
             $this->toldImages(['01a1b801-ce58-723d-8234-b76d9105d001', '01a1b801-ce58-723d-8234-b76d9105d002', '01a1b801-ce58-723d-8234-b76d9105d003']),
+            new RecordingTransaction(),
         );
     }
 
@@ -658,7 +661,7 @@ final class PageUpdaterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -689,7 +692,7 @@ final class PageUpdaterTest extends TestCase
             self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
             self::linking('01a1b801-ce58-723d-8234-b76d9105e002'),
             self::linking('01a1b801-ce58-723d-8234-b76d9105e001'),
-        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -723,7 +726,7 @@ final class PageUpdaterTest extends TestCase
             ['type' => 'widget', 'kind' => 'related_page', 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e021'],
             ['type' => 'widget', 'kind' => 'related_page', 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e011'],
             ['type' => 'widget', 'kind' => 'related_page', 'external_id' => '01a1b801-ce58-723d-8234-b76d9105e041'],
-        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus, new RecordingTransaction());
     }
 
     /**
@@ -749,7 +752,7 @@ final class PageUpdaterTest extends TestCase
         self::updater($id, 'Sobre mí', 'sobre-mi', Text::stored(
             self::mosaic(['limit' => 6, 'section_id' => '01a1b801-ce58-723d-8234-b76d9105e023', 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e031', 'tag_ids' => ['01a1b801-ce58-723d-8234-b76d9105e022']]),
             self::mosaic(['limit' => 3, 'tag_ids' => ['01a1b801-ce58-723d-8234-b76d9105e021', '01a1b801-ce58-723d-8234-b76d9105e022']]),
-        ), PageMother::META_DESCRIPTION)($repository, $eventBus);
+        ), PageMother::META_DESCRIPTION)($repository, $eventBus, new RecordingTransaction());
     }
 
     public function testItTellsNothingWhenThePageLinksToTheSamePages(): void
@@ -761,7 +764,29 @@ final class PageUpdaterTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus);
+        self::updater($id, 'Quién soy', 'sobre-mi', $content)($repository, $eventBus, new RecordingTransaction());
+    }
+
+    /**
+     * Saving it and telling what it uses happen within one transaction, so
+     * a subscriber told at once that fails undoes the save.
+     */
+    public function testItSavesThePageAndTellsWhatItUsesWithinOneTransaction(): void
+    {
+        $transaction = new RecordingTransaction();
+        $within = [];
+        $note = static function () use ($transaction, &$within): void {
+            $within[] = $transaction->isRunning();
+        };
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::create(id: PageIdMother::DEFAULT_VALUE, title: 'Sobre mí', slug: 'sobre-mi'));
+        $repository->method('save')->willReturnCallback($note);
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback($note);
+
+        self::updater(PageIdMother::DEFAULT_VALUE, 'Sobre mí', 'sobre-mi')($repository, $eventBus, $transaction);
+
+        self::assertSame([true, true], $within);
     }
 
     /**

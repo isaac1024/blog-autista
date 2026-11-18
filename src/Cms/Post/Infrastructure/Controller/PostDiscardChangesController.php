@@ -9,6 +9,7 @@ use Cms\Post\Application\PostNotFound;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -22,10 +23,10 @@ final class PostDiscardChangesController extends AbstractController
 {
     #[Route('/posts/{id}/discard', name: 'cms_posts_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_posts_discard')]
-    public function __invoke(string $id, PostRepository $postRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, PostRepository $postRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
-            new PostChangesDiscarder($id)($postRepository, $eventBus);
+            new PostChangesDiscarder($id)($postRepository, $eventBus, $transaction);
         } catch (PostNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

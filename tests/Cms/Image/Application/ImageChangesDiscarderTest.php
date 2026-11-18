@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
@@ -45,7 +46,7 @@ final class ImageChangesDiscarderTest extends TestCase
             ImageMother::published(createdAt: self::BEFORE, updatedAt: ClockMother::NOW),
         ));
 
-        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItTellsTheSiteNothing(): void
@@ -55,7 +56,7 @@ final class ImageChangesDiscarderTest extends TestCase
         $eventBus = $this->createMock(EventBus::class);
         $eventBus->expects(self::once())->method('publish')->with();
 
-        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus);
+        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction());
     }
 
     #[DataProvider('imagesWithoutChanges')]
@@ -68,6 +69,7 @@ final class ImageChangesDiscarderTest extends TestCase
         self::assertTells('errors.image.publication.no_changes_to_discard', [], static fn () => (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))(
             $repository,
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
         ));
     }
 
@@ -89,6 +91,6 @@ final class ImageChangesDiscarderTest extends TestCase
 
         $this->expectExceptionObject(ImageNotFound::withId(ImageIdMother::DEFAULT_VALUE));
 
-        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class));
+        (new ImageChangesDiscarder(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

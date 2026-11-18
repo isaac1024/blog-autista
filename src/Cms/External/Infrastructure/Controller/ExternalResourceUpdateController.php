@@ -10,6 +10,7 @@ use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceImageStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +22,7 @@ final class ExternalResourceUpdateController extends AbstractController
 {
     #[Route('/externals/{id}', name: 'cms_externals_update', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_externals_update')]
-    public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceImageStorage $imageStorage): Response
+    public function __invoke(string $id, Request $request, ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage): Response
     {
         $details = $request->request->all('details');
 
@@ -33,7 +34,7 @@ final class ExternalResourceUpdateController extends AbstractController
                 $request->request->getString('summary'),
                 $request->request->getString('language'),
                 $details,
-            )($resourceRepository, $eventBus, $imageStorage);
+            )($resourceRepository, $eventBus, $transaction, $imageStorage);
         } catch (ExternalResourceNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

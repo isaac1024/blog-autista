@@ -10,6 +10,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,12 +21,12 @@ final class AuthorCreateController extends AbstractController
 {
     #[Route('/authors', name: 'cms_authors_create', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_authors_create')]
-    public function __invoke(Request $request, AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): Response
+    public function __invoke(Request $request, AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): Response
     {
         $id = AuthorId::random()->value();
 
         try {
-            new AuthorCreator($id, $request->request->getString('name'))($authorRepository, $eventBus, $avatarStorage);
+            new AuthorCreator($id, $request->request->getString('name'))($authorRepository, $eventBus, $transaction, $avatarStorage);
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

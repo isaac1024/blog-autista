@@ -23,6 +23,7 @@ use Shared\Domain\Event\DomainEvent;
 use Shared\Domain\Event\EventBus;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\DomainErrorAssertions;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class PostUnpublisherTest extends TestCase
@@ -46,7 +47,7 @@ final class PostUnpublisherTest extends TestCase
             static fn (DomainEvent $event): bool => $event instanceof PostUnpublished && ['revision' => 2] === $event->toPrimitives(),
         ));
 
-        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, self::createStub(PostRedirects::class));
+        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, $eventBus, new RecordingTransaction(), self::createStub(PostRedirects::class));
 
         self::assertNull($post->publishedAddress());
     }
@@ -62,6 +63,7 @@ final class PostUnpublisherTest extends TestCase
         new PostUpdater(PostIdMother::DEFAULT_VALUE, PostMother::TITLE, PostMother::SLUG, '', '', [PostMother::OTHER_TAG], '', PostMother::CONTENT, '', 'index,follow')(
             self::stub($post),
             self::createStub(EventBus::class),
+            new RecordingTransaction(),
             new InMemoryClassifiers(),
             new InMemoryPostImages(),
         );
@@ -71,7 +73,7 @@ final class PostUnpublisherTest extends TestCase
             $told = array_map(static fn (DomainEvent $event): array => [$event::eventName(), $event->toPrimitives()], $events);
         });
 
-        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), $eventBus, self::createStub(PostRedirects::class));
+        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), $eventBus, new RecordingTransaction(), self::createStub(PostRedirects::class));
 
         self::assertSame([
             [PostImagesUsed::eventName(), ['image_ids' => []]],
@@ -91,12 +93,12 @@ final class PostUnpublisherTest extends TestCase
         $redirects = self::createStub(PostRedirects::class);
         $redirects->method('isTargeted')->willReturn(true);
 
-        self::assertTells('errors.post.publication.redirected', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), $redirects));
+        self::assertTells('errors.post.publication.redirected', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), $redirects));
     }
 
     public function testItNeverUnpublishesAPostOffTheSite(): void
     {
-        self::assertTells('errors.post.publication.not_published', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::create()), self::createStub(EventBus::class), self::createStub(PostRedirects::class)));
+        self::assertTells('errors.post.publication.not_published', [], static fn () => new PostUnpublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::create()), self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(PostRedirects::class)));
     }
 
     public function testItThrowsWhenThePostDoesNotExist(): void
@@ -106,7 +108,7 @@ final class PostUnpublisherTest extends TestCase
 
         $this->expectExceptionObject(PostNotFound::withId(PostIdMother::DEFAULT_VALUE));
 
-        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), self::createStub(PostRedirects::class));
+        new PostUnpublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), self::createStub(PostRedirects::class));
     }
 
     /**

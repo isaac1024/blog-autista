@@ -53,8 +53,8 @@ final class ImageUnpublishController extends AbstractController
                 Resource::image($id),
                 RetirementRequest::address($request),
                 RetirementRequest::incoming($request),
-                static function () use ($id, $imageRepository, $eventBus, $imageRedirects): void {
-                    new ImageUnpublisher($id)($imageRepository, $eventBus, $imageRedirects);
+                function () use ($id, $imageRepository, $eventBus, $imageRedirects): void {
+                    new ImageUnpublisher($id)($imageRepository, $eventBus, $this->transaction, $imageRedirects);
                 },
             )($this->redirectRepository, $this->siteResources, $this->mutualExclusion, $this->transaction);
         } catch (ImageNotFound $exception) {

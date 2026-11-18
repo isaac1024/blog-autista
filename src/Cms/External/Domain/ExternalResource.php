@@ -13,6 +13,7 @@ use Shared\Domain\External\ImageShape;
 use Shared\Domain\External\Provider;
 use Shared\Domain\External\Providers;
 use Shared\Domain\External\ResourceKind;
+use Shared\Domain\Transaction;
 
 /**
  * Something of another site the blog links to or embeds, such as a video, a
@@ -342,11 +343,11 @@ final class ExternalResource extends AggregateRoot
     /**
      * Saves the resource, then tells the rest of the system what happened to
      * it since it was loaded, and removes the images neither version has any
-     * longer. When saving fails, the images kept since it was loaded are
-     * removed instead, and the ones left stay: the resource saved still has
-     * them.
+     * longer. When saving or telling fails, the images kept since it was
+     * loaded are removed instead, and the ones left stay: the resource saved
+     * still has them.
      */
-    public function save(ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceImageStorage $imageStorage): void
+    public function save(ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage): void
     {
         $events = $this->pullDomainEvents();
         $kept = $this->keptImages;
@@ -355,7 +356,11 @@ final class ExternalResource extends AggregateRoot
         $this->leftImages = [];
 
         try {
-            $resourceRepository->save($this);
+            // What a subscriber told at once fails to do undoes the save.
+            $transaction->run(function () use ($resourceRepository, $eventBus, $events): void {
+                $resourceRepository->save($this);
+                $eventBus->publish(...$events);
+            });
         } catch (\Throwable $exception) {
             foreach ($kept as $image) {
                 $imageStorage->delete($image);
@@ -367,14 +372,12 @@ final class ExternalResource extends AggregateRoot
         foreach ($left as $image) {
             $imageStorage->delete($image);
         }
-
-        $eventBus->publish(...$events);
     }
 
     /**
      * Deletes a resource off the site that nothing uses, with its images.
      */
-    public function delete(ExternalResourceRepository $resourceRepository, EventBus $eventBus, ResourceImageStorage $imageStorage, ExternalResourceUsage $usage): void
+    public function delete(ExternalResourceRepository $resourceRepository, EventBus $eventBus, Transaction $transaction, ResourceImageStorage $imageStorage, ExternalResourceUsage $usage): void
     {
         if (ResourceStatus::Published === $this->status) {
             throw InvalidResourcePublication::publishedResource();
@@ -385,13 +388,15 @@ final class ExternalResource extends AggregateRoot
         }
 
         $events = $this->pullDomainEvents();
-        $resourceRepository->delete($this);
+        $transaction->run(function () use ($resourceRepository, $eventBus, $events): void {
+            $resourceRepository->delete($this);
+            $eventBus->publish(...$events);
+        });
 
+        // Only once it is gone for good, so no resource is left without its images.
         foreach ($this->images() as $image) {
             $imageStorage->delete($image);
         }
-
-        $eventBus->publish(...$events);
     }
 
     public function id(): ExternalResourceId

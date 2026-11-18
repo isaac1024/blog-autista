@@ -9,6 +9,7 @@ use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AuthorSlugAvailability;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Creates an author from the submitted name, deriving its slug from it.
@@ -20,11 +21,11 @@ final readonly class AuthorCreator
         private string $name,
     ) {}
 
-    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): void
     {
         $author = Author::create($this->id, $this->name);
 
         new AuthorSlugAvailability($author)($authorRepository);
-        $author->save($authorRepository, $eventBus, $avatarStorage);
+        $author->save($authorRepository, $eventBus, $transaction, $avatarStorage);
     }
 }

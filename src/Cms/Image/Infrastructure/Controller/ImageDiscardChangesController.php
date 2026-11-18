@@ -9,6 +9,7 @@ use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\ImageRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -19,10 +20,10 @@ final class ImageDiscardChangesController extends AbstractController
 {
     #[Route('/images/{id}/discard', name: 'cms_images_discard', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
     #[IsCsrfTokenValid('cms_images_discard')]
-    public function __invoke(string $id, ImageRepository $imageRepository, EventBus $eventBus): Response
+    public function __invoke(string $id, ImageRepository $imageRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         try {
-            new ImageChangesDiscarder($id)($imageRepository, $eventBus);
+            new ImageChangesDiscarder($id)($imageRepository, $eventBus, $transaction);
         } catch (ImageNotFound $exception) {
             throw $this->createNotFoundException($exception->getMessage(), $exception);
         } catch (DomainError $error) {

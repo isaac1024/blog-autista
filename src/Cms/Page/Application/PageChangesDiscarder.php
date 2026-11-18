@@ -7,6 +7,7 @@ namespace Cms\Page\Application;
 use Cms\Page\Domain\PageId;
 use Cms\Page\Domain\PageRepository;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Throws away what was edited on a published page since it was published,
@@ -16,12 +17,12 @@ final readonly class PageChangesDiscarder
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(PageRepository $pageRepository, EventBus $eventBus): void
+    public function __invoke(PageRepository $pageRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $page = $pageRepository->find(new PageId($this->id)) ?? throw PageNotFound::withId($this->id);
 
         $page->discardChanges();
 
-        $page->save($pageRepository, $eventBus);
+        $page->save($pageRepository, $eventBus, $transaction);
     }
 }

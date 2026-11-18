@@ -20,6 +20,7 @@ use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\InvalidUuid;
 use Shared\Tests\Domain\ClockMother;
+use Shared\Tests\Domain\RecordingTransaction;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 
 final class ImageUploaderTest extends TestCase
@@ -49,7 +50,7 @@ final class ImageUploaderTest extends TestCase
             ->method('save')
             ->with(self::equalTo($expected));
 
-        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, $alt, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class));
+        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, $alt, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -84,7 +85,7 @@ final class ImageUploaderTest extends TestCase
             ->method('save')
             ->with(self::equalTo(ImageMother::create(createdAt: '2027-01-31 23:59:59')));
 
-        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class));
+        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     /**
@@ -111,7 +112,7 @@ final class ImageUploaderTest extends TestCase
         $repository->expects(self::never())->method('save');
 
         try {
-            (new ImageUploader($id, $alt, $file))($repository, $storage, self::createStub(EventBus::class));
+            (new ImageUploader($id, $alt, $file))($repository, $storage, self::createStub(EventBus::class), new RecordingTransaction());
         } catch (DomainError $thrown) {
             self::assertSame(
                 [$error, $message, 0, $key, $parameters],
@@ -176,7 +177,7 @@ final class ImageUploaderTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class));
+        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class), new RecordingTransaction());
     }
 
     public function testItSavesNothingWhenTheFileCannotBeKept(): void
@@ -190,6 +191,6 @@ final class ImageUploaderTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class));
+        (new ImageUploader(ImageIdMother::DEFAULT_VALUE, ImageMother::ALT, ImageFileMother::path()))($repository, $storage, self::createStub(EventBus::class), new RecordingTransaction());
     }
 }

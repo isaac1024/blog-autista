@@ -9,6 +9,7 @@ use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,12 +23,12 @@ final class PostCreateController extends AbstractController
 {
     #[Route('/posts', name: 'cms_posts_create', methods: ['POST'])]
     #[IsCsrfTokenValid('cms_posts_create')]
-    public function __invoke(Request $request, PostRepository $postRepository, EventBus $eventBus): Response
+    public function __invoke(Request $request, PostRepository $postRepository, EventBus $eventBus, Transaction $transaction): Response
     {
         $id = PostId::random()->value();
 
         try {
-            new PostCreator($id, $request->request->getString('title'))($postRepository, $eventBus);
+            new PostCreator($id, $request->request->getString('title'))($postRepository, $eventBus, $transaction);
         } catch (DomainError $error) {
             // Told on the page it goes back to.
             $this->addFlash('error', ['key' => $error->key(), 'parameters' => $error->parameters()]);

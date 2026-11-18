@@ -8,6 +8,7 @@ use Cms\Author\Domain\AuthorId;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarStorage;
 use Shared\Domain\Event\EventBus;
+use Shared\Domain\Transaction;
 
 /**
  * Throws away what was edited on a published author since it was published,
@@ -17,12 +18,12 @@ final readonly class AuthorChangesDiscarder
 {
     public function __construct(private string $id) {}
 
-    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, AvatarStorage $avatarStorage): void
+    public function __invoke(AuthorRepository $authorRepository, EventBus $eventBus, Transaction $transaction, AvatarStorage $avatarStorage): void
     {
         $author = $authorRepository->find(new AuthorId($this->id)) ?? throw AuthorNotFound::withId($this->id);
 
         $author->discardChanges();
 
-        $author->save($authorRepository, $eventBus, $avatarStorage);
+        $author->save($authorRepository, $eventBus, $transaction, $avatarStorage);
     }
 }
