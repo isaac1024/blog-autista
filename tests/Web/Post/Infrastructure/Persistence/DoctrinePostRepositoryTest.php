@@ -241,9 +241,14 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
 
     /**
      * A search that would take longer than it may asks for another word.
+     * MariaDB only stops a statement while it reads rows, so the search has
+     * one to read, committed, as full-text search needs.
      */
+    #[SkipDatabaseRollback]
     public function testItRefusesASearchThatWouldTakeLongerThanItMay(): void
     {
+        $this->publishText(self::OLDEST, '2026-11-01T10:00:00+00:00', 'El ruido del metro', 'Cómo viví la hora punta.', 'Cuánto ruido.');
+        $this->entityManager()->clear();
         $repository = new DoctrinePostRepository($this->entityManager(), 0.000001);
 
         $this->expectException(SearchTooBroad::class);
