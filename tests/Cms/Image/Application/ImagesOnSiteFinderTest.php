@@ -41,9 +41,7 @@ final class ImagesOnSiteFinderTest extends TestCase
             self::OTHER_PUBLISHED => ImageMother::published(id: self::OTHER_PUBLISHED),
         ];
         $repository = self::createStub(ImageRepository::class);
-        $repository->method('find')->willReturnCallback(
-            static fn (ImageId $id): ?Image => $images[$id->value()] ?? null,
-        );
+        $repository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Image => $id instanceof ImageId ? $images[$id->value()] ?? null : null, $ids))));
 
         self::assertEquals([
             self::PUBLISHED => new ImageOnSiteResponse(
@@ -60,16 +58,16 @@ final class ImagesOnSiteFinderTest extends TestCase
     }
 
     /**
-     * Each image is looked up once, however often it is asked for.
+     * The images are read at once, what isn't an id left out.
      */
-    public function testItLooksUpEveryImageOnce(): void
+    public function testItReadsEveryImageAtOnce(): void
     {
         $repository = $this->createMock(ImageRepository::class);
         $repository->expects(self::once())
-            ->method('find')
-            ->with(self::equalTo(ImageIdMother::create(self::PUBLISHED)))
-            ->willReturn(null);
+            ->method('findByIds')
+            ->with(self::equalTo([ImageIdMother::create(self::PUBLISHED), ImageIdMother::create(self::MISSING)]))
+            ->willReturn([]);
 
-        new ImagesOnSiteFinder([self::PUBLISHED, self::PUBLISHED])($repository);
+        new ImagesOnSiteFinder([self::PUBLISHED, 'imagen', self::MISSING])($repository);
     }
 }

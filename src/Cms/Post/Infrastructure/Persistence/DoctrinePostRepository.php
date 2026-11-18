@@ -15,6 +15,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Shared\Domain\Criteria\Criteria;
 use Shared\Infrastructure\Persistence\Doctrine\DoctrineCriteriaConverter;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
@@ -63,6 +64,24 @@ final readonly class DoctrinePostRepository implements PostRepository
     public function find(PostId $id): ?Post
     {
         return $this->entityManager->find(Post::class, $id);
+    }
+
+    #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var Query<null, Post> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('post')
+            ->from(Post::class, 'post')
+            ->where('post.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (PostId $id): string => $id->value(), $ids))
+            ->getQuery();
+
+        return $query->getResult();
     }
 
     #[\Override]
@@ -148,15 +167,12 @@ final readonly class DoctrinePostRepository implements PostRepository
         ));
         $posts = [];
 
-        foreach ($ids as $id) {
-            $post = $this->find(new PostId($id));
-
-            if (null !== $post) {
-                $posts[] = $post;
-            }
+        foreach ($this->findByIds(array_map(static fn (string $id): PostId => new PostId($id), $ids)) as $post) {
+            $posts[$post->id()->value()] = $post;
         }
 
-        return $posts;
+        // In the order they were listed.
+        return array_values(array_filter(array_map(static fn (string $id): ?Post => $posts[$id] ?? null, $ids)));
     }
 
     private static function id(mixed $value): string

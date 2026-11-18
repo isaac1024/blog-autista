@@ -17,11 +17,8 @@ final readonly class AuthorOnSiteFinder
 
     public function __invoke(AuthorRepository $authorRepository): ?AuthorOnSiteResponse
     {
-        $version = $authorRepository->find(new AuthorId($this->id))?->onSite();
-        $slug = $version?->slug();
+        $author = $authorRepository->find(new AuthorId($this->id));
 
-        return null === $version || null === $slug
-            ? null
-            : new AuthorOnSiteResponse($this->id, $version->name()->value(), $slug->value(), $version->avatar()?->value(), $version->seo()->description());
+        return null === $author ? null : AuthorOnSiteResponse::fromAuthor($author);
     }
 }

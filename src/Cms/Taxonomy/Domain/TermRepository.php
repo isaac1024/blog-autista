@@ -22,6 +22,16 @@ interface TermRepository
     public function find(TermId $id): ?Term;
 
     /**
+     * The terms among those given, of any taxonomy, read at once, in no
+     * order; an id of no term is left out.
+     *
+     * @param list<TermId> $ids
+     *
+     * @return list<Term>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The names, as edited, of the terms among those given, by id, with the
      * taxonomy of each, read without the rest of each; an id of none is left
      * out.

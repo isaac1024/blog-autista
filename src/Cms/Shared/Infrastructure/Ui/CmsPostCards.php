@@ -12,7 +12,8 @@ use Cms\Post\Application\PostOnSiteCardResponse;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
 use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
-use Cms\Taxonomy\Application\TermOnSiteFinder;
+use Cms\Taxonomy\Application\TermOnSiteResponse;
+use Cms\Taxonomy\Application\TermsOnSiteFinder;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Redirect\ReferenceResolver;
@@ -49,11 +50,10 @@ final readonly class CmsPostCards
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
-        $sections = [];
-
-        foreach (array_unique(array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts)) as $id) {
-            $sections[$id] = new TermOnSiteFinder(Taxonomy::Section, $id)($this->termRepository)?->name;
-        }
+        $sections = array_map(
+            static fn (TermOnSiteResponse $term): ?string => Taxonomy::Section->value === $term->taxonomy ? $term->name : null,
+            new TermsOnSiteFinder(array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts))($this->termRepository),
+        );
 
         return array_map(fn (PostOnSiteCardResponse $post): array => [
             'url' => $this->url($post),

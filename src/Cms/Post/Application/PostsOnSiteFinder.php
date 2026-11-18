@@ -9,8 +9,8 @@ use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 
 /**
- * Finds the posts on the site among those given, as the site has them; one
- * off it, or an id of no post, is left out.
+ * Finds the posts on the site among those given, read at once, as the site
+ * has them; one off it, or an id of no post, is left out.
  */
 final readonly class PostsOnSiteFinder
 {
@@ -24,23 +24,26 @@ final readonly class PostsOnSiteFinder
      */
     public function __invoke(PostRepository $postRepository): array
     {
-        $posts = [];
+        $ids = [];
 
-        foreach (array_unique($this->ids) as $id) {
+        foreach ($this->ids as $id) {
             try {
-                $post = $postRepository->find(new PostId($id));
+                $ids[] = new PostId($id);
             } catch (DomainError) {
                 // Not the id of a post: none on the site.
-                continue;
             }
+        }
 
-            $version = $post?->onSite();
-            $address = $post?->publishedAddress();
+        $posts = [];
+
+        foreach ($postRepository->findByIds($ids) as $post) {
+            $version = $post->onSite();
+            $address = $post->publishedAddress();
             $section = $version?->classification()->section();
-            $firstPublishedAt = $post?->timeline()->firstPublishedAt();
+            $firstPublishedAt = $post->timeline()->firstPublishedAt();
 
             if (null !== $version && null !== $address && null !== $section && null !== $firstPublishedAt) {
-                $posts[$id] = new PostOnSiteResponse(
+                $posts[$post->id()->value()] = new PostOnSiteResponse(
                     $version->title()->value(),
                     PostAddressResponse::fromAddress($address),
                     $version->seo()->description(),

@@ -16,6 +16,16 @@ interface PostRepository
     public function find(PostId $id): ?Post;
 
     /**
+     * The posts on the site among those given, in the order given, read at
+     * once; an id of none is left out.
+     *
+     * @param list<PostId> $ids
+     *
+     * @return list<Post>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The post served under the slug of a section, on the day it was first
      * published, by its slug.
      */

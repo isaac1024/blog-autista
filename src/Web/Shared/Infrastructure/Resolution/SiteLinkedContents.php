@@ -13,14 +13,16 @@ use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Web\Author\Application\AuthorOnSiteFinder;
+use Web\Author\Application\AuthorResponse;
+use Web\Author\Application\AuthorsOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
-use Web\Post\Application\PostOnSiteFinder;
+use Web\Post\Application\PostResponse;
+use Web\Post\Application\PostsOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
 use Web\Taxonomy\Application\TermResponse;
@@ -100,9 +102,9 @@ final readonly class SiteLinkedContents
                 'title' => $page->title,
                 'related' => self::related('page', $page->metaDescription, null, null, null),
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
-            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => $this->each($ids, $this->post(...))),
+            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, $this->posts(...)),
             ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, $this->terms(...)),
-            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, $this->author(...))),
+            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, $this->authors(...)),
             // No address of the site leads to an external resource, so none is redirected.
             ...($this->externalViews)($ids(LinkType::External)),
         ];
@@ -130,54 +132,56 @@ final readonly class SiteLinkedContents
     }
 
     /**
-     * A post on the site, as a link and a card of related content show it.
+     * The posts on the site among those given, as a link and a card of
+     * related content show them: the posts at once, then the images they
+     * open with, at once too.
      *
-     * @return ?LinkedContent
+     * @param list<string> $ids
+     *
+     * @return array<string, LinkedContent>
      */
-    private function post(string $id): ?array
+    private function posts(array $ids): array
     {
-        $post = new PostOnSiteFinder($id)($this->postRepository);
+        $posts = new PostsOnSiteFinder($ids)($this->postRepository);
+        $images = new ImagesOnSiteFinder(array_values(array_map(static fn (PostResponse $post): string => $post->openingImageId, $posts)))($this->imageRepository);
 
-        if (null === $post) {
-            return null;
-        }
+        return array_map(function (PostResponse $post) use ($images): array {
+            $image = $images[$post->openingImageId] ?? null;
+            $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
 
-        $image = new ImagesOnSiteFinder([$post->openingImageId])($this->imageRepository)[$post->openingImageId] ?? null;
-        $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
-
-        return [
-            'url' => PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
-            'title' => $post->title,
-            'related' => self::related(
-                'post',
-                $post->metaDescription,
-                null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
-                $post->sectionName,
-                $post->firstPublishedAt,
-            ),
-        ];
+            return [
+                'url' => PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
+                'title' => $post->title,
+                'related' => self::related(
+                    'post',
+                    $post->metaDescription,
+                    null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
+                    $post->sectionName,
+                    $post->firstPublishedAt,
+                ),
+            ];
+        }, $posts);
     }
 
     /**
-     * An author on the site, as a link and a card of related content show it.
+     * The authors on the site among those given, read at once, as a link
+     * and a card of related content show them.
      *
-     * @return ?LinkedContent
+     * @param list<string> $ids
+     *
+     * @return array<string, LinkedContent>
      */
-    private function author(string $id): ?array
+    private function authors(array $ids): array
     {
-        $author = new AuthorOnSiteFinder($id)($this->authorRepository);
+        return array_map(function (AuthorResponse $author): array {
+            $avatar = SiteMedia::avatar($author->avatarName, $author->name);
 
-        if (null === $author) {
-            return null;
-        }
-
-        $avatar = SiteMedia::avatar($author->avatarName, $author->name);
-
-        return [
-            'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
-            'title' => $author->name,
-            'related' => self::related('author', $author->metaDescription, ['src' => $avatar['src'], 'srcset' => $avatar['srcset'], 'width' => $avatar['size'], 'height' => $avatar['size']], null, null),
-        ];
+            return [
+                'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
+                'title' => $author->name,
+                'related' => self::related('author', $author->metaDescription, ['src' => $avatar['src'], 'srcset' => $avatar['srcset'], 'width' => $avatar['size'], 'height' => $avatar['size']], null, null),
+            ];
+        }, new AuthorsOnSiteFinder($ids)($this->authorRepository));
     }
 
     /**
@@ -189,27 +193,6 @@ final readonly class SiteLinkedContents
     private function resolve(LinkType $type, array $ids, ?string $painted, \Closure $onSite): array
     {
         return new ReferenceResolver($type->value, $ids, $painted)($onSite, $this->redirectsByOrigin);
-    }
-
-    /**
-     * @param list<string>                     $ids
-     * @param \Closure(string): ?LinkedContent $find
-     *
-     * @return array<string, LinkedContent>
-     */
-    private function each(array $ids, \Closure $find): array
-    {
-        $found = [];
-
-        foreach ($ids as $id) {
-            $content = $find($id);
-
-            if (null !== $content) {
-                $found[$id] = $content;
-            }
-        }
-
-        return $found;
     }
 
     /**

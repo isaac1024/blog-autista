@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Shared\Infrastructure\Resolution;
 
-use Cms\Author\Application\AuthorOnSiteFinder;
+use Cms\Author\Application\AuthorOnSiteResponse;
+use Cms\Author\Application\AuthorsOnSiteFinder;
 use Cms\Author\Domain\AuthorRepository;
 use Cms\Author\Domain\AvatarFile;
 use Cms\Image\Application\ImagesOnSiteFinder;
@@ -17,7 +18,8 @@ use Cms\Post\Application\PostsOnSiteFinder;
 use Cms\Post\Domain\PostRepository;
 use Cms\Shared\Infrastructure\Http\AvatarUrl;
 use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
-use Cms\Taxonomy\Application\TermOnSiteFinder;
+use Cms\Taxonomy\Application\TermOnSiteResponse;
+use Cms\Taxonomy\Application\TermsOnSiteFinder;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Clock;
@@ -108,65 +110,77 @@ final readonly class CmsLinkedContents
                 'title' => $page->title,
                 'related' => self::related('page', $page->metaDescription, null, null, null),
             ], new PagesOnSiteFinder($ids)($this->pageRepository))),
-            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, fn (array $ids): array => array_map(function (PostOnSiteResponse $post): array {
-                $image = null === $post->openingImageId ? null : new ImagesOnSiteFinder([$post->openingImageId])($this->imageRepository)[$post->openingImageId] ?? null;
-                $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
+            ...$this->resolve(LinkType::Post, $ids(LinkType::Post), $painted, $this->posts(...)),
+            ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => array_map(function (TermOnSiteResponse $term): array {
+                $kind = Taxonomy::Section->value === $term->taxonomy ? 'section' : 'tag';
 
-                return [
-                    'url' => PostAddressUrl::generate($this->urlGenerator, $post->address->section, $post->address->day, $post->address->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
-                    'title' => $post->title,
-                    'related' => self::related(
-                        'post',
-                        $post->excerpt,
-                        null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
-                        new TermOnSiteFinder(Taxonomy::Section, $post->sectionId)($this->termRepository)?->name,
-                        $post->firstPublishedAt,
-                    ),
-                ];
-            }, new PostsOnSiteFinder($ids)($this->postRepository))),
-            ...$this->resolve(LinkType::Term, $ids(LinkType::Term), $painted, fn (array $ids): array => $this->each($ids, function (string $id): ?array {
-                $section = new TermOnSiteFinder(Taxonomy::Section, $id)($this->termRepository);
-
-                if (null !== $section) {
-                    return ['url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug]), 'title' => $section->name, 'related' => self::related('section', $section->metaDescription, null, null, null)];
-                }
-
-                $tag = new TermOnSiteFinder(Taxonomy::Tag, $id)($this->termRepository);
-
-                return null === $tag ? null : ['url' => $this->urlGenerator->generate('web_tag', ['slug' => $tag->slug]), 'title' => $tag->name, 'related' => self::related('tag', $tag->metaDescription, null, null, null)];
-            })),
-            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, fn (array $ids): array => $this->each($ids, $this->author(...))),
+                return ['url' => $this->urlGenerator->generate('web_'.$kind, ['slug' => $term->slug]), 'title' => $term->name, 'related' => self::related($kind, $term->metaDescription, null, null, null)];
+            }, new TermsOnSiteFinder($ids)($this->termRepository))),
+            ...$this->resolve(LinkType::Author, $ids(LinkType::Author), $painted, $this->authors(...)),
             // No address of the site leads to an external resource, so none is redirected.
             ...($this->externalViews)($ids(LinkType::External)),
         ];
     }
 
     /**
-     * An author on the site, as a link and a card of related content show it.
+     * The posts on the site among those given, as a link and a card of
+     * related content show them: the posts at once, then the images they
+     * open with and the names of their sections, at once each.
      *
-     * @return ?LinkedContent
+     * @param list<string> $ids
+     *
+     * @return array<string, LinkedContent>
      */
-    private function author(string $id): ?array
+    private function posts(array $ids): array
     {
-        $author = new AuthorOnSiteFinder($id)($this->authorRepository);
+        $posts = new PostsOnSiteFinder($ids)($this->postRepository);
+        $images = new ImagesOnSiteFinder(array_values(array_filter(array_map(static fn (PostOnSiteResponse $post): ?string => $post->openingImageId, $posts), static fn (?string $id): bool => null !== $id)))($this->imageRepository);
+        $sections = new TermsOnSiteFinder(array_values(array_map(static fn (PostOnSiteResponse $post): string => $post->sectionId, $posts)))($this->termRepository);
 
-        if (null === $author) {
-            return null;
-        }
+        return array_map(function (PostOnSiteResponse $post) use ($images, $sections): array {
+            $image = $images[$post->openingImageId ?? ''] ?? null;
+            $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
+            $section = $sections[$post->sectionId] ?? null;
 
-        // Its avatar is the CMS's file, as on the preview of the author.
-        $avatar = null === $author->avatar ? null : [
-            'src' => ($this->avatarUrl)($author->id, $author->avatar, Clock::now()->add(new \DateInterval(self::AVATAR_VALIDITY))),
-            'srcset' => '',
-            'width' => AvatarFile::SIZE,
-            'height' => AvatarFile::SIZE,
-        ];
+            return [
+                'url' => PostAddressUrl::generate($this->urlGenerator, $post->address->section, $post->address->day, $post->address->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
+                'title' => $post->title,
+                'related' => self::related(
+                    'post',
+                    $post->excerpt,
+                    null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
+                    Taxonomy::Section->value === $section?->taxonomy ? $section->name : null,
+                    $post->firstPublishedAt,
+                ),
+            ];
+        }, $posts);
+    }
 
-        return [
-            'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
-            'title' => $author->name,
-            'related' => self::related('author', $author->metaDescription, $avatar, null, null),
-        ];
+    /**
+     * The authors on the site among those given, read at once, as a link
+     * and a card of related content show them.
+     *
+     * @param list<string> $ids
+     *
+     * @return array<string, LinkedContent>
+     */
+    private function authors(array $ids): array
+    {
+        return array_map(function (AuthorOnSiteResponse $author): array {
+            // Its avatar is the CMS's file, as on the preview of the author.
+            $avatar = null === $author->avatar ? null : [
+                'src' => ($this->avatarUrl)($author->id, $author->avatar, Clock::now()->add(new \DateInterval(self::AVATAR_VALIDITY))),
+                'srcset' => '',
+                'width' => AvatarFile::SIZE,
+                'height' => AvatarFile::SIZE,
+            ];
+
+            return [
+                'url' => $this->urlGenerator->generate('web_author', ['slug' => $author->slug]),
+                'title' => $author->name,
+                'related' => self::related('author', $author->metaDescription, $avatar, null, null),
+            ];
+        }, new AuthorsOnSiteFinder($ids)($this->authorRepository));
     }
 
     /**
@@ -178,27 +192,6 @@ final readonly class CmsLinkedContents
     private function resolve(LinkType $type, array $ids, ?string $painted, \Closure $onSite): array
     {
         return new ReferenceResolver($type->value, $ids, $painted)($onSite, $this->redirectsByOrigin);
-    }
-
-    /**
-     * @param list<string>                     $ids
-     * @param \Closure(string): ?LinkedContent $find
-     *
-     * @return array<string, LinkedContent>
-     */
-    private function each(array $ids, \Closure $find): array
-    {
-        $found = [];
-
-        foreach ($ids as $id) {
-            $content = $find($id);
-
-            if (null !== $content) {
-                $found[$id] = $content;
-            }
-        }
-
-        return $found;
     }
 
     /**

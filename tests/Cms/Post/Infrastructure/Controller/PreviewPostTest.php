@@ -213,6 +213,7 @@ final class PreviewPostTest extends TestCase
         $author = $onSite ? AuthorMother::published(id: PostMother::AUTHOR, name: 'Firma editada', publishedName: 'Firma publicada') : AuthorMother::create(id: PostMother::AUTHOR);
         $termRepository = self::createStub(TermRepository::class);
         $termRepository->method('find')->willReturnCallback(static fn (TermId $id): ?Term => $terms[$id->value()] ?? null);
+        $termRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Term => $id instanceof TermId ? $terms[$id->value()] ?? null : null, $ids))));
         $authorRepository = self::createStub(AuthorRepository::class);
         $authorRepository->method('find')->willReturnCallback(static fn (AuthorId $id): ?Author => match (true) {
             PostMother::AUTHOR === $id->value() => $author,
@@ -221,7 +222,7 @@ final class PreviewPostTest extends TestCase
         });
         $authorRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => [] === array_filter($ids, static fn (mixed $id): bool => $id instanceof AuthorId && $id->equals($author->id())) ? [] : [$author]);
         $imageRepository = self::createStub(ImageRepository::class);
-        $imageRepository->method('findByIds')->willReturn([]);
+        $imageRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Image => $id instanceof ImageId ? $images[$id->value()] ?? null : null, $ids))));
         $imageRepository->method('find')->willReturnCallback(static fn (ImageId $id): ?Image => $images[$id->value()] ?? null);
         $pageRepository = self::createStub(PageRepository::class);
         $pageRepository->method('findByIds')->willReturn([]);

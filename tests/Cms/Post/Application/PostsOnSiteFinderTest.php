@@ -36,7 +36,7 @@ final class PostsOnSiteFinderTest extends TestCase
             self::OFF_SITE => PostMother::unpublished(id: self::OFF_SITE),
         ];
         $repository = self::createStub(PostRepository::class);
-        $repository->method('find')->willReturnCallback(static fn (PostId $id): ?Post => $posts[$id->value()] ?? null);
+        $repository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Post => $id instanceof PostId ? $posts[$id->value()] ?? null : null, $ids))));
 
         self::assertEquals(
             [PostIdMother::DEFAULT_VALUE => new PostOnSiteResponse(PostMother::TITLE, new PostAddressResponse(TermMother::SLUG, '2026-11-07', PostMother::SLUG), PostMother::META_DESCRIPTION, PostMother::SECTION, PostMother::OPENING_IMAGE, ClockMother::now())],

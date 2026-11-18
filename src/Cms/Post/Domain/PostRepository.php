@@ -21,6 +21,16 @@ interface PostRepository
     public function find(PostId $id): ?Post;
 
     /**
+     * The posts among those given, read at once, in no order; an id of no
+     * post is left out.
+     *
+     * @param list<PostId> $ids
+     *
+     * @return list<Post>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The title, as edited, of the posts among those given, by id, read
      * without the rest of each; an id of none is left out.
      *

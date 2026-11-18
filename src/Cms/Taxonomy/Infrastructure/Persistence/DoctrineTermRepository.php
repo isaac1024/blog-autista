@@ -62,6 +62,24 @@ final readonly class DoctrineTermRepository implements TermRepository
     }
 
     #[\Override]
+    public function findByIds(array $ids): array
+    {
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var Query<null, Term> $query */
+        $query = $this->entityManager->createQueryBuilder()
+            ->select('term')
+            ->from(Term::class, 'term')
+            ->where('term.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (TermId $id): string => $id->value(), $ids))
+            ->getQuery();
+
+        return $query->getResult();
+    }
+
+    #[\Override]
     public function namesOf(array $ids): array
     {
         if ([] === $ids) {

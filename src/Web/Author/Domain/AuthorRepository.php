@@ -16,6 +16,16 @@ interface AuthorRepository
     public function find(AuthorId $id): ?Author;
 
     /**
+     * The authors on the site among those given, read at once, in no order;
+     * an id of none is left out.
+     *
+     * @param list<AuthorId> $ids
+     *
+     * @return list<Author>
+     */
+    public function findByIds(array $ids): array;
+
+    /**
      * The author served at the slug.
      */
     public function findBySlug(string $slug): ?Author;

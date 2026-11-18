@@ -9,8 +9,9 @@ use Cms\Image\Domain\ImageRepository;
 use Shared\Domain\DomainError;
 
 /**
- * The images on the site among those given by id, as it serves them: an
- * image never published, or taken off, is left out, as is an id of no image.
+ * The images on the site among those given by id, read at once, as it
+ * serves them: an image never published, or taken off, is left out, as is
+ * an id of no image.
  */
 final readonly class ImagesOnSiteFinder
 {
@@ -24,20 +25,23 @@ final readonly class ImagesOnSiteFinder
      */
     public function __invoke(ImageRepository $imageRepository): array
     {
-        $images = [];
+        $ids = [];
 
-        foreach (array_unique($this->ids) as $id) {
+        foreach ($this->ids as $id) {
             try {
-                $image = $imageRepository->find(new ImageId($id));
+                $ids[] = new ImageId($id);
             } catch (DomainError) {
                 // Not the id of an image: none on the site.
-                continue;
             }
+        }
 
-            $version = $image?->onSite();
+        $images = [];
 
-            if (null !== $image && null !== $version) {
-                $images[$id] = ImageOnSiteResponse::fromVersion($image, $version);
+        foreach ($imageRepository->findByIds($ids) as $image) {
+            $version = $image->onSite();
+
+            if (null !== $version) {
+                $images[$image->id()->value()] = ImageOnSiteResponse::fromVersion($image, $version);
             }
         }
 

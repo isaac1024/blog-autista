@@ -218,7 +218,7 @@ final class PreviewPageTest extends TestCase
             PostMother::published(id: PostIdMother::random()->value(), title: 'Otro día', slug: 'otro-dia'),
         ]);
         $termRepository = self::createStub(TermRepository::class);
-        $termRepository->method('find')->willReturn(TermMother::published(id: PostMother::SECTION, name: 'Vida diaria publicada'));
+        $termRepository->method('findByIds')->willReturn([TermMother::published(id: PostMother::SECTION, name: 'Vida diaria publicada')]);
         $page = PageMother::create(id: self::PAGE, content: ['version' => 1, 'blocks' => [
             ['type' => 'mosaic', 'limit' => 4, 'section_id' => PostMother::SECTION, 'author_id' => null, 'tag_ids' => [PostMother::TAG]],
         ]]);
@@ -277,6 +277,7 @@ final class PreviewPageTest extends TestCase
         $imageRepository->method('find')->willReturnCallback(
             static fn (ImageId $id) => $images[$id->value()] ?? null,
         );
+        $imageRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Image => $id instanceof ImageId ? $images[$id->value()] ?? null : null, $ids))));
 
         $redirectsByOrigin = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
 

@@ -87,7 +87,7 @@ final class PublishedPostTest extends TestCase
                 self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
                 self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
             ],
-            authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
+            authors: [self::AUTHOR => self::author(self::AUTHOR, 'Isaac', 'isaac')],
         );
 
         PageComponents::one($page, 'Shared:PostHeader', [
@@ -126,7 +126,7 @@ final class PublishedPostTest extends TestCase
                 self::NEW_SECTION => self::term(self::NEW_SECTION, 'section', 'Día a día', 'dia-a-dia'),
                 self::NEW_TAG => self::term(self::NEW_TAG, 'tag', 'Calma', 'calma'),
             ],
-            authors: [self::NEW_AUTHOR => self::author('Isaac', 'isaac')],
+            authors: [self::NEW_AUTHOR => self::author(self::NEW_AUTHOR, 'Isaac', 'isaac')],
             redirects: [
                 new Redirect('term', self::NEW_SECTION, self::SECTION),
                 new Redirect('author', self::NEW_AUTHOR, self::AUTHOR),
@@ -252,7 +252,7 @@ final class PublishedPostTest extends TestCase
                 self::SECTION => self::term(self::SECTION, 'section', 'Día a día', 'dia-a-dia'),
                 self::OTHER_TAG => self::term(self::OTHER_TAG, 'tag', 'Ruido', 'ruido'),
             ],
-            authors: [self::AUTHOR => self::author('Isaac', 'isaac')],
+            authors: [self::AUTHOR => self::author(self::AUTHOR, 'Isaac', 'isaac')],
             images: [self::image(CmsPostPublishedMother::OPENING_IMAGE, 'Andén del metro vacío')],
         );
         $canonical = RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html';
@@ -314,7 +314,7 @@ final class PublishedPostTest extends TestCase
     #[DataProvider('signers')]
     public function testItTellsSearchEnginesWhoSignsThePost(string $publisher, string $publisherName, string $publisherSlug, int $people): void
     {
-        $authors = [self::AUTHOR => self::author('Isaac', 'isaac'), self::NEW_AUTHOR => self::author('Ana', 'ana')];
+        $authors = [self::AUTHOR => self::author(self::AUTHOR, 'Isaac', 'isaac'), self::NEW_AUTHOR => self::author(self::NEW_AUTHOR, 'Ana', 'ana')];
         $page = $this->compose(
             [],
             authors: [self::AUTHOR => $authors[self::AUTHOR], $publisher => $authors[$publisher]],
@@ -379,7 +379,7 @@ final class PublishedPostTest extends TestCase
     {
         $page = $this->compose(
             [],
-            authors: [self::NEW_AUTHOR => self::author('Ana', 'ana')],
+            authors: [self::NEW_AUTHOR => self::author(self::NEW_AUTHOR, 'Ana', 'ana')],
             settings: Settings::publish(CmsSettingsPublishedMother::create(defaultImageId: null, mainMenu: [], footerMenu: [], authorId: self::NEW_AUTHOR)),
         );
 
@@ -413,6 +413,7 @@ final class PublishedPostTest extends TestCase
         );
         $authorRepository = self::createStub(AuthorRepository::class);
         $authorRepository->method('find')->willReturnCallback(static fn (AuthorId $id): ?Author => $authors[$id->value()] ?? null);
+        $authorRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Author => $id instanceof AuthorId ? $authors[$id->value()] ?? null : null, $ids))));
         $imageRepository = self::createStub(ImageRepository::class);
         $imageRepository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(
             $images,
@@ -492,9 +493,9 @@ final class PublishedPostTest extends TestCase
         ];
     }
 
-    private static function author(string $name, string $slug): Author
+    private static function author(string $id, string $name, string $slug): Author
     {
-        return Author::publish(CmsAuthorPublished::fromPrimitives(AuthorId::random()->value(), [
+        return Author::publish(CmsAuthorPublished::fromPrimitives($id, [
             'name' => $name,
             'slug' => $slug,
             'avatar' => '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp',

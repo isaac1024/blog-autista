@@ -90,7 +90,7 @@ final class PreviewTermTest extends TestCase
         $pageRepository = self::createStub(PageRepository::class);
         $redirectsByOrigin = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
         $termRepository = self::createStub(TermRepository::class);
-        $termRepository->method('find')->willReturn(TermMother::published());
+        $termRepository->method('findByIds')->willReturn([TermMother::published()]);
         $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
 
         return new PreviewTerm(

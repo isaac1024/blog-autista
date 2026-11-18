@@ -22,11 +22,7 @@ final readonly class TermOnSiteFinder
     public function __invoke(TermRepository $termRepository): ?TermOnSiteResponse
     {
         $term = $termRepository->find(new TermId($this->id));
-        $version = $term?->taxonomy() === $this->taxonomy ? $term->onSite() : null;
-        $slug = $version?->slug();
 
-        return null === $version || null === $slug
-            ? null
-            : new TermOnSiteResponse($version->name()->value(), $slug->value(), $version->seo()->description());
+        return null !== $term && $term->taxonomy() === $this->taxonomy ? TermOnSiteResponse::fromTerm($term) : null;
     }
 }

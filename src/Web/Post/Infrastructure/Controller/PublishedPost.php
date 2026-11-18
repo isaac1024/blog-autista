@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Web\Post\Infrastructure\Controller;
 
 use Shared\Domain\Redirect\ReferenceResolver;
+use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
 use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Shared\Infrastructure\Ui\StructuredData;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Web\Author\Application\AuthorOnSiteFinder;
 use Web\Author\Application\AuthorResponse;
+use Web\Author\Application\AuthorsOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
 use Web\Image\Application\ImageResponse;
 use Web\Image\Application\ImagesOnSiteFinder;
@@ -57,26 +58,14 @@ final readonly class PublishedPost
     {
         $canonical = $this->canonical($post);
 
-        // An image off the site, the opening one too, is painted as the one
-        // its address now leads to, if any, so the pages its caption links to
-        // are those of that one.
-        $images = array_map(
-            static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
-            new ReferenceResolver('image', [$post->openingImageId, ...$post->content->imageIds()], null)(
-                fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
-                $this->redirectsByOrigin,
-            ),
-        );
+        $images = $this->images($post);
 
         // A section or an author off the site is shown as the one its address
         // now leads to, if any; otherwise by the name it had, as text.
         $terms = $this->terms([$post->sectionId, ...$post->tagIds]);
         $section = $terms[$post->sectionId] ?? null;
         $section = Taxonomy::Section->value === $section?->taxonomy ? $section : null;
-        $author = new ReferenceResolver('author', [$post->authorId], null)(
-            fn (array $ids): array => $this->authorsOnSite($ids),
-            $this->redirectsByOrigin,
-        )[$post->authorId] ?? null;
+        $author = $this->author($post->authorId);
 
         $tags = $this->tags($post->tagIds, $terms);
         $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
@@ -133,6 +122,24 @@ final readonly class PublishedPost
     }
 
     /**
+     * The images the post paints, the opening one too, keyed by id. One off
+     * the site is painted as the one its address now leads to, if any, so
+     * the pages its caption links to are those of that one.
+     *
+     * @return array<string, array{src: string, srcset: string, width: int, height: int, alt: string, caption: RichText}>
+     */
+    private function images(PostResponse $post): array
+    {
+        return array_map(
+            static fn (ImageResponse $image): array => SiteMedia::image($image->path, $image->alt, $image->caption),
+            new ReferenceResolver('image', [$post->openingImageId, ...$post->content->imageIds()], null)(
+                fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
+                $this->redirectsByOrigin,
+            ),
+        );
+    }
+
+    /**
      * Who signs the post, leading to their page with their avatar while they
      * are on the site, or as the one their address now leads to; otherwise
      * by the name they had when it was published, as text.
@@ -176,6 +183,18 @@ final readonly class PublishedPost
     }
 
     /**
+     * Who signs the post, as the site has them, or as the author their
+     * address now leads to; none otherwise.
+     */
+    private function author(string $id): ?AuthorResponse
+    {
+        return new ReferenceResolver('author', [$id], null)(
+            fn (array $ids): array => new AuthorsOnSiteFinder($ids)($this->authorRepository),
+            $this->redirectsByOrigin,
+        )[$id] ?? null;
+    }
+
+    /**
      * The terms among those given, the section and the tags at once, as the
      * site has them, keyed by the id given; one off the site, as the term its
      * address now leads to. Each tells its taxonomy, which its caller checks.
@@ -190,25 +209,5 @@ final readonly class PublishedPost
             fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
             $this->redirectsByOrigin,
         );
-    }
-
-    /**
-     * @param list<string> $ids
-     *
-     * @return array<string, AuthorResponse>
-     */
-    private function authorsOnSite(array $ids): array
-    {
-        $authors = [];
-
-        foreach ($ids as $id) {
-            $author = new AuthorOnSiteFinder($id)($this->authorRepository);
-
-            if (null !== $author) {
-                $authors[$id] = $author;
-            }
-        }
-
-        return $authors;
     }
 }
