@@ -82,6 +82,15 @@ final class PublishedAuthorTest extends TestCase
                 'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
                 'inLanguage' => 'es',
                 'mainEntity' => ['@id' => $canonical.'#person'],
+                'breadcrumb' => ['@id' => $canonical.'#breadcrumb'],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $canonical.'#breadcrumb',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => RouteNameUrlGenerator::SITE.'/'],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => 'Isaac'],
+                ],
             ],
             [
                 '@type' => 'Person',

@@ -7,9 +7,9 @@ namespace Shared\Infrastructure\Twig\Components;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
- * The head of a post: the section it is under, its title, and who signs it,
- * with their avatar, when it was published, or last updated, and how long it
- * takes to read. The section and the author lead to their pages when they
+ * The head of a post: its breadcrumbs, from the home page to the section it
+ * is under, its title, and who signs it, with their avatar, when it was
+ * published, or last updated, and how long it takes to read. The section and the author lead to their pages when they
  * have one, and are named as text otherwise.
  */
 #[AsTwigComponent]

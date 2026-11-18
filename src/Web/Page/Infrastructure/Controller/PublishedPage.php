@@ -19,6 +19,7 @@ use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SiteMosaics;
+use Web\Shared\Infrastructure\Ui\SiteRobots;
 
 /**
  * Composes a page of the site, painted as SitePage paints it, in the chrome of
@@ -43,9 +44,8 @@ final readonly class PublishedPage
 
     public function __invoke(PageResponse $page): Page
     {
-        $canonical = null === $page->slug
-            ? $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL)
-            : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
+        $home = $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL);
+        $canonical = null === $page->slug ? $home : $this->urlGenerator->generate('web_page', ['slug' => $page->slug], UrlGeneratorInterface::ABSOLUTE_URL);
 
         // An image off the site is painted as the one its address now leads
         // to, if any, so the pages its caption links to are those of that one.
@@ -57,24 +57,26 @@ final readonly class PublishedPage
             ),
         );
 
-        // Search engines may show its images large, in results and Discover.
         // Its visits are counted; those of a preview or an error never are.
+        // Every page but the home one is a step away from it.
+        $layout = $this->siteLayout->page($page->title)
+            ->withSearchEngineMetadata($page->metaDescription, SiteRobots::meta($page->robots), $canonical)
+            ->withCountedVisits('page', $page->id)
+            ->withStructuredData(StructuredData::webPage(
+                match (PageType::from($page->type)) {
+                    PageType::Contact => 'ContactPage',
+                    PageType::Search => 'SearchResultsPage',
+                    default => 'WebPage',
+                },
+                $home,
+                $canonical,
+                $page->title,
+                $page->metaDescription,
+                null === $page->slug ? [] : StructuredData::breadcrumbOf($canonical),
+            ));
+
         return ($this->sitePage)(
-            $this->siteLayout->page($page->title)
-                ->withSearchEngineMetadata($page->metaDescription, $page->robots.',max-image-preview:large', $canonical)
-                ->withCountedVisits('page', $page->id)
-                ->withStructuredData(StructuredData::webPage(
-                    match (PageType::from($page->type)) {
-                        PageType::Contact => 'ContactPage',
-                        PageType::Search => 'SearchResultsPage',
-                        default => 'WebPage',
-                    },
-                    $this->urlGenerator->generate('web_home', referenceType: UrlGeneratorInterface::ABSOLUTE_URL),
-                    $canonical,
-                    $page->title,
-                    $page->metaDescription,
-                    [],
-                )),
+            null === $page->slug ? $layout : $layout->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [['name' => $page->title, 'url' => null]])),
             $page->title,
             $page->content,
             $images,

@@ -123,15 +123,28 @@ final class PublishedTermTest extends TestCase
         self::assertCount(1, $secondCards);
         PageComponents::one($second, 'Shared:Pagination', ['previousUrl' => '/tag/sueno.html', 'nextUrl' => null]);
         // Each page of the list is a collection of its own.
-        self::assertSame([[
-            '@type' => 'CollectionPage',
-            '@id' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2#webpage',
-            'url' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2',
-            'name' => 'site.posts.page_title(%name%=Sueño, %page%=2)',
-            'description' => 'Sobre el sueño.',
-            'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
-            'inLanguage' => 'es',
-        ]], $second->structuredData);
+        self::assertSame([
+            [
+                '@type' => 'CollectionPage',
+                '@id' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2#webpage',
+                'url' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2',
+                'name' => 'site.posts.page_title(%name%=Sueño, %page%=2)',
+                'description' => 'Sobre el sueño.',
+                'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
+                'inLanguage' => 'es',
+                'breadcrumb' => ['@id' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2#breadcrumb'],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => RouteNameUrlGenerator::SITE.'/tag/sueno.html?pagina=2#breadcrumb',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => RouteNameUrlGenerator::SITE.'/'],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => 'site.posts.page_title(%name%=Sueño, %page%=2)'],
+                ],
+            ],
+        ], $second->structuredData);
+        // Search engines may show its images large.
+        self::assertSame('index,follow,max-image-preview:large', $second->robots);
     }
 
     public function testItTellsATermWithoutPostsHasNoneYet(): void

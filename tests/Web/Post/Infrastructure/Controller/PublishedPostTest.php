@@ -267,6 +267,16 @@ final class PublishedPostTest extends TestCase
                 'description' => 'Qué cambió el primer día con tapones.',
                 'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
                 'inLanguage' => 'es',
+                'breadcrumb' => ['@id' => $canonical.'#breadcrumb'],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $canonical.'#breadcrumb',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => RouteNameUrlGenerator::SITE.'/'],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => 'Día a día', 'item' => RouteNameUrlGenerator::SITE.'/dia-a-dia/'],
+                    ['@type' => 'ListItem', 'position' => 3, 'name' => 'Mi primer día sin ruido'],
+                ],
             ],
             [
                 '@type' => 'BlogPosting',
@@ -364,7 +374,11 @@ final class PublishedPostTest extends TestCase
     {
         $page = $this->compose([self::TAG]);
 
-        $posting = $page->structuredData[1] ?? self::fail('No post was told.');
+        $posting = array_values(array_filter($page->structuredData, static fn (array $node): bool => 'BlogPosting' === $node['@type']))[0] ?? self::fail('No post was told.');
+        // Its section off the site, the post is a step away from the home page.
+        $trail = array_values(array_filter($page->structuredData, static fn (array $node): bool => 'BreadcrumbList' === $node['@type']))[0] ?? self::fail('No breadcrumbs were told.');
+        self::assertIsArray($trail['itemListElement']);
+        self::assertSame(['Inicio', 'Mi primer día sin ruido'], array_column($trail['itemListElement'], 'name'));
         self::assertSame(['@type' => 'Person', 'name' => 'Isaac Abreu'], $posting['author']);
         self::assertSame('Vida diaria', $posting['articleSection']);
         self::assertArrayNotHasKey('image', $posting);

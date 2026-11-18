@@ -1149,6 +1149,8 @@ site:
         title: 'Something went wrong on the blog'
         message: 'It isn’t your fault. Try again in a while.'
     post:
+        breadcrumbs: 'Breadcrumbs'
+        home: 'Home'
         reading: '{1}1 minute read|]1,Inf[%count% minutes read'
         published: 'Published on'
         updated: 'Updated on'

@@ -15,6 +15,7 @@ use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SitePostCards;
+use Web\Shared\Infrastructure\Ui\SiteRobots;
 use Web\Taxonomy\Application\TermResponse;
 
 /**
@@ -45,19 +46,14 @@ final readonly class PublishedTerm
         $parameters = ['slug' => $term->slug];
         $title = ListPagination::FIRST_PAGE === $page ? $term->name : $this->translator->trans('site.posts.page_title', ['%name%' => $term->name, '%page%' => $page]);
         $canonical = $this->pagination->siteUrl($route, $parameters, $page, UrlGeneratorInterface::ABSOLUTE_URL);
+        $home = $this->pagination->siteUrl('web_home', [], ListPagination::FIRST_PAGE, UrlGeneratorInterface::ABSOLUTE_URL);
 
         return ($this->siteTermPage)(
             $this->siteLayout->page($title)
-                ->withSearchEngineMetadata($term->metaDescription, $term->robots, $canonical)
+                ->withSearchEngineMetadata($term->metaDescription, SiteRobots::meta($term->robots), $canonical)
                 ->withCountedVisits('term', $term->id)
-                ->withStructuredData(StructuredData::webPage(
-                    'CollectionPage',
-                    $this->pagination->siteUrl('web_home', [], ListPagination::FIRST_PAGE, UrlGeneratorInterface::ABSOLUTE_URL),
-                    $canonical,
-                    $title,
-                    $term->metaDescription,
-                    [],
-                )),
+                ->withStructuredData(StructuredData::webPage('CollectionPage', $home, $canonical, $title, $term->metaDescription, StructuredData::breadcrumbOf($canonical)))
+                ->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [['name' => $title, 'url' => null]])),
             $term->name,
             ($this->postCards)($posts->posts),
             $this->pagination->site($route, $parameters, $page, $posts->hasMore),

@@ -23,6 +23,7 @@ use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\AuthorPerson;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SiteRobots;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\Taxonomy;
@@ -82,9 +83,14 @@ final readonly class PublishedPost
 
         return ($this->sitePostPage)(
             $layout
-                ->withSearchEngineMetadata($post->metaDescription, $post->robots.',max-image-preview:large', $canonical)
+                ->withSearchEngineMetadata($post->metaDescription, SiteRobots::meta($post->robots), $canonical)
                 ->withCountedVisits('post', $post->id)
-                ->withStructuredData(StructuredData::webPage('WebPage', $home, $canonical, $post->title, $post->metaDescription, []))
+                ->withStructuredData(StructuredData::webPage('WebPage', $home, $canonical, $post->title, $post->metaDescription, StructuredData::breadcrumbOf($canonical)))
+                // Its section while on the site, then the post itself.
+                ->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [
+                    ...(null === $section ? [] : [['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug], UrlGeneratorInterface::ABSOLUTE_URL)]]),
+                    ['name' => $post->title, 'url' => null],
+                ]))
                 ->withStructuredData(StructuredData::blogPosting(
                     $canonical,
                     $post->title,

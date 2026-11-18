@@ -1,8 +1,8 @@
 {#
-    The section above the title, then who signs the post, beside their
-    avatar, with the date and how long it takes to read, one under the other.
-    A preview of a draft may have no author or no section yet: it says what
-    it has.
+    Above the title, the breadcrumbs of the post: the home page, then its
+    section. Under it, who signs the post, beside their avatar, with the date
+    and how long it takes to read, one under the other. A preview of a draft
+    may have no author or no section yet: it says what it has.
 #}
 {% macro named(item, class) %}
 {%- if item.url is not null -%}
@@ -13,7 +13,12 @@
 {% endmacro %}
 <header class="m-0 grid gap-5">
 {% if section.name %}
-    <p class="m-0 text-base">{{ _self.named(section, 'text-accent underline decoration-[0.06em] underline-offset-[0.2em]') }}</p>
+    <nav aria-label="{{ 'site.post.breadcrumbs'|trans }}">
+        <ol class="m-0 flex list-none flex-wrap items-center gap-x-2 p-0 text-base">
+            <li><a class="text-accent underline decoration-[0.06em] underline-offset-[0.2em] hover:text-accent-strong hover:decoration-[0.08em]" href="{{ path('web_home') }}">{{ 'site.post.home'|trans }}</a></li>
+            <li class="flex items-center gap-x-2"><span class="text-muted" aria-hidden="true">›</span>{{ _self.named(section, 'text-accent underline decoration-[0.06em] underline-offset-[0.2em]') }}</li>
+        </ol>
+    </nav>
 {% endif %}
     <h1 class="m-0 text-[clamp(2.125rem,4.5vw,3rem)] leading-[1.15] font-normal tracking-[-0.015em] text-balance break-words">{{ title }}</h1>
     <div class="flex items-center gap-4">

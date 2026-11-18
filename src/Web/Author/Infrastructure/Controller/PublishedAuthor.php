@@ -19,6 +19,7 @@ use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\AuthorPerson;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SiteMosaics;
+use Web\Shared\Infrastructure\Ui\SiteRobots;
 
 /**
  * Composes the page of an author of the site, painted as SiteAuthorPage
@@ -62,11 +63,13 @@ final readonly class PublishedAuthor
         // The page of a person: the person, who may be the one who publishes the blog too, is one node.
         return ($this->siteAuthorPage)(
             $this->siteLayout->page($author->name)
-                ->withSearchEngineMetadata($author->metaDescription, $author->robots.',max-image-preview:large', $canonical)
+                ->withSearchEngineMetadata($author->metaDescription, SiteRobots::meta($author->robots), $canonical)
                 ->withCountedVisits('author', $author->id)
                 ->withStructuredData(StructuredData::webPage('ProfilePage', $home, $canonical, $author->name, $author->metaDescription, [
                     'mainEntity' => ['@id' => StructuredData::personId($canonical)],
+                    ...StructuredData::breadcrumbOf($canonical),
                 ]))
+                ->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [['name' => $author->name, 'url' => null]]))
                 ->withStructuredData($person['node']),
             $author->name,
             $avatar,

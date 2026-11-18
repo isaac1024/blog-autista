@@ -114,7 +114,8 @@ final class PublishedPageTest extends TestCase
 
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
-        self::assertSame('noindex,follow,max-image-preview:large', $result->robots);
+        // Only a page they may list may have its images shown large.
+        self::assertSame('noindex,follow', $result->robots);
         // Shared, it is a page of the site, not a post.
         self::assertNull($result->article);
     }
@@ -197,7 +198,7 @@ final class PublishedPageTest extends TestCase
 
         $result = new PublishedPage($urlGenerator, new SitePage(new RichTextComponents()), $imageRepository, $siteLayout, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), self::linkedContents($urlGenerator, $pageRepository), self::mosaics($urlGenerator, $imageRepository))(PageResponse::fromPage($page));
 
-        self::assertSame([[
+        $webPage = [
             '@type' => $schema,
             '@id' => $canonical.'#webpage',
             'url' => $canonical,
@@ -205,7 +206,20 @@ final class PublishedPageTest extends TestCase
             'description' => 'Quién escribe este blog sobre autismo y por qué.',
             'isPartOf' => ['@id' => RouteNameUrlGenerator::SITE.'/#website'],
             'inLanguage' => 'es',
-        ]], $result->structuredData);
+        ];
+
+        // Every page but the home one is a step away from it.
+        self::assertSame(null === $slug ? [$webPage] : [
+            $webPage + ['breadcrumb' => ['@id' => $canonical.'#breadcrumb']],
+            [
+                '@type' => 'BreadcrumbList',
+                '@id' => $canonical.'#breadcrumb',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => RouteNameUrlGenerator::SITE.'/'],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => 'Sobre mí'],
+                ],
+            ],
+        ], $result->structuredData);
     }
 
     /**

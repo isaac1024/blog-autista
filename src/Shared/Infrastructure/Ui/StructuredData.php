@@ -21,6 +21,11 @@ final class StructuredData
     public const string LANGUAGE = 'es';
 
     /**
+     * The name of the home page in a trail of breadcrumbs, in that language.
+     */
+    public const string HOME = 'Inicio';
+
+    /**
      * @param string  $home      the absolute address of the home page
      * @param ?string $publisher the absolute address of the page of the author who publishes it, null for none
      *
@@ -123,6 +128,42 @@ final class StructuredData
     }
 
     /**
+     * The trail that leads from the home page to a page, which search
+     * engines show as its place in the site: each step by its name and its
+     * absolute address, the home page first. The page itself goes last; it,
+     * or a step off the site, goes without an address.
+     *
+     * @param list<array{name: string, url: ?string}> $trail the steps after the home page, the page last
+     *
+     * @return array<string, mixed>
+     */
+    public static function breadcrumbs(string $home, string $canonical, array $trail): array
+    {
+        $steps = [['name' => self::HOME, 'url' => $home], ...$trail];
+
+        return [
+            '@type' => 'BreadcrumbList',
+            '@id' => self::breadcrumbId($canonical),
+            'itemListElement' => array_map(
+                static fn (array $step, int $index): array => self::known(['@type' => 'ListItem', 'position' => $index + 1, 'name' => $step['name'], 'item' => $step['url']]),
+                $steps,
+                array_keys($steps),
+            ),
+        ];
+    }
+
+    /**
+     * What a page tells of its breadcrumbs, as a page of schema.org links
+     * them.
+     *
+     * @return array{breadcrumb: array{'@id': string}}
+     */
+    public static function breadcrumbOf(string $canonical): array
+    {
+        return ['breadcrumb' => ['@id' => self::breadcrumbId($canonical)]];
+    }
+
+    /**
      * The absolute address of a path of the site, such as that of an image.
      */
     public static function absolute(string $home, string $path): string
@@ -133,6 +174,11 @@ final class StructuredData
     public static function personId(string $url): string
     {
         return $url.'#person';
+    }
+
+    private static function breadcrumbId(string $canonical): string
+    {
+        return $canonical.'#breadcrumb';
     }
 
     private static function websiteId(string $home): string
