@@ -2,7 +2,9 @@
     Each card is one link, a single stop for the keyboard, named by all it
     says. Its title is a heading, so the cards can be skimmed by headings
     too. The image says nothing the title doesn't, so it has no alternative
-    text.
+    text. The first picture of a list that opens its page comes first, as
+    it may be the largest thing on the screen; the others wait until they
+    are near it.
 #}
 <ul class="m-0 grid list-none gap-x-10 gap-y-12 p-0 sm:grid-cols-2{{ wide ? ' lg:grid-cols-3' : '' }}">
 {% for card in cards %}
@@ -10,7 +12,7 @@
         <article class="h-full">
             <a class="group grid content-start gap-3 text-text no-underline forced-colors:text-[LinkText]" href="{{ card.url }}">
 {% if card.image %}
-                <img class="block aspect-video h-auto w-full bg-surface object-cover" src="{{ card.image.src }}" srcset="{{ card.image.srcset }}" sizes="{{ wide ? '(min-width: 64rem) 22rem, (min-width: 40rem) 45vw, 100vw' : '(min-width: 40rem) 21rem, 100vw' }}" width="{{ card.image.width }}" height="{{ card.image.height }}" alt=""{% if not (lead and loop.first) %} loading="lazy" decoding="async"{% endif %}>
+                <img class="block aspect-video h-auto w-full bg-surface object-cover" src="{{ card.image.src }}" srcset="{{ card.image.srcset }}" sizes="{{ wide ? '(min-width: 64rem) 22rem, (min-width: 40rem) 45vw, 100vw' : '(min-width: 40rem) 21rem, 100vw' }}" width="{{ card.image.width }}" height="{{ card.image.height }}" alt=""{% if lead and loop.first %} fetchpriority="high"{% else %} loading="lazy" decoding="async"{% endif %}>
 {% endif %}
                 <div class="grid gap-1.5">
                     <span class="text-base text-accent">{{ card.section }}</span>

@@ -255,6 +255,7 @@ const loadWhenNear = (embed) => {
 /** @param {Embed} embed */
 const closeNotice = (embed) => {
     embed.notice.hidden = true;
+    showFooter(embed);
     // Only an open notice closes, and opening it said what opened it.
     /** @type {HTMLButtonElement} */ (embed.opener).focus();
 };
@@ -266,6 +267,8 @@ const closeNotice = (embed) => {
 const openNotice = (embed, opener) => {
     embed.opener = opener;
     embed.notice.hidden = false;
+    // The notice loads it, once agreed: the line doesn't offer it twice.
+    embed.load.hidden = true;
     embed.noticeTitle.focus();
 };
 

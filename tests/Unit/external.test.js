@@ -107,15 +107,17 @@ test('without consent, the facade stays and its line offers to load it', async (
     assert.equal(observed.length, 0);
 });
 
-test('loading asks first, in a notice that takes the focus, and cancelling, or Escape, goes back', async () => {
+test('loading asks first, in a notice that takes the focus and alone offers it, and cancelling, or Escape, goes back', async () => {
     const { loaded, part, click, window } = await page();
 
     await click(0, '[data-external-load]');
     assert.equal(part(0, '[data-external-notice]').hidden, false);
+    assert.equal(part(0, '[data-external-load]').hidden, true);
     assertFocused(part(0, '[data-external-notice-title]'));
 
     await click(0, '[data-external-cancel]');
     assert.equal(part(0, '[data-external-notice]').hidden, true);
+    assert.equal(part(0, '[data-external-load]').hidden, false);
     assertFocused(part(0, '[data-external-load]'));
 
     await click(0, '[data-external-load]');
