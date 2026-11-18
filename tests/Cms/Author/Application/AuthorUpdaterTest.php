@@ -202,6 +202,57 @@ final class AuthorUpdaterTest extends TestCase
         ), 'index,follow', 'errors.author.bio.links_itself', []];
     }
 
+    /**
+     * A bio has headings of two levels, notes and important callouts, bold
+     * text and links.
+     */
+    public function testItKeepsABioWithEverythingABioMayHave(): void
+    {
+        $repository = $this->createMock(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::create());
+        $repository->expects(self::once())->method('save');
+
+        self::update($repository, self::createStub(AvatarStorage::class), bio: RichTextMother::stored(
+            ['type' => 'heading', 'level' => 2, 'text' => [['text' => 'Quién soy']]],
+            ['type' => 'heading', 'level' => 3, 'text' => [['text' => 'Infancia']]],
+            ['type' => 'callout', 'variant' => 'note', 'paragraphs' => [[['text' => 'Una nota']]]],
+            ['type' => 'callout', 'variant' => 'important', 'paragraphs' => [[['text' => 'Algo importante']]]],
+            ['type' => 'paragraph', 'text' => [['text' => 'En negrita', 'marks' => ['bold']], ['text' => ' y enlazado', 'marks' => ['link'], 'page_id' => self::PAGE]]],
+        ));
+    }
+
+    /**
+     * The images and pages of the bio being edited and of the one on the
+     * site are told each once, in order, whichever version has them.
+     */
+    public function testItTellsTheImagesAndPagesOfBothBiosEachOnceInOrder(): void
+    {
+        $first = '01a1b801-ce58-723d-8234-b76d9105d000';
+        $page = '01a1b801-ce58-723d-8234-b76d9105e000';
+        $repository = self::createStub(AuthorRepository::class);
+        $repository->method('find')->willReturn(AuthorMother::published(bio: RichTextMother::stored(
+            ['type' => 'image', 'id' => self::IMAGE],
+            ['type' => 'paragraph', 'text' => [['text' => 'Contacto', 'marks' => ['link'], 'page_id' => self::PAGE]]],
+        )));
+        $told = [];
+        $eventBus = self::createStub(EventBus::class);
+        $eventBus->method('publish')->willReturnCallback(static function (DomainEvent ...$events) use (&$told): void {
+            foreach ($events as $event) {
+                if ($event instanceof AuthorImagesUsed || $event instanceof AuthorPagesLinked) {
+                    $told[] = $event->toPrimitives();
+                }
+            }
+        });
+
+        new AuthorUpdater(AuthorIdMother::DEFAULT_VALUE, AuthorMother::NAME, AuthorMother::SLUG, RichTextMother::stored(
+            ['type' => 'image', 'id' => self::IMAGE],
+            ['type' => 'image', 'id' => $first],
+            ['type' => 'paragraph', 'text' => [['text' => 'Otra', 'marks' => ['link'], 'page_id' => self::PAGE], ['text' => ' y otra', 'marks' => ['link'], 'page_id' => $page]]],
+        ), '', 'index,follow', null)($repository, $eventBus, self::createStub(AvatarStorage::class));
+
+        self::assertSame([['image_ids' => [$first, self::IMAGE]], ['page_ids' => [$page, self::PAGE]]], $told);
+    }
+
     public function testItRefusesTheSlugOfAnotherAuthor(): void
     {
         $repository = $this->createMock(AuthorRepository::class);

@@ -129,20 +129,9 @@ final readonly class DoctrineCriteriaConverter
             ->andWhere(match ($filter->operator) {
                 FilterOperator::Equal => $expr->eq($field, $placeholder),
                 FilterOperator::NotEqual => $expr->neq($field, $placeholder),
-                FilterOperator::GreaterThan => $expr->gt($field, $placeholder),
-                FilterOperator::GreaterThanOrEqual => $expr->gte($field, $placeholder),
-                FilterOperator::LessThan => $expr->lt($field, $placeholder),
-                FilterOperator::LessThanOrEqual => $expr->lte($field, $placeholder),
-                FilterOperator::Contains,
-                FilterOperator::StartsWith,
-                FilterOperator::EndsWith => $expr->like($field, $placeholder),
+                FilterOperator::Contains => $expr->like($field, $placeholder),
             })
-            ->setParameter($parameter, match ($filter->operator) {
-                FilterOperator::Contains => '%'.$this->escapeLike($filter->value).'%',
-                FilterOperator::StartsWith => $this->escapeLike($filter->value).'%',
-                FilterOperator::EndsWith => '%'.$this->escapeLike($filter->value),
-                default => $filter->value,
-            });
+            ->setParameter($parameter, FilterOperator::Contains === $filter->operator ? '%'.$this->escapeLike($filter->value).'%' : $filter->value);
     }
 
     /**

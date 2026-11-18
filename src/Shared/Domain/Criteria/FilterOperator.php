@@ -8,13 +8,7 @@ enum FilterOperator
 {
     case Equal;
     case NotEqual;
-    case GreaterThan;
-    case GreaterThanOrEqual;
-    case LessThan;
-    case LessThanOrEqual;
     case Contains;
-    case StartsWith;
-    case EndsWith;
 
     /**
      * Full-text search: every word must appear, in any order and as a word

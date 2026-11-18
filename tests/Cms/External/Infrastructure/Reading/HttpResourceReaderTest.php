@@ -200,6 +200,16 @@ final class HttpResourceReaderTest extends TestCase
             ]),
             self::study('Largo', str_repeat('é', 300), null, ['authors' => mb_substr(implode(', ', $names), 0, 300), 'journal' => str_repeat('á', 200), 'year' => 2010]),
         ];
+        yield 'a DOI of as many authors as are listed, all of them short, with none left out' => [
+            'https://doi.org/10.1000/seis',
+            $crossref('10.1000/seis', ['title' => ['Seis'], 'author' => array_map(static fn (int $number): array => ['family' => 'Autor'.$number], range(1, 6))]),
+            self::study('Seis', null, null, ['authors' => 'Autor1, Autor2, Autor3, Autor4, Autor5, Autor6', 'journal' => null, 'year' => null]),
+        ];
+        yield 'a DOI of more authors than are listed' => [
+            'https://doi.org/10.1000/siete',
+            $crossref('10.1000/siete', ['title' => ['Siete'], 'author' => array_map(static fn (int $number): array => ['family' => 'Autor'.$number], range(1, 7))]),
+            self::study('Siete', null, null, ['authors' => 'Autor1, Autor2, Autor3, Autor4, Autor5, Autor6 et al.', 'journal' => null, 'year' => null]),
+        ];
         yield 'a DOI whose registry answers without the work' => ['https://doi.org/10.1000/xyz', static fn () => RecordedSites::answerJson('https://api.crossref.org/works/10.1000%2Fxyz', ['status' => 'ok']), $unread];
         yield 'a DOI whose registry fails' => ['https://doi.org/10.1000/xyz', static fn () => RecordedSites::answerJson('https://api.crossref.org/works/10.1000%2Fxyz', ['message' => ['title' => ['Un informe']]], 500), $unread];
         yield 'a DOI of a work without a title' => ['https://doi.org/10.1000/xyz', $crossref('10.1000/xyz', ['author' => [['family' => 'Ruiz']]]), $unread];
@@ -212,6 +222,16 @@ final class HttpResourceReaderTest extends TestCase
                 'pubdate' => 'Invierno',
             ]]]),
             self::study('Un ensayo.', null, null, ['authors' => 'Ruiz A', 'journal' => 'N Engl J Med', 'year' => null]),
+        ];
+        yield 'an article of PubMed by the full name of its journal, rather than its abbreviation' => [
+            'https://pubmed.ncbi.nlm.nih.gov/123/',
+            static fn () => RecordedSites::answerJson('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=123', ['result' => ['123' => [
+                'title' => 'Un ensayo.',
+                'source' => 'N Engl J Med',
+                'fulljournalname' => 'The New England Journal of Medicine',
+                'pubdate' => '2020 Jan 2',
+            ]]]),
+            self::study('Un ensayo.', null, null, ['authors' => null, 'journal' => 'The New England Journal of Medicine', 'year' => 2020]),
         ];
         yield 'an article of PubMed the NCBI does not have' => ['https://pubmed.ncbi.nlm.nih.gov/123/', static fn () => RecordedSites::answerJson('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=123', ['result' => []]), $unread];
         yield 'a preprint of arXiv with its authors trimmed, of no day and no summary' => [
@@ -262,6 +282,11 @@ final class HttpResourceReaderTest extends TestCase
             'https://example.org:8443/a/b.html',
             static fn () => RecordedSites::answerRedirected('https://example.org:8443/a/b.html', 'https://example.org:8443/c/d.html', '<html><head><meta property="og:title" content="Un título"><meta property="og:image" content="img/e.png"></head></html>', 'text/html'),
             new Reading(ResourceKind::Article, null, null, 'Un título', null, null, ['publisher' => null, 'published_on' => null], ['https://example.org:8443/c/img/e.png'], true),
+        ];
+        yield 'a page that tells its language twice, the page itself before the locale, and quotes in its title, with its image beside it at the root' => [
+            'https://example.org/',
+            $page('https://example.org/', '<html lang="es"><head><meta property="og:locale" content="en_US"><meta property="og:title" content="&quot;Lo que veo&quot; y &apos;lo que oigo&apos;"><meta property="og:image" content="portada.png"></head></html>'),
+            new Reading(ResourceKind::Article, null, null, '"Lo que veo" y \'lo que oigo\'', null, Language::Spanish, ['publisher' => null, 'published_on' => null], ['https://example.org/portada.png'], true),
         ];
         yield 'a page in XHTML' => [
             ExternalResourceMother::ARTICLE_URL,
@@ -319,6 +344,26 @@ final class HttpResourceReaderTest extends TestCase
             'https://mastodon.social/@Gargron/1',
             $mastodon(['language' => 'EN-us', 'content' => '<p>'.str_repeat('ñ', 3100).'</p>', 'account' => ['username' => 'Gargron', 'acct' => 'Gargron@otro.social', 'display_name' => ' '], 'media_attachments' => []]),
             self::post('mastodon', 'mastodon.social/Gargron/1', 'Publicación de Gargron en Mastodon', Language::English, ['author' => 'Gargron', 'handle' => '@Gargron@otro.social', 'posted_on' => null, 'text' => str_repeat('ñ', 3000), 'with_media' => false]),
+        ];
+        yield 'a post of X whose provider tells no text of it' => [
+            'https://x.com/jack/status/20',
+            static fn () => RecordedSites::answerJson(self::oembed('https://publish.twitter.com/oembed?omit_script=true&dnt=true&url=', 'https://x.com/jack/status/20'), ['author_name' => 'jack']),
+            new Reading(ResourceKind::SocialPost, 'x', 'jack/20', null, null, null, [], [], false),
+        ];
+        yield 'a status with no account, which a server that is no Mastodon makes an article' => [
+            'https://mastodon.social/@Gargron/1',
+            $mastodon(['content' => '<p>Hola</p>', 'media_attachments' => []]),
+            new Reading(ResourceKind::Article, null, null, null, null, null, [], [], false),
+        ];
+        yield 'a status with no text, which a server that is no Mastodon makes an article' => [
+            'https://mastodon.social/@Gargron/1',
+            $mastodon(['account' => ['username' => 'Gargron', 'acct' => 'Gargron'], 'media_attachments' => []]),
+            new Reading(ResourceKind::Article, null, null, null, null, null, [], [], false),
+        ];
+        yield 'a post of Mastodon written with spaces and blank lines to spare' => [
+            'https://mastodon.social/@Gargron/1',
+            $mastodon(['content' => "<p>  Hola   a  todos  </p>\n\n<p></p><p></p><p>  &quot;Adiós&quot;  </p>", 'account' => ['username' => 'Gargron', 'acct' => 'Gargron', 'display_name' => 'Eugen'], 'media_attachments' => []]),
+            self::post('mastodon', 'mastodon.social/Gargron/1', 'Publicación de Eugen en Mastodon', null, ['author' => 'Eugen', 'handle' => '@Gargron@mastodon.social', 'posted_on' => null, 'text' => "Hola a todos\n\n\"Adiós\"", 'with_media' => false]),
         ];
         yield 'a post of Threads whose page tells no handle' => [
             'https://www.threads.com/@mosseri/post/DCo4WiOvCB0',

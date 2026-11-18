@@ -6,6 +6,7 @@ namespace Cms\Tests\Post\Infrastructure\Controller;
 
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Domain\Classifiers;
+use Cms\Post\Infrastructure\Controller\PostPublishFormController;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Domain\Redirect;
 use Cms\Redirect\Domain\RedirectRepository;
@@ -58,6 +59,26 @@ final class PostRedirectsTest extends PostControllerTestCase
         $client->request('GET', self::HOST.'/posts/'.$id.'/publish');
         self::assertResponseIsSuccessful();
         self::assertSame(self::PATH, $this->publishedPath($id));
+    }
+
+    /**
+     * What it refuses of the redirects is told on the confirmation, which
+     * comes back with what was sent, and the post stays as it was.
+     */
+    public function testItGoesBackToItsConfirmationWithWhatWasSentWhenARedirectIsRefused(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveClassifiers();
+        $id = $this->saveMovedPost();
+
+        $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish', ['outlook' => 'stale']);
+
+        self::assertResponseRedirects(self::HOST.'/posts/'.$id.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
+        self::assertSame(self::PATH, $this->publishedPath($id));
+        $saved = $client->getRequest()->getSession()->get(\sprintf(PostPublishFormController::SAVED, $id));
+        self::assertIsArray($saved);
+        self::assertSame('stale', $saved['outlook'] ?? null);
     }
 
     /**

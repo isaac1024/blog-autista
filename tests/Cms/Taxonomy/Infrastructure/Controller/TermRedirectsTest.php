@@ -13,6 +13,7 @@ use Cms\Redirect\Domain\SiteResources;
 use Cms\Redirect\Domain\Source;
 use Cms\Redirect\Domain\Target;
 use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Infrastructure\Controller\TermPublishFormController;
 use Cms\Tests\Page\Domain\PageMother;
 use Cms\Tests\Redirect\Domain\RedirectMother;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
@@ -35,6 +36,25 @@ final class TermRedirectsTest extends TermControllerTestCase
     {
         parent::setUp();
         self::mockTime(ClockMother::NOW);
+    }
+
+    /**
+     * What it refuses of the redirects is told on the confirmation, which
+     * comes back with what was sent.
+     */
+    public function testItGoesBackToItsConfirmationWithWhatWasSentWhenARedirectIsRefused(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = TermIdMother::random()->value();
+        $this->saveTerm(TermMother::published(id: $id, slug: 'dia-a-dia', publishedSlug: TermMother::SLUG));
+
+        $this->post($client, 'cms_terms_publish', self::HOST.'/sections/'.$id.'/publish', ['outlook' => 'stale']);
+
+        self::assertResponseRedirects(self::HOST.'/sections/'.$id.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
+        $saved = $client->getRequest()->getSession()->get(\sprintf(TermPublishFormController::SAVED, $id));
+        self::assertIsArray($saved);
+        self::assertSame('stale', $saved['outlook'] ?? null);
     }
 
     public function testItAsksFirstWhenPublishingLeavesAnAddress(): void

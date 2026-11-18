@@ -7,6 +7,7 @@ namespace Web\Tests\Post\Infrastructure\Controller;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Web\Image\Domain\Image;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Domain\CmsPostPublished;
@@ -23,6 +24,8 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class FeedControllerTest extends WebTestCase
 {
+    use ClockSensitiveTrait;
+
     private const string SITE = 'http://www.blogautista.localhost';
 
     private const string ATOM = 'http://www.w3.org/2005/Atom';
@@ -62,6 +65,69 @@ final class FeedControllerTest extends WebTestCase
 
         self::assertSame([], $this->entries($client));
         self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * The feed tells what it is: the site, by its home page, named as its
+     * host until its settings are published, last updated when its latest
+     * post was, in Spanish, at its own address. An entry leads to its post,
+     * and tells no summary nor image it has not.
+     */
+    public function testItTellsWhatTheFeedIsAndEachEntryWhatItHas(): void
+    {
+        $client = self::createClient();
+        self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives('01a1e000-0000-7000-8000-000000000001', [
+            'title' => 'Sin resumen',
+            'slug' => 'sin-resumen',
+            'day' => '2026-11-03',
+            'robots' => 'index,follow',
+            'meta_description' => '',
+            'first_published_at' => '2026-11-03T10:00:00+00:00',
+            'last_published_at' => '2026-11-05T08:30:00+00:00',
+            'revision' => 1,
+        ] + CmsPostPublishedMother::body())));
+
+        $client->request('GET', self::SITE.'/feed.xml');
+        $xpath = $this->xpath($client);
+        $read = static function (string $query) use ($xpath): string {
+            $value = $xpath->evaluate('string('.$query.')');
+            self::assertIsString($value);
+
+            return $value;
+        };
+
+        self::assertSame(
+            [self::SITE.'/', 'www.blogautista.localhost', '2026-11-05T08:30:00+00:00', 'es', self::SITE.'/feed.xml', 'application/atom+xml', self::SITE.'/', 'text/html'],
+            [$read('/a:feed/a:id'), $read('/a:feed/a:title'), $read('/a:feed/a:updated'), $read('/a:feed/@xml:lang'), $read('/a:feed/a:link[@rel="self"]/@href'), $read('/a:feed/a:link[@rel="self"]/@type'), $read('/a:feed/a:link[@rel="alternate"]/@href'), $read('/a:feed/a:link[@rel="alternate"]/@type')],
+        );
+        $url = self::SITE.'/vida-diaria/2026/11/03/sin-resumen.html';
+        self::assertSame(
+            [$url, '2026-11-05T08:30:00+00:00', $url, 'text/html', 0.0, 0.0],
+            [$read('/a:feed/a:entry/a:id'), $read('/a:feed/a:entry/a:updated'), $read('/a:feed/a:entry/a:link[@rel="alternate"]/@href'), $read('/a:feed/a:entry/a:link[@rel="alternate"]/@type'), $xpath->evaluate('count(/a:feed/a:entry/a:summary)'), $xpath->evaluate('count(/a:feed/a:entry/a:link[@rel="enclosure"])')],
+        );
+    }
+
+    /**
+     * With no post, the feed was last updated now.
+     */
+    public function testAFeedWithNoPostWasUpdatedNow(): void
+    {
+        $client = self::createClient();
+        self::mockTime('2026-11-18 09:15:00 UTC');
+
+        $client->request('GET', self::SITE.'/feed.xml');
+
+        self::assertSame('2026-11-18T09:15:00+00:00', $this->xpath($client)->evaluate('string(/a:feed/a:updated)'));
+    }
+
+    private function xpath(KernelBrowser $client): \DOMXPath
+    {
+        $document = new \DOMDocument();
+        self::assertTrue($document->loadXML($client->getInternalResponse()->getContent()));
+        $xpath = new \DOMXPath($document);
+        $xpath->registerNamespace('a', self::ATOM);
+
+        return $xpath;
     }
 
     /**

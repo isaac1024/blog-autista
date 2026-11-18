@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Author\Infrastructure\Controller;
 
+use Cms\Author\Infrastructure\Controller\AuthorPublishFormController;
 use Cms\Page\Domain\PageRepository;
 use Cms\Redirect\Application\PublicationOutlookFinder;
 use Cms\Redirect\Domain\Redirect;
@@ -34,6 +35,24 @@ final class AuthorRedirectsTest extends AuthorControllerTestCase
     {
         parent::setUp();
         self::mockTime(ClockMother::NOW);
+    }
+
+    /**
+     * What it refuses of the redirects is told on the confirmation, which
+     * comes back with what was sent.
+     */
+    public function testItGoesBackToItsConfirmationWithWhatWasSentWhenARedirectIsRefused(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $id = $this->saveMovedAuthor();
+
+        $this->post($client, 'cms_authors_publish', self::HOST.'/authors/'.$id.'/publish', ['outlook' => 'stale']);
+
+        self::assertResponseRedirects(self::HOST.'/authors/'.$id.'/publish', Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
+        $saved = $client->getRequest()->getSession()->get(\sprintf(AuthorPublishFormController::SAVED, $id));
+        self::assertIsArray($saved);
+        self::assertSame('stale', $saved['outlook'] ?? null);
     }
 
     public function testItAsksFirstWhenPublishingLeavesAnAddress(): void
