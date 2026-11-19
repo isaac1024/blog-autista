@@ -36,6 +36,21 @@ final class DoctrineProjectionTest extends KernelTestCase
     }
 
     /**
+     * An event already applied ends its transaction as one applied does:
+     * the next event of the queue starts from none of its own.
+     */
+    public function testItLeavesNoTransactionOpenForAnEventAlreadyApplied(): void
+    {
+        $this->apply(2);
+        $connection = self::getContainer()->get(Connection::class);
+        $depth = $connection->getTransactionNestingLevel();
+
+        $this->apply(2);
+
+        self::assertSame($depth, $connection->getTransactionNestingLevel());
+    }
+
+    /**
      * Each projection keeps its own revision of an aggregate.
      */
     public function testItKeepsTheRevisionOfEachProjectionApart(): void

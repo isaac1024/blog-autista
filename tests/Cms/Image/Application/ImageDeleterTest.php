@@ -7,6 +7,7 @@ namespace Cms\Tests\Image\Application;
 use Cms\Image\Application\ImageDeleter;
 use Cms\Image\Application\ImageNotFound;
 use Cms\Image\Domain\Image;
+use Cms\Image\Domain\ImageContentsLinked;
 use Cms\Image\Domain\ImagePagesLinked;
 use Cms\Image\Domain\ImagePath;
 use Cms\Image\Domain\ImageRepository;
@@ -150,6 +151,28 @@ final class ImageDeleterTest extends TestCase
         (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus, $transaction);
 
         self::assertSame([true, true], $within);
+    }
+
+    /**
+     * The posts, terms, authors and external resources the caption of an
+     * image deleted linked to are freed, in one event that tells it links
+     * none.
+     */
+    public function testItFreesWhatTheCaptionOfAnImageDeletedLinkedTo(): void
+    {
+        $repository = self::createStub(ImageRepository::class);
+        $repository->method('find')->willReturn(ImageMother::create(caption: Text::stored(['type' => 'paragraph', 'text' => [
+            ['text' => 'Un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e101'],
+            ['text' => ' una etiqueta', 'marks' => ['link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e201'],
+            ['text' => ' una autora', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e301'],
+            ['text' => ' un vídeo', 'marks' => ['link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105e401'],
+        ]])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof ImageContentsLinked && ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new ImageDeleter(ImageIdMother::DEFAULT_VALUE))($repository, self::createStub(ImageStorage::class), self::usage(false), $eventBus, new RecordingTransaction());
     }
 
     private static function usage(bool $inUse): ImageUsage

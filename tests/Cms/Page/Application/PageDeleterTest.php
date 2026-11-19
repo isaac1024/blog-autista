@@ -8,6 +8,7 @@ use Cms\Page\Application\PageDeleter;
 use Cms\Page\Application\PageNotFound;
 use Cms\Page\Domain\InvalidPagePublication;
 use Cms\Page\Domain\Page;
+use Cms\Page\Domain\PageContentsLinked;
 use Cms\Page\Domain\PageImagesUsed;
 use Cms\Page\Domain\PagePagesLinked;
 use Cms\Page\Domain\PageRepository;
@@ -173,6 +174,27 @@ final class PageDeleterTest extends TestCase
         ));
 
         (new PageDeleter($id))($repository, $eventBus, new RecordingTransaction(), self::unused());
+    }
+
+    /**
+     * The posts, terms, authors and external resources the text of a page
+     * deleted linked to are freed, in one event that tells it links none.
+     */
+    public function testItFreesWhatTheTextOfAPageDeletedLinkedTo(): void
+    {
+        $repository = self::createStub(PageRepository::class);
+        $repository->method('find')->willReturn(PageMother::unpublished(content: Text::stored(['type' => 'paragraph', 'text' => [
+            ['text' => 'Un post', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105e101'],
+            ['text' => ' una etiqueta', 'marks' => ['link'], 'term_id' => '01a1b801-ce58-723d-8234-b76d9105e201'],
+            ['text' => ' una autora', 'marks' => ['link'], 'author_id' => '01a1b801-ce58-723d-8234-b76d9105e301'],
+            ['text' => ' un vídeo', 'marks' => ['link'], 'external_id' => '01a1b801-ce58-723d-8234-b76d9105e401'],
+        ]])));
+        $eventBus = $this->createMock(EventBus::class);
+        $eventBus->expects(self::once())->method('publish')->with(self::callback(
+            static fn (DomainEvent $event): bool => $event instanceof PageContentsLinked && ['post_ids' => [], 'term_ids' => [], 'author_ids' => [], 'external_ids' => []] === $event->toPrimitives(),
+        ));
+
+        (new PageDeleter(PageIdMother::DEFAULT_VALUE))($repository, $eventBus, new RecordingTransaction(), self::unused());
     }
 
     /**

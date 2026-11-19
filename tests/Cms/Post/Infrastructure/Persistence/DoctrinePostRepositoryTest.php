@@ -100,6 +100,29 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     }
 
     /**
+     * The section is part of the address: the post that last had the day
+     * and the slug under another section isn't the one there, even newer.
+     */
+    public function testItFindsThePostOffTheSiteThatLastHadAnAddressUnderItsSection(): void
+    {
+        $here = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c01';
+        $elsewhere = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c02';
+        $this->repository()->save(PostMother::unpublished(id: $here));
+        $this->repository()->save(PostMother::unpublished(id: $elsewhere));
+        $this->entityManager()->getConnection()->update('cms_post', ['last_section_slug' => 'otra-seccion'], ['id' => $elsewhere]);
+        $this->entityManager()->clear();
+
+        self::assertSame(
+            [$here, $elsewhere, null],
+            [
+                $this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, PostMother::SLUG))?->id()->value(),
+                $this->repository()->findOffSiteByLastAddress(self::address('otra-seccion', ClockMother::NOW, PostMother::SLUG))?->id()->value(),
+                $this->repository()->findOffSiteByLastAddress(self::address('ninguna', ClockMother::NOW, PostMother::SLUG)),
+            ],
+        );
+    }
+
+    /**
      * Only the posts on the site under the slug count, by the section each
      * is under there, whatever section it is under as edited.
      */

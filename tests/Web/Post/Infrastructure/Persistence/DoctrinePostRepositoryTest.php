@@ -178,12 +178,13 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
     /**
      * The index of the tags follows each post: republished with other tags,
      * it lists under those alone, dated as the post; deleted, under none,
-     * while the others keep theirs.
+     * while the others keep theirs, their dates included.
      */
     public function testItKeepsTheIndexOfTheTagsWithEachPost(): void
     {
         $post = $this->publish(self::OLDEST, '2026-11-01T10:00:00+00:00', self::SECTION, self::AUTHOR, [self::SLEEP, self::SOUND]);
         $this->publish(self::NEWEST, '2026-11-05T10:00:00+00:00', self::SECTION, self::AUTHOR, [self::SLEEP]);
+        $this->publish(self::MIDDLE, '2026-11-07T10:00:00+00:00', self::SECTION, self::AUTHOR, [self::SOUND]);
 
         $post->republish(CmsPostPublished::fromPrimitives(self::OLDEST, [
             'tag_ids' => [self::UNUSED, self::SOUND],
@@ -198,9 +199,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         // Kept in the order the editor gave them.
         self::assertSame([self::UNUSED, self::SOUND], $this->repository()->find(new PostId(self::OLDEST))?->tagIds());
 
-        $this->publish(self::MIDDLE, '2026-11-07T10:00:00+00:00', self::SECTION, self::AUTHOR, [self::SOUND]);
-        $this->entityManager()->clear();
-        // Dated as republished: after the one of the 7th.
+        // Dated as republished, after the one of the 7th, which keeps its date.
         self::assertSame([self::OLDEST, self::MIDDLE], $this->listed(PostSelection::ofTag(self::SOUND), 0, 10));
 
         $this->repository()->delete($this->repository()->find(new PostId(self::NEWEST)) ?? throw new \LogicException('Saved above.'));
