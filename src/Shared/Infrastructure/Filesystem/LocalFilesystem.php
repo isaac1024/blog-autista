@@ -21,8 +21,34 @@ final readonly class LocalFilesystem
      */
     public function copy(string $source, string $target, int $permissions): void
     {
-        $this->filesystem->copy($source, $target);
-        $this->filesystem->chmod($target, $permissions);
+        $this->writeWhole($target, $permissions, function (string $partial) use ($source): void {
+            $this->filesystem->copy($source, $partial, true);
+        });
+    }
+
+    /**
+     * Writes a file whole or not at all, creating the directories of the
+     * target it lacks: the writing goes to a file of its own beside the
+     * target, which takes the target's place, with its permissions, once
+     * written. A file left halfway, as by a process that dies, is never
+     * the target, which is served once there and never written again.
+     *
+     * @param \Closure(string): void $write writes the file at the path it is given
+     */
+    public function writeWhole(string $target, int $permissions, \Closure $write): void
+    {
+        $directory = \dirname($target);
+        $this->filesystem->mkdir($directory);
+        // In the same directory, so taking the target's place is one rename.
+        $partial = \sprintf('%s/.%s.%s.partial', $directory, basename($target), bin2hex(random_bytes(6)));
+
+        try {
+            $write($partial);
+            $this->filesystem->chmod($partial, $permissions);
+            $this->filesystem->rename($partial, $target, true);
+        } finally {
+            $this->remove($partial);
+        }
     }
 
     /**
@@ -40,19 +66,6 @@ final readonly class LocalFilesystem
     public function exists(string $path): bool
     {
         return $this->filesystem->exists($path);
-    }
-
-    /**
-     * Creates a directory and those above it it lacks.
-     */
-    public function makeDirectory(string $path): void
-    {
-        $this->filesystem->mkdir($path);
-    }
-
-    public function setPermissions(string $path, int $permissions): void
-    {
-        $this->filesystem->chmod($path, $permissions);
     }
 
     /**

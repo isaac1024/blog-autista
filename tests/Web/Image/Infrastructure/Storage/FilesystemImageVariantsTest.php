@@ -80,6 +80,24 @@ final class FilesystemImageVariantsTest extends KernelTestCase
         self::assertFileExists(self::copy(400));
     }
 
+    /**
+     * A copy that fails halfway is never left in its place, where the site
+     * would serve it for good and nothing would make it again.
+     */
+    public function testItLeavesNoCopyItFailedToMake(): void
+    {
+        new Filesystem()->dumpFile(self::originals().'/'.self::PATH, 'not an image');
+
+        try {
+            self::variants()->publish(self::PATH);
+            self::fail('A file that is not an image makes no smaller copy.');
+        } catch (\RuntimeException) {
+        }
+
+        // Nor the copy, nor what was written of it.
+        self::assertSame(['.', '..'], scandir(\dirname(self::copy(800))));
+    }
+
     public function testItRemovesOnlyTheCopiesOfTheImage(): void
     {
         $other = '2026/11/01a1b801-ce58-723d-8234-b76d9105d0ff.webp';

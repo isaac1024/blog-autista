@@ -20,18 +20,16 @@ final readonly class ImageResizer
     /**
      * Saves a copy of the image at the source, resized to the width and
      * height, as WebP at the quality, from 0 to 100, readable by everyone, so
-     * the web server can serve it.
+     * the web server can serve it; whole or not at all.
      */
     public function resize(string $source, string $target, int $width, int $height, int $quality): void
     {
-        $this->filesystem->makeDirectory(\dirname($target));
-
-        new Imagine()
-            ->open($source)
-            ->resize(new Box($width, $height))
-            ->save($target, ['format' => 'webp', 'webp_quality' => $quality]);
-
-        $this->filesystem->setPermissions($target, 0o644);
+        $this->filesystem->writeWhole($target, 0o644, static function (string $partial) use ($source, $width, $height, $quality): void {
+            new Imagine()
+                ->open($source)
+                ->resize(new Box($width, $height))
+                ->save($partial, ['format' => 'webp', 'webp_quality' => $quality]);
+        });
     }
 
     /**
@@ -45,14 +43,12 @@ final readonly class ImageResizer
      */
     public function cover(string $source, string $target, int $width, int $height, int $quality): void
     {
-        $this->filesystem->makeDirectory(\dirname($target));
-
-        new Imagine()
-            ->open($source)
-            ->strip()
-            ->thumbnail(new Box($width, $height), ManipulatorInterface::THUMBNAIL_OUTBOUND | ManipulatorInterface::THUMBNAIL_FLAG_UPSCALE)
-            ->save($target, ['format' => 'webp', 'webp_quality' => $quality]);
-
-        $this->filesystem->setPermissions($target, 0o644);
+        $this->filesystem->writeWhole($target, 0o644, static function (string $partial) use ($source, $width, $height, $quality): void {
+            new Imagine()
+                ->open($source)
+                ->strip()
+                ->thumbnail(new Box($width, $height), ManipulatorInterface::THUMBNAIL_OUTBOUND | ManipulatorInterface::THUMBNAIL_FLAG_UPSCALE)
+                ->save($partial, ['format' => 'webp', 'webp_quality' => $quality]);
+        });
     }
 }
