@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Web\Tests\Shared\Infrastructure\Ui;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\ListPagination;
 use Shared\Infrastructure\Ui\Page\Page;
@@ -72,14 +73,42 @@ final class SiteSearchTest extends TestCase
         self::assertSame([], PageComponents::find($page, 'Shared:PostCards', []));
     }
 
-    public function testItSaysWhenNoWordIsLongEnoughToSearchBy(): void
+    /**
+     * Words too short, or so common almost every post has them, search
+     * nothing.
+     */
+    #[DataProvider('wordsToSearchNothingBy')]
+    public function testItSaysWhenNoWordIsWorthSearchingBy(string $text): void
     {
         $postRepository = $this->createMock(PostRepository::class);
         $postRepository->expects(self::never())->method('searched');
 
-        $page = $this->search($postRepository, 'yo y tú', 1);
+        $page = $this->search($postRepository, $text, 1);
 
         PageComponents::one($page, 'Shared:Notice', ['message' => 'site.search.too_short(%min%=3)']);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function wordsToSearchNothingBy(): iterable
+    {
+        yield 'too short' => ['yo y tú'];
+        yield 'too common' => ['Para que, CON todo'];
+    }
+
+    /**
+     * Every word searched must be in a post: a common one would only leave
+     * out the few without it.
+     */
+    public function testItSearchesByTheWordsThatAreNotCommon(): void
+    {
+        $postRepository = $this->createMock(PostRepository::class);
+        $postRepository->expects(self::once())->method('searched')
+            ->with(self::callback(static fn (SearchTerms $terms): bool => ['ruido', 'metro'] === $terms->words))
+            ->willReturn([]);
+
+        $this->search($postRepository, 'Sobre el ruido del metro, también', 1);
     }
 
     public function testItSaysWhenNothingWasFound(): void

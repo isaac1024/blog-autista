@@ -1173,7 +1173,7 @@ site:
         label: 'Buscar en el blog'
         submit: 'Buscar'
         results: 'Resultados de «%text%»'
-        too_short: 'Escribe alguna palabra de al menos %min% letras.'
+        too_short: 'Escribe alguna palabra de al menos %min% letras, menos común que «para» o «que».'
         too_broad: 'Hay demasiadas entradas con «%text%». Añade otra palabra para afinar la búsqueda.'
         too_many: 'Has hecho muchas búsquedas seguidas. Espera un minuto y vuelve a intentarlo.'
         none: 'No hay entradas con «%text%».'
