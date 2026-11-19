@@ -14,6 +14,9 @@ final class ContextIndependenceRules
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Web'))
+            // A contract test looks at the other side on purpose, to fail
+            // when what one context writes and the other reads drift apart.
+            ->excluding(Selector::classname('/^Web\\\\Tests\\\\.*ContractTest$/', true))
             ->shouldNot()
             ->dependOn()
             ->classes(Selector::inNamespace('Cms'))
@@ -24,6 +27,9 @@ final class ContextIndependenceRules
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Cms'))
+            // A contract test looks at the other side on purpose, to fail
+            // when what one context writes and the other reads drift apart.
+            ->excluding(Selector::classname('/^Cms\\\\Tests\\\\.*ContractTest$/', true))
             ->shouldNot()
             ->dependOn()
             ->classes(Selector::inNamespace('Web'))

@@ -61,7 +61,10 @@ Symfony:
 
   A contract test on the side that reads (`tests/Web/Redirect`,
   `tests/Cms/Analytics`) fails when the columns it reads change. No other
-  table is read across contexts.
+  table is read across contexts. The enums whose values cross between them
+  (robots, kinds of page, taxonomies, analytics dimensions) are twins, one
+  per context, held by `*ContractTest` classes, the only tests PHPat lets
+  name the other context.
 - Within a context, a module reaches another through its Application layer
   (its finders, use cases and `*Response`), never through its Domain, whose
   rules are its own: an Infrastructure class may name a Domain class of
