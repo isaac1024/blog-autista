@@ -11,7 +11,8 @@ namespace Shared\Infrastructure\Ui\Page;
  * that paints them, so every context can provide its own chrome.
  *
  * Its private constructor takes all of its state, one parameter each, for
- * the methods that copy it with one part changed.
+ * create(); the methods that change a part clone it with that part alone,
+ * so a part added to it is kept by all of them.
  *
  * @phpstan-type Article array{publishedTime: string, modifiedTime: string, section: ?string, tags: list<string>}
  *
@@ -65,7 +66,7 @@ final readonly class Page
      */
     public function withHeader(string $component, array $props = [], array $children = []): self
     {
-        return $this->copy(header: [...$this->header, new PageComponent($component, $props, $children)]);
+        return clone($this, ['header' => [...$this->header, new PageComponent($component, $props, $children)]]);
     }
 
     /**
@@ -74,7 +75,7 @@ final readonly class Page
      */
     public function withMain(string $component, array $props = [], array $children = []): self
     {
-        return $this->copy(main: [...$this->main, new PageComponent($component, $props, $children)]);
+        return clone($this, ['main' => [...$this->main, new PageComponent($component, $props, $children)]]);
     }
 
     /**
@@ -83,7 +84,7 @@ final readonly class Page
      */
     public function withFooter(string $component, array $props = [], array $children = []): self
     {
-        return $this->copy(footer: [...$this->footer, new PageComponent($component, $props, $children)]);
+        return clone($this, ['footer' => [...$this->footer, new PageComponent($component, $props, $children)]]);
     }
 
     /**
@@ -95,17 +96,17 @@ final readonly class Page
      */
     public function withMainMapped(\Closure $turn): self
     {
-        return $this->copy(main: self::mapped($this->main, $turn));
+        return clone($this, ['main' => self::mapped($this->main, $turn)]);
     }
 
     public function withMainClass(string $mainClass): self
     {
-        return $this->copy(mainClass: $mainClass);
+        return clone($this, ['mainClass' => $mainClass]);
     }
 
     public function withLayout(string $layout): self
     {
-        return $this->copy(layout: $layout);
+        return clone($this, ['layout' => $layout]);
     }
 
     /**
@@ -115,24 +116,7 @@ final readonly class Page
      */
     public function withSearchEngineMetadata(?string $description, string $robots, string $canonical): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $description,
-            $robots,
-            $canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['description' => $description, 'robots' => $robots, 'canonical' => $canonical]);
     }
 
     /**
@@ -141,24 +125,7 @@ final readonly class Page
      */
     public function withShareImage(string $src, int $width, int $height, string $alt): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt],
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['image' => ['src' => $src, 'width' => $width, 'height' => $height, 'alt' => $alt]]);
     }
 
     /**
@@ -168,24 +135,7 @@ final readonly class Page
      */
     public function withCountedVisits(string $type, string $id): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            ['type' => $type, 'id' => $id],
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['countedContent' => ['type' => $type, 'id' => $id]]);
     }
 
     /**
@@ -196,24 +146,7 @@ final readonly class Page
      */
     public function withFrames(array $origins): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            array_values(array_unique([...$this->frames, ...$origins])),
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['frames' => array_values(array_unique([...$this->frames, ...$origins]))]);
     }
 
     /**
@@ -231,24 +164,7 @@ final readonly class Page
             static fn (array $other): bool => !isset($node['@id']) || ($other['@id'] ?? null) !== $node['@id'],
         ));
 
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            [...$others, $node],
-            $this->siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['structuredData' => [...$others, $node]]);
     }
 
     /**
@@ -257,24 +173,7 @@ final readonly class Page
      */
     public function withSiteName(string $siteName): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $siteName,
-            $this->article,
-            $this->feed,
-        );
+        return clone($this, ['siteName' => $siteName]);
     }
 
     /**
@@ -283,24 +182,7 @@ final readonly class Page
      */
     public function withFeed(string $url, string $title): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            ['url' => $url, 'title' => $title],
-        );
+        return clone($this, ['feed' => ['url' => $url, 'title' => $title]]);
     }
 
     /**
@@ -312,29 +194,12 @@ final readonly class Page
      */
     public function withArticle(\DateTimeImmutable $publishedAt, \DateTimeImmutable $modifiedAt, ?string $section, array $tags): self
     {
-        return new self(
-            $this->title,
-            $this->header,
-            $this->main,
-            $this->footer,
-            $this->mainClass,
-            $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            [
-                'publishedTime' => $publishedAt->format(\DATE_ATOM),
-                'modifiedTime' => $modifiedAt->format(\DATE_ATOM),
-                'section' => $section,
-                'tags' => $tags,
-            ],
-            $this->feed,
-        );
+        return clone($this, ['article' => [
+            'publishedTime' => $publishedAt->format(\DATE_ATOM),
+            'modifiedTime' => $modifiedAt->format(\DATE_ATOM),
+            'section' => $section,
+            'tags' => $tags,
+        ]]);
     }
 
     /**
@@ -348,38 +213,6 @@ final readonly class Page
         return array_map(
             static fn (PageComponent $component): PageComponent => $turn(new PageComponent($component->name, $component->props, self::mapped($component->children, $turn))),
             $components,
-        );
-    }
-
-    /**
-     * @param null|list<PageComponent> $header
-     * @param null|list<PageComponent> $main
-     * @param null|list<PageComponent> $footer
-     */
-    private function copy(
-        ?array $header = null,
-        ?array $main = null,
-        ?array $footer = null,
-        ?string $mainClass = null,
-        ?string $layout = null,
-    ): self {
-        return new self(
-            $this->title,
-            $header ?? $this->header,
-            $main ?? $this->main,
-            $footer ?? $this->footer,
-            $mainClass ?? $this->mainClass,
-            $layout ?? $this->layout,
-            $this->description,
-            $this->robots,
-            $this->canonical,
-            $this->image,
-            $this->countedContent,
-            $this->frames,
-            $this->structuredData,
-            $this->siteName,
-            $this->article,
-            $this->feed,
         );
     }
 }
