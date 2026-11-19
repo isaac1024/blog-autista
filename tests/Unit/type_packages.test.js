@@ -8,6 +8,7 @@ import test from 'node:test';
 const root = new URL('../../', import.meta.url);
 const importMap = await readFile(new URL('importmap.php', root), 'utf8');
 const { devDependencies } = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
+const { packages: locked } = JSON.parse(await readFile(new URL('package-lock.json', root), 'utf8'));
 
 /** @type {Map<string, string>} */
 const mapped = new Map(
@@ -31,6 +32,21 @@ test('npm pins each package at the version the import map loads', () => {
             if (packageOf(imported) === name) {
                 assert.equal(devDependencies[name], version, `${imported} loads ${version}, npm has ${devDependencies[name]}`);
             }
+        }
+    }
+});
+
+/*
+ * Types come also from the packages npm installs for those, such as
+ * prosemirror-transform for @tiptap/pm: each one the import map loads too
+ * is resolved at the version the browser runs.
+ */
+test('npm resolves every package the import map loads at the version it loads', () => {
+    for (const [imported, version] of mapped) {
+        const installed = locked[`node_modules/${packageOf(imported)}`];
+
+        if (installed !== undefined) {
+            assert.equal(installed.version, version, `${imported} loads ${version}, npm resolves ${installed.version}`);
         }
     }
 });

@@ -51,7 +51,7 @@ return [
     '@tiptap/pm/tables' => ['version' => '3.34.0'],
     '@tiptap/pm/dropcursor' => ['version' => '3.34.0'],
     '@tiptap/pm/gapcursor' => ['version' => '3.34.0'],
-    'prosemirror-transform' => ['version' => '1.12.6'],
+    'prosemirror-transform' => ['version' => '1.12.7'],
     'prosemirror-commands' => ['version' => '1.7.2'],
     'prosemirror-model' => ['version' => '1.25.13'],
     'prosemirror-schema-list' => ['version' => '1.6.0'],
