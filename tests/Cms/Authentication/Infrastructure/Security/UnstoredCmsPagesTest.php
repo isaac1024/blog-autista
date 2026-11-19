@@ -23,6 +23,22 @@ final class UnstoredCmsPagesTest extends CmsWebTestCase
         self::assertTrue($client->getResponse()->headers->getCacheControlDirective('private'));
     }
 
+    /**
+     * What a page asks the CMS, such as the images a search finds, is the
+     * administrator's as much as the page.
+     */
+    public function testItKeepsWhatThePagesAskOutOfTheBrowserStores(): void
+    {
+        $client = self::createAuthenticatedClient();
+
+        $client->request('GET', 'http://cms.blogautista.localhost/images/search');
+
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertTrue($client->getResponse()->headers->getCacheControlDirective('no-store'));
+        self::assertTrue($client->getResponse()->headers->getCacheControlDirective('private'));
+    }
+
     public function testItKeepsTheRedirectToTheLoginOutOfTheBrowserStores(): void
     {
         $client = self::createClient();

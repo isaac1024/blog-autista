@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Authentication\Infrastructure\Security;
 
+use Cms\Authentication\Domain\Administrator;
 use Cms\Authentication\Infrastructure\Security\AdministratorUser;
 use Cms\Tests\Authentication\Domain\AdministratorMother;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +16,23 @@ use Symfony\Component\Security\Core\User\InMemoryUser;
  */
 final class AdministratorUserTest extends TestCase
 {
+    /**
+     * A copy of the session gives no hash to crack, and its user is still
+     * the administrator Symfony loads again.
+     */
+    public function testTheSessionKeepsTheAdministratorWithoutTheHashOfItsPassword(): void
+    {
+        $administrator = AdministratorMother::create(passwordHash: '$2y$13$hashOfThePassword');
+
+        $kept = serialize(AdministratorUser::fromAdministrator($administrator));
+        $user = unserialize($kept);
+
+        self::assertStringNotContainsString('hashOfThePassword', $kept);
+        self::assertInstanceOf(AdministratorUser::class, $user);
+        self::assertTrue($user->isEqualTo(AdministratorUser::fromAdministrator($administrator)));
+        self::assertSame([AdministratorMother::DEFAULT_IDENTIFIER, [Administrator::ADMIN_ROLE]], [$user->getUserIdentifier(), $user->getRoles()]);
+    }
+
     public function testItEqualsTheSameAdministrator(): void
     {
         $user = AdministratorUser::fromAdministrator(AdministratorMother::create());
