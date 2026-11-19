@@ -75,7 +75,8 @@ services:
 
   # Consumes the domain events queued by the application, such as the CMS
   # publishing a page, so the site follows without running the consumer by
-  # hand. Production runs the same command from cron. It stops every hour, or
+  # hand, and runs what is scheduled, such as the nightly count of visits.
+  # Production runs the same from cron. It stops every hour, or
   # when it grows too big, and Docker starts it again with fresh code.
   worker:
     build:
@@ -85,7 +86,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     user: www-data
-    command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=256M", "-vv"]
+    command: ["php", "bin/console", "messenger:consume", "async", "scheduler_default", "--time-limit=3600", "--memory-limit=256M", "-vv"]
     environment:
       DATABASE_URL: "${DATABASE_URL}"
       REDIS_URL: "${REDIS_URL:-redis://redis:6379}"
