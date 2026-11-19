@@ -211,7 +211,9 @@ images, from `public/media/`, under `/media/`.
 
 ## Production checklist
 
-- `APP_ENV=prod` and `APP_DEBUG=0`.
+- `APP_ENV=prod` and `APP_DEBUG=0`. Left in `dev`, the app answers every
+  host but this machine's with a bare 503, so the mistake shows at once
+  instead of opening the CMS with the administrator of `.env.dev`.
 - In konsoleH (PHP configuration), enable OPcache, so PHP doesn't compile the
   app again on every request, and APCu, which Symfony's system cache (Doctrine
   metadata, validation, serialization) uses on its own when it finds it.
