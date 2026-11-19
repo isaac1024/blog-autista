@@ -113,7 +113,7 @@ final readonly class ImageList
             'title' => $image->alt,
             'url' => $this->urlGenerator->generate('cms_images_edit', ['id' => $image->id]),
             'meta' => $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
-            'thumbnail' => $this->urlGenerator->generate('cms_images_file', ['id' => $image->id]),
+            'thumbnail' => $this->urlGenerator->generate('cms_images_thumbnail', ['id' => $image->id]),
             'status' => $this->imageState->label($image),
         ]);
     }

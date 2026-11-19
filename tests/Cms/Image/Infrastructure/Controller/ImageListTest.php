@@ -101,7 +101,7 @@ final class ImageListTest extends TestCase
             'title' => 'Un faro al anochecer',
             'url' => '/cms_images_edit?id='.self::ID,
             'meta' => 'cms.images.list.uploaded_at(%date%=1 oct 2026)',
-            'thumbnail' => '/cms_images_file?id='.self::ID,
+            'thumbnail' => '/cms_images_thumbnail?id='.self::ID,
             'status' => 'cms.images.status.published.label',
         ]);
     }

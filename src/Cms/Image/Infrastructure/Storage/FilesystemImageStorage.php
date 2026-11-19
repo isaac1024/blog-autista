@@ -20,6 +20,7 @@ final readonly class FilesystemImageStorage implements ImageStorage
 {
     public function __construct(
         private LocalFilesystem $filesystem,
+        private ImageThumbnails $thumbnails,
         #[Autowire(param: 'cms.image.storage_directory')]
         private string $directory,
     ) {}
@@ -35,6 +36,7 @@ final readonly class FilesystemImageStorage implements ImageStorage
     public function delete(ImagePath $path): void
     {
         $this->filesystem->remove($this->absolute($path));
+        $this->thumbnails->remove($path->value());
     }
 
     private function absolute(ImagePath $path): string

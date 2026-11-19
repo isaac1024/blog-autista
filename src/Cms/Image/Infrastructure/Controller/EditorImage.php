@@ -28,7 +28,7 @@ final readonly class EditorImage
             'id' => $image->id,
             'alt' => $image->alt,
             'caption' => self::plain($image->caption),
-            'thumbnail' => $this->urls->generate('cms_images_file', ['id' => $image->id]),
+            'thumbnail' => $this->urls->generate('cms_images_thumbnail', ['id' => $image->id]),
             'status' => $this->imageState->label($image),
             'published' => 'published' === $image->status,
         ];

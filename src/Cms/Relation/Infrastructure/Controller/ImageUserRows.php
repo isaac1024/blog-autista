@@ -47,7 +47,7 @@ final readonly class ImageUserRows
                 $this->translator->trans('cms.relations.types.image'),
                 $this->translator->trans('cms.images.list.uploaded_at', ['%date%' => $formatter->format($image->createdAt)]),
             ),
-            'thumbnail' => $this->urlGenerator->generate('cms_images_file', ['id' => $image->id]),
+            'thumbnail' => $this->urlGenerator->generate('cms_images_thumbnail', ['id' => $image->id]),
             'status' => $this->imageState->label($image),
         ]);
     }

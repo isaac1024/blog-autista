@@ -102,7 +102,7 @@ final class UserRowsTest extends TestCase
             'title' => 'Un faro',
             'url' => '/cms_images_edit?id='.self::IMAGE,
             'meta' => 'cms.relations.types.image · cms.images.list.uploaded_at(%date%=1 oct 2026)',
-            'thumbnail' => '/cms_images_file?id='.self::IMAGE,
+            'thumbnail' => '/cms_images_thumbnail?id='.self::IMAGE,
             'status' => 'cms.images.status.published.label',
         ])], $rows);
     }

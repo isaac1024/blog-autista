@@ -9,6 +9,9 @@
 parameters:
     # Where the files of the images uploaded to the CMS are kept, out of public/.
     cms.image.storage_directory: '%kernel.project_dir%/media'
+    # The small copies the CMS shows of them in its lists and pickers, made
+    # the first time one is asked for, so they can always be made again.
+    cms.image.thumbnail_directory: '%kernel.project_dir%/var/thumbnails'
     # The site makes its copies of the images the CMS publishes from those
     # files, and keeps them in its public directory, apart from them.
     web.image.originals_directory: '%cms.image.storage_directory%'
@@ -68,6 +71,7 @@ when@test:
         # Tests keep their files apart from the real ones, one directory per
         # parallel process, as they do with their databases.
         cms.image.storage_directory: '%kernel.project_dir%/var/test/media%env(default::TEST_TOKEN)%'
+        cms.image.thumbnail_directory: '%kernel.project_dir%/var/test/thumbnails%env(default::TEST_TOKEN)%'
         web.image.public_directory: '%kernel.project_dir%/var/test/public-media%env(default::TEST_TOKEN)%'
         cms.author.avatar_directory: '%kernel.project_dir%/var/test/avatars%env(default::TEST_TOKEN)%'
         cms.external.image_directory: '%kernel.project_dir%/var/test/externals%env(default::TEST_TOKEN)%'
