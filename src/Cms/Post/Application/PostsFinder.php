@@ -24,21 +24,26 @@ final readonly class PostsFinder
      */
     public function __invoke(PostRepository $postRepository): array
     {
-        $posts = [];
+        $ids = [];
 
         foreach (array_unique($this->ids) as $id) {
             try {
-                $post = $postRepository->find(new PostId($id));
+                $ids[] = new PostId($id);
             } catch (DomainError) {
                 // Not the id of a post: none to find.
-                continue;
-            }
-
-            if (null !== $post) {
-                $posts[] = PostResponse::fromPost($post);
             }
         }
 
-        return $posts;
+        $found = [];
+
+        foreach ($postRepository->findByIds($ids) as $post) {
+            $found[$post->id()->value()] = PostResponse::fromPost($post);
+        }
+
+        // The repository answers in its own order.
+        return array_values(array_filter(array_map(
+            static fn (PostId $id): ?PostResponse => $found[$id->value()] ?? null,
+            $ids,
+        )));
     }
 }

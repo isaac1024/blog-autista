@@ -33,20 +33,28 @@ final readonly class TermsOfTaxonomyByIdFinder
      */
     public function __invoke(TermRepository $termRepository): array
     {
-        $terms = [];
+        $ids = [];
 
         foreach ($this->ids as $id) {
             try {
-                $term = $termRepository->find(new TermId($id));
+                $ids[] = new TermId($id);
             } catch (DomainError) {
-                continue;
-            }
-
-            if (null !== $term && $term->taxonomy() === $this->taxonomy) {
-                $terms[] = TermResponse::fromTerm($term);
+                // Not the id of a term: none to find.
             }
         }
 
-        return $terms;
+        $found = [];
+
+        foreach ($termRepository->findByIds($ids) as $term) {
+            if ($term->taxonomy() === $this->taxonomy) {
+                $found[$term->id()->value()] = TermResponse::fromTerm($term);
+            }
+        }
+
+        // In the order asked, the repository answering in its own.
+        return array_values(array_filter(array_map(
+            static fn (TermId $id): ?TermResponse => $found[$id->value()] ?? null,
+            $ids,
+        )));
     }
 }

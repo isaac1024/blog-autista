@@ -24,20 +24,26 @@ final readonly class TermsFinder
      */
     public function __invoke(TermRepository $termRepository): array
     {
-        $terms = [];
+        $ids = [];
 
         foreach (array_unique($this->ids) as $id) {
             try {
-                $term = $termRepository->find(new TermId($id));
+                $ids[] = new TermId($id);
             } catch (DomainError) {
-                continue;
-            }
-
-            if (null !== $term) {
-                $terms[] = TermResponse::fromTerm($term);
+                // Not the id of a term: none to find.
             }
         }
 
-        return $terms;
+        $found = [];
+
+        foreach ($termRepository->findByIds($ids) as $term) {
+            $found[$term->id()->value()] = TermResponse::fromTerm($term);
+        }
+
+        // The repository answers in its own order.
+        return array_values(array_filter(array_map(
+            static fn (TermId $id): ?TermResponse => $found[$id->value()] ?? null,
+            $ids,
+        )));
     }
 }

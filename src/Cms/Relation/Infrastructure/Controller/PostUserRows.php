@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Relation\Infrastructure\Controller;
 
-use Cms\Post\Application\PostFinder;
-use Cms\Post\Application\PostNotFound;
 use Cms\Post\Application\PostResponse;
+use Cms\Post\Application\PostsFinder;
 use Cms\Post\Domain\PostRepository;
 use Cms\Shared\Infrastructure\Ui\PostState;
 use Shared\Infrastructure\Ui\Page\PageComponent;
@@ -33,17 +32,7 @@ final readonly class PostUserRows
      */
     public function __invoke(array $ids): array
     {
-        $rows = [];
-
-        foreach ($ids as $id) {
-            try {
-                $rows[] = $this->row(new PostFinder($id)($this->postRepository));
-            } catch (PostNotFound) {
-                continue;
-            }
-        }
-
-        return $rows;
+        return array_map($this->row(...), new PostsFinder($ids)($this->postRepository));
     }
 
     private function row(PostResponse $post): PageComponent

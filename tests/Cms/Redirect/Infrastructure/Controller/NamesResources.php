@@ -11,7 +11,6 @@ use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Domain\Page;
 use Cms\Page\Domain\PageRepository;
 use Cms\Post\Domain\Post;
-use Cms\Post\Domain\PostId;
 use Cms\Post\Domain\PostRepository;
 use Cms\Redirect\Domain\RedirectRepository;
 use Cms\Redirect\Domain\SiteResources;
@@ -19,7 +18,6 @@ use Cms\Shared\Infrastructure\Publication\LastAddressPanel;
 use Cms\Shared\Infrastructure\Publication\ReplacedRedirectNotice;
 use Cms\Shared\Infrastructure\Ui\RedirectNames;
 use Cms\Taxonomy\Domain\Term;
-use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -48,9 +46,9 @@ trait NamesResources
         $imageRepository = self::createStub(ImageRepository::class);
         $imageRepository->method('findByIds')->willReturn($images);
         $postRepository = self::createStub(PostRepository::class);
-        $postRepository->method('find')->willReturnCallback(static fn (PostId $id): ?Post => array_find($posts, static fn (Post $post): bool => $post->id()->equals($id)));
+        $postRepository->method('findByIds')->willReturn($posts);
         $termRepository = self::createStub(TermRepository::class);
-        $termRepository->method('find')->willReturnCallback(static fn (TermId $id): ?Term => array_find($terms, static fn (Term $term): bool => $term->id()->equals($id)));
+        $termRepository->method('findByIds')->willReturn($terms);
         $authorRepository = self::createStub(AuthorRepository::class);
         $authorRepository->method('findByIds')->willReturn($authors);
 
