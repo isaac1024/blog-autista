@@ -16,7 +16,6 @@ final class SessionLifetimeTest extends KernelTestCase
     {
         self::bootKernel();
 
-        /** @var array<string, mixed> $options */
         $options = self::getContainer()->getParameter('session.storage.options');
 
         self::assertSame(8 * 3600, $options['gc_maxlifetime']);

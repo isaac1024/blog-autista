@@ -87,10 +87,7 @@ final readonly class PublishedPost
                 ->withCountedVisits('post', $post->id)
                 ->withStructuredData(StructuredData::webPage('WebPage', $home, $canonical, $post->title, $post->metaDescription, StructuredData::breadcrumbOf($canonical)))
                 // Its section while on the site, then the post itself.
-                ->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [
-                    ...(null === $section ? [] : [['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug], UrlGeneratorInterface::ABSOLUTE_URL)]]),
-                    ['name' => $post->title, 'url' => null],
-                ]))
+                ->withStructuredData(StructuredData::breadcrumbs($home, $canonical, [...(null === $section ? [] : [$this->section($post, $section, UrlGeneratorInterface::ABSOLUTE_URL)]), ['name' => $post->title, 'url' => null]]))
                 ->withStructuredData(StructuredData::blogPosting(
                     $canonical,
                     $post->title,
@@ -107,9 +104,7 @@ final readonly class PublishedPost
             $post->firstPublishedAt,
             $post->lastPublishedAt,
             $post->readingMinutes,
-            null === $section
-                ? ['name' => $post->sectionName, 'url' => null]
-                : ['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug])],
+            $this->section($post, $section, UrlGeneratorInterface::ABSOLUTE_PATH),
             $this->signature($post, $author),
             $tags,
             $opening,
@@ -117,6 +112,21 @@ final readonly class PublishedPost
             $images,
             ($this->linkedContents)($post->content, $images, $post->id),
         );
+    }
+
+    /**
+     * The section of the post, linked while on the site, otherwise by the
+     * name it had, as text.
+     *
+     * @return array{name: string, url: ?string}
+     */
+    private function section(PostResponse $post, ?TermResponse $section, int $referenceType): array
+    {
+        if (null === $section) {
+            return ['name' => $post->sectionName, 'url' => null];
+        }
+
+        return ['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug], $referenceType)];
     }
 
     /**
