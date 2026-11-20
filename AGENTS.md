@@ -39,10 +39,14 @@ Symfony:
   of several implementations of an interface). A YAML service definition is the
   last resort, not the first.
 - Controllers extend `AbstractController`, stay thin, and delegate to services.
-- Use the framework for what it already does: Form for server-rendered forms,
-  Validator for validation, Serializer for JSON, Messenger for async work,
-  Security (voters, authenticators) for access control, Twig `path()`/`url()`
-  instead of hardcoded URLs.
+- Use the framework for what it already does: Validator for validation,
+  Serializer for JSON, Messenger for async work, Security (voters,
+  authenticators) for access control, Twig `path()`/`url()` instead of
+  hardcoded URLs.
+- The forms of the CMS don't use Symfony Form, and won't: they are painted
+  with the `Shared:` components, and their controllers read the fields from
+  the `Request`. The domain checks the rules, and a `DomainError` goes back
+  to the editor with what was sent (`KeptEdit`).
 - Before hand-writing infrastructure (locks, queues, caches, HTTP clients,
   mailers, schedulers) or reaching for a third-party library, check whether a
   Symfony component covers it. It usually does.
