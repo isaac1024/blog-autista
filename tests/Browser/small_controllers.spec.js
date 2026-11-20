@@ -143,4 +143,17 @@ test.describe('unsaved form', () => {
         expect(asked).toBe('beforeunload');
         await expect(page.getByLabel('Title')).toHaveValue('Second');
     });
+
+    test('while it holds changes, the page asks for itself every five minutes, with its cookies', async ({ page }) => {
+        await page.context().addCookies([{ name: 'session', value: 'kept', url: 'http://blogautista.test' }]);
+        await page.clock.install();
+        await loadController(page, 'unsaved-form', actionBar());
+        const kept = page.waitForRequest((request) => request.method() === 'HEAD');
+
+        await page.getByLabel('Title').fill('Second');
+        await page.clock.runFor(5 * 60 * 1000);
+
+        const request = await kept;
+        expect([new URL(request.url()).pathname, await request.headerValue('cookie')]).toEqual(['/fixture', 'session=kept']);
+    });
 });

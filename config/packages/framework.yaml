@@ -5,10 +5,13 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     # The sessions of the CMS live in the account, not where the php.ini of
     # the shared hosting keeps those of every account; var/sessions outlives
-    # each deploy. Their files are swept as PHP does, now and then.
+    # each deploy. Their files are swept as PHP does, now and then, once
+    # idle for 8 hours: the 24 minutes of PHP's own default are shorter than
+    # writing a post, and a form sent once its session is gone is lost.
     session:
         save_path: '%kernel.project_dir%/var/sessions/%kernel.environment%'
         gc_probability: 1
+        gc_maxlifetime: 28800
 
     #esi: true
     #fragments: true

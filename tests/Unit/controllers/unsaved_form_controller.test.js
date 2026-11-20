@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import UnsavedForm from '../../../assets/controllers/unsaved_form_controller.js';
 import { actionBar } from '../../Markup/small_controllers.js';
-import { mount } from '../support/dom.js';
+import { mount, serve, settle } from '../support/dom.js';
 
 /*
  * An edit form whose bar knows whether it holds changes, and a form of its
@@ -21,6 +21,11 @@ const open = async (options) => {
         },
         send: (id) => {
             document.getElementById(id)?.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+        },
+        /** Takes the bar off the page, as leaving it for another does. */
+        leave: async () => {
+            document.querySelector('[data-controller~="unsaved-form"]')?.remove();
+            await settle();
         },
         /** Whether leaving the page asks first. */
         leaveAsks: () => {
@@ -77,4 +82,51 @@ test('a form back with what was sent and refused holds changes from the start, u
     send('edit');
 
     assert.deepEqual([atFirst, leaveAsks()], [['Unsaved changes', true], false]);
+});
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
+test('while the form holds changes, the page asks the server for itself every five minutes, so its session lasts', async (t) => {
+    t.mock.timers.enable({ apis: ['setInterval'] });
+    const requests = serve(() => ({ ok: true, status: 200 }));
+    const { type } = await open();
+    const methods = () => requests.map(({ url, method }) => `${method} ${url}`);
+
+    t.mock.timers.tick(FIVE_MINUTES);
+    const unchanged = methods();
+    type('Second');
+    t.mock.timers.tick(FIVE_MINUTES - 1);
+    const early = methods();
+    t.mock.timers.tick(1);
+
+    assert.deepEqual([unchanged, early, methods()], [[], [], ['HEAD https://blog.test/']]);
+});
+
+test('a form being sent, or left, no longer keeps its session', async (t) => {
+    t.mock.timers.enable({ apis: ['setInterval'] });
+    const requests = serve(() => ({ ok: true, status: 200 }));
+    const { type, send, leave } = await open();
+    type('Second');
+
+    send('edit');
+    t.mock.timers.tick(FIVE_MINUTES);
+    const sending = requests.length;
+    await leave();
+    t.mock.timers.tick(FIVE_MINUTES);
+
+    assert.deepEqual([sending, requests.length], [0, 0]);
+});
+
+test('a server out of reach is no error: the page asks again later', async (t) => {
+    t.mock.timers.enable({ apis: ['setInterval'] });
+    const requests = serve(async () => { throw new TypeError('Failed to fetch'); });
+    const { type } = await open();
+    type('Second');
+
+    t.mock.timers.tick(FIVE_MINUTES);
+    await settle();
+    t.mock.timers.tick(FIVE_MINUTES);
+    await settle();
+
+    assert.equal(requests.length, 2);
 });

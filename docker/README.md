@@ -285,7 +285,9 @@ images, from `public/media/`, under `/media/`.
 - The sessions of the CMS live in `var/sessions/prod`, in the account, not
   where the php.ini of the hosting keeps those of every account: keep
   `var/sessions` between deploys (upload over it, never replace `var/`), or
-  every deploy signs the editor out.
+  every deploy signs the editor out. How long an idle session lasts is the
+  app's too (`gc_maxlifetime`, 8 hours, in `config/packages/framework.yaml`),
+  whatever the php.ini of the hosting says: only the app sweeps that folder.
 - Compression and the cache of the assets, which `public/.htaccess` asks of
   Apache: `curl -sI -H 'Accept-Encoding: gzip' https://<site>/` carries
   `Content-Encoding: gzip` (or `br`, if Hetzner's nginx compresses first),

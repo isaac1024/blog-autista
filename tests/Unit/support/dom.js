@@ -16,7 +16,7 @@ import { Application } from '@hotwired/stimulus';
  */
 const BORROWED = /^(HTML\w*|SVG\w*|\w*Event|Node|Element|Text|DocumentFragment|MutationObserver|CSS|FormData|File|FileList|DataTransfer|DOMParser|Image|requestAnimationFrame|cancelAnimationFrame|matchMedia|getComputedStyle|getSelection)$/;
 
-/** @type {{window: Window, application: Application, errors: unknown[]}|null} */
+/** @type {{window: Window, application: Application, identifiers: string[], errors: unknown[]}|null} */
 let current = null;
 
 const close = async () => {
@@ -24,8 +24,10 @@ const close = async () => {
         return;
     }
 
-    const { window, application, errors } = current;
+    const { window, application, identifiers, errors } = current;
     current = null;
+    // Stopping leaves the controllers connected, and their timers running.
+    application.unload(identifiers);
     application.stop();
     await window.happyDOM.close();
     // Stimulus reports what a controller throws instead of letting it out.
@@ -75,7 +77,7 @@ export const mount = async (markup, controllers, { url = 'https://blog.test/', s
     application.handleError = (error) => { errors.push(error); };
     // What a listener of the page throws, happy-dom reports instead.
     window.addEventListener('error', (event) => { errors.push(event.error ?? event.message); });
-    current = { window, application, errors };
+    current = { window, application, identifiers: Object.keys(controllers), errors };
     await application.start();
 
     for (const [identifier, controller] of Object.entries(controllers)) {
@@ -131,10 +133,10 @@ export const answer = (body) => ({ ok: true, status: 200, json: async () => body
  * @param {(url: string, options: RequestInit) => unknown} respond
  */
 export const serve = (respond) => {
-    /** @type {{url: string, signal: AbortSignal|null|undefined}[]} */
+    /** @type {{url: string, method: string, signal: AbortSignal|null|undefined}[]} */
     const requests = [];
     globalThis.fetch = /** @type {typeof fetch} */ (async (url, options = {}) => {
-        requests.push({ url: String(url), signal: options.signal });
+        requests.push({ url: String(url), method: options.method ?? 'GET', signal: options.signal });
 
         return respond(String(url), options);
     });

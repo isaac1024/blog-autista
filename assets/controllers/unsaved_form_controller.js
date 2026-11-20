@@ -11,7 +11,14 @@ import { snapshot } from '../form/snapshot.js';
  * @property {string} saved
  * @property {string} told
  * @property {boolean} sending
+ * @property {ReturnType<typeof setInterval>} keeping
  */
+
+/*
+ * How often a form holding changes reminds the server of its session:
+ * well within the 8 hours an idle session lasts.
+ */
+const KEEP_ALIVE = 5 * 60 * 1000;
 
 const BaseController = /** @type {import('./controller_types.js').ControllerWith<Properties>} */ (Controller);
 
@@ -20,7 +27,9 @@ const BaseController = /** @type {import('./controller_types.js').ControllerWith
  * whether the form holds changes not saved yet. While it does, its status
  * says so, where the bar said what is saved, and leaving the page asks
  * first, unless the form itself is being sent. A form that came back with
- * what was sent and refused holds changes from the start.
+ * what was sent and refused holds changes from the start. Meanwhile, the
+ * page asks the server for itself now and then, so the session does not
+ * expire under an editor still writing, which would lose what they send.
  */
 export default class extends BaseController {
     static targets = ['status'];
@@ -37,6 +46,17 @@ export default class extends BaseController {
         }
 
         this.check();
+        this.keeping = setInterval(() => { this.keepAlive(); }, KEEP_ALIVE);
+    }
+
+    disconnect() {
+        clearInterval(this.keeping);
+    }
+
+    keepAlive() {
+        if (!this.sending && this.changed()) {
+            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' }).catch(() => {});
+        }
     }
 
     check() {
