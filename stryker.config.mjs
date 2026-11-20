@@ -30,6 +30,6 @@ export default {
     ignorePatterns: [
         '.codegraph', '.claude', '.idea', '.vscode',
         'vendor', 'var', 'public', 'docker', 'src', 'templates', 'translations', 'migrations', 'config', 'tools',
-        'tests/Cms', 'tests/Web', 'tests/Shared', 'tests/Browser', 'assets/vendor', 'assets/fonts', 'assets/images',
+        'tests/Cms', 'tests/Web', 'tests/Shared', 'tests/Browser', 'assets/fonts', 'assets/images',
     ],
 };

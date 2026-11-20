@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const ASSETS = path.join(ROOT, 'assets');
+const PACKAGES = path.join(ROOT, 'node_modules');
 const ORIGIN = 'http://blogautista.test';
 /*
  * The stylesheets of the CMS, in the order its layout links them: the app's,
@@ -11,42 +12,29 @@ const ORIGIN = 'http://blogautista.test';
  */
 const STYLESHEETS = [
     '/assets/styles/app.css',
-    '/assets/vendor/prosemirror-view/style/prosemirror.min.css',
-    '/assets/vendor/prosemirror-tables/style/tables.min.css',
+    '/node_modules/prosemirror-view/style/prosemirror.css',
+    '/node_modules/prosemirror-tables/style/tables.css',
 ];
 
 /*
- * Native browser modules, served from the same files AssetMapper uses. Package
- * entry points are resolved below, so no npm copies of the runtime packages
- * nor a Symfony server are needed.
+ * The import map of the app, without Symfony: each package at the file of
+ * node_modules importmap.php names, the very one AssetMapper serves.
  */
-const IMPORTS = {
-    '@hotwired/stimulus': '/assets/vendor/@hotwired/stimulus',
-    '@tiptap/': '/assets/vendor/@tiptap/',
-    '@floating-ui/': '/assets/vendor/@floating-ui/',
-    'orderedmap': '/assets/vendor/orderedmap',
-    'prosemirror-commands': '/assets/vendor/prosemirror-commands',
-    'prosemirror-dropcursor': '/assets/vendor/prosemirror-dropcursor',
-    'prosemirror-gapcursor': '/assets/vendor/prosemirror-gapcursor',
-    'prosemirror-history': '/assets/vendor/prosemirror-history',
-    'prosemirror-keymap': '/assets/vendor/prosemirror-keymap',
-    'prosemirror-model': '/assets/vendor/prosemirror-model',
-    'prosemirror-schema-list': '/assets/vendor/prosemirror-schema-list',
-    'prosemirror-state': '/assets/vendor/prosemirror-state',
-    'prosemirror-tables': '/assets/vendor/prosemirror-tables',
-    'prosemirror-transform': '/assets/vendor/prosemirror-transform',
-    'prosemirror-view': '/assets/vendor/prosemirror-view',
-    'rope-sequence': '/assets/vendor/rope-sequence',
-    'w3c-keyname': '/assets/vendor/w3c-keyname',
-};
+const IMPORTS = Object.fromEntries(
+    [...(await readFile(path.join(ROOT, 'importmap.php'), 'utf8')).matchAll(/'([^']+)'\s*=>\s*\[\s*'path'\s*=>\s*'\.\/node_modules\/([^']+)'/g)]
+        .map(([, name, file]) => [name, `/node_modules/${file}`]),
+);
 
-async function moduleBody(pathname) {
-    const relative = pathname.slice('/assets/'.length);
-    const base = path.join(ASSETS, relative);
-    const candidates = [base, `${base}.js`, path.join(base, `${path.basename(base)}.index.js`)];
+/**
+ * A file of the directory given at the path asked for, or null outside it or
+ * when there is none; a module of the app may be asked for without its
+ * extension.
+ */
+async function fileBody(directory, relative) {
+    const base = path.join(directory, relative);
 
-    for (const candidate of candidates) {
-        if (!candidate.startsWith(`${ASSETS}${path.sep}`)) {
+    for (const candidate of [base, `${base}.js`]) {
+        if (!candidate.startsWith(`${directory}${path.sep}`)) {
             continue;
         }
 
@@ -99,13 +87,13 @@ export async function loadPage(page, body, { mocked = ['/api/'], query = '', sty
         // The stylesheets as written: the browser skips what only Tailwind
         // reads, and lays out the rules of the components.
         if (STYLESHEETS.includes(url.pathname)) {
-            await route.fulfill({ contentType: 'text/css', body: await readFile(path.join(ASSETS, url.pathname.slice('/assets/'.length))) });
+            await route.fulfill({ contentType: 'text/css', body: await readFile(path.join(ROOT, url.pathname)) });
 
             return;
         }
 
-        if (url.pathname.startsWith('/assets/')) {
-            const module = await moduleBody(url.pathname);
+        for (const [prefix, directory] of [['/assets/', ASSETS], ['/node_modules/', PACKAGES]]) {
+            const module = url.pathname.startsWith(prefix) ? await fileBody(directory, url.pathname.slice(prefix.length)) : null;
 
             if (module !== null) {
                 await route.fulfill({ contentType: 'text/javascript', body: module });

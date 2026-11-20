@@ -151,19 +151,28 @@ the wiring only a real browser checks. Run `npm run test:js` for both suites, or
 with `npm run test:browser:install`. Browser failures are written under
 `var/browser-tests/`.
 
-`npm run mutation:js` runs Stryker over every module under `assets/` but the
-vendored ones, as Infection does for PHP: it ignores nothing and fails below
+`npm run mutation:js` runs Stryker over every module under `assets/`, as
+Infection does for PHP: it ignores nothing and fails below
 80 %; the report goes to `var/mutation/js.html`. Logic that can live outside a
 Stimulus controller goes to a module of its own with a `node:test` suite. A
 mutant that survives is fixed by a test or by rewriting the code that makes it
 equivalent, not ignored. The whole run stays under five minutes.
 `npm run check:js:full` is `check:js` plus the mutation run.
 
-Run `npm run check:js` for the frontend gate: ESLint, strict TypeScript
-`checkJs` over every module under `assets/` (JSDoc, no build step) and both test
-suites. The browser loads packages through the import map; npm installs the same
-versions only for their types, and `tests/Unit/type_packages.test.js` fails when
-the two drift, so bump both together. A Stimulus controller declares its targets
+Run `npm run check:js` for the frontend gate: the audit of the packages the
+browser runs, ESLint, strict TypeScript `checkJs` over every module under
+`assets/` (JSDoc, no build step) and both test suites.
+
+The packages the CMS runs in the browser come from npm, the official registry,
+never from a CDN: they are the `dependencies` of `package.json` (the tools are
+`devDependencies`), checked against the hashes of `package-lock.json`, and
+`.npmrc` installs none published less than a day ago and runs no install
+script. `importmap.php` names the file of each one in `node_modules` by
+`path`, and `config/packages/asset_mapper.yaml` maps the directory of those
+files (its `dist/`) under `vendor/`. A new package is installed with
+`npm install --save-exact` and added to both; never `importmap:require`, which
+downloads a build of jsDelivr's instead. `tests/Unit/importmap_packages.test.js`
+fails when the import map loads anything else. A Stimulus controller declares its targets
 and values in a `Properties` typedef and extends
 `ControllerWith<Properties>` from `assets/controllers/controller_types.d.ts`.
 Endpoint responses are `unknown` until cast to the shape the endpoint documents.
@@ -186,7 +195,7 @@ running app shows a broken import.
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
 superset). `composer cs` fixes PHP style and `composer twig:cs` fixes Twig style;
-`composer check` runs the whole gate (security audit of Composer and of the import map, style, phpmd, phpstan, schema validation, tests).
+`composer check` runs the whole gate (security audit of Composer, style, phpmd, phpstan, schema validation, tests).
 
 ## Discover, don't guess
 

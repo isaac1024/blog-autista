@@ -17,6 +17,7 @@ serves the app at Hetzner Webhosting L.
 ## Usage
 
 ```bash
+npm ci                                  # the packages the CMS runs in the browser
 docker compose up -d --build            # http://www.blogautista.localhost
 docker compose exec -u www-data php bin/console about
 docker compose exec -u www-data php php bin/phpunit
@@ -99,9 +100,9 @@ takes 60 visits a minute per reader.
 | Dead code | `shipmonk/dead-code-detector` | methods, constants, enum cases and properties; understands Symfony DI and PHPUnit |
 | Architecture | PHPat | `Web` ⇏ `Cms`, `Cms` ⇏ `Web`, `Shared` ⇏ both; Infrastructure → Application → Domain in every module; a module's infrastructure never uses another module's |
 | Tests | PHPUnit + ParaTest | in parallel, one database per process; random order, strict output, fail on risky/deprecation/notice/warning |
-| JavaScript static analysis | ESLint + TypeScript `checkJs` | recommended correctness rules and strict JSDoc checking on every module under `assets/` but `assets/vendor` (`jsconfig.json`); no emitted build |
+| JavaScript static analysis | ESLint + TypeScript `checkJs` | recommended correctness rules and strict JSDoc checking on every module under `assets/` (`jsconfig.json`); no emitted build |
 | JavaScript tests | node:test + happy-dom + Playwright | pure modules, then the Stimulus controllers on happy-dom with the markup of `tests/Markup/`, then the wiring in Chromium; neither Symfony nor a database |
-| JavaScript mutation | Stryker | every module under `assets/` but the vendored ones; fails below 80 %, report in `var/mutation/js.html` |
+| JavaScript mutation | Stryker | every module under `assets/`; fails below 80 %, report in `var/mutation/js.html` |
 | Mutation | Infection | in parallel, one database per thread, the whole suite against each mutant; MSI ≥ 70, covered MSI ≥ 80, excludes Kernel and generated migrations |
 
 ```bash
@@ -189,7 +190,7 @@ go. Delete that directory locally afterwards: while it exists, development
 serves those compiled copies instead of the current files.
 
 ```bash
-docker compose exec -u www-data php bin/console importmap:install
+npm ci   # the packages the CMS runs in the browser, from npm
 docker compose exec -u www-data php bin/console tailwind:build --minify
 docker compose exec -u www-data php bin/console cache:clear --env=prod
 docker compose exec -u www-data php bin/console asset-map:compile --env=prod

@@ -1,8 +1,60 @@
 framework:
     asset_mapper:
-        # The paths to make available to the asset mapper.
+        # The paths to make available to the asset mapper: the app's own, and
+        # the files the browser runs of each package npm installs for it (the
+        # "dependencies" of package.json), read from the official registry and
+        # checked against the hashes of package-lock.json. A package the CMS
+        # starts to load is added here and to importmap.php.
         paths:
-            - assets/
+            assets/: ''
+            node_modules/@floating-ui/core/dist/: vendor/@floating-ui/core
+            node_modules/@floating-ui/dom/dist/: vendor/@floating-ui/dom
+            node_modules/@floating-ui/utils/dist/: vendor/@floating-ui/utils
+            node_modules/@hotwired/stimulus/dist/: vendor/@hotwired/stimulus
+            node_modules/@tiptap/core/dist/: vendor/@tiptap/core
+            node_modules/@tiptap/extension-blockquote/dist/: vendor/@tiptap/extension-blockquote
+            node_modules/@tiptap/extension-bold/dist/: vendor/@tiptap/extension-bold
+            node_modules/@tiptap/extension-document/dist/: vendor/@tiptap/extension-document
+            node_modules/@tiptap/extension-heading/dist/: vendor/@tiptap/extension-heading
+            node_modules/@tiptap/extension-list/dist/: vendor/@tiptap/extension-list
+            node_modules/@tiptap/extension-paragraph/dist/: vendor/@tiptap/extension-paragraph
+            node_modules/@tiptap/extension-table/dist/: vendor/@tiptap/extension-table
+            node_modules/@tiptap/extension-text/dist/: vendor/@tiptap/extension-text
+            node_modules/@tiptap/extensions/dist/: vendor/@tiptap/extensions
+            node_modules/@tiptap/pm/dist/: vendor/@tiptap/pm
+            node_modules/@tiptap/suggestion/dist/: vendor/@tiptap/suggestion
+            node_modules/orderedmap/dist/: vendor/orderedmap
+            node_modules/prosemirror-commands/dist/: vendor/prosemirror-commands
+            node_modules/prosemirror-dropcursor/dist/: vendor/prosemirror-dropcursor
+            node_modules/prosemirror-gapcursor/dist/: vendor/prosemirror-gapcursor
+            node_modules/prosemirror-history/dist/: vendor/prosemirror-history
+            node_modules/prosemirror-keymap/dist/: vendor/prosemirror-keymap
+            node_modules/prosemirror-model/dist/: vendor/prosemirror-model
+            node_modules/prosemirror-schema-list/dist/: vendor/prosemirror-schema-list
+            node_modules/prosemirror-state/dist/: vendor/prosemirror-state
+            node_modules/prosemirror-tables/dist/: vendor/prosemirror-tables
+            node_modules/prosemirror-tables/style/: vendor/prosemirror-tables/style
+            node_modules/prosemirror-transform/dist/: vendor/prosemirror-transform
+            node_modules/prosemirror-view/dist/: vendor/prosemirror-view
+            node_modules/prosemirror-view/style/: vendor/prosemirror-view/style
+            node_modules/rope-sequence/dist/: vendor/rope-sequence
+            node_modules/w3c-keyname/: vendor/w3c-keyname
+        # What npm packages carry for other loaders than the browser's: CommonJS,
+        # UMD and other builds, types and source maps.
+        excluded_patterns:
+            - '*/node_modules/*.cjs'
+            - '*/node_modules/*.map'
+            - '*/node_modules/*.d.ts'
+            - '*/node_modules/*.d.cts'
+            - '*/node_modules/*.d.mts'
+            - '*/node_modules/*.umd.js'
+            - '*/node_modules/*.umd.min.js'
+            - '*/node_modules/*.esm.js'
+            - '*/node_modules/*.browser.mjs'
+            - '*/node_modules/*.browser.min.mjs'
+            - '*/node_modules/*.json'
+            - '*/node_modules/*.md'
+            - '*/node_modules/*/LICENSE'
         missing_import_mode: strict
         # Every browser the CMS supports reads import maps, so no polyfill is
         # loaded, least of all from a third party.

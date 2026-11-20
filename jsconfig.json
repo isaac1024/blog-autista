@@ -22,8 +22,5 @@
   "include": [
     "assets/**/*.js",
     "assets/**/*.d.ts"
-  ],
-  "exclude": [
-    "assets/vendor"
   ]
 }

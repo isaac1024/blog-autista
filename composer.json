@@ -108,8 +108,7 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd",
-            "importmap:install": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"
@@ -139,8 +138,7 @@
             "XDEBUG_MODE=coverage infection --with-uncovered --git-diff-lines --git-diff-base=master"
         ],
         "audit:all": [
-            "@composer audit",
-            "bin/console importmap:audit"
+            "@composer audit"
         ],
         "check": [
             "@audit:all",

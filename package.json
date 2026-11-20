@@ -2,13 +2,14 @@
   "name": "blog-autista",
   "private": true,
   "type": "module",
-  "description": "Browser interaction tests and UI quality gates for the blog.autista frontend.",
+  "description": "The libraries the CMS runs in the browser, and the tests and UI quality gates of its frontend.",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "check:js": "npm run lint:js && npm run typecheck:js && npm run test:js",
+    "check:js": "npm run audit:js && npm run lint:js && npm run typecheck:js && npm run test:js",
     "check:js:full": "npm run check:js && npm run mutation:js",
+    "audit:js": "npm audit --omit=dev",
     "lint:js": "eslint assets tests/Browser tests/Markup tests/Unit tools stryker.config.mjs playwright.config.js eslint.config.js",
     "typecheck:js": "tsc -p jsconfig.json",
     "test:js": "npm run test:unit && npm run test:browser",
@@ -21,12 +22,8 @@
     "ui:contrast": "node tools/ui-check.mjs --only=contrast",
     "ui:lighthouse": "node tools/ui-check.mjs --only=lighthouse"
   },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
+  "dependencies": {
     "@hotwired/stimulus": "3.2.2",
-    "@playwright/test": "^1.65.0",
-    "@stryker-mutator/core": "10.1.1",
-    "@stryker-mutator/tap-runner": "10.1.1",
     "@tiptap/core": "3.34.0",
     "@tiptap/extension-blockquote": "3.34.0",
     "@tiptap/extension-bold": "3.34.0",
@@ -38,7 +35,13 @@
     "@tiptap/extension-text": "3.34.0",
     "@tiptap/extensions": "3.34.0",
     "@tiptap/pm": "3.34.0",
-    "@tiptap/suggestion": "3.34.0",
+    "@tiptap/suggestion": "3.34.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/tap-runner": "10.1.1",
     "chrome-launcher": "^1.2.2",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
