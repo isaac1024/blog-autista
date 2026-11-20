@@ -73,7 +73,11 @@
             "infection/extension-installer": true
         },
         "bump-after-update": true,
-        "sort-packages": true
+        "sort-packages": true,
+        "audit": {
+            "block-insecure": true,
+            "abandoned": "fail"
+        }
     },
     "autoload": {
         "psr-4": {
