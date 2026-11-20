@@ -27,7 +27,7 @@ final readonly class PostTagRow
         #[ORM\Column(type: 'web_post_id')]
         public PostId $postId,
         #[ORM\Id]
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         public string $termId,
         #[ORM\Column]
         public \DateTimeImmutable $firstPublishedAt,

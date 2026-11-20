@@ -39,11 +39,11 @@ final class Post
         private string $title,
         #[ORM\Column(length: 80)]
         private string $slug,
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         private string $sectionId,
         #[ORM\Column(length: 60)]
         private string $sectionName,
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         private string $authorId,
         #[ORM\Column(length: 100)]
         private string $authorName,
@@ -52,7 +52,7 @@ final class Post
         /*
          * The image it opens with, by id: the site shows it while it is on it.
          */
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         private string $openingImageId,
         #[ORM\Column(type: 'rich_text')]
         private RichText $content,

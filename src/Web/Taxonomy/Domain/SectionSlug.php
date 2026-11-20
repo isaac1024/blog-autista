@@ -18,7 +18,7 @@ final class SectionSlug
 {
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         private readonly string $sectionId,
         #[ORM\Column(length: 80)]
         private string $slug,

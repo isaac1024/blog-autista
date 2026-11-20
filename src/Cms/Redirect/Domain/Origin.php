@@ -22,7 +22,7 @@ final readonly class Origin
     private function __construct(
         #[ORM\Column(name: 'origin_type', length: 20, nullable: true, enumType: ResourceType::class)]
         private ?ResourceType $type,
-        #[ORM\Column(name: 'origin_id', length: 36, nullable: true)]
+        #[ORM\Column(name: 'origin_id', type: 'uuid_text', nullable: true)]
         private ?string $id,
     ) {}
 

@@ -30,9 +30,9 @@ final class Settings
         private readonly SettingsId $id,
         #[ORM\Column(length: 60)]
         private string $name,
-        #[ORM\Column(length: 36, nullable: true)]
+        #[ORM\Column(type: 'uuid_text', nullable: true)]
         private ?string $defaultImageId,
-        #[ORM\Column(length: 36, nullable: true)]
+        #[ORM\Column(type: 'uuid_text', nullable: true)]
         private ?string $authorId,
         #[ORM\Column(type: 'json')]
         private array $mainMenu,

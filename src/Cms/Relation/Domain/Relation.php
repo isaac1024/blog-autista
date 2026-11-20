@@ -26,11 +26,11 @@ final class Relation
         private readonly RelationId $id,
         #[ORM\Column(length: 20, enumType: ResourceType::class)]
         private readonly ResourceType $sourceType,
-        #[ORM\Column(length: 36)]
+        #[ORM\Column(type: 'uuid_text')]
         private readonly string $sourceId,
         #[ORM\Column(length: 20, enumType: ResourceType::class)]
         private readonly ResourceType $targetType,
-        #[ORM\Column(length: 36)]
+        #[ORM\Column(type: 'uuid_text')]
         private readonly string $targetId,
     ) {}
 

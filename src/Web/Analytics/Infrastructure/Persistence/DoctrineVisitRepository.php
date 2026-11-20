@@ -56,12 +56,14 @@ final readonly class DoctrineVisitRepository implements VisitRepository
 
         // Readers are counted apart in every dimension, so each count of them
         // is exact. Each kind of content is counted by the dimension of its
-        // name, such as the posts by "post".
+        // name, such as the posts by "post", its id as the text the totals
+        // keep: a UUID beside the text of the other dimensions would turn
+        // them into UUIDs too.
         $connection->executeStatement(<<<'SQL'
             INSERT INTO shared_visit_total (day, dimension, value, views, visitors)
             SELECT day, :site, '', COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day
             UNION ALL
-            SELECT day, content_type, content_id, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, content_type, content_id
+            SELECT day, content_type, CAST(content_id AS CHAR(36)), COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, content_type, content_id
             UNION ALL
             SELECT day, :channel, channel, COUNT(*), COUNT(DISTINCT reader) FROM shared_visit WHERE day = :day GROUP BY day, channel
             UNION ALL

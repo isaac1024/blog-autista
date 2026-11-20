@@ -19,7 +19,7 @@ final class ProjectionCheckpoint
         #[ORM\Column(length: 32)]
         private string $projection,
         #[ORM\Id]
-        #[ORM\Column(length: 36)]
+        #[ORM\Column(type: 'uuid_text')]
         private string $aggregateId,
         #[ORM\Column]
         private int $revision,

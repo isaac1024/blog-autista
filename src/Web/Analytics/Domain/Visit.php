@@ -33,7 +33,7 @@ final class Visit
         private readonly VisitId $id,
         #[ORM\Column(name: 'content_type', length: 10, enumType: ContentType::class)]
         private readonly ContentType $contentType,
-        #[ORM\Column(name: 'content_id', length: 36, options: ['fixed' => true])]
+        #[ORM\Column(name: 'content_id', type: 'uuid_text')]
         private readonly string $contentId,
         #[ORM\Column(type: 'date_immutable')]
         private readonly \DateTimeImmutable $day,

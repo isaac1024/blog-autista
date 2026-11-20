@@ -34,6 +34,7 @@ doctrine:
             cms_slug: Cms\Shared\Infrastructure\Persistence\Doctrine\SlugType
             cms_page_version: Cms\Page\Infrastructure\Persistence\Doctrine\PageVersionType
             rich_text: Shared\Infrastructure\Persistence\Doctrine\RichTextType
+            uuid_text: Shared\Infrastructure\Persistence\Doctrine\UuidTextType
             web_author_id: Web\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
             web_external_resource_id: Web\External\Infrastructure\Persistence\Doctrine\ExternalResourceIdType
             web_image_id: Web\Image\Infrastructure\Persistence\Doctrine\ImageIdType

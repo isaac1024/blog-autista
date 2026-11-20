@@ -29,7 +29,7 @@ final class SitemapEntry
      */
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: 'guid')]
+        #[ORM\Column(type: 'uuid_text')]
         private readonly string $resourceId,
         #[ORM\Column(length: 20)]
         private readonly string $file,
@@ -37,7 +37,7 @@ final class SitemapEntry
         private string $path,
         #[ORM\Column]
         private \DateTimeImmutable $lastmod,
-        #[ORM\Column(type: 'guid', nullable: true)]
+        #[ORM\Column(type: 'uuid_text', nullable: true)]
         private ?string $imageId,
         #[ORM\Column(type: 'json')]
         private array $termIds,
@@ -45,7 +45,7 @@ final class SitemapEntry
          * The section of a post, whose slug on the site its address names
          * in place of the one the path kept; none for anything else.
          */
-        #[ORM\Column(type: 'guid', nullable: true)]
+        #[ORM\Column(type: 'uuid_text', nullable: true)]
         private ?string $sectionId,
     ) {}
 

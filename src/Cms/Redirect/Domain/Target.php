@@ -16,7 +16,7 @@ final readonly class Target
     private function __construct(
         #[ORM\Column(name: 'target_type', length: 20, nullable: true, enumType: ResourceType::class)]
         private ?ResourceType $type,
-        #[ORM\Column(name: 'target_id', length: 36, nullable: true)]
+        #[ORM\Column(name: 'target_id', type: 'uuid_text', nullable: true)]
         private ?string $id,
     ) {}
 
