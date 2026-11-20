@@ -20,7 +20,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * it is not found, one whose content was taken off for good is gone, and a
  * failure says so. The kernel keeps the status, and the headers, of the error.
  *
- * Only the site's host is answered so; the CMS keeps the framework's pages.
+ * Only the site's host is answered so; the CMS answers its own errors
+ * (CmsErrorListener).
  * A failure is left to the debug page while debugging, and to the error
  * template, which needs nothing of the database, when its page can't be
  * painted either.

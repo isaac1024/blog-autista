@@ -26,6 +26,8 @@
  *                  (e.g. { Cookie: 'PHPSESSID=...' })
  *   - thresholds:  per-page overrides for the Lighthouse thresholds
  *   - formFactors: per-page override of `lighthouse.formFactors`
+ *   - status:      the HTTP status the page answers with, for a page of an
+ *                  error; any 2xx otherwise
  *
  * The pages are read from the app running in Docker (`docker compose up -d`),
  * through its edge on port 80, as a browser reaches it: the PHP of the host
@@ -65,6 +67,15 @@ const pages = [
         name: 'cms-login',
         host: cmsHost,
         path: '/login',
+        thresholds: cmsThresholds,
+    },
+    // The page of an error of the CMS, as whoever opens an expired preview
+    // link sees it, signed in or not.
+    {
+        name: 'cms-error',
+        host: cmsHost,
+        path: '/preview/posts/00000000-0000-7000-8000-000000000000?_expiration=1&_hash=x',
+        status: 403,
         thresholds: cmsThresholds,
     },
 ];

@@ -1086,6 +1086,19 @@ cms:
         publish:
             page_title: 'Publicar «%title%»'
             submit: 'Publicar el post'
+    error:
+        not_found:
+            title: 'No existe o se ha borrado'
+            message: 'Puede que alguien lo haya borrado o que el enlace esté incompleto.'
+        preview:
+            title: 'Este enlace de vista previa ha caducado o no es válido'
+            message: 'Los enlaces de vista previa duran 7 días. Pide uno nuevo a quien te lo envió.'
+        invalid:
+            title: 'No se ha podido hacer lo que pediste'
+            message: 'La petición no era válida. Vuelve atrás e inténtalo de nuevo.'
+        back_to: 'Volver a %list%'
+        go_back: 'Volver atrás'
+        home: 'Ir al inicio del CMS'
     login:
         title: 'Iniciar sesión'
         subtitle: 'Accede al panel de administración'

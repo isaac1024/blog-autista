@@ -1086,6 +1086,19 @@ cms:
         publish:
             page_title: 'Publish “%title%”'
             submit: 'Publish the post'
+    error:
+        not_found:
+            title: "It doesn't exist or was deleted"
+            message: 'Someone may have deleted it, or the link is incomplete.'
+        preview:
+            title: "This preview link has expired or isn't valid"
+            message: 'Preview links last 7 days. Ask whoever sent it for a new one.'
+        invalid:
+            title: "That couldn't be done"
+            message: "The request wasn't valid. Go back and try again."
+        back_to: 'Back to %list%'
+        go_back: 'Go back'
+        home: 'Go to the CMS home'
     login:
         title: 'Sign in'
         subtitle: 'Access the administration panel'

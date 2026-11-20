@@ -195,6 +195,7 @@ function normalizePage(page) {
         headers: { ...(page.headers ?? {}) },
         thresholds: { ...(page.thresholds ?? {}) },
         formFactors: Array.isArray(page.formFactors) ? page.formFactors : null,
+        status: Number.isInteger(page.status) ? page.status : undefined,
     };
 }
 
@@ -430,7 +431,9 @@ function runVnu(java, file) {
 }
 
 async function validateHtml(page, response, java) {
-    if (response.status < 200 || response.status >= 300) {
+    const expected = page.status === undefined ? response.status >= 200 && response.status < 300 : response.status === page.status;
+
+    if (!expected) {
         fail(`${page.name}: HTTP ${response.status} (add auth headers to the page config?)`, 4);
         record(`html:${page.name}`, false);
         return;
@@ -807,6 +810,8 @@ async function checkLighthouse(page, chrome, thresholds, formFactor) {
         extraHeaders: lighthouseHeaders(page),
         // Clearing the storage would take the cookies just set.
         disableStorageReset: cookies.length > 0,
+        // The page of an error answers with its status on purpose.
+        ignoreStatusCode: page.status !== undefined,
     });
 
     if (!runnerResult) {
