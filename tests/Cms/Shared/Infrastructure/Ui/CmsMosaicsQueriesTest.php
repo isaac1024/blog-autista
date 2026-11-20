@@ -33,7 +33,6 @@ final class CmsMosaicsQueriesTest extends KernelTestCase
                     id: \sprintf('01a1f000-0000-7000-8000-%06d%06d', $i, $j),
                     slug: \sprintf('entrada-%d-%d', $i, $j),
                     section: $section,
-                    sectionSlug: 'seccion-'.$i,
                 ));
             }
 

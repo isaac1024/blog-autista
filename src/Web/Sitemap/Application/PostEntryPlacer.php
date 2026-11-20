@@ -19,7 +19,7 @@ use Web\Sitemap\Domain\SitemapRepository;
 final readonly class PostEntryPlacer
 {
     /**
-     * @param string       $path    its address, under the slug it kept of its section
+     * @param string       $path    its address without its section, which the sitemap names by the slug of the section
      * @param list<string> $termIds its section and its tags
      */
     public function __construct(

@@ -25,8 +25,9 @@ use Shared\Domain\Transaction;
 
 /**
  * A post of the blog, filed under a section, signed by an author and
- * labelled with any number of tags. The site serves it under the slug of its
- * section, on the day it was first published, by its own slug.
+ * labelled with any number of tags. The site tells it by the day it was
+ * first published and its own slug; the section in front of them in its
+ * address only says where it is filed.
  *
  * Editors work on its version in the CMS; once published, the site serves a
  * copy of it, which only changes when the post is published again.
@@ -39,10 +40,10 @@ use Shared\Domain\Transaction;
  *   section, an author and an opening image, all three on the site,
  *   content and a meta description. Its tags needn't be: the site only
  *   shows those on it.
- * - Its address on the site is taken as it is published: the slug its
- *   section has on the site then, the day it was first published, and its
- *   own slug. Two posts on the site never share one; drafts take none, so
- *   they are never checked against each other.
+ * - Its address on the site is taken as it is published: the day it was
+ *   first published and its own slug. Two posts on the site never share
+ *   one, whatever their sections; drafts take none, so they are never
+ *   checked against each other.
  * - A post anything links to is never deleted.
  * - A published post is unpublished before it is deleted, and stays on
  *   the site while redirects lead to it.
@@ -63,8 +64,8 @@ use Shared\Domain\Transaction;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'cms_post')]
-#[ORM\UniqueConstraint(name: 'uniq_cms_post_published_address', columns: ['published_section_slug', 'published_day', 'published_slug'])]
-#[ORM\Index(name: 'idx_cms_post_last_address', columns: ['last_section_slug', 'last_day', 'last_slug'])]
+#[ORM\UniqueConstraint(name: 'uniq_cms_post_published_address', columns: ['published_day', 'published_slug'])]
+#[ORM\Index(name: 'idx_cms_post_last_address', columns: ['last_day', 'last_slug'])]
 #[ORM\Index(name: 'ftx_cms_post_title', columns: ['title'], flags: ['fulltext'])]
 // The ids alone, newest first, for a page deep in the list: the primary key
 // holds every column of the post, contents and all, and reading thousands
@@ -72,14 +73,6 @@ use Shared\Domain\Transaction;
 #[ORM\Index(name: 'idx_cms_post_id', columns: ['id'])]
 final class Post extends AggregateRoot
 {
-    /**
-     * The slug of its section where the site serves the post, apart from the
-     * version so the address can be indexed and kept unique. Null, as the
-     * rest of the address, while the post isn't on the site.
-     */
-    #[ORM\Column(name: 'published_section_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
-    private ?Slug $publishedSectionSlug;
-
     /**
      * The day it was first published, in Madrid, while it is on the site.
      */
@@ -93,13 +86,10 @@ final class Post extends AggregateRoot
     private ?Slug $publishedSlug;
 
     /**
-     * The address the post last had on the site, as its three columns, kept
+     * The address the post last had on the site, as its two columns, kept
      * once it is off it, so it can be told and found. Null for a post never
      * published, and once another post is published at that address.
      */
-    #[ORM\Column(name: 'last_section_slug', type: 'cms_slug', length: Slug::MAX_LENGTH, nullable: true)]
-    private ?Slug $lastSectionSlug;
-
     #[ORM\Column(name: 'last_day', type: 'date_immutable', nullable: true)]
     private ?\DateTimeImmutable $lastDay;
 
@@ -135,10 +125,8 @@ final class Post extends AggregateRoot
         ?PostAddress $address,
     ) {
         $onSite = PostStatus::Published === $status ? $address : null;
-        $this->publishedSectionSlug = $onSite?->section();
         $this->publishedDay = null === $onSite ? null : new \DateTimeImmutable($onSite->day());
         $this->publishedSlug = $onSite?->slug();
-        $this->lastSectionSlug = $address?->section();
         $this->lastDay = null === $address ? null : new \DateTimeImmutable($address->day());
         $this->lastSlug = $address?->slug();
     }
@@ -260,16 +248,14 @@ final class Post extends AggregateRoot
         }
 
         $timeline = $this->timeline->published($now);
-        $address = new PostAddress($section->slug(), $timeline->firstPublishedAt() ?? $now, $slug);
+        $address = new PostAddress($timeline->firstPublishedAt() ?? $now, $slug);
 
         $this->changeResourcesUsed(function (): void {
             $this->status = PostStatus::Published;
             $this->published = $this->version;
         });
-        $this->publishedSectionSlug = $address->section();
         $this->publishedDay = new \DateTimeImmutable($address->day());
         $this->publishedSlug = $address->slug();
-        $this->lastSectionSlug = $address->section();
         $this->lastDay = new \DateTimeImmutable($address->day());
         $this->lastSlug = $address->slug();
         $this->timeline = $timeline;
@@ -281,7 +267,6 @@ final class Post extends AggregateRoot
             $slug->value(),
             $sectionId->value(),
             $section->name(),
-            $section->slug()->value(),
             $authorId->value(),
             $author->name(),
             $classification->tags()->values(),
@@ -314,7 +299,6 @@ final class Post extends AggregateRoot
         $this->changeResourcesUsed(function (): void {
             $this->status = PostStatus::Unpublished;
         });
-        $this->publishedSectionSlug = null;
         $this->publishedDay = null;
         $this->publishedSlug = null;
         ++$this->publicationRevision;
@@ -332,7 +316,6 @@ final class Post extends AggregateRoot
             throw InvalidPostPublication::addressOnSite();
         }
 
-        $this->lastSectionSlug = null;
         $this->lastDay = null;
         $this->lastSlug = null;
     }
@@ -469,12 +452,11 @@ final class Post extends AggregateRoot
      */
     public function publishedAddress(): ?PostAddress
     {
-        if (null === $this->publishedSectionSlug || null === $this->publishedDay || null === $this->publishedSlug) {
+        if (null === $this->publishedDay || null === $this->publishedSlug) {
             return null;
         }
 
         return new PostAddress(
-            $this->publishedSectionSlug,
             new \DateTimeImmutable($this->publishedDay->format('Y-m-d'), SiteTimeZone::zone()),
             $this->publishedSlug,
         );
@@ -495,12 +477,11 @@ final class Post extends AggregateRoot
      */
     public function lastAddress(): ?PostAddress
     {
-        if (null === $this->lastSectionSlug || null === $this->lastDay || null === $this->lastSlug) {
+        if (null === $this->lastDay || null === $this->lastSlug) {
             return null;
         }
 
         return new PostAddress(
-            $this->lastSectionSlug,
             new \DateTimeImmutable($this->lastDay->format('Y-m-d'), SiteTimeZone::zone()),
             $this->lastSlug,
         );
@@ -508,10 +489,9 @@ final class Post extends AggregateRoot
 
     /**
      * Where the site would serve the post were it published now as it is
-     * saved, as publish() takes it: under the slug its section has on the
-     * site, on the day it was first published, or today, by its own slug.
-     * Null when it has no such address, missing a slug or a section on the
-     * site, and so can't be published.
+     * saved, as publish() takes it: on the day it was first published, or
+     * today, by its own slug. Null when it has no such address, missing a
+     * slug or a section on the site, and so can't be published.
      */
     public function nextAddress(Classifiers $classifiers): ?PostAddress
     {
@@ -523,7 +503,7 @@ final class Post extends AggregateRoot
             return null;
         }
 
-        return new PostAddress($section->slug(), $this->timeline->firstPublishedAt() ?? Clock::now(), $slug);
+        return new PostAddress($this->timeline->firstPublishedAt() ?? Clock::now(), $slug);
     }
 
     public function timeline(): PublicationTimeline

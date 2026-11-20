@@ -10,8 +10,11 @@ use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostTitle;
 use Cms\Post\Infrastructure\Controller\PostList;
 use Cms\Post\Infrastructure\Controller\PostUrl;
+use Cms\Shared\Infrastructure\Ui\CmsSectionSlugs;
 use Cms\Shared\Infrastructure\Ui\PostState;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Post\Domain\PostMother;
+use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shared\Infrastructure\Ui\ListPagination;
@@ -122,8 +125,10 @@ final class PostListTest extends TestCase
         $urlGenerator = new RouteNameUrlGenerator();
         $translator = new CatalogueTranslator();
         $translator->setLocale('es');
+        $terms = self::createStub(TermRepository::class);
+        $terms->method('findByIds')->willReturn([TermMother::published(id: PostMother::SECTION)]);
 
-        $list = new PostList($urlGenerator, $translator, new PostState($translator), new PostUrl($urlGenerator), new ListPagination($translator, $urlGenerator))(
+        $list = new PostList($urlGenerator, $translator, new PostState($translator), new PostUrl($urlGenerator, new CmsSectionSlugs($terms)), new ListPagination($translator, $urlGenerator))(
             new PostsResponse(array_map(PostResponse::fromPost(...), $posts), $hasMore),
             $search,
             $number,

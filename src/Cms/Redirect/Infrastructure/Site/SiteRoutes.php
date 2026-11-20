@@ -21,15 +21,14 @@ final readonly class SiteRoutes
 {
     /**
      * The routes that serve a kind of resource each, by the name of their
-     * route: the pages but the home page, the sections, the tags, the
-     * authors and the posts.
+     * route: the pages but the home page, the sections, the tags and the
+     * authors. A post is told by its address without a section, PostPath.
      */
     private const array ROUTES = [
         'web_page' => SiteRoute::PAGE,
         'web_section' => SiteRoute::SECTION,
         'web_tag' => SiteRoute::TAG,
         'web_author' => SiteRoute::AUTHOR,
-        'web_post' => SiteRoute::POST,
     ];
 
     public function __construct(
@@ -98,17 +97,6 @@ final readonly class SiteRoutes
     public function authorPath(string $slug): string
     {
         return $this->path('web_author', ['slug' => $slug]);
-    }
-
-    /**
-     * The path the site serves a post at, by the slug of its section, the
-     * day it was first published, as Y-m-d, and its own slug.
-     */
-    public function postPath(string $section, string $day, string $slug): string
-    {
-        [$year, $month, $date] = explode('-', $day);
-
-        return $this->path('web_post', ['section' => $section, 'year' => $year, 'month' => $month, 'day' => $date, 'slug' => $slug]);
     }
 
     /**

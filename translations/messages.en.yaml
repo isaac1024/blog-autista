@@ -604,9 +604,6 @@ cms:
         publish:
             page_title: 'Publish “%name%”'
             submit: 'Publish the section'
-            posts_left_behind:
-                title: 'Its posts stay at the address of now'
-                message: '{1}A published post of this section stays under /%slug%/: it moves to the new address once you publish it again. Meanwhile, no other section can take /%slug%/.|]1,Inf[%count% published posts of this section stay under /%slug%/: each moves to the new address once you publish it again. Meanwhile, no other section can take /%slug%/.'
     tags:
         title: 'Tags'
         subtitle: 'Tags tell what each post is about. A post will be able to have several.'
@@ -1584,7 +1581,6 @@ errors:
         publication:
             without_slug: 'It can’t be published without an address.'
             without_meta_description: 'It can’t be published without a meta description.'
-            slug_of_posts_of_another_section: 'Published posts of another section are under /%slug%/: choose another address for this one, or publish those posts again first.'
             nothing_to_publish: 'It is published as it is: there is nothing to publish.'
             not_published: 'Only what is published can be unpublished.'
             no_changes_to_discard: 'There are no unpublished changes to discard.'
@@ -1659,7 +1655,7 @@ errors:
             unknown_author: 'The author chosen no longer exists. Choose another.'
             unknown_tag: 'One of the tags chosen no longer exists. Remove it.'
         address:
-            taken: 'Another post on the site already has the address /%section%/%date%/%slug%.html. Change the address of the post.'
+            taken: 'Another post on the site, first published on %date%, already has the slug “%slug%”: two posts of one day never share it, whatever their sections. Change the address of the post.'
         publication:
             without_slug: 'The post can’t be published without an address.'
             without_section: 'The post can’t be published without a section.'

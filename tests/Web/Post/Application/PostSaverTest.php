@@ -32,7 +32,7 @@ final class PostSaverTest extends TestCase
 
     public function testItReplacesThePostOnTheSiteWithTheVersionPublishedLater(): void
     {
-        $later = CmsPostPublishedMother::create(title: 'Otro título', sectionSlug: 'dia-a-dia', tagIds: [], metaDescription: null, lastPublishedAt: self::LATER);
+        $later = CmsPostPublishedMother::create(title: 'Otro título', tagIds: [], metaDescription: null, lastPublishedAt: self::LATER);
         $repository = $this->createMock(PostRepository::class);
         $repository->method('find')->willReturn(Post::publish(CmsPostPublishedMother::create()));
         $repository->method('findAt')->willReturn(null);

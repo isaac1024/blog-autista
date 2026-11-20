@@ -78,7 +78,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
      */
     public function testItFindsThePostByItsDayAndSlugWhateverItsSection(): void
     {
-        $this->repository()->save(Post::publish(CmsPostPublishedMother::create(sectionSlug: 'dia-a-dia')));
+        $this->repository()->save(Post::publish(CmsPostPublishedMother::create()));
         $this->repository()->save(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value(), title: 'Otro día', day: '2026-11-08')));
         $this->repository()->save(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value(), title: 'Otro slug', slug: 'otro')));
         $this->entityManager()->clear();
@@ -151,7 +151,6 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
             $post->slug(),
             $post->sectionId(),
             $post->sectionName(),
-            $post->sectionSlug(),
             $post->authorId(),
             $post->authorName(),
             $post->openingImageId(),

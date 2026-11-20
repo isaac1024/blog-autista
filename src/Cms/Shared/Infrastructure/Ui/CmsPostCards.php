@@ -11,7 +11,6 @@ use Cms\Post\Application\LatestPostsOnSiteFinder;
 use Cms\Post\Application\PostOnSiteCardResponse;
 use Cms\Post\Domain\PostRepository;
 use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
-use Cms\Taxonomy\Application\TermOnSiteResponse;
 use Cms\Taxonomy\Application\TermsOnSiteFinder;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Redirect\ReferenceResolver;
@@ -37,6 +36,7 @@ final readonly class CmsPostCards
         private TermRepository $termRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private UrlGeneratorInterface $urlGenerator,
+        private CmsSectionSlugs $sectionSlugs,
     ) {}
 
     /**
@@ -64,27 +64,25 @@ final readonly class CmsPostCards
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
-        $sections = array_map(
-            static fn (TermOnSiteResponse $term): ?string => $term->isSection() ? $term->name : null,
-            new ReferenceResolver('term', array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts), null)(
-                fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
-                $this->redirectsByOrigin,
-            ),
+        $terms = new ReferenceResolver('term', array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts), null)(
+            fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
+            $this->redirectsByOrigin,
         );
 
-        return array_map(fn (PostOnSiteCardResponse $post): array => [
-            'url' => $this->url($post),
-            'title' => $post->title,
-            'excerpt' => $post->excerpt,
-            'section' => $sections[$post->sectionId] ?? '',
-            'firstPublishedAt' => $post->firstPublishedAt,
-            'image' => self::image(null === $post->openingImageId ? null : $images[$post->openingImageId] ?? null),
-        ], $posts);
-    }
+        $slugs = ($this->sectionSlugs)(array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts));
 
-    private function url(PostOnSiteCardResponse $post): string
-    {
-        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
+        return array_map(function (PostOnSiteCardResponse $post) use ($terms, $images, $slugs): array {
+            $term = $terms[$post->sectionId] ?? null;
+
+            return [
+                'url' => PostAddressUrl::generate($this->urlGenerator, $slugs[$post->sectionId] ?? '', $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL),
+                'title' => $post->title,
+                'excerpt' => $post->excerpt,
+                'section' => true === $term?->isSection() ? $term->name : '',
+                'firstPublishedAt' => $post->firstPublishedAt,
+                'image' => self::image(null === $post->openingImageId ? null : $images[$post->openingImageId] ?? null),
+            ];
+        }, $posts);
     }
 
     /**

@@ -17,6 +17,7 @@ use Cms\Shared\Infrastructure\Resolution\CmsLinkedContents;
 use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
 use Cms\Shared\Infrastructure\Ui\CmsPostCards;
+use Cms\Shared\Infrastructure\Ui\CmsSectionSlugs;
 use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\Taxonomy;
@@ -91,14 +92,14 @@ final class PreviewTermTest extends TestCase
         $redirectsByOrigin = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
         $termRepository = self::createStub(TermRepository::class);
         $termRepository->method('findByIds')->willReturn([TermMother::published()]);
-        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), $termRepository, $redirectsByOrigin, $urlGenerator), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
+        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), $termRepository, $redirectsByOrigin, $urlGenerator, new CmsSectionSlugs($termRepository)), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
 
         return new PreviewTerm(
             new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirectsByOrigin, $linkedContents, self::createStub(PageRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             new TermAddress($urlGenerator),
             $urlGenerator,
-            new CmsPostCards($postRepository, $imageRepository, $termRepository, $redirectsByOrigin, $urlGenerator),
+            new CmsPostCards($postRepository, $imageRepository, $termRepository, $redirectsByOrigin, $urlGenerator, new CmsSectionSlugs($termRepository)),
         );
     }
 }

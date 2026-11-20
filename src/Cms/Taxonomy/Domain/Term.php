@@ -136,24 +136,12 @@ final class Term extends AggregateRoot
 
     /**
      * Puts the version last saved on the site, for the first time or in place
-     * of the one there, once it has everything the site shows. A section
-     * never takes the slug posts of another section still carry in their
-     * addresses, which would then lead to it.
+     * of the one there, once it has everything the site shows.
      */
-    public function publish(PostsUnderSectionSlugs $postsUnderSectionSlugs): void
+    public function publish(): void
     {
         $now = Clock::now();
         $this->version->assertPublishable();
-        $slug = $this->version->slug();
-
-        if (Taxonomy::Section === $this->taxonomy && null !== $slug) {
-            $others = $postsUnderSectionSlugs->countedBySection($slug);
-            unset($others[$this->id->value()]);
-
-            if ([] !== $others) {
-                throw InvalidTermPublication::slugOfPostsOfAnotherSection($slug);
-            }
-        }
 
         if (!$this->hasSomethingToPublish()) {
             throw InvalidTermPublication::nothingToPublish();
@@ -318,23 +306,6 @@ final class Term extends AggregateRoot
     public function status(): TermStatus
     {
         return $this->status;
-    }
-
-    /**
-     * How many posts of the section on the site its publication leaves at
-     * the address of the slug the section has there now, which it changes:
-     * each moves to the new one once published again. None for a tag, or a
-     * section whose slug doesn't change.
-     */
-    public function postsLeftBehind(PostsUnderSectionSlugs $postsUnderSectionSlugs): int
-    {
-        $slug = $this->version->slug();
-
-        if (Taxonomy::Section !== $this->taxonomy || null === $this->publishedSlug || null === $slug || $slug->value() === $this->publishedSlug->value()) {
-            return 0;
-        }
-
-        return $postsUnderSectionSlugs->countedBySection($this->publishedSlug)[$this->id->value()] ?? 0;
     }
 
     /**

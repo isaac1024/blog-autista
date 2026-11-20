@@ -25,6 +25,7 @@ use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * What a rich text painted on the site links to, its widgets and the
@@ -35,6 +36,8 @@ use Web\Tests\Post\Domain\PostIdMother;
  */
 final class SiteLinkedContentsTest extends KernelTestCase
 {
+    use SectionSlugs;
+
     private const string PAGE = '01a1b801-ce58-723d-8234-b76d9105a001';
     private const string SECTION = '01a1b801-ce58-723d-8234-b76d9105a011';
     private const string TAG = '01a1b801-ce58-723d-8234-b76d9105a012';
@@ -47,6 +50,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
     #[\Override]
     protected function setUp(): void
     {
+        self::saveSectionSlug();
         self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Sobre mí', slug: 'sobre-mi')));
         self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: CmsPostPublishedMother::OPENING_IMAGE, path: '2026/11/faro.webp')));
         self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(PostIdMother::DEFAULT_VALUE, CmsPostPublishedMother::body() + ['revision' => 1])));

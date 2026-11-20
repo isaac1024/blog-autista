@@ -21,6 +21,7 @@ use Web\Tests\External\Domain\ExternalResourceIdMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * External resources as readers meet them on the site: a text links them
@@ -32,6 +33,8 @@ use Web\Tests\Post\Domain\PostIdMother;
  */
 final class ExternalResourcesOnTheSiteTest extends WebTestCase
 {
+    use SectionSlugs;
+
     private const string HOST = 'http://www.blogautista.localhost';
 
     private const string VIDEO = ExternalResourceIdMother::DEFAULT_VALUE;
@@ -70,6 +73,7 @@ final class ExternalResourcesOnTheSiteTest extends WebTestCase
     public function testItLetsAPageFrameTheProvidersOfTheResourcesItEmbedsAlone(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish(self::VIDEO, ['image' => null, 'image_shape' => null] + CmsExternalResourcePublishedMother::body());
         $this->publish(self::POST, ['kind' => 'social_post', 'provider' => 'mastodon', 'locator' => 'mastodon.social/Gargron/1', 'url' => 'https://mastodon.social/@Gargron/1', 'image' => null, 'image_shape' => null] + CmsExternalResourcePublishedMother::body());
         $this->publish(self::ARTICLE, self::article());
@@ -87,6 +91,7 @@ final class ExternalResourcesOnTheSiteTest extends WebTestCase
     public function testItLetsAPostFrameTheProvidersOfTheResourcesItEmbeds(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish(self::VIDEO, ['image' => null, 'image_shape' => null] + CmsExternalResourcePublishedMother::body());
         self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(
             PostIdMother::DEFAULT_VALUE,
@@ -102,6 +107,7 @@ final class ExternalResourcesOnTheSiteTest extends WebTestCase
     public function testItFramesNothingOnAPageThatEmbedsNothing(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish(self::ARTICLE, self::article());
         $this->page(self::widget(self::ARTICLE));
 

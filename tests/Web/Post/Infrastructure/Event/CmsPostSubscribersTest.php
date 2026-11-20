@@ -34,9 +34,9 @@ final class CmsPostSubscribersTest extends KernelTestCase
     {
         $this->handle(CmsPostPublishedMother::body());
 
-        $this->handle(CmsPostPublishedMother::body(title: 'Otro título', sectionSlug: 'dia-a-dia', tagIds: []), 2);
+        $this->handle(CmsPostPublishedMother::body(title: 'Otro título', tagIds: []), 2);
 
-        self::assertSame(['Otro título', 'dia-a-dia', []], [$this->storedPost()?->title(), $this->storedPost()?->sectionSlug(), $this->storedPost()?->tagIds()]);
+        self::assertSame(['Otro título', []], [$this->storedPost()?->title(), $this->storedPost()?->tagIds()]);
     }
 
     public function testItKeepsThePostWhenAnEarlierVersionArrivesLate(): void

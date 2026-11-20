@@ -17,6 +17,7 @@ use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * Sections are served at the first level of the site, /{slug}/, and tags
@@ -24,12 +25,15 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class TermControllersTest extends WebTestCase
 {
+    use SectionSlugs;
+
     private const string HOST = 'http://www.blogautista.localhost';
 
     #[DataProvider('publishedTerms')]
     public function testItServesThePublishedTermAtItsAddress(string $taxonomy, string $path, string $route): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish($taxonomy, 'vida-diaria');
 
         $client->request('GET', self::HOST.$path);
@@ -51,6 +55,7 @@ final class TermControllersTest extends WebTestCase
     public function testItRespondsNotFoundWhereNoTermIsPublished(string $path): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish('section', 'vida-diaria');
         $this->publish('tag', 'sueno');
 
@@ -78,6 +83,7 @@ final class TermControllersTest extends WebTestCase
     public function testItLeadsAnAddressWithoutTheTrailingSlashToTheSection(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish('section', 'vida-diaria');
 
         $client->request('GET', self::HOST.'/vida-diaria');
@@ -88,6 +94,7 @@ final class TermControllersTest extends WebTestCase
     public function testItLeavesPathsShorterThanASlugToThemselves(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
 
         $client->request('GET', self::HOST.'/ab/');
 
@@ -98,6 +105,7 @@ final class TermControllersTest extends WebTestCase
     public function testItOnlyServesTheSiteOnItsHost(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish('section', 'vida-diaria');
 
         $client->request('GET', 'http://cms.blogautista.localhost/vida-diaria/');
@@ -114,6 +122,7 @@ final class TermControllersTest extends WebTestCase
     public function testItListsThePostsOfTheTermAPageAtATime(string $taxonomy, string $path, string $route): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $term = $this->publish($taxonomy, 'vida-diaria');
 
         for ($post = 1; $post <= 21; ++$post) {
@@ -146,6 +155,7 @@ final class TermControllersTest extends WebTestCase
     public function testItServesTheFirstPageOfATermWithoutPosts(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $this->publish('tag', 'sueno');
 
         $client->request('GET', self::HOST.'/tag/sueno.html');
@@ -171,6 +181,11 @@ final class TermControllersTest extends WebTestCase
                 'revision' => 1,
             ],
         )));
+
+        // As the site keeps it once the CMS publishes a section.
+        if ('section' === $taxonomy) {
+            self::saveSectionSlug($id, $slug);
+        }
 
         return $id;
     }

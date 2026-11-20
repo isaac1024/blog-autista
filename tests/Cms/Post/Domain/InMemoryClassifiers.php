@@ -55,7 +55,7 @@ final readonly class InMemoryClassifiers implements Classifiers
     {
         $section = $this->sections[$id->value()] ?? null;
 
-        return null === $section ? null : new SectionOnSite($section['name'], new Slug($section['slug']));
+        return null === $section ? null : new SectionOnSite($section['name']);
     }
 
     #[\Override]

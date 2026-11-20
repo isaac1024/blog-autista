@@ -15,6 +15,7 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * The mosaics of a text are read at once but for which posts each shows:
@@ -23,6 +24,8 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class SiteMosaicsQueriesTest extends KernelTestCase
 {
+    use SectionSlugs;
+
     public function testEachMosaicReadsOnlyWhichPostsItShows(): void
     {
         $sections = [];
@@ -39,13 +42,13 @@ final class SiteMosaicsQueriesTest extends KernelTestCase
                 'last_published_at' => '2026-11-07T10:00:00+00:00',
                 'revision' => 1,
             ])));
+            self::saveSectionSlug($section, 'seccion-'.$i);
 
             for ($j = 1; $j <= 2; ++$j) {
                 self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives(\sprintf('01a1f000-0000-7000-8000-%06d%06d', $i, $j), [
                     'title' => \sprintf('Entrada %d.%d', $i, $j),
                     'slug' => \sprintf('entrada-%d-%d', $i, $j),
                     'section_id' => $section,
-                    'section_slug' => 'seccion-'.$i,
                     'revision' => 1,
                 ] + CmsPostPublishedMother::body())));
             }

@@ -13,7 +13,6 @@ use Cms\Post\Domain\Classifiers;
 use Cms\Post\Domain\SectionId;
 use Cms\Post\Domain\SectionOnSite;
 use Cms\Post\Domain\TagId;
-use Cms\Shared\Domain\Slug;
 use Cms\Taxonomy\Application\TermExistenceChecker;
 use Cms\Taxonomy\Application\TermOnSiteFinder;
 use Cms\Taxonomy\Application\TermResponse;
@@ -55,7 +54,7 @@ final readonly class CmsClassifiers implements Classifiers
     {
         $section = new TermOnSiteFinder(TermResponse::SECTION, $id->value())($this->termRepository);
 
-        return null === $section ? null : new SectionOnSite($section->name, new Slug($section->slug));
+        return null === $section ? null : new SectionOnSite($section->name);
     }
 
     #[\Override]

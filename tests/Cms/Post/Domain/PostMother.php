@@ -18,7 +18,6 @@ use Cms\Shared\Domain\Slug;
 use Cms\Tests\Author\Domain\AuthorIdMother;
 use Cms\Tests\Image\Domain\ImageIdMother;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
-use Cms\Tests\Taxonomy\Domain\TermMother;
 use Shared\Domain\RichText\RichText;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Domain\RichText\RichTextMother;
@@ -102,8 +101,8 @@ final class PostMother
     }
 
     /**
-     * A post on the site, at the address its section slug and the day it was
-     * first published give. With another published title, it is published
+     * A post on the site, at the address the day it was first published and
+     * its slug give. With another published title, it is published
      * with changes: the site has the post with that title, the rest as edited.
      *
      * @param list<string>            $tags
@@ -119,7 +118,6 @@ final class PostMother
         string $author = self::AUTHOR,
         array $tags = [],
         ?string $publishedTitle = null,
-        string $sectionSlug = TermMother::SLUG,
         string $updatedAt = ClockMother::NOW,
         string $firstPublishedAt = ClockMother::NOW,
         string $lastPublishedAt = ClockMother::NOW,
@@ -138,7 +136,7 @@ final class PostMother
                 ClockMother::now($lastPublishedAt),
             ),
             $publicationRevision,
-            new PostAddress(new Slug($sectionSlug), ClockMother::now($firstPublishedAt), new Slug($slug)),
+            new PostAddress(ClockMother::now($firstPublishedAt), new Slug($slug)),
         );
     }
 
@@ -161,7 +159,7 @@ final class PostMother
             $version,
             new PublicationTimeline(ClockMother::now(), ClockMother::now(), ClockMother::now($firstPublishedAt), ClockMother::now($firstPublishedAt)),
             $publicationRevision,
-            $lastAddress ? new PostAddress(new Slug(TermMother::SLUG), ClockMother::now($firstPublishedAt), new Slug(self::SLUG)) : null,
+            $lastAddress ? new PostAddress(ClockMother::now($firstPublishedAt), new Slug(self::SLUG)) : null,
         );
     }
 

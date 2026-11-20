@@ -32,6 +32,7 @@ use Cms\Taxonomy\Application\TermAtAddressFinder;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Application\TermsFinder;
 use Cms\Taxonomy\Domain\TermRepository;
+use Shared\Domain\PostPath;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
 /**
@@ -82,6 +83,12 @@ final readonly class CmsSiteResources implements SiteResources
             return true === $this->imageAt($imagePath)?->isPublished();
         }
 
+        $post = $this->postAt($source);
+
+        if (null !== $post) {
+            return null !== $post->onSite($this->postRepository);
+        }
+
         $route = $this->siteRoutes->match($source->value());
 
         if (null === $route) {
@@ -94,7 +101,6 @@ final readonly class CmsSiteResources implements SiteResources
             SiteRoute::PAGE => null !== new PageAtAddressFinder($route->parameter('slug'))->onSite($this->pageRepository),
             SiteRoute::SECTION, SiteRoute::TAG => null !== new TermAtAddressFinder($route->kind, $route->parameter('slug'))->onSite($this->termRepository),
             SiteRoute::AUTHOR => null !== new AuthorAtAddressFinder($route->parameter('slug'))->onSite($this->authorRepository),
-            SiteRoute::POST => null !== $this->postAt($route)->onSite($this->postRepository),
             default => true,
         };
     }
@@ -135,13 +141,18 @@ final readonly class CmsSiteResources implements SiteResources
             return true === $image?->isUnpublished() ? Resource::image($image->id) : null;
         }
 
+        $post = $this->postAt($source);
+
+        if (null !== $post) {
+            return self::resourceOf(ResourceType::Post, $post->lastOffSite($this->postRepository)?->id);
+        }
+
         $route = $this->siteRoutes->match($source->value());
 
         return match ($route?->kind) {
             SiteRoute::PAGE => self::resourceOf(ResourceType::Page, new PageAtAddressFinder($route->parameter('slug'))->lastOffSite($this->pageRepository)?->id),
             SiteRoute::SECTION, SiteRoute::TAG => self::resourceOf(ResourceType::Term, new TermAtAddressFinder($route->kind, $route->parameter('slug'))->lastOffSite($this->termRepository)?->id),
             SiteRoute::AUTHOR => self::resourceOf(ResourceType::Author, new AuthorAtAddressFinder($route->parameter('slug'))->lastOffSite($this->authorRepository)?->id),
-            SiteRoute::POST => self::resourceOf(ResourceType::Post, $this->postAt($route)->lastOffSite($this->postRepository)?->id),
             default => null,
         };
     }
@@ -181,13 +192,15 @@ final readonly class CmsSiteResources implements SiteResources
         return null === $slug ? null : Source::fromPath($this->siteRoutes->pagePath($slug));
     }
 
-    private function postAt(SiteRoute $route): PostAtAddressFinder
+    /**
+     * The post an address names, by its day and slug: the address of a post
+     * is kept without its section. Null when it is no address of a post.
+     */
+    private function postAt(Source $source): ?PostAtAddressFinder
     {
-        return new PostAtAddressFinder(
-            $route->parameter('section'),
-            \sprintf('%s-%s-%s', $route->parameter('year'), $route->parameter('month'), $route->parameter('day')),
-            $route->parameter('slug'),
-        );
+        $address = PostPath::dayAndSlug($source->value());
+
+        return null === $address ? null : new PostAtAddressFinder($address['day'], $address['slug']);
     }
 
     /**
@@ -207,7 +220,7 @@ final readonly class CmsSiteResources implements SiteResources
 
     private function postAddress(?PostAddressResponse $address): ?Source
     {
-        return null === $address ? null : Source::fromPath($this->siteRoutes->postPath($address->section, $address->day, $address->slug));
+        return null === $address ? null : Source::fromPath(PostPath::fromDayAndSlug($address->day, $address->slug));
     }
 
     private function term(Resource $resource): ?TermResponse

@@ -51,7 +51,6 @@ final class CmsPostPublishedMother
      */
     public static function body(
         string $title = 'Mi primer día sin ruido',
-        string $sectionSlug = 'vida-diaria',
         string $day = '2026-11-07',
         array $tagIds = [self::TAG],
         string $openingImageId = self::OPENING_IMAGE,
@@ -61,7 +60,6 @@ final class CmsPostPublishedMother
             'slug' => 'mi-primer-dia',
             'section_id' => self::SECTION,
             'section_name' => 'Vida diaria',
-            'section_slug' => $sectionSlug,
             'author_id' => self::AUTHOR,
             'author_name' => 'Isaac Abreu',
             'tag_ids' => $tagIds,
@@ -83,7 +81,6 @@ final class CmsPostPublishedMother
         string $id = PostIdMother::DEFAULT_VALUE,
         string $title = 'Mi primer día sin ruido',
         string $slug = 'mi-primer-dia',
-        string $sectionSlug = 'vida-diaria',
         string $day = '2026-11-07',
         array $tagIds = [self::TAG],
         ?string $metaDescription = 'Qué cambió el primer día con tapones.',
@@ -98,7 +95,6 @@ final class CmsPostPublishedMother
             $slug,
             self::SECTION,
             'Vida diaria',
-            $sectionSlug,
             self::AUTHOR,
             'Isaac Abreu',
             $tagIds,

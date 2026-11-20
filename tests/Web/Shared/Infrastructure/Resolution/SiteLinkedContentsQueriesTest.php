@@ -18,6 +18,7 @@ use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Author\Domain\CmsAuthorPublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Taxonomy\Domain\CmsTermPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * What a text links to is read a kind at a time: a text linking to five
@@ -26,6 +27,14 @@ use Web\Tests\Taxonomy\Domain\CmsTermPublishedMother;
  */
 final class SiteLinkedContentsQueriesTest extends KernelTestCase
 {
+    use SectionSlugs;
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        self::saveSectionSlug();
+    }
+
     public function testItReadsWhatATextLinksToAKindAtATime(): void
     {
         $postsAndTags = 5;

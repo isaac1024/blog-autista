@@ -57,7 +57,6 @@ final class PostPublisherTest extends TestCase
             'slug' => PostMother::SLUG,
             'section_id' => PostMother::SECTION,
             'section_name' => TermMother::NAME,
-            'section_slug' => TermMother::SLUG,
             'author_id' => PostMother::AUTHOR,
             'author_name' => AuthorMother::NAME,
             'tag_ids' => [PostMother::TAG],
@@ -70,7 +69,7 @@ final class PostPublisherTest extends TestCase
             'last_published_at' => ClockMother::now()->format(\DATE_ATOM),
             'revision' => 1,
         ], $published[0]->toPrimitives());
-        self::assertSame(['post-address:vida-diaria/2026-11-07/'.PostMother::SLUG], $locks->lastHeld());
+        self::assertSame(['post-address:2026-11-07/'.PostMother::SLUG], $locks->lastHeld());
     }
 
     public function testItDatesTheAddressByTheDayOfMadrid(): void
@@ -81,7 +80,7 @@ final class PostPublisherTest extends TestCase
 
         new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub(PostMother::publishable()), self::createStub(EventBus::class), new RecordingTransaction(), new InMemoryClassifiers(), new InMemoryPostImages(), $locks);
 
-        self::assertSame(['post-address:vida-diaria/2026-11-15/'.PostMother::SLUG], $locks->lastHeld());
+        self::assertSame(['post-address:2026-11-15/'.PostMother::SLUG], $locks->lastHeld());
     }
 
     public function testItKeepsTheDayOfTheFirstPublicationAndTakesTheSlugTheSectionHasNow(): void
@@ -92,8 +91,8 @@ final class PostPublisherTest extends TestCase
 
         new PostPublisher(PostIdMother::DEFAULT_VALUE)(self::stub($post), self::createStub(EventBus::class), new RecordingTransaction(), $classifiers, new InMemoryPostImages(), $locks);
 
-        self::assertSame(['post-address:dia-a-dia/2026-10-01/'.PostMother::SLUG], $locks->lastHeld());
-        self::assertEquals(PostMother::published(sectionSlug: 'dia-a-dia', firstPublishedAt: '2026-10-01 10:00:00', publicationRevision: 2), $post);
+        self::assertSame(['post-address:2026-10-01/'.PostMother::SLUG], $locks->lastHeld());
+        self::assertEquals(PostMother::published(firstPublishedAt: '2026-10-01 10:00:00', publicationRevision: 2), $post);
     }
 
     #[DataProvider('incompletePosts')]
@@ -162,7 +161,7 @@ final class PostPublisherTest extends TestCase
 
         self::assertTells(
             'errors.post.address.taken',
-            ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => PostMother::SLUG],
+            ['%date%' => '2026/11/07', '%slug%' => PostMother::SLUG],
             static fn () => new PostPublisher(PostIdMother::DEFAULT_VALUE)($repository, self::createStub(EventBus::class), new RecordingTransaction(), new InMemoryClassifiers(), new InMemoryPostImages(), $locks),
         );
     }

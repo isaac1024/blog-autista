@@ -11,8 +11,8 @@ use Web\Shared\Domain\Robots;
 /**
  * A post on the site, as the CMS last published it: only published posts are
  * here, each the one first published on its day with its slug, two never
- * sharing both. It keeps the names its section and its author had then, and
- * the slug of its section, which the site shows once either is off it.
+ * sharing both. It keeps the names its section and its author had then,
+ * which the site shows once either is off it.
  *
  * Its constructor takes all of its state, one parameter each, as Doctrine maps it.
  *
@@ -43,8 +43,6 @@ final class Post
         private string $sectionId,
         #[ORM\Column(length: 60)]
         private string $sectionName,
-        #[ORM\Column(length: 80)]
-        private string $sectionSlug,
         #[ORM\Column(type: 'guid')]
         private string $authorId,
         #[ORM\Column(length: 100)]
@@ -91,7 +89,6 @@ final class Post
             $event->slug(),
             $event->sectionId(),
             $event->sectionName(),
-            $event->sectionSlug(),
             $event->authorId(),
             $event->authorName(),
             $event->tagIds(),
@@ -121,7 +118,6 @@ final class Post
         $this->slug = $event->slug();
         $this->sectionId = $event->sectionId();
         $this->sectionName = $event->sectionName();
-        $this->sectionSlug = $event->sectionSlug();
         $this->authorId = $event->authorId();
         $this->authorName = $event->authorName();
         $this->tagIds = $event->tagIds();
@@ -178,11 +174,6 @@ final class Post
     public function sectionName(): string
     {
         return $this->sectionName;
-    }
-
-    public function sectionSlug(): string
-    {
-        return $this->sectionSlug;
     }
 
     public function authorId(): string

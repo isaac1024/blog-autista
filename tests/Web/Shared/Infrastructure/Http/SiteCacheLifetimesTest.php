@@ -17,6 +17,7 @@ use Web\Tests\Author\Domain\CmsAuthorPublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Page\Domain\PageIdMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * The page cache in front of the site keeps each page as long as the page
@@ -25,12 +26,15 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class SiteCacheLifetimesTest extends WebTestCase
 {
+    use SectionSlugs;
+
     private const string HOST = 'http://www.blogautista.localhost';
 
     #[DataProvider('pages')]
     public function testItTellsThePageCacheHowLongToKeepEachPage(string $path, string $cacheControl): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create()));
         self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: PageIdMother::random()->value(), title: 'Inicio', slug: null, type: PageType::Home)));
         self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublishedMother::create()));
@@ -60,6 +64,7 @@ final class SiteCacheLifetimesTest extends WebTestCase
     public function testItLeavesErrorsToTheirOwnLifetimes(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
 
         $client->request('GET', self::HOST.'/no-existe.html');
 

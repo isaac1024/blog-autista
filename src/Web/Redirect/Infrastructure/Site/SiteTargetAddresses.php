@@ -88,7 +88,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
             return null;
         }
 
-        return ($this->sitePostUrls)([['sectionId' => $post->sectionId, 'sectionSlug' => $post->sectionSlug, 'day' => $post->day, 'slug' => $post->slug]], UrlGeneratorInterface::ABSOLUTE_PATH)[0];
+        return ($this->sitePostUrls)([['sectionId' => $post->sectionId, 'day' => $post->day, 'slug' => $post->slug]], UrlGeneratorInterface::ABSOLUTE_PATH)[0];
     }
 
     /**

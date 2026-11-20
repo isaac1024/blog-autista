@@ -408,19 +408,19 @@ final readonly class PostEditor
     }
 
     /**
-     * Where the site serves the post but its slug: under the slug of its
-     * section on the day it was first published. Off the site, the section
-     * is the one chosen as it would be published, and the day the first one
-     * it was published, or today, which it would take if published now.
+     * Where the site serves the post but its slug: under the slug of the
+     * section chosen, as it has it on the site, on the day it was first
+     * published, or today, which it would take if published now. The
+     * section only says where it is filed: changing it moves the post.
      *
      * @param list<TermResponse> $sections
      */
     private function addressPrefix(PostResponse $post, array $sections): string
     {
-        $section = $post->publishedSectionSlug;
+        $section = null;
 
         foreach ($sections as $candidate) {
-            if (null === $section && $candidate->id === $post->sectionId) {
+            if ($candidate->id === $post->sectionId) {
                 $section = $candidate->publishedSlug ?? $candidate->slug;
             }
         }

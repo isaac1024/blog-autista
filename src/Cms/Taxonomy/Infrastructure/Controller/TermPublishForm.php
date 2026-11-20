@@ -27,10 +27,9 @@ final readonly class TermPublishForm
     ) {}
 
     /**
-     * @param array<array-key, mixed> $saved      what was sent the last time, when it was refused, to choose it again
-     * @param int                     $leftBehind the posts on the site a section with a new slug leaves at the address of its slug of now
+     * @param array<array-key, mixed> $saved what was sent the last time, when it was refused, to choose it again
      */
-    public function __invoke(TaxonomySegment $taxonomy, TermResponse $term, PublicationOutlook $outlook, array $saved, int $leftBehind): Page
+    public function __invoke(TaxonomySegment $taxonomy, TermResponse $term, PublicationOutlook $outlook, array $saved): Page
     {
         $title = $this->translator->trans($taxonomy->key('publish.page_title'), ['%name%' => $term->name]);
         $parameters = ['taxonomy' => $taxonomy->value, 'id' => $term->id];
@@ -45,15 +44,6 @@ final readonly class TermPublishForm
                     'label' => $this->translator->trans($taxonomy->key('unpublish.back')),
                 ]),
             ]);
-
-        // Its posts keep the address they were published at, until each is
-        // published again.
-        if ($leftBehind > 0) {
-            $layout = $layout->withMain('Shared:Alert', [
-                'title' => $this->translator->trans('cms.sections.publish.posts_left_behind.title'),
-                'message' => $this->translator->trans('cms.sections.publish.posts_left_behind.message', ['%count%' => $leftBehind, '%slug%' => $term->publishedSlug ?? '']),
-            ]);
-        }
 
         foreach (($this->publicationForm)(
             $outlook,

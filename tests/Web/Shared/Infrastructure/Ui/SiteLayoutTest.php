@@ -41,6 +41,8 @@ use Web\Tests\Settings\Domain\CmsSettingsPublishedMother as Event;
  */
 final class SiteLayoutTest extends TestCase
 {
+    use PostUrls;
+
     private const string HOME = '01a19e72-b07f-7d78-889c-fa4a14a4fb90';
 
     private const string OFF_SITE = '01a19e72-b07f-7d78-889c-fa4a14a4fb99';
@@ -243,7 +245,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authors ?? self::createStub(AuthorRepository::class), $pages);
+        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authors ?? self::createStub(AuthorRepository::class), $pages);
     }
 
     /**

@@ -19,6 +19,7 @@ use Web\Post\Domain\Post;
 use Web\Post\Domain\PostRepository;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * The feed of the site, in Atom: the latest posts search engines may index,
@@ -28,6 +29,8 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class FeedControllerTest extends WebTestCase
 {
+    use SectionSlugs;
+
     use ClockSensitiveTrait;
 
     private const string SITE = 'http://www.blogautista.localhost';
@@ -41,6 +44,7 @@ final class FeedControllerTest extends WebTestCase
     public function testItTellsTheLatestPostsSearchEnginesMayIndexNewestFirst(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         $posts = self::getContainer()->get(PostRepository::class);
 
         // Twenty-one may be indexed, the newest on the 21st; one newer asks not to be.
@@ -70,6 +74,7 @@ final class FeedControllerTest extends WebTestCase
     public function testItTellsNoPostWhileTheSiteHasNone(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
 
         self::assertSame([], $this->entries($client));
         self::assertResponseIsSuccessful();
@@ -84,6 +89,7 @@ final class FeedControllerTest extends WebTestCase
     public function testItTellsWhatTheFeedIsAndEachEntryWhatItHas(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         self::getContainer()->get(PostRepository::class)->save(Post::publish(CmsPostPublished::fromPrimitives('01a1e000-0000-7000-8000-000000000001', [
             'title' => 'Sin resumen',
             'slug' => 'sin-resumen',
@@ -123,6 +129,7 @@ final class FeedControllerTest extends WebTestCase
     public function testAnEntryIsSignedAndIllustratedAsTheSiteHasThemNow(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         self::getContainer()->get(PostRepository::class)->save(self::post(3, 'index,follow'));
         self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/bosque.webp')));
         self::redirect('01a1b801-ce58-723d-8234-b76d9105c001', '/media/2026/11/faro.webp', 'image', self::IMAGE, 'image', CmsPostPublishedMother::OPENING_IMAGE);
@@ -150,6 +157,7 @@ final class FeedControllerTest extends WebTestCase
     public function testAnAuthorOffTheSiteSignsAsTheAuthorTheirAddressLeadsTo(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         self::getContainer()->get(PostRepository::class)->save(self::post(3, 'index,follow'));
         $unsigned = $this->entries($client)[0]['author'];
         self::getContainer()->get(AuthorRepository::class)->save(Author::publish(CmsAuthorPublished::fromPrimitives(self::OTHER_AUTHOR, [
@@ -174,6 +182,7 @@ final class FeedControllerTest extends WebTestCase
     public function testAFeedWithNoPostWasUpdatedNow(): void
     {
         $client = self::createClient();
+        self::saveSectionSlug();
         self::mockTime('2026-11-18 09:15:00 UTC');
 
         $client->request('GET', self::SITE.'/feed.xml');

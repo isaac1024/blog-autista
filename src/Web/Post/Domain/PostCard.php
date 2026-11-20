@@ -25,7 +25,6 @@ final readonly class PostCard
         public string $slug,
         public string $sectionId,
         public string $sectionName,
-        public string $sectionSlug,
         public string $authorId,
         public string $authorName,
         public string $openingImageId,

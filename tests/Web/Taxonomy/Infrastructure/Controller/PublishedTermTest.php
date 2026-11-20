@@ -36,9 +36,12 @@ use Web\Taxonomy\Infrastructure\Controller\PublishedTerm;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostCardMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Shared\Infrastructure\Ui\PostUrls;
 
 final class PublishedTermTest extends TestCase
 {
+    use PostUrls;
+
     private const string TERM = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a01';
 
     /**
@@ -67,10 +70,10 @@ final class PublishedTermTest extends TestCase
         $postRepository->method('listed')->willReturn([]);
 
         $page = new PublishedTerm(
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             $postRepository,
-            new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects),
+            new SitePostCards(self::postUrls($urlGenerator), $imageRepository, self::createStub(TermRepository::class), $redirects),
             new ListPagination($translator, $urlGenerator),
             $translator,
         )(TermResponse::fromTerm($term), 'web_tag', 1);
@@ -182,10 +185,10 @@ final class PublishedTermTest extends TestCase
         $redirects = new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class));
 
         return new PublishedTerm(
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
             new SiteTermPage(new PostCardsComponent($translator), $translator),
             $postRepository,
-            new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects),
+            new SitePostCards(self::postUrls($urlGenerator), $imageRepository, self::createStub(TermRepository::class), $redirects),
             new ListPagination($translator, $urlGenerator),
             $translator,
         );

@@ -19,7 +19,7 @@ use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Redirect\Domain\RedirectMother;
-use Cms\Tests\Taxonomy\Domain\TermMother;
+use Shared\Domain\PostPath;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
 use Symfony\Component\HttpFoundation\Response;
@@ -58,7 +58,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         self::assertResponseRedirects(self::HOST.'/posts/'.$id.'/publish', Response::HTTP_SEE_OTHER);
         $client->request('GET', self::HOST.'/posts/'.$id.'/publish');
         self::assertResponseIsSuccessful();
-        self::assertSame(self::PATH, $this->publishedPath($id));
+        self::assertSame(PostPath::withoutSection(self::PATH), $this->publishedPath($id));
     }
 
     /**
@@ -75,7 +75,7 @@ final class PostRedirectsTest extends PostControllerTestCase
 
         self::assertResponseRedirects(self::HOST.'/posts/'.$id.'/publish', Response::HTTP_SEE_OTHER);
         self::assertSame([['key' => 'errors.redirect.outlook_changed', 'parameters' => []]], self::errorNotices($client));
-        self::assertSame(self::PATH, $this->publishedPath($id));
+        self::assertSame(PostPath::withoutSection(self::PATH), $this->publishedPath($id));
         $saved = $client->getRequest()->getSession()->get(\sprintf(PostPublishFormController::SAVED, $id));
         self::assertIsArray($saved);
         self::assertSame('stale', $saved['outlook'] ?? null);
@@ -91,7 +91,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         $this->saveClassifiers();
         $id = $this->saveMovedPost();
         $this->savePost(PostMother::published(id: PostIdMother::random()->value(), slug: 'otro-dia'));
-        $taken = [['key' => 'errors.post.address.taken', 'parameters' => ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => 'otro-dia']]];
+        $taken = [['key' => 'errors.post.address.taken', 'parameters' => ['%date%' => '2026/11/07', '%slug%' => 'otro-dia']]];
 
         $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
 
@@ -103,7 +103,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
         // Told once more, as nothing has shown the first yet.
         self::assertSame([...$taken, ...$taken], self::errorNotices($client));
-        self::assertSame(self::PATH, $this->publishedPath($id));
+        self::assertSame(PostPath::withoutSection(self::PATH), $this->publishedPath($id));
     }
 
     public function testItLeadsTheAddressItLeavesToThePostOnceConfirmed(): void
@@ -118,7 +118,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         ]);
 
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
-        self::assertSame(self::MOVED_PATH, $this->publishedPath($id));
+        self::assertSame(PostPath::withoutSection(self::MOVED_PATH), $this->publishedPath($id));
         self::assertEquals(Target::leadingTo(Resource::post($id)), $this->redirectAt(self::PATH)?->target());
     }
 
@@ -193,7 +193,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
 
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
-        self::assertSame(self::PATH, $this->publishedPath($id));
+        self::assertSame(PostPath::withoutSection(self::PATH), $this->publishedPath($id));
         self::assertNull($this->storedPost($former)?->lastAddress());
     }
 
@@ -221,7 +221,7 @@ final class PostRedirectsTest extends PostControllerTestCase
         $post = $this->storedPost(PostMother::create(id: $id));
         $address = $post?->publishedAddress();
 
-        return null === $address ? null : \sprintf('/%s/%s/%s.html', $address->section()->value(), str_replace('-', '/', $address->day()), $address->slug()->value());
+        return null === $address ? null : PostPath::fromDayAndSlug($address->day(), $address->slug()->value());
     }
 
     private function redirectAt(string $path): ?Redirect

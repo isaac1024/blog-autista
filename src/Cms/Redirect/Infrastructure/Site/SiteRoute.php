@@ -17,7 +17,6 @@ final readonly class SiteRoute
     public const string SECTION = 'section';
     public const string TAG = 'tag';
     public const string AUTHOR = 'author';
-    public const string POST = 'post';
 
     /**
      * @param ?string               $kind       one of the constants, null for a route that always answers

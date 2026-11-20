@@ -179,9 +179,10 @@ final class CmsSiteResourcesTest extends KernelTestCase
         yield 'an image, whose address never changes' => [Resource::image(self::IMAGE), $image, $image];
         yield 'an image draft, never on the site' => [Resource::image(self::IMAGE_DRAFT), null, self::image(self::IMAGE_DRAFT)->value()];
         yield 'no image' => [Resource::image(self::NONE), null, null];
-        yield 'a post on the site, saved to move' => [Resource::post(self::POST), self::POST_PATH, '/vida-diaria/2026/11/07/otro-dia-mas.html'];
-        yield 'a post off the site' => [Resource::post(self::POST_OFF_SITE), self::POST_OFF_SITE_PATH, null];
-        yield 'a post draft, which would take today' => [Resource::post(self::POST_DRAFT), null, '/vida-diaria/2026/11/14/borrador.html'];
+        // The address of a post is kept without its section, which only says where it is filed.
+        yield 'a post on the site, saved to move' => [Resource::post(self::POST), '/2026/11/07/otro-dia.html', '/2026/11/07/otro-dia-mas.html'];
+        yield 'a post off the site' => [Resource::post(self::POST_OFF_SITE), '/2026/11/07/mi-primer-dia-sin-ruido.html', null];
+        yield 'a post draft, which would take today' => [Resource::post(self::POST_DRAFT), null, '/2026/11/14/borrador.html'];
         yield 'no post' => [Resource::post(self::NONE), null, null];
         yield 'a section on the site, saved to move' => [Resource::term(self::SECTION), '/vida-diaria/', '/dia-a-dia/'];
         yield 'a tag off the site' => [Resource::term(self::TAG_OFF_SITE), '/tag/sueno.html', '/tag/sueno.html'];

@@ -14,7 +14,6 @@ use Cms\Taxonomy\Domain\TermId;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
-use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Domain\ClockMother;
 use Shared\Tests\Infrastructure\Event\QueuedDomainEvents;
@@ -145,8 +144,8 @@ final class PostChangesControllersTest extends PostControllerTestCase
         self::assertSame([['key' => 'cms.notices.post.published', 'parameters' => []]], self::successNotices($client));
         self::assertEquals(PostMother::published(id: $id, tags: [PostMother::OTHER_TAG]), $this->storedPost($post));
         self::assertSame(
-            [['cms.post.published', $id, TermMother::SLUG, '2026-11-07', [PostMother::OTHER_TAG]]],
-            array_map(static fn ($event): array => [$event->name, $event->aggregateId, $event->body['section_slug'], $event->body['day'], $event->body['tag_ids']], $this->queuedEvents()),
+            [['cms.post.published', $id, PostMother::SECTION, '2026-11-07', [PostMother::OTHER_TAG]]],
+            array_map(static fn ($event): array => [$event->name, $event->aggregateId, $event->body['section_id'], $event->body['day'], $event->body['tag_ids']], $this->queuedEvents()),
         );
     }
 
@@ -188,7 +187,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
 
         $post = PostMother::publishable(id: $id);
         self::assertResponseRedirects(self::HOST.'/posts/'.$id, Response::HTTP_SEE_OTHER);
-        self::assertSame([['key' => 'errors.post.address.taken', 'parameters' => ['%section%' => TermMother::SLUG, '%date%' => '2026/11/07', '%slug%' => PostMother::SLUG]]], self::errorNotices($client));
+        self::assertSame([['key' => 'errors.post.address.taken', 'parameters' => ['%date%' => '2026/11/07', '%slug%' => PostMother::SLUG]]], self::errorNotices($client));
         self::assertEquals($post, $this->storedPost($post));
     }
 
@@ -221,7 +220,7 @@ final class PostChangesControllersTest extends PostControllerTestCase
         $this->post($client, 'cms_posts_publish', self::HOST.'/posts/'.$id.'/publish');
 
         self::assertEquals(
-            new PostAddress(new Slug(TermMother::SLUG), ClockMother::now(), new Slug(PostMother::SLUG)),
+            new PostAddress(ClockMother::now(), new Slug(PostMother::SLUG)),
             $this->storedPost($post)?->publishedAddress(),
         );
     }

@@ -32,7 +32,6 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
         private string $slug,
         private string $sectionId,
         private string $sectionName,
-        private string $sectionSlug,
         private string $authorId,
         private string $authorName,
         private array $tagIds,
@@ -66,7 +65,6 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
             $body->string('slug'),
             $body->string('section_id'),
             $body->string('section_name'),
-            $body->string('section_slug'),
             $body->string('author_id'),
             $body->string('author_name'),
             $body->stringList('tag_ids'),
@@ -99,11 +97,6 @@ final readonly class CmsPostPublished extends RevisedReceivedEvent
     public function sectionName(): string
     {
         return $this->sectionName;
-    }
-
-    public function sectionSlug(): string
-    {
-        return $this->sectionSlug;
     }
 
     public function authorId(): string

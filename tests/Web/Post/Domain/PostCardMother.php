@@ -23,7 +23,6 @@ final class PostCardMother
             $post->slug(),
             $post->sectionId(),
             $post->sectionName(),
-            $post->sectionSlug(),
             $post->authorId(),
             $post->authorName(),
             $post->openingImageId(),

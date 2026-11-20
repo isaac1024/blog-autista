@@ -23,6 +23,7 @@ use Web\Settings\Domain\SettingsRepository;
 use Web\Settings\Infrastructure\Controller\SiteErrorListener;
 use Web\Settings\Infrastructure\Controller\SiteErrorResponse;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * Which errors the site answers with a page of its own: every one, only on
@@ -32,7 +33,15 @@ use Web\Tests\Post\Domain\CmsPostPublishedMother;
  */
 final class SiteErrorListenerTest extends KernelTestCase
 {
+    use SectionSlugs;
+
     private const string SITE = 'http://www.blogautista.localhost';
+
+    #[\Override]
+    protected function setUp(): void
+    {
+        self::saveSectionSlug();
+    }
 
     /**
      * An address that answers nothing, no longer does, or not as asked, gets

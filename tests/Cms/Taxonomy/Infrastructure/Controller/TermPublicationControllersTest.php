@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Taxonomy\Infrastructure\Controller;
 
-use Cms\Post\Domain\PostRepository;
 use Cms\Taxonomy\Domain\Taxonomy;
 use Cms\Taxonomy\Domain\Term;
-use Cms\Tests\Post\Domain\PostIdMother;
-use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Taxonomy\Domain\TermIdMother;
 use Cms\Tests\Taxonomy\Domain\TermMother;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -102,24 +99,6 @@ final class TermPublicationControllersTest extends TermControllerTestCase
         self::assertSame([['key' => 'errors.term.publication.without_meta_description', 'parameters' => []]], self::errorNotices($client));
         self::assertEquals($term, $this->storedTerm($term));
         self::assertSame([], $this->queuedEvents());
-    }
-
-    /**
-     * Posts of another section on the site carry its slug in their
-     * addresses, so the section is not published there, and is told why.
-     */
-    public function testItGoesBackAndTellsTheSlugIsCarriedByPostsOfAnotherSection(): void
-    {
-        $client = self::createAuthenticatedClient();
-        $id = TermIdMother::random()->value();
-        $term = $this->saveTerm(TermMother::create(id: $id, metaDescription: TermMother::META_DESCRIPTION));
-        self::getContainer()->get(PostRepository::class)->save(PostMother::published(id: PostIdMother::random()->value(), sectionSlug: TermMother::SLUG));
-
-        $this->post($client, 'cms_terms_publish', self::HOST.'/sections/'.$id.'/publish');
-
-        self::assertResponseRedirects(self::HOST.'/sections/'.$id, Response::HTTP_SEE_OTHER);
-        self::assertSame([['key' => 'errors.term.publication.slug_of_posts_of_another_section', 'parameters' => ['%slug%' => TermMother::SLUG]]], self::errorNotices($client));
-        self::assertEquals($term, $this->storedTerm($term));
     }
 
     public function testItUnpublishesTheTermAndTellsTheSite(): void

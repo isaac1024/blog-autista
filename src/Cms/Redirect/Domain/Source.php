@@ -6,6 +6,7 @@ namespace Cms\Redirect\Domain;
 
 use Doctrine\ORM\Mapping as ORM;
 use Shared\Domain\ImageCopy;
+use Shared\Domain\PostPath;
 use Shared\Domain\SitePath;
 
 /**
@@ -14,6 +15,10 @@ use Shared\Domain\SitePath;
  * The copies of an image share one: the address of its file, such as
  * /media/2026/11/<id>, so whatever width is asked for, the same width of the
  * target is given. Any other address under /media/ names nothing to redirect.
+ *
+ * The addresses of a post share one too: without its section, such as
+ * /2026/11/07/<slug>.html, which the site looks up whatever section an
+ * address names.
  */
 #[ORM\Embeddable]
 final readonly class Source
@@ -31,7 +36,7 @@ final readonly class Source
         $path = SitePath::fromUrl($url, $host)->value();
 
         if (!ImageCopy::isMediaUrl($path)) {
-            return new self($path);
+            return new self(PostPath::withoutSection($path) ?? $path);
         }
 
         $copy = ImageCopy::fromUrl($path) ?? throw InvalidRedirect::notAnImageCopy($url);
@@ -44,7 +49,9 @@ final readonly class Source
      */
     public static function fromPath(string $path): self
     {
-        return new self(SitePath::fromRequest($path)?->value() ?? $path);
+        $path = SitePath::fromRequest($path)?->value() ?? $path;
+
+        return new self(PostPath::withoutSection($path) ?? $path);
     }
 
     /**

@@ -30,9 +30,12 @@ use Web\Shared\Infrastructure\Ui\SiteLayout;
 use Web\Shared\Infrastructure\Ui\SiteMosaics;
 use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\Tests\Shared\Infrastructure\Ui\PostUrls;
 
 final class PublishedAuthorTest extends TestCase
 {
+    use PostUrls;
+
     private const string AUTHOR = '01a1da50-7c41-7e02-9b6d-3f8a2c4e1b02';
 
     /**
@@ -61,11 +64,11 @@ final class PublishedAuthorTest extends TestCase
         $page = new PublishedAuthor(
             $urlGenerator,
             new SiteAuthorPage(new RichTextComponents()),
-            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
+            new SiteLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), self::createStub(AuthorRepository::class), self::createStub(PageRepository::class)),
             $imageRepository,
             $redirects,
-            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))),
-            new SiteMosaics(self::createStub(PostRepository::class), new SitePostCards($urlGenerator, $imageRepository, self::createStub(TermRepository::class), $redirects), new PostCardsComponent(new CatalogueTranslator())),
+            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))),
+            new SiteMosaics(self::createStub(PostRepository::class), new SitePostCards(self::postUrls($urlGenerator), $imageRepository, self::createStub(TermRepository::class), $redirects), new PostCardsComponent(new CatalogueTranslator())),
         )(AuthorResponse::fromAuthor($author));
         ComponentContracts::assertHonoured($page);
 

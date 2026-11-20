@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Web\Shared\Infrastructure\Ui;
 
 use Shared\Domain\Redirect\ReferenceResolver;
-use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\PostCardsComponent;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -33,7 +32,7 @@ use Web\Taxonomy\Domain\TermRepository;
 final readonly class SitePostCards
 {
     public function __construct(
-        private UrlGeneratorInterface $urlGenerator,
+        private SitePostUrls $sitePostUrls,
         private ImageRepository $imageRepository,
         private TermRepository $termRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
@@ -77,15 +76,17 @@ final readonly class SitePostCards
             $this->redirectsByOrigin,
         );
 
-        return array_map(function (PostCardResponse $post) use ($terms, $images, $referenceType): array {
+        $urls = ($this->sitePostUrls)(array_map(static fn (PostCardResponse $post): array => ['sectionId' => $post->sectionId, 'day' => $post->day, 'slug' => $post->slug], $posts), $referenceType);
+
+        return array_map(static function (PostCardResponse $post, string $url) use ($terms, $images): array {
             $term = $terms[$post->sectionId] ?? null;
 
             return [
-                'url' => PostAddressUrl::generate($this->urlGenerator, SitePostUrls::section($term, $post->sectionId, $post->sectionSlug), $post->day, $post->slug, $referenceType),
+                'url' => $url,
                 'section' => true === $term?->isSection() ? $term->name : $post->sectionName,
                 'image' => $images[$post->openingImageId] ?? null,
             ];
-        }, $posts);
+        }, $posts, $urls);
     }
 
     /**

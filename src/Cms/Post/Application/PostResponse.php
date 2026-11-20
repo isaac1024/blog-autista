@@ -28,7 +28,7 @@ final readonly class PostResponse
      * @param string                                                  $robots                one of the Robots values
      * @param string                                                  $status                one of the PostStatus values
      * @param bool                                                    $changed               whether it is published with changes not on the site yet, which can be discarded
-     * @param ?string                                                 $publishedSectionSlug  the slug of the section it is served under, null while it isn't on the site
+     * @param ?string                                                 $publishedSectionId    the section of the version on the site, null while it isn't there
      * @param ?string                                                 $publishedDay          the day it was first published, as Y-m-d, null while it isn't on the site
      * @param ?string                                                 $publishedSlug         the slug it has on the site, null while it isn't there
      * @param bool                                                    $hasSomethingToPublish whether publishing would change the site
@@ -48,7 +48,7 @@ final readonly class PostResponse
         public string $robots,
         public string $status,
         public bool $changed,
-        public ?string $publishedSectionSlug,
+        public ?string $publishedSectionId,
         public ?string $publishedDay,
         public ?string $publishedSlug,
         public \DateTimeImmutable $createdAt,
@@ -77,7 +77,7 @@ final readonly class PostResponse
             $post->seo()->robots()->value,
             $post->status()->value,
             $post->hasUnpublishedChanges(),
-            $address?->section()->value(),
+            null === $address ? null : $post->onSite()?->classification()->section()?->value(),
             $address?->day(),
             $address?->slug()->value(),
             $post->timeline()->createdAt(),

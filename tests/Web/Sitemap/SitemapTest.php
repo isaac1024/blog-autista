@@ -183,9 +183,9 @@ final class SitemapTest extends WebTestCase
     }
 
     /**
-     * A post names its section by the slug it has on the site: renamed
-     * there, the files of its posts tell the new addresses, and changed then,
-     * though no post did; once off the site, the slug each post kept.
+     * A post names its section by the slug the section was last published
+     * with: renamed, the files of its posts tell the new addresses, and
+     * changed then, though no post did; once off the site, the same slug.
      */
     public function testAPostNamesItsSectionByItsSlugOnTheSite(): void
     {
@@ -201,7 +201,7 @@ final class SitemapTest extends WebTestCase
         self::mockTime(ClockMother::now('2026-11-10 08:00:00'));
         $this->dispatch('cms.term.unpublished', self::SECTION, ['revision' => 3]);
 
-        self::assertSame(['/vida-diaria/2026/11/07/mi-primer-dia.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2026'));
+        self::assertSame(['/dia-a-dia/2026/11/07/mi-primer-dia.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2026'));
         self::assertSame('2026-11-10T08:00:00+00:00', $this->index($client)['/sitemap-posts-2026.xml']);
     }
 

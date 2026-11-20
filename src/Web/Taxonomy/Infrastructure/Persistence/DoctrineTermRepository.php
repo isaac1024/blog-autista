@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Web\Taxonomy\Infrastructure\Persistence;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
+use Web\Taxonomy\Domain\SectionSlug;
 use Web\Taxonomy\Domain\Taxonomy;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
@@ -80,5 +82,31 @@ final readonly class DoctrineTermRepository implements TermRepository
     public function findBySlug(Taxonomy $taxonomy, string $slug): ?Term
     {
         return $this->entityManager->getRepository(Term::class)->findOneBy(['taxonomy' => $taxonomy, 'slug' => $slug]);
+    }
+
+    #[\Override]
+    public function saveSectionSlug(SectionSlug $sectionSlug): void
+    {
+        $this->entityManager->persist($sectionSlug);
+        $this->entityManager->flush();
+    }
+
+    #[\Override]
+    public function findSectionSlug(string $sectionId): ?SectionSlug
+    {
+        return $this->entityManager->find(SectionSlug::class, $sectionId);
+    }
+
+    #[\Override]
+    public function sectionSlugs(array $sectionIds): array
+    {
+        /** @var list<array{section_id: string, slug: string}> $rows */
+        $rows = $this->entityManager->getConnection()->fetchAllAssociative(
+            'SELECT section_id, slug FROM web_section_slug WHERE section_id IN (:ids)',
+            ['ids' => $sectionIds],
+            ['ids' => ArrayParameterType::STRING],
+        );
+
+        return array_column($rows, 'slug', 'section_id');
     }
 }

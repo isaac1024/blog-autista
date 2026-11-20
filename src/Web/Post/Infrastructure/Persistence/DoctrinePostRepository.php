@@ -155,9 +155,9 @@ final readonly class DoctrinePostRepository implements PostRepository
         $connection = $this->entityManager->getConnection();
         $cards = [];
 
-        /** @var list<array{id: string, title: string, slug: string, section_id: string, section_name: string, section_slug: string, author_id: string, author_name: string, opening_image_id: string, meta_description: ?string, day: string, first_published_at: string, last_published_at: string}> $rows */
+        /** @var list<array{id: string, title: string, slug: string, section_id: string, section_name: string, author_id: string, author_name: string, opening_image_id: string, meta_description: ?string, day: string, first_published_at: string, last_published_at: string}> $rows */
         $rows = $connection->fetchAllAssociative(
-            'SELECT id, title, slug, section_id, section_name, section_slug, author_id, author_name, opening_image_id, meta_description, day, first_published_at, last_published_at FROM web_post WHERE id IN (:ids)',
+            'SELECT id, title, slug, section_id, section_name, author_id, author_name, opening_image_id, meta_description, day, first_published_at, last_published_at FROM web_post WHERE id IN (:ids)',
             ['ids' => $ids],
             ['ids' => ArrayParameterType::STRING],
         );
@@ -169,7 +169,6 @@ final readonly class DoctrinePostRepository implements PostRepository
                 $row['slug'],
                 $row['section_id'],
                 $row['section_name'],
-                $row['section_slug'],
                 $row['author_id'],
                 $row['author_name'],
                 $row['opening_image_id'],

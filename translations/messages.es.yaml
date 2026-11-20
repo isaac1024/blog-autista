@@ -604,9 +604,6 @@ cms:
         publish:
             page_title: 'Publicar «%name%»'
             submit: 'Publicar la sección'
-            posts_left_behind:
-                title: 'Sus posts siguen en la dirección de ahora'
-                message: '{1}Un post publicado de esta sección sigue bajo /%slug%/: se moverá a la nueva dirección cuando vuelvas a publicarlo. Mientras, ninguna otra sección podrá usar /%slug%/.|]1,Inf[%count% posts publicados de esta sección siguen bajo /%slug%/: cada uno se moverá a la nueva dirección cuando vuelvas a publicarlo. Mientras, ninguna otra sección podrá usar /%slug%/.'
     tags:
         title: 'Etiquetas'
         subtitle: 'Las etiquetas señalan de qué trata cada artículo. Un artículo podrá llevar varias.'
@@ -1584,7 +1581,6 @@ errors:
         publication:
             without_slug: 'No se puede publicar sin dirección.'
             without_meta_description: 'No se puede publicar sin meta descripción.'
-            slug_of_posts_of_another_section: 'Hay posts publicados de otra sección bajo /%slug%/: elige otra dirección para esta, o vuelve a publicar esos posts antes.'
             nothing_to_publish: 'Ya está publicada tal como está: no hay nada que publicar.'
             not_published: 'Solo se puede despublicar lo que está publicado.'
             no_changes_to_discard: 'No hay cambios sin publicar que descartar.'
@@ -1659,7 +1655,7 @@ errors:
             unknown_author: 'El autor elegido ya no existe. Elige otro.'
             unknown_tag: 'Alguna de las etiquetas elegidas ya no existe. Quítala.'
         address:
-            taken: 'Otro post de la web ya tiene la dirección /%section%/%date%/%slug%.html. Cambia la dirección del post.'
+            taken: 'Otro post de la web, publicado por primera vez el %date%, ya tiene el slug «%slug%»: dos posts del mismo día nunca lo comparten, sean de la sección que sean. Cambia la dirección del post.'
         publication:
             without_slug: 'El post no se puede publicar sin dirección.'
             without_section: 'El post no se puede publicar sin sección.'

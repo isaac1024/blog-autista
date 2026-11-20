@@ -85,7 +85,7 @@ final readonly class PostList
 
         return $page->withMain('Shared:ResourceList', [
             'label' => $this->translator->trans('cms.posts.list.label'),
-        ], array_map($this->row(...), $found->posts))
+        ], $this->rows($found->posts))
             ->withMain('Shared:Pagination', ($this->listPagination)(
                 'cms_posts',
                 '' === $title ? [] : ['title' => $title],
@@ -95,13 +95,23 @@ final readonly class PostList
     }
 
     /**
-     * A post with its address on the site, while it has one, when it last
+     * Each post with its address on the site, while it has one, when it last
      * changed and where it stands. The address of a post off the site is
      * only known once it is published.
+     *
+     * @param list<PostResponse> $posts
+     *
+     * @return list<PageComponent>
      */
-    private function row(PostResponse $post): PageComponent
+    private function rows(array $posts): array
     {
-        $url = $this->postUrl->onSite($post);
+        $urls = $this->postUrl->allOnSite($posts);
+
+        return array_map(fn (PostResponse $post): PageComponent => $this->row($post, $urls[$post->id]), $posts);
+    }
+
+    private function row(PostResponse $post, ?string $url): PageComponent
+    {
         // The site's own path: a URL of another host comes whole, which a
         // narrow row would break into lines of host.
         $path = null === $url ? null : (string) parse_url($url, \PHP_URL_PATH);

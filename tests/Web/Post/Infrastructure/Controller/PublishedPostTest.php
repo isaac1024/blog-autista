@@ -49,9 +49,12 @@ use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
 use Web\Tests\Settings\Domain\CmsSettingsPublishedMother;
+use Web\Tests\Shared\Infrastructure\Ui\PostUrls;
 
 final class PublishedPostTest extends TestCase
 {
+    use PostUrls;
+
     private const string SECTION = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a01';
 
     private const string TAG = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a02';
@@ -489,12 +492,14 @@ final class PublishedPostTest extends TestCase
         $page = new PublishedPost(
             $urlGenerator,
             new SitePostPage(new RichTextComponents(), $translator),
-            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authorRepository, self::createStub(PageRepository::class)),
+            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authorRepository, self::createStub(PageRepository::class)),
             $imageRepository,
             $termRepository,
             $authorRepository,
             $redirects,
-            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))),
+            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))),
+            // Its section by the slug it was last published with.
+            self::postUrls($urlGenerator, ($terms[self::SECTION] ?? null)?->slug() ?? 'vida-diaria'),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 

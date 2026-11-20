@@ -7,7 +7,6 @@ namespace Web\Post\Infrastructure\Controller;
 use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\Page\Page;
-use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePostPage;
 use Shared\Infrastructure\Ui\StructuredData;
@@ -54,6 +53,7 @@ final readonly class PublishedPost
         private AuthorRepository $authorRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteLinkedContents $linkedContents,
+        private SitePostUrls $sitePostUrls,
     ) {}
 
     public function __invoke(PostResponse $post): Page
@@ -63,7 +63,7 @@ final readonly class PublishedPost
         // A section or an author off the site is shown as the one its address
         // now leads to, if any; otherwise by the name it had, as text.
         $terms = $this->terms([$post->sectionId, ...$post->tagIds]);
-        $canonical = PostAddressUrl::generate($this->urlGenerator, SitePostUrls::section($terms[$post->sectionId] ?? null, $post->sectionId, $post->sectionSlug), $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
+        $canonical = ($this->sitePostUrls)([['sectionId' => $post->sectionId, 'day' => $post->day, 'slug' => $post->slug]], UrlGeneratorInterface::ABSOLUTE_URL)[0];
         $section = $terms[$post->sectionId] ?? null;
         $section = true === $section?->isSection() ? $section : null;
         $author = $this->author($post->authorId);

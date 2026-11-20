@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Taxonomy\Application;
 
-use Cms\Taxonomy\Domain\PostsUnderSectionSlugs;
 use Cms\Taxonomy\Domain\TermRepository;
 use Shared\Domain\Event\EventBus;
 use Shared\Domain\Transaction;
@@ -23,11 +22,11 @@ final readonly class TermPublisher
         private string $id,
     ) {}
 
-    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction, PostsUnderSectionSlugs $postsUnderSectionSlugs): void
+    public function __invoke(TermRepository $termRepository, EventBus $eventBus, Transaction $transaction): void
     {
         $term = new TermOfTaxonomy($this->taxonomy, $this->id)($termRepository);
 
-        $term->publish($postsUnderSectionSlugs);
+        $term->publish();
         $term->save($termRepository, $eventBus, $transaction);
 
         // Its address is its last from now on, not that of a term off the

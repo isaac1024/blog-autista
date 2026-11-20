@@ -29,4 +29,18 @@ interface TermRepository
      * The term of the taxonomy served at the slug.
      */
     public function findBySlug(Taxonomy $taxonomy, string $slug): ?Term;
+
+    public function saveSectionSlug(SectionSlug $sectionSlug): void;
+
+    public function findSectionSlug(string $sectionId): ?SectionSlug;
+
+    /**
+     * The slug of each section given, on the site or off it, by id; one the
+     * CMS never published is left out.
+     *
+     * @param list<string> $sectionIds
+     *
+     * @return array<string, string>
+     */
+    public function sectionSlugs(array $sectionIds): array;
 }

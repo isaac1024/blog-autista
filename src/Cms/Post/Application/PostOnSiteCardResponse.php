@@ -11,7 +11,8 @@ use Cms\Post\Domain\Post;
  * version on the site, where the site serves it, and when it was first
  * published, which lists order it by.
  *
- * It carries what the card shows, one parameter each.
+ * It carries what the card shows, one parameter each. Its address names
+ * its section by the section's own slug, as CmsSectionSlugs finds it.
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
@@ -24,7 +25,6 @@ final readonly class PostOnSiteCardResponse
         public string $title,
         public ?string $excerpt,
         public string $sectionId,
-        public string $sectionSlug,
         public string $day,
         public string $slug,
         public ?string $openingImageId,
@@ -51,7 +51,6 @@ final readonly class PostOnSiteCardResponse
             $version->title()->value(),
             $version->seo()->description(),
             $section->value(),
-            $address->section()->value(),
             $address->day(),
             $address->slug()->value(),
             $version->openingImage()?->value(),

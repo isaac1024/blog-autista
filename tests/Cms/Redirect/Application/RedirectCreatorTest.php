@@ -178,6 +178,22 @@ final class RedirectCreatorTest extends TestCase
         yield 'an address under /media/ of no image' => [self::SITE.'/media/logo.png', $gone, 'errors.redirect.not_an_image_copy', ['%url%' => self::SITE.'/media/logo.png']];
     }
 
+    /**
+     * The address of a post is kept without its section, which only says
+     * where it is filed: the site looks its redirect up whatever section an
+     * address names, and one redirect answers them all.
+     */
+    public function testItKeepsTheAddressOfAPostWithoutItsSection(): void
+    {
+        $repository = $this->createMock(RedirectRepository::class);
+        $repository->expects(self::once())->method('findBySource')->with(self::equalTo(Source::fromStored('/2026/11/07/vieja.html')))->willReturn(null);
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::equalTo(RedirectMother::create(id: self::ID, source: '/2026/11/07/vieja.html', target: Resource::page(self::PAGE))));
+
+        self::create(self::SITE.'/vida-diaria/2026/11/07/vieja.html', new TargetInput('page', self::PAGE), $repository);
+    }
+
     public function testItRefusesASecondRedirectAtTheSameAddress(): void
     {
         $repository = $this->createMock(RedirectRepository::class);

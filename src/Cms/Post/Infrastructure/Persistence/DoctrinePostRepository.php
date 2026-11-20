@@ -106,7 +106,6 @@ final readonly class DoctrinePostRepository implements PostRepository
     public function findOnSiteAt(PostAddress $address): ?Post
     {
         return $this->entityManager->getRepository(Post::class)->findOneBy([
-            'publishedSectionSlug' => $address->section(),
             'publishedDay' => new \DateTimeImmutable($address->day()),
             'publishedSlug' => $address->slug(),
         ]);
@@ -119,7 +118,6 @@ final readonly class DoctrinePostRepository implements PostRepository
         // post off the site at most last had it; the newest wins otherwise.
         return $this->entityManager->getRepository(Post::class)->findOneBy(
             [
-                'lastSectionSlug' => $address->section(),
                 'lastDay' => new \DateTimeImmutable($address->day()),
                 'lastSlug' => $address->slug(),
                 'status' => PostStatus::Unpublished,
@@ -138,18 +136,6 @@ final readonly class DoctrinePostRepository implements PostRepository
      * Read through the index of the addresses on the site, which starts with
      * the slug of the section.
      */
-    #[\Override]
-    public function onSiteUnderSectionSlug(Slug $slug): array
-    {
-        /** @var array<string, int|string> $counts */
-        $counts = $this->entityManager->getConnection()->fetchAllKeyValue(
-            "SELECT JSON_VALUE(p.published_version, '$.section_id'), COUNT(*) FROM cms_post p WHERE p.status = 'published' AND p.published_section_slug = :slug GROUP BY 1",
-            ['slug' => $slug->value()],
-        );
-
-        return array_map(intval(...), $counts);
-    }
-
     /**
      * Read from the version on the site of each post, where a post keeps its
      * section, its author and its tags: only previews list posts this way, so

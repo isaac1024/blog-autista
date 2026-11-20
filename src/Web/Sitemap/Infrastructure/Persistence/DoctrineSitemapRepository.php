@@ -107,12 +107,11 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             SitemapFile::TAGS => ' AND EXISTS (SELECT 1 FROM web_post_tag t WHERE t.term_id = e.resource_id)',
             default => '',
         };
-        // A post names its section by the slug the section has on the site,
-        // in place of the first segment of the path, which holds the one the
-        // post kept for when the section is off it.
+        // The path of a post is kept without its section, named in front of
+        // it by the slug of the section, on the site or off it.
         $rows = $this->entityManager->getConnection()->iterateAssociative(
-            "SELECT IF(s.slug IS NULL, e.path, CONCAT('/', s.slug, SUBSTRING(e.path, LOCATE('/', e.path, 2)))) AS path, e.lastmod, e.image_id, i.path AS image_path"
-            ." FROM web_sitemap_entry e LEFT JOIN web_term s ON s.id = e.section_id AND s.taxonomy = 'section' LEFT JOIN web_image i ON i.id = e.image_id"
+            "SELECT IF(e.section_id IS NULL, e.path, CONCAT('/', s.slug, e.path)) AS path, e.lastmod, e.image_id, i.path AS image_path"
+            .' FROM web_sitemap_entry e LEFT JOIN web_section_slug s ON s.section_id = e.section_id LEFT JOIN web_image i ON i.id = e.image_id'
             .' WHERE e.file = :file'.$listing.' ORDER BY e.path',
             ['file' => $file],
         );

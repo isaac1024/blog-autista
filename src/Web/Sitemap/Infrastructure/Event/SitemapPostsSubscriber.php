@@ -6,9 +6,8 @@ namespace Web\Sitemap\Infrastructure\Event;
 
 use Shared\Domain\Clock;
 use Shared\Domain\Event\ReceivedEvent;
+use Shared\Domain\PostPath;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
-use Shared\Infrastructure\Ui\PostAddressUrl;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Shared\Domain\Projection;
 use Web\Sitemap\Application\PostEntryPlacer;
 use Web\Sitemap\Application\PostEntryRemover;
@@ -27,7 +26,6 @@ final readonly class SitemapPostsSubscriber implements DomainEventSubscriber
     public function __construct(
         private SitemapRepository $repository,
         private Projection $projection,
-        private UrlGeneratorInterface $urlGenerator,
     ) {}
 
     #[\Override]
@@ -45,7 +43,7 @@ final readonly class SitemapPostsSubscriber implements DomainEventSubscriber
                 new PostEntryPlacer(
                     $event->aggregateId(),
                     $event->sectionId,
-                    PostAddressUrl::generate($this->urlGenerator, $event->sectionSlug, $event->day, $event->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
+                    PostPath::fromDayAndSlug($event->day, $event->slug),
                     $day,
                     $event->lastPublishedAt,
                     $event->openingImageId,

@@ -14,11 +14,13 @@ use Cms\Shared\Domain\Robots;
 use Cms\Shared\Domain\Seo;
 use Cms\Shared\Domain\Slug;
 use Cms\Shared\Infrastructure\Ui\AuthorState;
+use Cms\Shared\Infrastructure\Ui\CmsSectionSlugs;
 use Cms\Shared\Infrastructure\Ui\LinkTargets;
 use Cms\Shared\Infrastructure\Ui\PostState;
 use Cms\Shared\Infrastructure\Ui\TermState;
 use Cms\Taxonomy\Application\TermResponse;
 use Cms\Taxonomy\Domain\Taxonomy;
+use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Author\Domain\AuthorMother;
 use Cms\Tests\Post\Domain\InMemoryClassifiers;
 use Cms\Tests\Post\Domain\InMemoryPostImages;
@@ -222,12 +224,13 @@ final class PostEditorTest extends TestCase
      */
     public static function prefixes(): iterable
     {
-        $moved = PostMother::published(sectionSlug: 'antes', firstPublishedAt: '2026-10-01 10:00:00');
+        $moved = PostMother::published(firstPublishedAt: '2026-10-01 10:00:00');
         $moved->edit(PostMother::TITLE, PostMother::SLUG, self::OTHER_SECTION, PostMother::AUTHOR, [], PostMother::OPENING_IMAGE, PostMother::CONTENT, PostMother::META_DESCRIPTION, 'index,follow', new InMemoryClassifiers(sections: [self::OTHER_SECTION => null]), new InMemoryPostImages());
 
         yield 'a draft, under its section, today' => [PostMother::publishable(), '/vida-diaria/2026/11/07/'];
         yield 'an unfiled draft' => [PostMother::create(), '/cms.posts.edit.no_section/2026/11/07/'];
-        yield 'a post on the site, at its address there' => [$moved, '/antes/2026/10/01/'];
+        // The section only says where it is filed: the one chosen, as it would be published.
+        yield 'a post on the site moved to another section, under the one chosen' => [$moved, '/salud/2026/10/01/'];
         yield 'an unpublished post, on the day it was first published' => [PostMother::unpublished(firstPublishedAt: '2026-10-01 10:00:00'), '/vida-diaria/2026/10/01/'];
     }
 
@@ -355,6 +358,17 @@ final class PostEditorTest extends TestCase
         return [] !== $forms;
     }
 
+    /**
+     * The sections the CMS has: the post's, on the site.
+     */
+    private function sections(): TermRepository
+    {
+        $terms = self::createStub(TermRepository::class);
+        $terms->method('findByIds')->willReturn([TermMother::published(id: PostMother::SECTION)]);
+
+        return $terms;
+    }
+
     private function edit(Post $post): Page
     {
         $urlGenerator = new RouteNameUrlGenerator();
@@ -366,7 +380,7 @@ final class PostEditorTest extends TestCase
             $translator,
             new TiptapRichText(),
             new PostState($translator),
-            new PostUrl($urlGenerator),
+            new PostUrl($urlGenerator, new CmsSectionSlugs($this->sections())),
             new TermState($translator),
             new AuthorState($translator),
             $this->lastAddressPanelOnSite($translator, $urlGenerator),

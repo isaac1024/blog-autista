@@ -25,6 +25,7 @@ use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 /**
  * Where the site serves each resource now: a page at its slug, the home
@@ -34,6 +35,8 @@ use Web\Tests\Post\Domain\PostIdMother;
  */
 final class SiteTargetAddressesTest extends KernelTestCase
 {
+    use SectionSlugs;
+
     private const string PAGE = '0196f3a0-0000-7000-8000-0000000000b1';
     private const string HOME = '0196f3a0-0000-7000-8000-0000000000b2';
     private const string IMAGE = '0196f3a0-0000-7000-8000-0000000000c1';
@@ -45,6 +48,7 @@ final class SiteTargetAddressesTest extends KernelTestCase
     #[\Override]
     protected function setUp(): void
     {
+        self::saveSectionSlug();
         $pages = self::getContainer()->get(PageRepository::class);
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Destino', slug: 'destino')));
         $pages->save(Page::publish(CmsPagePublishedMother::create(id: self::HOME, title: 'Portada', slug: null, type: PageType::Home)));

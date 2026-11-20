@@ -16,7 +16,6 @@ use Cms\Tests\Post\Domain\InMemoryPostImages;
 use Cms\Tests\Post\Domain\PostIdMother;
 use Cms\Tests\Post\Domain\PostMother;
 use Cms\Tests\Shared\Domain\SlugMother;
-use Cms\Tests\Taxonomy\Domain\TermMother;
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -75,10 +74,9 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->repository()->save(PostMother::published(id: $id, slug: 'en-su-direccion'));
         $this->entityManager()->clear();
 
-        self::assertSame($id, $this->repository()->findOnSiteAt(self::address(TermMother::SLUG, ClockMother::NOW, 'en-su-direccion'))?->id()->value());
-        self::assertNull($this->repository()->findOnSiteAt(self::address('otra-seccion', ClockMother::NOW, 'en-su-direccion')));
-        self::assertNull($this->repository()->findOnSiteAt(self::address(TermMother::SLUG, '2026-11-08 10:00:00', 'en-su-direccion')));
-        self::assertNull($this->repository()->findOnSiteAt(self::address(TermMother::SLUG, ClockMother::NOW, 'otro-slug')));
+        self::assertSame($id, $this->repository()->findOnSiteAt(self::address(ClockMother::NOW, 'en-su-direccion'))?->id()->value());
+        self::assertNull($this->repository()->findOnSiteAt(self::address('2026-11-08 10:00:00', 'en-su-direccion')));
+        self::assertNull($this->repository()->findOnSiteAt(self::address(ClockMother::NOW, 'otro-slug')));
     }
 
     /**
@@ -94,53 +92,9 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'en-el-sitio'));
         $this->entityManager()->clear();
 
-        self::assertSame($newer, $this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, PostMother::SLUG))?->id()->value());
-        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, '2026-11-08 10:00:00', PostMother::SLUG)));
-        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, 'en-el-sitio')));
-    }
-
-    /**
-     * The section is part of the address: the post that last had the day
-     * and the slug under another section isn't the one there, even newer.
-     */
-    public function testItFindsThePostOffTheSiteThatLastHadAnAddressUnderItsSection(): void
-    {
-        $here = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c01';
-        $elsewhere = '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0c02';
-        $this->repository()->save(PostMother::unpublished(id: $here));
-        $this->repository()->save(PostMother::unpublished(id: $elsewhere));
-        $this->entityManager()->getConnection()->update('cms_post', ['last_section_slug' => 'otra-seccion'], ['id' => $elsewhere]);
-        $this->entityManager()->clear();
-
-        self::assertSame(
-            [$here, $elsewhere, null],
-            [
-                $this->repository()->findOffSiteByLastAddress(self::address(TermMother::SLUG, ClockMother::NOW, PostMother::SLUG))?->id()->value(),
-                $this->repository()->findOffSiteByLastAddress(self::address('otra-seccion', ClockMother::NOW, PostMother::SLUG))?->id()->value(),
-                $this->repository()->findOffSiteByLastAddress(self::address('ninguna', ClockMother::NOW, PostMother::SLUG)),
-            ],
-        );
-    }
-
-    /**
-     * Only the posts on the site under the slug count, by the section each
-     * is under there, whatever section it is under as edited.
-     */
-    public function testItCountsThePostsOnTheSiteUnderASectionSlugBySection(): void
-    {
-        $other = '01a1b801-ce58-723d-8234-b76d9105f0aa';
-        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'uno', sectionSlug: 'vida-diaria'));
-        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'dos', sectionSlug: 'vida-diaria'));
-        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'tres', section: $other, sectionSlug: 'vida-diaria'));
-        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'cuatro', sectionSlug: 'otra'));
-        $this->repository()->save(PostMother::create(id: PostIdMother::random()->value(), slug: 'borrador'));
-
-        $counted = $this->repository()->onSiteUnderSectionSlug(new Slug('vida-diaria'));
-        ksort($counted);
-        $expected = [PostMother::SECTION => 2, $other => 1];
-        ksort($expected);
-        self::assertSame($expected, $counted);
-        self::assertSame([], $this->repository()->onSiteUnderSectionSlug(new Slug('nadie')));
+        self::assertSame($newer, $this->repository()->findOffSiteByLastAddress(self::address(ClockMother::NOW, PostMother::SLUG))?->id()->value());
+        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address('2026-11-08 10:00:00', PostMother::SLUG)));
+        self::assertNull($this->repository()->findOffSiteByLastAddress(self::address(ClockMother::NOW, 'en-el-sitio')));
     }
 
     public function testItLetsDraftsShareTheirSlug(): void
@@ -151,13 +105,17 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         $this->expectNotToPerformAssertions();
     }
 
+    /**
+     * Two posts on the site never share their day and slug, whatever their
+     * sections.
+     */
     public function testItRejectsPublishingAtTheAddressOfAnotherPostOnTheSite(): void
     {
         $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'repetido'));
 
-        $this->expectExceptionObject(PostAddressTaken::atAddress(self::address(TermMother::SLUG, ClockMother::NOW, 'repetido')));
+        $this->expectExceptionObject(PostAddressTaken::atAddress(self::address(ClockMother::NOW, 'repetido')));
 
-        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'repetido'));
+        $this->repository()->save(PostMother::published(id: PostIdMother::random()->value(), slug: 'repetido', section: '01a1b801-ce58-723d-8234-b76d9105f0aa'));
     }
 
     public function testItLetsTheSameSlugBeOnTheSiteOnAnotherDay(): void
@@ -253,9 +211,9 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertSame([$oldest->id()->value()], $listed(new PostSelection(PostMother::SECTION, PostMother::AUTHOR, [PostMother::TAG]), 10));
     }
 
-    private static function address(string $section, string $firstPublishedAt, string $slug): PostAddress
+    private static function address(string $firstPublishedAt, string $slug): PostAddress
     {
-        return new PostAddress(SlugMother::create($section), ClockMother::now($firstPublishedAt), SlugMother::create($slug));
+        return new PostAddress(ClockMother::now($firstPublishedAt), SlugMother::create($slug));
     }
 
     private function repository(): PostRepository

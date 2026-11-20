@@ -124,24 +124,19 @@ final class CmsLinkedContentsTest extends KernelTestCase
     }
 
     /**
-     * A post whose section is off the site, or is a tag, shows no section on
-     * its card.
+     * A post whose section is off the site shows no section on its card,
+     * but its address still names the section by its slug.
      */
     public function testACardOfAPostShowsNoSectionThatIsNotOneOnTheSite(): void
     {
-        $posts = self::getContainer()->get(PostRepository::class);
-        $posts->save(PostMother::published(id: '01a1b801-ce58-723d-8234-b76d9105b004', slug: 'sin-seccion', section: '01a1b801-ce58-723d-8234-b76d9105b0ff'));
-        $posts->save(PostMother::published(id: '01a1b801-ce58-723d-8234-b76d9105b005', slug: 'con-etiqueta', section: self::TAG));
+        self::getContainer()->get(TermRepository::class)->save(TermMother::create(id: '01a1b801-ce58-723d-8234-b76d9105b0ff', name: 'Fuera', slug: 'fuera'));
+        self::getContainer()->get(PostRepository::class)->save(PostMother::published(id: '01a1b801-ce58-723d-8234-b76d9105b004', slug: 'sin-seccion', section: '01a1b801-ce58-723d-8234-b76d9105b0ff'));
         $content = RichText::fromArray(['version' => 1, 'blocks' => [
-            ['type' => 'paragraph', 'text' => [
-                ['text' => 'uno', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105b004'],
-                ['text' => 'otro', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105b005'],
-            ]],
+            ['type' => 'paragraph', 'text' => [['text' => 'uno', 'marks' => ['link'], 'post_id' => '01a1b801-ce58-723d-8234-b76d9105b004']]],
         ]]);
 
-        self::assertSame([null, null], array_values(array_map(
-            static fn (array $linked): mixed => \is_array($linked['related'] ?? null) && \array_key_exists('section', $linked['related']) ? $linked['related']['section'] : 'no card',
-            self::getContainer()->get(CmsLinkedContents::class)($content, [], null),
-        )));
+        $linked = self::getContainer()->get(CmsLinkedContents::class)($content, [], null)['01a1b801-ce58-723d-8234-b76d9105b004'] ?? null;
+
+        self::assertSame(['http://www.blogautista.localhost/fuera/2026/11/07/sin-seccion.html', null], [$linked['url'] ?? null, \array_key_exists('section', $linked['related'] ?? []) ? $linked['related']['section'] : 'no card']);
     }
 }

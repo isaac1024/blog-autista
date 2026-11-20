@@ -34,7 +34,6 @@ final class PostFinderTest extends TestCase
                 'mi-primer-dia',
                 CmsPostPublishedMother::SECTION,
                 'Vida diaria',
-                'vida-diaria',
                 CmsPostPublishedMother::AUTHOR,
                 'Isaac Abreu',
                 [CmsPostPublishedMother::TAG],

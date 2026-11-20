@@ -31,6 +31,8 @@ use Web\Tests\Post\Domain\PostIdMother;
 
 final class SiteSearchTest extends TestCase
 {
+    use PostUrls;
+
     /**
      * The field comes first, holding what was searched; then what it found,
      * as cards, a page at a time, the next page searching the same.
@@ -176,7 +178,7 @@ final class SiteSearchTest extends TestCase
     {
         return new SiteSearch(
             $postRepository,
-            new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))),
+            new SitePostCards(self::postUrls($urlGenerator), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class))),
             new PostCardsComponent($translator),
             new ListPagination($translator, $urlGenerator),
             $translator,

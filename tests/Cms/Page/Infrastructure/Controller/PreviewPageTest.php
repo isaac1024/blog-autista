@@ -26,6 +26,7 @@ use Cms\Shared\Infrastructure\Resolution\CmsRedirectsByOrigin;
 use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
 use Cms\Shared\Infrastructure\Ui\CmsMosaics;
 use Cms\Shared\Infrastructure\Ui\CmsPostCards;
+use Cms\Shared\Infrastructure\Ui\CmsSectionSlugs;
 use Cms\Shared\Infrastructure\Ui\PreviewLayout;
 use Cms\Taxonomy\Domain\TermRepository;
 use Cms\Tests\Image\Domain\ImageMother;
@@ -284,11 +285,11 @@ final class PreviewPageTest extends TestCase
         return new PreviewPage(
             $urlGenerator,
             new SitePage(new RichTextComponents()),
-            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
+            new PreviewLayout($urlGenerator, $settingsRepository, $imageRepository, $redirectsByOrigin, new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator, new CmsSectionSlugs(self::createStub(TermRepository::class))), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(PageRepository::class)),
             $imageRepository,
             $redirectsByOrigin,
-            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
-            new CmsMosaics($postRepository ?? self::createStub(PostRepository::class), new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
+            new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator, new CmsSectionSlugs(self::createStub(TermRepository::class))), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
+            new CmsMosaics($postRepository ?? self::createStub(PostRepository::class), new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator, new CmsSectionSlugs($termRepository ?? self::createStub(TermRepository::class))), new PostCardsComponent(new CatalogueTranslator())),
         );
     }
 }
