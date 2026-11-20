@@ -242,6 +242,21 @@ test('a page picked as related content becomes a widget with its current state',
     await expect(widget).toContainText('Not on the site');
 });
 
+test('a widget with a long title without spaces fits a phone, as does the page around it', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    // No space nor hyphen to break it at, as in the address of a video.
+    const long = { ...PAGE, title: 'tiktok.com/@scout2015/video/6718335390845095173/6718335390845095173' };
+    await page.route('**/api/pages/search*', (route) => route.fulfill({ json: { pages: [long], more: false } }));
+    await loadController(page, 'rich-text-editor', pageEditor({ widgets: true }), { styled: true });
+
+    await page.locator('#content').focus();
+    await page.getByRole('button', { name: 'Related page', exact: true }).click();
+    await page.locator('[data-rich-text-editor-target="pageResults"] button').click();
+    await expect(page.locator('.rich-text-widget')).toContainText(long.title);
+
+    expect(await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth])).toEqual([375, 375]);
+});
+
 test('the block menu creates a labelled callout variant', async ({ page }) => {
     await loadController(page, 'rich-text-editor', richTextEditor({
         features: { blocks: ['callout'], headingLevels: [], calloutVariants: ['note'], marks: [] },

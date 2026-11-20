@@ -29,7 +29,8 @@ const BaseController = /** @type {import('./controller_types.js').ControllerWith
  * first, unless the form itself is being sent. A form that came back with
  * what was sent and refused holds changes from the start. Meanwhile, the
  * page asks the server for itself now and then, so the session does not
- * expire under an editor still writing, which would lose what they send.
+ * expire under an editor still writing, which would lose what they send;
+ * the pages of the CMS are never stored, so each request reaches it.
  */
 export default class extends BaseController {
     static targets = ['status'];
@@ -55,7 +56,7 @@ export default class extends BaseController {
 
     keepAlive() {
         if (!this.sending && this.changed()) {
-            fetch(window.location.href, { method: 'HEAD', cache: 'no-store' }).catch(() => {});
+            fetch(window.location.href, { method: 'HEAD' }).catch(() => {});
         }
     }
 

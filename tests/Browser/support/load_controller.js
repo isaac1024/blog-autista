@@ -5,6 +5,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const ASSETS = path.join(ROOT, 'assets');
 const ORIGIN = 'http://blogautista.test';
+/*
+ * The stylesheets of the CMS, in the order its layout links them: the app's,
+ * then those of the editor, which come later and win.
+ */
+const STYLESHEETS = [
+    '/assets/styles/app.css',
+    '/assets/vendor/prosemirror-view/style/prosemirror.min.css',
+    '/assets/vendor/prosemirror-tables/style/tables.min.css',
+];
 
 /*
  * Native browser modules, served from the same files AssetMapper uses. Package
@@ -57,7 +66,7 @@ async function moduleBody(pathname) {
  * Serves a page of the given body, with the assets and the import map of the
  * app, and opens it. API mocks are registered by each test, outside this loader.
  */
-export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = {}) {
+export async function loadPage(page, body, { mocked = ['/api/'], query = '', styled = false } = {}) {
     await page.route('**/*', async (route) => {
         const url = new URL(route.request().url());
 
@@ -74,6 +83,8 @@ export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = 
                     <html lang="en">
                         <head>
                             <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1">
+                            ${styled ? STYLESHEETS.map((href) => `<link rel="stylesheet" href="${href}">`).join('') : ''}
                             <script type="importmap">${JSON.stringify({ imports: IMPORTS })}</script>
                         </head>
                         <body>
@@ -81,6 +92,14 @@ export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = 
                         </body>
                     </html>`,
             });
+
+            return;
+        }
+
+        // The stylesheets as written: the browser skips what only Tailwind
+        // reads, and lays out the rules of the components.
+        if (STYLESHEETS.includes(url.pathname)) {
+            await route.fulfill({ contentType: 'text/css', body: await readFile(path.join(ASSETS, url.pathname.slice('/assets/'.length))) });
 
             return;
         }
@@ -101,8 +120,11 @@ export async function loadPage(page, body, { mocked = ['/api/'], query = '' } = 
     await page.goto(`${ORIGIN}/fixture${query}`);
 }
 
-/** Loads one real Stimulus controller around the markup supplied by the test. */
-export async function loadController(page, name, markup) {
+/**
+ * Loads one real Stimulus controller around the markup supplied by the test,
+ * styled by the stylesheets of the CMS if asked.
+ */
+export async function loadController(page, name, markup, { styled = false } = {}) {
     await loadPage(page, `
         ${markup}
         <script type="module">
@@ -113,6 +135,6 @@ export async function loadController(page, name, markup) {
             window.stimulus.register('${name}', Controller);
             requestAnimationFrame(() => { window.controllerLoaded = true; });
         </script>
-    `);
+    `, { styled });
     await page.waitForFunction(() => window.controllerLoaded === true);
 }

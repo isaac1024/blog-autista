@@ -596,9 +596,14 @@
         font-weight: 700;
     }
 
-    /* A widget in the editor: what kind it is, then its page as the CMS knows it now. */
+    /*
+     * A widget in the editor: what kind it is, then its page as the CMS knows
+     * it now. Its one column is as wide as the editor, never as its longest
+     * word, such as the address of a video: the page would scroll sideways.
+     */
     .rich-text-widget {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 0.375rem;
         margin: 1rem 0;
         border: 1px solid var(--color-border);
@@ -617,6 +622,12 @@
             background-color: transparent;
             color: var(--color-text);
         }
+    }
+
+    /* The editor's own stylesheet breaks words only once a line can't hold them. */
+    .rich-text-widget-label,
+    .rich-text-widget-title {
+        overflow-wrap: anywhere;
     }
 
     .rich-text-widget-label {
