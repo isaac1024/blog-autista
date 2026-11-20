@@ -46,7 +46,7 @@ final readonly class SitemapAuthorsSubscriber implements DomainEventSubscriber
                     return;
                 }
 
-                new EntryPlacer($event->aggregateId(), SitemapFile::AUTHORS, $this->urlGenerator->generate('web_author', ['slug' => $event->slug]), $event->lastPublishedAt, null, [])($this->repository);
+                new EntryPlacer($event->aggregateId(), SitemapFile::AUTHORS, $this->urlGenerator->generate('web_author', ['slug' => $event->slug]), $event->lastPublishedAt, null, [], null)($this->repository);
             });
         }
 

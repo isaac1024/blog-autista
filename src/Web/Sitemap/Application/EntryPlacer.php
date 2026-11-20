@@ -13,11 +13,16 @@ use Web\Sitemap\Domain\SitemapRepository;
  * belongs to, or brings the one it has up to date: what it is never moves
  * to another file, as a page, a section, a tag or an author keeps its kind,
  * and a post the year it was first published. Its file changed then.
+ *
+ * It takes what an entry has, one parameter each.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 final readonly class EntryPlacer
 {
     /**
-     * @param list<string> $termIds the section and the tags of a post, none for anything else
+     * @param list<string> $termIds   the section and the tags of a post, none for anything else
+     * @param ?string      $sectionId the section of a post, whose slug on the site its address names; none for anything else
      */
     public function __construct(
         private string $resourceId,
@@ -26,6 +31,7 @@ final readonly class EntryPlacer
         private \DateTimeImmutable $lastmod,
         private ?string $imageId,
         private array $termIds,
+        private ?string $sectionId,
     ) {}
 
     public function __invoke(SitemapRepository $repository): void
@@ -34,10 +40,10 @@ final readonly class EntryPlacer
         $file = $repository->file($this->file) ?? SitemapFile::open($this->file, $this->lastmod);
 
         if (null === $entry) {
-            $entry = new SitemapEntry($this->resourceId, $this->file, $this->path, $this->lastmod, $this->imageId, $this->termIds);
+            $entry = new SitemapEntry($this->resourceId, $this->file, $this->path, $this->lastmod, $this->imageId, $this->termIds, $this->sectionId);
             $file->added($this->lastmod);
         } else {
-            $entry->update($this->path, $this->lastmod, $this->imageId, $this->termIds);
+            $entry->update($this->path, $this->lastmod, $this->imageId, $this->termIds, $this->sectionId);
             $file->touched($this->lastmod);
         }
 

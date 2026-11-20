@@ -17,8 +17,9 @@ use Web\Sitemap\Domain\SitemapRepository;
 /**
  * Outbound adapter that keeps the sitemap through Doctrine ORM, and reads
  * the lines of a file in plain SQL, one at a time: whether a section or a
- * tag lists some post, and where the image of a post on the site is, are
- * read from the tables of the posts and the images, through their indexes.
+ * tag lists some post, the slug of the section of a post, and where the
+ * image of a post on the site is, are read from the tables of the posts,
+ * the terms and the images, through their indexes.
  */
 #[AsAlias(SitemapRepository::class)]
 final readonly class DoctrineSitemapRepository implements SitemapRepository
@@ -41,6 +42,16 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
     public function touchEntries(array $resourceIds, \DateTimeImmutable $moment): void
     {
         $this->touch('e.resource_id IN (:ids)', ['ids' => $resourceIds], ['ids' => ArrayParameterType::STRING], $moment);
+    }
+
+    #[\Override]
+    public function touchFilesOfSection(string $sectionId, \DateTimeImmutable $moment): void
+    {
+        $this->entityManager->getConnection()->executeStatement(
+            'UPDATE web_sitemap_file SET lastmod = GREATEST(lastmod, :moment) WHERE name IN (SELECT DISTINCT e.file FROM web_sitemap_entry e WHERE e.section_id = :section) ORDER BY name',
+            ['moment' => $moment, 'section' => $sectionId],
+            ['moment' => Types::DATETIME_IMMUTABLE],
+        );
     }
 
     #[\Override]
@@ -96,8 +107,13 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
             SitemapFile::TAGS => ' AND EXISTS (SELECT 1 FROM web_post_tag t WHERE t.term_id = e.resource_id)',
             default => '',
         };
+        // A post names its section by the slug the section has on the site,
+        // in place of the first segment of the path, which holds the one the
+        // post kept for when the section is off it.
         $rows = $this->entityManager->getConnection()->iterateAssociative(
-            'SELECT e.path, e.lastmod, e.image_id, i.path AS image_path FROM web_sitemap_entry e LEFT JOIN web_image i ON i.id = e.image_id WHERE e.file = :file'.$listing.' ORDER BY e.path',
+            "SELECT IF(s.slug IS NULL, e.path, CONCAT('/', s.slug, SUBSTRING(e.path, LOCATE('/', e.path, 2)))) AS path, e.lastmod, e.image_id, i.path AS image_path"
+            ." FROM web_sitemap_entry e LEFT JOIN web_term s ON s.id = e.section_id AND s.taxonomy = 'section' LEFT JOIN web_image i ON i.id = e.image_id"
+            .' WHERE e.file = :file'.$listing.' ORDER BY e.path',
             ['file' => $file],
         );
 

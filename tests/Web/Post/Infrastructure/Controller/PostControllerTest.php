@@ -75,11 +75,42 @@ final class PostControllerTest extends WebTestCase
      */
     public static function otherAddresses(): iterable
     {
-        yield 'under another section' => ['/salud/2026/11/07/mi-primer-dia.html'];
         yield 'on another day' => ['/vida-diaria/2026/11/08/mi-primer-dia.html'];
         yield 'with another slug' => ['/vida-diaria/2026/11/07/otro.html'];
         yield 'on a day there is not' => ['/vida-diaria/2026/02/30/mi-primer-dia.html'];
         yield 'with a month of one digit' => ['/vida-diaria/2026/1/07/mi-primer-dia.html'];
+    }
+
+    /**
+     * The section in front of the day and the slug only tells where a post
+     * is filed: any other, such as the slug its section had before, leads to
+     * its canonical address, keeping the query, for as long as the other
+     * redirects of the site.
+     */
+    #[DataProvider('otherSections')]
+    public function testItLeadsFromAnyOtherSectionToItsCanonicalAddress(bool $sectionOnSite, string $path, string $canonical): void
+    {
+        $client = self::createClient();
+        $this->publish();
+
+        if ($sectionOnSite) {
+            $this->publishTerm('section', '01a1da50-2b7c-7d01-8a3f-5c2e9b1d0a01', 'dia-a-dia');
+        }
+
+        $client->request('GET', self::HOST.$path.'?utm_source=feed');
+
+        self::assertResponseRedirects($canonical.'?utm_source=feed', Response::HTTP_MOVED_PERMANENTLY);
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=3600, public');
+    }
+
+    /**
+     * @return iterable<string, array{bool, string, string}>
+     */
+    public static function otherSections(): iterable
+    {
+        yield 'the slug the section had, now renamed on the site' => [true, self::ADDRESS, '/dia-a-dia/2026/11/07/mi-primer-dia.html'];
+        yield 'another section, while its own is on the site' => [true, '/salud/2026/11/07/mi-primer-dia.html', '/dia-a-dia/2026/11/07/mi-primer-dia.html'];
+        yield 'another section, while its own is off it' => [false, '/salud/2026/11/07/mi-primer-dia.html', self::ADDRESS];
     }
 
     public function testItFindsNoPostTheCmsTookOffTheSite(): void

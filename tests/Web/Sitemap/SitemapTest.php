@@ -23,6 +23,8 @@ use Web\Sitemap\Infrastructure\Event\SitemapImagesSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapPagesSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapPostsSubscriber;
 use Web\Sitemap\Infrastructure\Event\SitemapTermsSubscriber;
+use Web\Taxonomy\Infrastructure\Event\CmsTermPublishedSubscriber;
+use Web\Taxonomy\Infrastructure\Event\CmsTermUnpublishedSubscriber;
 use Web\Tests\Author\Domain\CmsAuthorPublishedMother;
 use Web\Tests\Image\Domain\CmsImagePublishedMother;
 use Web\Tests\Page\Domain\CmsPagePublishedMother;
@@ -181,6 +183,29 @@ final class SitemapTest extends WebTestCase
     }
 
     /**
+     * A post names its section by the slug it has on the site: renamed
+     * there, the files of its posts tell the new addresses, and changed then,
+     * though no post did; once off the site, the slug each post kept.
+     */
+    public function testAPostNamesItsSectionByItsSlugOnTheSite(): void
+    {
+        $client = self::createClient();
+        $this->publishSite();
+
+        $this->dispatch('cms.term.published', self::SECTION, ['last_published_at' => '2026-11-09T10:00:00+00:00', 'revision' => 2] + CmsTermPublishedMother::body('section', 'Día a día', 'dia-a-dia'));
+
+        self::assertSame(['/dia-a-dia/2026/11/07/mi-primer-dia.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2026'));
+        self::assertSame(['/dia-a-dia/2025/03/02/un-dia-de-2025.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2025'));
+        self::assertSame(['2026-11-09T10:00:00+00:00', '2026-11-07T10:00:00+00:00'], [$this->index($client)['/sitemap-posts-2026.xml'], $this->index($client)['/sitemap-autores.xml']]);
+
+        self::mockTime(ClockMother::now('2026-11-10 08:00:00'));
+        $this->dispatch('cms.term.unpublished', self::SECTION, ['revision' => 3]);
+
+        self::assertSame(['/vida-diaria/2026/11/07/mi-primer-dia.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2026'));
+        self::assertSame('2026-11-10T08:00:00+00:00', $this->index($client)['/sitemap-posts-2026.xml']);
+    }
+
+    /**
      * What leaves the site, or asks not to be indexed any longer, leaves the
      * sitemap; a file with nothing left isn't there.
      */
@@ -294,9 +319,9 @@ final class SitemapTest extends WebTestCase
         // As the worker does after each message.
         self::getContainer()->get(EntityManagerInterface::class)->clear();
 
-        // The subscribers of the sitemap, and those that put posts on the site, which a section
-        // or a tag lists: none of them needs the file of an image or an avatar.
-        foreach ([CmsPostPublishedSubscriber::class, CmsPostUnpublishedSubscriber::class, SitemapPagesSubscriber::class, SitemapTermsSubscriber::class, SitemapAuthorsSubscriber::class, SitemapPostsSubscriber::class, SitemapImagesSubscriber::class] as $class) {
+        // The subscribers of the sitemap, and those that put posts, sections and tags on the
+        // site, which the sitemap reads: none of them needs the file of an image or an avatar.
+        foreach ([CmsPostPublishedSubscriber::class, CmsPostUnpublishedSubscriber::class, CmsTermPublishedSubscriber::class, CmsTermUnpublishedSubscriber::class, SitemapPagesSubscriber::class, SitemapTermsSubscriber::class, SitemapAuthorsSubscriber::class, SitemapPostsSubscriber::class, SitemapImagesSubscriber::class] as $class) {
             $subscriber = self::getContainer()->get($class);
             self::assertInstanceOf(DomainEventSubscriber::class, $subscriber);
 

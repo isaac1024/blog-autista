@@ -50,7 +50,7 @@ final readonly class SitemapPagesSubscriber implements DomainEventSubscriber
                 $path = null === $event->slug
                     ? $this->urlGenerator->generate('web_home')
                     : $this->urlGenerator->generate('web_page', ['slug' => $event->slug]);
-                new EntryPlacer($event->aggregateId(), SitemapFile::PAGES, $path, $event->lastPublishedAt, null, [])($this->repository);
+                new EntryPlacer($event->aggregateId(), SitemapFile::PAGES, $path, $event->lastPublishedAt, null, [], null)($this->repository);
             });
         }
 

@@ -82,9 +82,9 @@ final readonly class DoctrinePostRepository implements PostRepository
     }
 
     #[\Override]
-    public function findAt(string $section, \DateTimeImmutable $day, string $slug): ?Post
+    public function findAt(\DateTimeImmutable $day, string $slug): ?Post
     {
-        return $this->entityManager->getRepository(Post::class)->findOneBy(['sectionSlug' => $section, 'day' => $day, 'slug' => $slug]);
+        return $this->entityManager->getRepository(Post::class)->findOneBy(['day' => $day, 'slug' => $slug]);
     }
 
     #[\Override]

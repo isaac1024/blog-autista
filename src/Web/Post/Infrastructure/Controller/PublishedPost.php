@@ -23,6 +23,7 @@ use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\AuthorPerson;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SitePostUrls;
 use Web\Shared\Infrastructure\Ui\SiteRobots;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
@@ -57,13 +58,12 @@ final readonly class PublishedPost
 
     public function __invoke(PostResponse $post): Page
     {
-        $canonical = $this->canonical($post);
-
         $images = $this->images($post);
 
         // A section or an author off the site is shown as the one its address
         // now leads to, if any; otherwise by the name it had, as text.
         $terms = $this->terms([$post->sectionId, ...$post->tagIds]);
+        $canonical = PostAddressUrl::generate($this->urlGenerator, SitePostUrls::section($terms[$post->sectionId] ?? null, $post->sectionId, $post->sectionSlug), $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
         $section = $terms[$post->sectionId] ?? null;
         $section = true === $section?->isSection() ? $section : null;
         $author = $this->author($post->authorId);
@@ -127,14 +127,6 @@ final readonly class PublishedPost
         }
 
         return ['name' => $section->name, 'url' => $this->urlGenerator->generate('web_section', ['slug' => $section->slug], $referenceType)];
-    }
-
-    /**
-     * The address the post is served at, the one search engines keep.
-     */
-    private function canonical(PostResponse $post): string
-    {
-        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     /**

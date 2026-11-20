@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Web\Redirect\Infrastructure\Site;
 
 use Shared\Domain\ImageCopy;
-use Shared\Infrastructure\Ui\PostAddressUrl;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorOnSiteFinder;
@@ -17,6 +16,7 @@ use Web\Page\Domain\PageRepository;
 use Web\Post\Application\PostOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Redirect\Domain\TargetAddresses;
+use Web\Shared\Infrastructure\Ui\SitePostUrls;
 use Web\Taxonomy\Application\TermOnSiteFinder;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Domain\Taxonomy;
@@ -25,13 +25,14 @@ use Web\Taxonomy\Domain\TermRepository;
 /**
  * Outbound adapter that asks the resources of the site where each is
  * served: a page at its slug, or the root for the home page, an image at the
- * copy of the width, a post under its section on its day, a section or a
- * tag at the slug of its taxonomy, and an author at its own.
+ * copy of the width, a post at its canonical address, a section or a tag
+ * at the slug of its taxonomy, and an author at its own.
  *
- * It reaches every module a redirect can lead to, so its coupling grows with
- * the kinds of resource and says nothing about its design.
+ * It reaches every module a redirect can lead to, so its coupling and what
+ * it takes grow with the kinds of resource and say nothing about its design.
  *
  * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
+ * @SuppressWarnings("PHPMD.ExcessiveParameterList")
  */
 #[AsAlias(TargetAddresses::class)]
 final readonly class SiteTargetAddresses implements TargetAddresses
@@ -43,6 +44,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
         private TermRepository $termRepository,
         private AuthorRepository $authorRepository,
         private UrlGeneratorInterface $urlGenerator,
+        private SitePostUrls $sitePostUrls,
     ) {}
 
     #[\Override]
@@ -86,7 +88,7 @@ final readonly class SiteTargetAddresses implements TargetAddresses
             return null;
         }
 
-        return PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH);
+        return ($this->sitePostUrls)([['sectionId' => $post->sectionId, 'sectionSlug' => $post->sectionSlug, 'day' => $post->day, 'slug' => $post->slug]], UrlGeneratorInterface::ABSOLUTE_PATH)[0];
     }
 
     /**

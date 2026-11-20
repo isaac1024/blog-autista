@@ -44,6 +44,7 @@ final readonly class SitemapPostsSubscriber implements DomainEventSubscriber
                 $day = new \DateTimeImmutable($event->day);
                 new PostEntryPlacer(
                     $event->aggregateId(),
+                    $event->sectionId,
                     PostAddressUrl::generate($this->urlGenerator, $event->sectionSlug, $event->day, $event->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
                     $day,
                     $event->lastPublishedAt,

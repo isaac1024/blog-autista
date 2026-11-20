@@ -98,7 +98,8 @@ final class PublishedPostTest extends TestCase
         ]);
         // Only the tags on the site, in order.
         PageComponents::one($page, 'Shared:PostTags', ['tags' => [['name' => 'Ruido', 'url' => '/tag/ruido.html']]]);
-        self::assertSame(RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html', $page->canonical);
+        // Its address names its section by the slug it has on the site now.
+        self::assertSame(RouteNameUrlGenerator::SITE.'/dia-a-dia/2026/11/07/mi-primer-dia.html', $page->canonical);
         self::assertSame('index,follow,max-image-preview:large', $page->robots);
         // Its visits are counted as those of the post.
         self::assertSame(['type' => 'post', 'id' => PostIdMother::DEFAULT_VALUE], $page->countedContent);
@@ -286,7 +287,7 @@ final class PublishedPostTest extends TestCase
             authors: [self::AUTHOR => self::author(self::AUTHOR, 'Isaac', 'isaac')],
             images: [self::image(CmsPostPublishedMother::OPENING_IMAGE, 'Andén del metro vacío')],
         );
-        $canonical = RouteNameUrlGenerator::SITE.'/vida-diaria/2026/11/07/mi-primer-dia.html';
+        $canonical = RouteNameUrlGenerator::SITE.'/dia-a-dia/2026/11/07/mi-primer-dia.html';
 
         self::assertSame([
             self::person('Isaac', 'isaac'),

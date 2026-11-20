@@ -11,6 +11,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Shared\Domain\Projection;
 use Web\Sitemap\Application\EntryPlacer;
 use Web\Sitemap\Application\EntryRemover;
+use Web\Sitemap\Application\SectionAddressesToucher;
 use Web\Sitemap\Domain\CmsTermPublished;
 use Web\Sitemap\Domain\CmsTermUnpublished;
 use Web\Sitemap\Domain\Indexable;
@@ -41,6 +42,10 @@ final readonly class SitemapTermsSubscriber implements DomainEventSubscriber
     {
         if ($event instanceof CmsTermPublished) {
             $this->projection->apply('sitemap_term', $event, function () use ($event): void {
+                if ('section' === $event->taxonomy) {
+                    new SectionAddressesToucher($event->aggregateId(), $event->lastPublishedAt)($this->repository);
+                }
+
                 if (!Indexable::robots($event->robots)) {
                     new EntryRemover($event->aggregateId(), $event->lastPublishedAt)($this->repository);
 
@@ -55,12 +60,15 @@ final readonly class SitemapTermsSubscriber implements DomainEventSubscriber
                     $event->lastPublishedAt,
                     null,
                     [],
+                    null,
                 )($this->repository);
             });
         }
 
         if ($event instanceof CmsTermUnpublished) {
             $this->projection->apply('sitemap_term', $event, function () use ($event): void {
+                // A tag lists no post by its section: it touches nothing.
+                new SectionAddressesToucher($event->aggregateId(), Clock::now())($this->repository);
                 new EntryRemover($event->aggregateId(), Clock::now())($this->repository);
             });
         }

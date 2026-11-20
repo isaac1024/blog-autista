@@ -41,13 +41,13 @@ final class DoctrineSitemapRepositoryTest extends KernelTestCase
         $repository->saveFile(new SitemapFile('posts-2025', 1, new \DateTimeImmutable('2025-03-02 10:00:00')));
         $repository->saveFile(new SitemapFile('posts-2024', 2, new \DateTimeImmutable('2026-12-01 10:00:00')));
         $repository->saveFile(new SitemapFile(SitemapFile::TAGS, 2, new \DateTimeImmutable('2026-11-07 10:00:00')));
-        $repository->saveEntry(new SitemapEntry(self::POST, 'posts-2026', '/a.html', new \DateTimeImmutable('2026-11-07 10:00:00'), self::IMAGE, []));
-        $repository->saveEntry(new SitemapEntry(self::OTHER_POST, 'posts-2026', '/b.html', new \DateTimeImmutable('2026-11-07 10:00:00'), self::OTHER_IMAGE, []));
-        $repository->saveEntry(new SitemapEntry(self::OLD_POST, 'posts-2025', '/c.html', new \DateTimeImmutable('2025-03-02 10:00:00'), self::IMAGE, []));
+        $repository->saveEntry(new SitemapEntry(self::POST, 'posts-2026', '/a.html', new \DateTimeImmutable('2026-11-07 10:00:00'), self::IMAGE, [], null));
+        $repository->saveEntry(new SitemapEntry(self::OTHER_POST, 'posts-2026', '/b.html', new \DateTimeImmutable('2026-11-07 10:00:00'), self::OTHER_IMAGE, [], null));
+        $repository->saveEntry(new SitemapEntry(self::OLD_POST, 'posts-2025', '/c.html', new \DateTimeImmutable('2025-03-02 10:00:00'), self::IMAGE, [], null));
         // Changed after the moment it is touched at, with its file.
-        $repository->saveEntry(new SitemapEntry(self::NEWER_POST, 'posts-2024', '/d.html', new \DateTimeImmutable('2026-12-01 10:00:00'), self::IMAGE, []));
-        $repository->saveEntry(new SitemapEntry(self::TAG, SitemapFile::TAGS, '/tag/a.html', new \DateTimeImmutable('2026-11-07 10:00:00'), null, []));
-        $repository->saveEntry(new SitemapEntry(self::OTHER_TAG, SitemapFile::TAGS, '/tag/b.html', new \DateTimeImmutable('2026-11-07 10:00:00'), null, []));
+        $repository->saveEntry(new SitemapEntry(self::NEWER_POST, 'posts-2024', '/d.html', new \DateTimeImmutable('2026-12-01 10:00:00'), self::IMAGE, [], null));
+        $repository->saveEntry(new SitemapEntry(self::TAG, SitemapFile::TAGS, '/tag/a.html', new \DateTimeImmutable('2026-11-07 10:00:00'), null, [], null));
+        $repository->saveEntry(new SitemapEntry(self::OTHER_TAG, SitemapFile::TAGS, '/tag/b.html', new \DateTimeImmutable('2026-11-07 10:00:00'), null, [], null));
     }
 
     public function testItMovesTheEntriesOfAnImageAndTheirFilesNeverBack(): void

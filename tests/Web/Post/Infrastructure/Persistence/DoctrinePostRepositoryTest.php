@@ -72,15 +72,19 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
         self::assertEquals($post, $this->repository()->find(PostIdMother::create()));
     }
 
-    public function testItFindsThePostAtItsSectionDayAndSlug(): void
+    /**
+     * A post is the one first published on its day with its slug: the
+     * section it is under doesn't tell it apart.
+     */
+    public function testItFindsThePostByItsDayAndSlugWhateverItsSection(): void
     {
-        $this->repository()->save(Post::publish(CmsPostPublishedMother::create()));
+        $this->repository()->save(Post::publish(CmsPostPublishedMother::create(sectionSlug: 'dia-a-dia')));
         $this->repository()->save(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value(), title: 'Otro día', day: '2026-11-08')));
-        $this->repository()->save(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value(), title: 'Otra sección', sectionSlug: 'dia-a-dia')));
+        $this->repository()->save(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value(), title: 'Otro slug', slug: 'otro')));
         $this->entityManager()->clear();
 
-        self::assertSame('Mi primer día sin ruido', $this->repository()->findAt('vida-diaria', new \DateTimeImmutable('2026-11-07'), 'mi-primer-dia')?->title());
-        self::assertNull($this->repository()->findAt('vida-diaria', new \DateTimeImmutable('2026-11-09'), 'mi-primer-dia'));
+        self::assertSame('Mi primer día sin ruido', $this->repository()->findAt(new \DateTimeImmutable('2026-11-07'), 'mi-primer-dia')?->title());
+        self::assertNull($this->repository()->findAt(new \DateTimeImmutable('2026-11-09'), 'mi-primer-dia'));
     }
 
     public function testItDeletesOnlyTheGivenPost(): void

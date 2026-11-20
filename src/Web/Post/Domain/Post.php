@@ -10,9 +10,9 @@ use Web\Shared\Domain\Robots;
 
 /**
  * A post on the site, as the CMS last published it: only published posts are
- * here, each served under the slug its section had then, on the day it was
- * first published, by its own slug. It keeps the names its section and its
- * author had then too, which the site shows once either is off it.
+ * here, each the one first published on its day with its slug, two never
+ * sharing both. It keeps the names its section and its author had then, and
+ * the slug of its section, which the site shows once either is off it.
  *
  * Its constructor takes all of its state, one parameter each, as Doctrine maps it.
  *
@@ -21,7 +21,7 @@ use Web\Shared\Domain\Robots;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'web_post')]
-#[ORM\UniqueConstraint(name: 'uniq_web_post_address', columns: ['section_slug', 'day', 'slug'])]
+#[ORM\UniqueConstraint(name: 'uniq_web_post_address', columns: ['day', 'slug'])]
 #[ORM\Index(name: 'idx_web_post_listing', columns: ['first_published_at', 'id'])]
 #[ORM\Index(name: 'idx_web_post_section_listing', columns: ['section_id', 'first_published_at', 'id'])]
 #[ORM\Index(name: 'idx_web_post_author_listing', columns: ['author_id', 'first_published_at', 'id'])]
@@ -151,10 +151,10 @@ final class Post
      */
     public function save(PostRepository $postRepository): void
     {
-        $holder = $postRepository->findAt($this->sectionSlug, $this->day, $this->slug);
+        $holder = $postRepository->findAt($this->day, $this->slug);
 
         if (null !== $holder && !$holder->id->equals($this->id)) {
-            throw AddressTaken::atAddress(\sprintf('%s/%s/%s', $this->sectionSlug, $this->day->format('Y-m-d'), $this->slug));
+            throw AddressTaken::atAddress(\sprintf('%s/%s', $this->day->format('Y-m-d'), $this->slug));
         }
 
         $postRepository->save($this);

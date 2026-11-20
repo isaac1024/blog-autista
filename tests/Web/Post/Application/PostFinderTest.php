@@ -24,7 +24,7 @@ final class PostFinderTest extends TestCase
         $repository = $this->createMock(PostRepository::class);
         $repository->expects(self::once())
             ->method('findAt')
-            ->with('vida-diaria', self::equalTo(new \DateTimeImmutable('2026-11-07')), 'mi-primer-dia')
+            ->with(self::equalTo(new \DateTimeImmutable('2026-11-07')), 'mi-primer-dia')
             ->willReturn(Post::publish(CmsPostPublishedMother::create(robots: Robots::NoindexFollow)));
 
         self::assertEquals(
@@ -47,7 +47,7 @@ final class PostFinderTest extends TestCase
                 ClockMother::now(),
                 ClockMother::now(),
             ),
-            (new PostFinder('vida-diaria', '2026-11-07', 'mi-primer-dia'))($repository),
+            (new PostFinder('2026-11-07', 'mi-primer-dia'))($repository),
         );
     }
 
@@ -67,7 +67,7 @@ final class PostFinderTest extends TestCase
 
             self::assertSame(
                 $minutes,
-                (new PostFinder('vida-diaria', '2026-11-07', 'mi-primer-dia'))($repository)->readingMinutes,
+                (new PostFinder('2026-11-07', 'mi-primer-dia'))($repository)->readingMinutes,
                 \sprintf('%d words', $words),
             );
         }
@@ -78,9 +78,9 @@ final class PostFinderTest extends TestCase
         $repository = self::createStub(PostRepository::class);
         $repository->method('findAt')->willReturn(null);
 
-        $this->expectExceptionObject(PostNotFound::atAddress('vida-diaria/2026-11-07/mi-primer-dia'));
+        $this->expectExceptionObject(PostNotFound::atAddress('2026-11-07/mi-primer-dia'));
 
-        (new PostFinder('vida-diaria', '2026-11-07', 'mi-primer-dia'))($repository);
+        (new PostFinder('2026-11-07', 'mi-primer-dia'))($repository);
     }
 
     /**
@@ -93,9 +93,9 @@ final class PostFinderTest extends TestCase
         $repository = $this->createMock(PostRepository::class);
         $repository->expects(self::never())->method('findAt');
 
-        $this->expectExceptionObject(PostNotFound::atAddress(\sprintf('vida-diaria/%s/mi-primer-dia', $day)));
+        $this->expectExceptionObject(PostNotFound::atAddress(\sprintf('%s/mi-primer-dia', $day)));
 
-        (new PostFinder('vida-diaria', $day, 'mi-primer-dia'))($repository);
+        (new PostFinder($day, 'mi-primer-dia'))($repository);
     }
 
     /**

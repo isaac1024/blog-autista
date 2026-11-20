@@ -14,7 +14,6 @@ use Web\Image\Application\ImagesOnSiteFinder;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Application\PostCardResponse;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
-use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\TermRepository;
 
@@ -25,6 +24,7 @@ use Web\Taxonomy\Domain\TermRepository;
  * opening image on the site, or the one the address of that image now leads
  * to, if any, and its section by the current name, while on the site or as
  * the section its address now leads to, by the one the post kept otherwise.
+ * Its address names the section as SitePostUrls does.
  *
  * @phpstan-import-type CardPost from PostCardsComponent
  *
@@ -72,19 +72,20 @@ final readonly class SitePostCards
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
-        $sections = array_filter(
-            new ReferenceResolver('term', array_map(static fn (PostCardResponse $post): string => $post->sectionId, $posts), null)(
-                fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
-                $this->redirectsByOrigin,
-            ),
-            static fn (TermResponse $term): bool => $term->isSection(),
+        $terms = new ReferenceResolver('term', array_map(static fn (PostCardResponse $post): string => $post->sectionId, $posts), null)(
+            fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
+            $this->redirectsByOrigin,
         );
 
-        return array_map(fn (PostCardResponse $post): array => [
-            'url' => PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, $referenceType),
-            'section' => $sections[$post->sectionId]->name ?? $post->sectionName,
-            'image' => $images[$post->openingImageId] ?? null,
-        ], $posts);
+        return array_map(function (PostCardResponse $post) use ($terms, $images, $referenceType): array {
+            $term = $terms[$post->sectionId] ?? null;
+
+            return [
+                'url' => PostAddressUrl::generate($this->urlGenerator, SitePostUrls::section($term, $post->sectionId, $post->sectionSlug), $post->day, $post->slug, $referenceType),
+                'section' => true === $term?->isSection() ? $term->name : $post->sectionName,
+                'image' => $images[$post->openingImageId] ?? null,
+            ];
+        }, $posts);
     }
 
     /**

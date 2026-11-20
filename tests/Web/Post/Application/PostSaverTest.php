@@ -48,7 +48,7 @@ final class PostSaverTest extends TestCase
         $repository->method('find')->willReturn(Post::publish($event));
         $repository->expects(self::once())
             ->method('findAt')
-            ->with('vida-diaria', self::equalTo(new \DateTimeImmutable('2026-11-07')), 'mi-primer-dia')
+            ->with(self::equalTo(new \DateTimeImmutable('2026-11-07')), 'mi-primer-dia')
             ->willReturn(Post::publish($event));
         $repository->expects(self::once())->method('save')->with(self::equalTo(Post::publish($event)));
 
@@ -62,7 +62,7 @@ final class PostSaverTest extends TestCase
         $repository->method('findAt')->willReturn(Post::publish(CmsPostPublishedMother::create(id: PostIdMother::random()->value())));
         $repository->expects(self::never())->method('save');
 
-        $this->expectExceptionObject(AddressTaken::atAddress('vida-diaria/2026-11-07/mi-primer-dia'));
+        $this->expectExceptionObject(AddressTaken::atAddress('2026-11-07/mi-primer-dia'));
 
         (new PostSaver(CmsPostPublishedMother::create()))($repository);
     }

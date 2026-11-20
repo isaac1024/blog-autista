@@ -19,10 +19,12 @@ use Web\Sitemap\Domain\SitemapRepository;
 final readonly class PostEntryPlacer
 {
     /**
+     * @param string       $path    its address, under the slug it kept of its section
      * @param list<string> $termIds its section and its tags
      */
     public function __construct(
         private string $postId,
+        private string $sectionId,
         private string $path,
         private \DateTimeImmutable $day,
         private \DateTimeImmutable $lastPublishedAt,
@@ -36,7 +38,7 @@ final readonly class PostEntryPlacer
         $had = $repository->entry($this->postId)?->termIds() ?? [];
 
         if ($this->indexable) {
-            new EntryPlacer($this->postId, SitemapFile::postsOf($this->day), $this->path, $this->lastPublishedAt, $this->openingImageId, $this->termIds)($repository);
+            new EntryPlacer($this->postId, SitemapFile::postsOf($this->day), $this->path, $this->lastPublishedAt, $this->openingImageId, $this->termIds, $this->sectionId)($repository);
         } else {
             new EntryRemover($this->postId, $this->lastPublishedAt)($repository);
         }

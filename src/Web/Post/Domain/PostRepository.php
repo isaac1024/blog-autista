@@ -26,10 +26,10 @@ interface PostRepository
     public function cardsOf(array $ids): array;
 
     /**
-     * The post served under the slug of a section, on the day it was first
-     * published, by its slug.
+     * The post first published on the day with the slug, whatever section
+     * it is under.
      */
-    public function findAt(string $section, \DateTimeImmutable $day, string $slug): ?Post;
+    public function findAt(\DateTimeImmutable $day, string $slug): ?Post;
 
     /**
      * The cards of the posts of the selection, newest first by the day they

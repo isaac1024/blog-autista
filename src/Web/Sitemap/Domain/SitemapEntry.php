@@ -21,6 +21,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'web_sitemap_entry')]
 #[ORM\Index(name: 'idx_web_sitemap_entry_file', columns: ['file', 'path'])]
 #[ORM\Index(name: 'idx_web_sitemap_entry_image', columns: ['image_id'])]
+#[ORM\Index(name: 'idx_web_sitemap_entry_section', columns: ['section_id'])]
 final class SitemapEntry
 {
     /**
@@ -40,17 +41,24 @@ final class SitemapEntry
         private ?string $imageId,
         #[ORM\Column(type: 'json')]
         private array $termIds,
+        /*
+         * The section of a post, whose slug on the site its address names
+         * in place of the one the path kept; none for anything else.
+         */
+        #[ORM\Column(type: 'guid', nullable: true)]
+        private ?string $sectionId,
     ) {}
 
     /**
      * Takes what it is now: where it is, when it changed, and for a post its
-     * image and its terms. Its file never changes.
+     * image, its terms and its section. Its file never changes.
      *
      * @param list<string> $termIds
      */
-    public function update(string $path, \DateTimeImmutable $lastmod, ?string $imageId, array $termIds): void
+    public function update(string $path, \DateTimeImmutable $lastmod, ?string $imageId, array $termIds, ?string $sectionId): void
     {
         $this->path = $path;
+        $this->sectionId = $sectionId;
         $this->lastmod = $lastmod;
         $this->imageId = $imageId;
         $this->termIds = $termIds;

@@ -20,6 +20,13 @@ interface SitemapRepository
     public function touchEntriesWithImage(string $imageId, \DateTimeImmutable $moment): void;
 
     /**
+     * Moves the files that list posts of the section to the moment: the
+     * addresses of those posts name the section by its slug on the site,
+     * which changed. The entries keep their own dates, their pages unchanged.
+     */
+    public function touchFilesOfSection(string $sectionId, \DateTimeImmutable $moment): void;
+
+    /**
      * The entries of the resources given changed at the moment, as the lists
      * of a section or a tag do, and so did their files; each keeps the
      * latest of the two. A resource with no entry changes nothing.
