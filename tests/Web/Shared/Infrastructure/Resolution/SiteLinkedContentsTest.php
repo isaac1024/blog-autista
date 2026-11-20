@@ -42,6 +42,7 @@ final class SiteLinkedContentsTest extends KernelTestCase
     private const string GONE_TAG = '01a1b801-ce58-723d-8234-b76d9105a013';
     private const string GONE_AUTHOR = '01a1b801-ce58-723d-8234-b76d9105a022';
     private const string OFF_SITE = '01a1b801-ce58-723d-8234-b76d9105a099';
+    private const string IMAGE = '01a1b801-ce58-723d-8234-b76d9105a031';
 
     #[\Override]
     protected function setUp(): void
@@ -103,6 +104,23 @@ final class SiteLinkedContentsTest extends KernelTestCase
                 'published' => null,
             ],
         ], $related);
+    }
+
+    /**
+     * A post is summed up as everywhere else on the site: by the current
+     * name of its section, and opening with the image its image's address
+     * now leads to, when its own left the site.
+     */
+    public function testACardOfARelatedPostShowsItsSectionAndImageAsTheSiteHasThemNow(): void
+    {
+        self::getContainer()->get(TermRepository::class)->save(self::term(CmsPostPublishedMother::SECTION, 'section', 'Día a día', 'dia-a-dia'));
+        self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/bosque.webp')));
+        self::getContainer()->get(Connection::class)->delete('web_image', ['id' => CmsPostPublishedMother::OPENING_IMAGE]);
+        self::redirect('01a1b801-ce58-723d-8234-b76d9105c004', '/media/2026/11/faro.webp', 'image', self::IMAGE, 'image', CmsPostPublishedMother::OPENING_IMAGE);
+
+        $related = self::getContainer()->get(SiteLinkedContents::class)(self::text(['post_id' => PostIdMother::DEFAULT_VALUE]), [], null)[PostIdMother::DEFAULT_VALUE]['related'] ?? null;
+
+        self::assertSame(['Día a día', '/media/2026/11/bosque-1200w.webp'], [$related['section'] ?? null, $related['image']['src'] ?? null]);
     }
 
     public function testItFindsEveryKindOfContentLinkedWhereTheSiteServesIt(): void

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Cms\Post\Application;
 
-use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostRepository;
 use Cms\Post\Domain\PostSelection;
 
@@ -39,7 +38,7 @@ final readonly class LatestPostsOnSiteFinder
         $cards = [];
 
         foreach ($postRepository->latestOnSite($this->selection, $this->limit) as $post) {
-            $card = self::card($post);
+            $card = PostOnSiteCardResponse::fromPost($post);
 
             if (null !== $card) {
                 $cards[] = $card;
@@ -47,32 +46,5 @@ final readonly class LatestPostsOnSiteFinder
         }
 
         return $cards;
-    }
-
-    /**
-     * A post on the site always has a version there, an address, a section
-     * and the day it was first published.
-     */
-    private static function card(Post $post): ?PostOnSiteCardResponse
-    {
-        $version = $post->onSite();
-        $address = $post->publishedAddress();
-        $section = $version?->classification()->section();
-        $firstPublishedAt = $post->timeline()->firstPublishedAt();
-
-        if (null === $version || null === $address || null === $section || null === $firstPublishedAt) {
-            return null;
-        }
-
-        return new PostOnSiteCardResponse(
-            $version->title()->value(),
-            $version->seo()->description(),
-            $section->value(),
-            $address->section()->value(),
-            $address->day(),
-            $address->slug()->value(),
-            $version->openingImage()?->value(),
-            $firstPublishedAt,
-        );
     }
 }

@@ -9,8 +9,8 @@ use Cms\Post\Domain\PostRepository;
 use Shared\Domain\DomainError;
 
 /**
- * Finds the posts on the site among those given, read at once, as the site
- * has them; one off it, or an id of no post, is left out.
+ * Finds the posts on the site among those given, read at once, as cards of
+ * what the site has of them; one off it, or an id of no post, is left out.
  */
 final readonly class PostsOnSiteFinder
 {
@@ -20,7 +20,7 @@ final readonly class PostsOnSiteFinder
     public function __construct(private array $ids) {}
 
     /**
-     * @return array<string, PostOnSiteResponse> keyed by id
+     * @return array<string, PostOnSiteCardResponse> keyed by id
      */
     public function __invoke(PostRepository $postRepository): array
     {
@@ -37,20 +37,10 @@ final readonly class PostsOnSiteFinder
         $posts = [];
 
         foreach ($postRepository->findByIds($ids) as $post) {
-            $version = $post->onSite();
-            $address = $post->publishedAddress();
-            $section = $version?->classification()->section();
-            $firstPublishedAt = $post->timeline()->firstPublishedAt();
+            $card = PostOnSiteCardResponse::fromPost($post);
 
-            if (null !== $version && null !== $address && null !== $section && null !== $firstPublishedAt) {
-                $posts[$post->id()->value()] = new PostOnSiteResponse(
-                    $version->title()->value(),
-                    PostAddressResponse::fromAddress($address),
-                    $version->seo()->description(),
-                    $section->value(),
-                    $version->openingImage()?->value(),
-                    $firstPublishedAt,
-                );
+            if (null !== $card) {
+                $posts[$post->id()->value()] = $card;
             }
         }
 

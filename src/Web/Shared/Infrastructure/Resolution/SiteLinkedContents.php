@@ -8,7 +8,6 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\ExternalComponents;
-use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\RichTextComponents;
 use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
@@ -16,15 +15,13 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Web\Author\Application\AuthorResponse;
 use Web\Author\Application\AuthorsOnSiteFinder;
 use Web\Author\Domain\AuthorRepository;
-use Web\Image\Application\ImagesOnSiteFinder;
-use Web\Image\Domain\ImageRepository;
 use Web\Page\Application\PageResponse;
 use Web\Page\Application\PagesOnSiteFinder;
 use Web\Page\Domain\PageRepository;
-use Web\Post\Application\PostCardResponse;
 use Web\Post\Application\PostsOnSiteFinder;
 use Web\Post\Domain\PostRepository;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Application\TermResponse;
 use Web\Taxonomy\Application\TermsOnSiteFinder;
 use Web\Taxonomy\Domain\TermRepository;
@@ -58,7 +55,7 @@ final readonly class SiteLinkedContents
         private AuthorRepository $authorRepository,
         private SiteRedirectsByOrigin $redirectsByOrigin,
         private SiteExternalViews $externalViews,
-        private ImageRepository $imageRepository,
+        private SitePostCards $sitePostCards,
     ) {}
 
     /**
@@ -132,8 +129,7 @@ final readonly class SiteLinkedContents
 
     /**
      * The posts on the site among those given, as a link and a card of
-     * related content show them: the posts at once, then the images they
-     * open with, at once too.
+     * related content show them, summed up as everywhere else on the site.
      *
      * @param list<string> $ids
      *
@@ -142,24 +138,12 @@ final readonly class SiteLinkedContents
     private function posts(array $ids): array
     {
         $posts = new PostsOnSiteFinder($ids)($this->postRepository);
-        $images = new ImagesOnSiteFinder(array_values(array_map(static fn (PostCardResponse $post): string => $post->openingImageId, $posts)))($this->imageRepository);
 
-        return array_map(function (PostCardResponse $post) use ($images): array {
-            $image = $images[$post->openingImageId] ?? null;
-            $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
-
-            return [
-                'url' => PostAddressUrl::generate($this->urlGenerator, $post->sectionSlug, $post->day, $post->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
-                'title' => $post->title,
-                'related' => self::related(
-                    'post',
-                    $post->metaDescription,
-                    null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
-                    $post->sectionName,
-                    $post->firstPublishedAt,
-                ),
-            ];
-        }, $posts);
+        return array_combine(array_keys($posts), array_map(static fn (array $card): array => [
+            'url' => $card['url'],
+            'title' => $card['title'],
+            'related' => self::related('post', $card['excerpt'], $card['image'], $card['section'], $card['firstPublishedAt']),
+        ], ($this->sitePostCards)(array_values($posts))));
     }
 
     /**

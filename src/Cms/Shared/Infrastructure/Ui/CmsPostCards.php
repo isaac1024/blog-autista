@@ -21,10 +21,11 @@ use Shared\Infrastructure\Ui\SiteMedia;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
- * The latest posts on the site of a selection as cards, as a preview paints
- * them, from what the CMS has on the site, gathered at once for all of them:
- * the opening image on the site, or the one its address now leads to, and the
- * section by its name there. Cards lead to the site.
+ * The posts on the site as cards, as a preview paints them wherever the site
+ * sums one up (a list, a mosaic, a card of related content), from what the
+ * CMS has on the site, gathered at once for all of them: the opening image on
+ * the site, or the one its address now leads to, and the section by its name
+ * there, or as the section its address now leads to. Cards lead to the site.
  *
  * @phpstan-import-type CardPost from PostCardsComponent
  */
@@ -47,14 +48,28 @@ final readonly class CmsPostCards
      */
     public function __invoke(?string $sectionId, ?string $authorId, array $tagIds, int $limit): array
     {
-        $posts = new LatestPostsOnSiteFinder($sectionId, $authorId, $tagIds, $limit)($this->postRepository);
+        return $this->cards(new LatestPostsOnSiteFinder($sectionId, $authorId, $tagIds, $limit)($this->postRepository));
+    }
+
+    /**
+     * The cards of the posts given, in that order, as the site sums them up.
+     *
+     * @param list<PostOnSiteCardResponse> $posts
+     *
+     * @return list<CardPost>
+     */
+    public function cards(array $posts): array
+    {
         $images = new ReferenceResolver('image', array_values(array_unique(array_filter(array_map(static fn (PostOnSiteCardResponse $post): ?string => $post->openingImageId, $posts), static fn (?string $id): bool => null !== $id))), null)(
             fn (array $ids): array => new ImagesOnSiteFinder($ids)($this->imageRepository),
             $this->redirectsByOrigin,
         );
         $sections = array_map(
             static fn (TermOnSiteResponse $term): ?string => $term->isSection() ? $term->name : null,
-            new TermsOnSiteFinder(array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts))($this->termRepository),
+            new ReferenceResolver('term', array_map(static fn (PostOnSiteCardResponse $post): string => $post->sectionId, $posts), null)(
+                fn (array $ids): array => new TermsOnSiteFinder($ids)($this->termRepository),
+                $this->redirectsByOrigin,
+            ),
         );
 
         return array_map(fn (PostOnSiteCardResponse $post): array => [

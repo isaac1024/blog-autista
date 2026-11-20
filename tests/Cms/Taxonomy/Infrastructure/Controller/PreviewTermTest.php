@@ -91,7 +91,7 @@ final class PreviewTermTest extends TestCase
         $redirectsByOrigin = new CmsRedirectsByOrigin(self::createStub(RedirectRepository::class));
         $termRepository = self::createStub(TermRepository::class);
         $termRepository->method('findByIds')->willReturn([TermMother::published()]);
-        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), self::createStub(ImageRepository::class), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
+        $linkedContents = new CmsLinkedContents($urlGenerator, $pageRepository, $postRepository, $termRepository, self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), $termRepository, $redirectsByOrigin, $urlGenerator), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret'))));
 
         return new PreviewTerm(
             new PreviewLayout($urlGenerator, self::createStub(SettingsRepository::class), $imageRepository, $redirectsByOrigin, $linkedContents, self::createStub(PageRepository::class)),

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Cms\Tests\Post\Application;
 
-use Cms\Post\Application\PostAddressResponse;
-use Cms\Post\Application\PostOnSiteResponse;
+use Cms\Post\Application\PostOnSiteCardResponse;
 use Cms\Post\Application\PostsOnSiteFinder;
 use Cms\Post\Domain\Post;
 use Cms\Post\Domain\PostId;
@@ -39,7 +38,7 @@ final class PostsOnSiteFinderTest extends TestCase
         $repository->method('findByIds')->willReturnCallback(static fn (array $ids): array => array_values(array_filter(array_map(static fn (mixed $id): ?Post => $id instanceof PostId ? $posts[$id->value()] ?? null : null, $ids))));
 
         self::assertEquals(
-            [PostIdMother::DEFAULT_VALUE => new PostOnSiteResponse(PostMother::TITLE, new PostAddressResponse(TermMother::SLUG, '2026-11-07', PostMother::SLUG), PostMother::META_DESCRIPTION, PostMother::SECTION, PostMother::OPENING_IMAGE, ClockMother::now())],
+            [PostIdMother::DEFAULT_VALUE => new PostOnSiteCardResponse(PostMother::TITLE, PostMother::META_DESCRIPTION, PostMother::SECTION, TermMother::SLUG, '2026-11-07', PostMother::SLUG, PostMother::OPENING_IMAGE, ClockMother::now())],
             new PostsOnSiteFinder([PostIdMother::DEFAULT_VALUE, self::DRAFT, 'mi-post', self::OFF_SITE, PostIdMother::DEFAULT_VALUE])($repository),
         );
     }

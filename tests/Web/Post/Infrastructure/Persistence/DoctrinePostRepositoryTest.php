@@ -148,6 +148,7 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
             $post->sectionId(),
             $post->sectionName(),
             $post->sectionSlug(),
+            $post->authorId(),
             $post->authorName(),
             $post->openingImageId(),
             $post->metaDescription(),

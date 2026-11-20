@@ -75,7 +75,7 @@ final class CmsLinkedContentsTest extends KernelTestCase
 
         self::assertEqualsCanonicalizing([
             self::PAGE => ['url' => '/sobre-mi.html', 'title' => 'Sobre mí'],
-            self::POST => ['url' => '/vida-diaria/2026/11/07/'.PostMother::SLUG.'.html', 'title' => 'En la web'],
+            self::POST => ['url' => 'http://www.blogautista.localhost/vida-diaria/2026/11/07/'.PostMother::SLUG.'.html', 'title' => 'En la web'],
             self::OFF_SITE_TAG => ['url' => '/tag/sueno.html', 'title' => 'Sueño'],
             self::AUTHOR => ['url' => '/autor/isaac.html', 'title' => 'Isaac'],
             self::SECTION => ['url' => '/vida-diaria/', 'title' => 'Vida diaria'],

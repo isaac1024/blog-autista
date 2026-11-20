@@ -40,6 +40,7 @@ use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
@@ -487,12 +488,12 @@ final class PublishedPostTest extends TestCase
         $page = new PublishedPost(
             $urlGenerator,
             new SitePostPage(new RichTextComponents(), $translator),
-            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), self::createStub(ImageRepository::class)), $authorRepository, self::createStub(PageRepository::class)),
+            new SiteLayout($urlGenerator, $settingsRepository, $imageRepository, $redirects, new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authorRepository, self::createStub(PageRepository::class)),
             $imageRepository,
             $termRepository,
             $authorRepository,
             $redirects,
-            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), self::createStub(ImageRepository::class)),
+            new SiteLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), $termRepository, $authorRepository, $redirects, new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pageRepository, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))),
         )(PostResponse::fromPost($post));
         ComponentContracts::assertHonoured($page);
 

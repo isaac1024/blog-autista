@@ -27,6 +27,7 @@ use Web\Shared\Infrastructure\Resolution\SiteLinkedContents;
 use Web\Shared\Infrastructure\Resolution\SiteRedirectsByOrigin;
 use Web\Shared\Infrastructure\Ui\SiteExternalViews;
 use Web\Shared\Infrastructure\Ui\SiteLayout;
+use Web\Shared\Infrastructure\Ui\SitePostCards;
 use Web\Taxonomy\Domain\TermRepository;
 use Web\Tests\Author\Domain\AuthorIdMother;
 use Web\Tests\Author\Domain\CmsAuthorPublishedMother;
@@ -242,7 +243,7 @@ final class SiteLayoutTest extends TestCase
         $repository = self::createStub(SettingsRepository::class);
         $repository->method('find')->willReturn($settings);
 
-        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator), self::createStub(ImageRepository::class)), $authors ?? self::createStub(AuthorRepository::class), $pages);
+        return new SiteLayout($urlGenerator, $repository, $images, new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteLinkedContents($urlGenerator, $pages, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)), new SiteExternalViews(self::createStub(WebExternalResourceRepository::class), $pages, $urlGenerator), new SitePostCards($urlGenerator, self::createStub(ImageRepository::class), self::createStub(TermRepository::class), new SiteRedirectsByOrigin(self::createStub(RedirectRepository::class)))), $authors ?? self::createStub(AuthorRepository::class), $pages);
     }
 
     /**

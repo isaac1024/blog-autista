@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Web\Tests\Post\Infrastructure\Controller;
 
+use Doctrine\DBAL\Connection;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Clock\Test\ClockSensitiveTrait;
+use Web\Author\Domain\Author;
+use Web\Author\Domain\AuthorRepository;
+use Web\Author\Domain\CmsAuthorPublished;
 use Web\Image\Domain\Image;
 use Web\Image\Domain\ImageRepository;
 use Web\Post\Domain\CmsPostPublished;
@@ -29,6 +33,10 @@ final class FeedControllerTest extends WebTestCase
     private const string SITE = 'http://www.blogautista.localhost';
 
     private const string ATOM = 'http://www.w3.org/2005/Atom';
+
+    private const string IMAGE = '01a1b801-ce58-723d-8234-b76d9105a031';
+
+    private const string OTHER_AUTHOR = '01a1b801-ce58-723d-8234-b76d9105a022';
 
     public function testItTellsTheLatestPostsSearchEnginesMayIndexNewestFirst(): void
     {
@@ -108,6 +116,59 @@ final class FeedControllerTest extends WebTestCase
     }
 
     /**
+     * An entry is summed up as everywhere else on the site: signed by its
+     * author as the site has them now, and opening with the image its
+     * image's address now leads to, when its own left the site.
+     */
+    public function testAnEntryIsSignedAndIllustratedAsTheSiteHasThemNow(): void
+    {
+        $client = self::createClient();
+        self::getContainer()->get(PostRepository::class)->save(self::post(3, 'index,follow'));
+        self::getContainer()->get(ImageRepository::class)->save(Image::publish(CmsImagePublishedMother::create(id: self::IMAGE, path: '2026/11/bosque.webp')));
+        self::redirect('01a1b801-ce58-723d-8234-b76d9105c001', '/media/2026/11/faro.webp', 'image', self::IMAGE, 'image', CmsPostPublishedMother::OPENING_IMAGE);
+        self::getContainer()->get(AuthorRepository::class)->save(Author::publish(CmsAuthorPublished::fromPrimitives(CmsPostPublishedMother::AUTHOR, [
+            'name' => 'Isaac A.',
+            'slug' => 'isaac',
+            'avatar' => '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp',
+            'bio' => ['version' => 1, 'blocks' => []],
+            'meta_description' => 'Quién escribe.',
+            'robots' => 'index,follow',
+            'first_published_at' => '2026-11-07T10:00:00+00:00',
+            'last_published_at' => '2026-11-07T10:00:00+00:00',
+            'revision' => 1,
+        ])));
+
+        $entry = $this->entries($client)[0];
+
+        self::assertSame(['Isaac A.', self::SITE.'/media/2026/11/bosque-1200w.webp'], [$entry['author'], $entry['enclosure']]);
+    }
+
+    /**
+     * An author off the site signs as the author their address now leads
+     * to, and by the name the post kept when that leads nowhere.
+     */
+    public function testAnAuthorOffTheSiteSignsAsTheAuthorTheirAddressLeadsTo(): void
+    {
+        $client = self::createClient();
+        self::getContainer()->get(PostRepository::class)->save(self::post(3, 'index,follow'));
+        $unsigned = $this->entries($client)[0]['author'];
+        self::getContainer()->get(AuthorRepository::class)->save(Author::publish(CmsAuthorPublished::fromPrimitives(self::OTHER_AUTHOR, [
+            'name' => 'Ana',
+            'slug' => 'ana',
+            'avatar' => '01a1da50-9e10-7f03-8c5a-1b2c3d4e5f03.webp',
+            'bio' => ['version' => 1, 'blocks' => []],
+            'meta_description' => 'Quién escribe.',
+            'robots' => 'index,follow',
+            'first_published_at' => '2026-11-07T10:00:00+00:00',
+            'last_published_at' => '2026-11-07T10:00:00+00:00',
+            'revision' => 1,
+        ])));
+        self::redirect('01a1b801-ce58-723d-8234-b76d9105c002', '/autor/isaac.html', 'author', self::OTHER_AUTHOR, 'author', CmsPostPublishedMother::AUTHOR);
+
+        self::assertSame(['Isaac Abreu', 'Ana'], [$unsigned, $this->entries($client)[0]['author']]);
+    }
+
+    /**
      * With no post, the feed was last updated now.
      */
     public function testAFeedWithNoPostWasUpdatedNow(): void
@@ -178,5 +239,14 @@ final class FeedControllerTest extends WebTestCase
             'last_published_at' => ClockMother::now()->format(\DATE_ATOM),
             'revision' => 1,
         ] + CmsPostPublishedMother::body()));
+    }
+
+    private static function redirect(string $id, string $source, string $targetType, string $targetId, string $originType, string $originId): void
+    {
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
+            'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
+            'origin_type' => $originType, 'origin_id' => $originId,
+            'created_at' => '2026-11-09 09:00:00', 'updated_at' => '2026-11-09 10:00:00', 'version' => 1,
+        ]);
     }
 }

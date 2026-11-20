@@ -7,16 +7,14 @@ namespace Cms\Shared\Infrastructure\Resolution;
 use Cms\Author\Application\AuthorOnSiteResponse;
 use Cms\Author\Application\AuthorsOnSiteFinder;
 use Cms\Author\Domain\AuthorRepository;
-use Cms\Image\Application\ImagesOnSiteFinder;
-use Cms\Image\Domain\ImageRepository;
 use Cms\Page\Application\PageOnSiteResponse;
 use Cms\Page\Application\PagesOnSiteFinder;
 use Cms\Page\Domain\PageRepository;
-use Cms\Post\Application\PostOnSiteResponse;
 use Cms\Post\Application\PostsOnSiteFinder;
 use Cms\Post\Domain\PostRepository;
 use Cms\Shared\Infrastructure\Http\AvatarUrl;
 use Cms\Shared\Infrastructure\Ui\CmsExternalViews;
+use Cms\Shared\Infrastructure\Ui\CmsPostCards;
 use Cms\Taxonomy\Application\TermOnSiteResponse;
 use Cms\Taxonomy\Application\TermsOnSiteFinder;
 use Cms\Taxonomy\Domain\TermRepository;
@@ -25,9 +23,7 @@ use Shared\Domain\Redirect\ReferenceResolver;
 use Shared\Domain\RichText\LinkType;
 use Shared\Domain\RichText\RichText;
 use Shared\Infrastructure\Ui\ExternalComponents;
-use Shared\Infrastructure\Ui\PostAddressUrl;
 use Shared\Infrastructure\Ui\RichTextComponents;
-use Shared\Infrastructure\Ui\SiteMedia;
 use Shared\Infrastructure\Ui\SitePage;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -64,7 +60,7 @@ final readonly class CmsLinkedContents
         private AuthorRepository $authorRepository,
         private CmsRedirectsByOrigin $redirectsByOrigin,
         private CmsExternalViews $externalViews,
-        private ImageRepository $imageRepository,
+        private CmsPostCards $postCards,
         private AvatarUrl $avatarUrl,
     ) {}
 
@@ -122,8 +118,7 @@ final readonly class CmsLinkedContents
 
     /**
      * The posts on the site among those given, as a link and a card of
-     * related content show them: the posts at once, then the images they
-     * open with and the names of their sections, at once each.
+     * related content show them, summed up as the preview does everywhere.
      *
      * @param list<string> $ids
      *
@@ -132,26 +127,12 @@ final readonly class CmsLinkedContents
     private function posts(array $ids): array
     {
         $posts = new PostsOnSiteFinder($ids)($this->postRepository);
-        $images = new ImagesOnSiteFinder(array_values(array_filter(array_map(static fn (PostOnSiteResponse $post): ?string => $post->openingImageId, $posts), static fn (?string $id): bool => null !== $id)))($this->imageRepository);
-        $sections = new TermsOnSiteFinder(array_values(array_map(static fn (PostOnSiteResponse $post): string => $post->sectionId, $posts)))($this->termRepository);
 
-        return array_map(function (PostOnSiteResponse $post) use ($images, $sections): array {
-            $image = $images[$post->openingImageId ?? ''] ?? null;
-            $painted = null === $image ? null : SiteMedia::image($image->path, $image->alt, $image->caption);
-            $section = $sections[$post->sectionId] ?? null;
-
-            return [
-                'url' => PostAddressUrl::generate($this->urlGenerator, $post->address->section, $post->address->day, $post->address->slug, UrlGeneratorInterface::ABSOLUTE_PATH),
-                'title' => $post->title,
-                'related' => self::related(
-                    'post',
-                    $post->excerpt,
-                    null === $painted ? null : ['src' => $painted['src'], 'srcset' => $painted['srcset'], 'width' => $painted['width'], 'height' => $painted['height']],
-                    true === $section?->isSection() ? $section->name : null,
-                    $post->firstPublishedAt,
-                ),
-            ];
-        }, $posts);
+        return array_combine(array_keys($posts), array_map(static fn (array $card): array => [
+            'url' => $card['url'],
+            'title' => $card['title'],
+            'related' => self::related('post', $card['excerpt'], $card['image'], '' === $card['section'] ? null : $card['section'], $card['firstPublishedAt']),
+        ], $this->postCards->cards(array_values($posts))));
     }
 
     /**
