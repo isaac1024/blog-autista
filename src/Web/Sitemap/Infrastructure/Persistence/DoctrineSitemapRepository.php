@@ -102,9 +102,12 @@ final readonly class DoctrineSitemapRepository implements SitemapRepository
     #[\Override]
     public function lines(string $file): iterable
     {
+        // Whether a section or a tag lists some post, by one row of its
+        // index each: written as EXISTS, MariaDB turns it into a semi-join
+        // that reads the whole index of the posts of every tag first.
         $listing = match ($file) {
-            SitemapFile::SECTIONS => ' AND EXISTS (SELECT 1 FROM web_post p WHERE p.section_id = e.resource_id)',
-            SitemapFile::TAGS => ' AND EXISTS (SELECT 1 FROM web_post_tag t WHERE t.term_id = e.resource_id)',
+            SitemapFile::SECTIONS => ' AND (SELECT 1 FROM web_post p WHERE p.section_id = e.resource_id LIMIT 1) IS NOT NULL',
+            SitemapFile::TAGS => ' AND (SELECT 1 FROM web_post_tag t WHERE t.term_id = e.resource_id LIMIT 1) IS NOT NULL',
             default => '',
         };
         // The path of a post is kept without its section, named in front of

@@ -19,7 +19,9 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'web_sitemap_entry')]
-#[ORM\Index(name: 'idx_web_sitemap_entry_file', columns: ['file', 'path'])]
+// It holds every column a file reads, so a file is read from it alone, in
+// order: left to choose, MariaDB would rather read every entry and sort.
+#[ORM\Index(name: 'idx_web_sitemap_entry_file', columns: ['file', 'path', 'lastmod', 'image_id', 'section_id'])]
 #[ORM\Index(name: 'idx_web_sitemap_entry_image', columns: ['image_id'])]
 #[ORM\Index(name: 'idx_web_sitemap_entry_section', columns: ['section_id'])]
 final class SitemapEntry
