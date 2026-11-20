@@ -13,6 +13,13 @@ framework:
         gc_probability: 1
         gc_maxlifetime: 28800
 
+    # What a request asks wrong, such as a bot sweeping for /wp-login.php, is
+    # the client's, not a fault of the app: it is no error of the logs, nor
+    # fills them with what led to it.
+    exceptions:
+        Symfony\Component\HttpKernel\Exception\HttpExceptionInterface:
+            log_level: info
+
     #esi: true
     #fragments: true
 

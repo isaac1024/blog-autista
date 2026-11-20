@@ -288,6 +288,13 @@ images, from `public/media/`, under `/media/`.
   every deploy signs the editor out. How long an idle session lasts is the
   app's too (`gc_maxlifetime`, 8 hours, in `config/packages/framework.yaml`),
   whatever the php.ini of the hosting says: only the app sweeps that folder.
+- The logs are files in `var/log`, since the stderr of PHP and the output of
+  the cron reach no file of the account: `prod-<date>.log` holds each
+  request or command that failed, with what led to it, and the warnings,
+  such as untrusted proxies; `messenger-<date>.log` holds the messages the
+  cron's consumers failed, retried or sent to `failed`. Two weeks of each are
+  kept (`config/packages/monolog.yaml`). A request the client asked wrong
+  (4xx) is no error there. Keep `var/log` between deploys, as `var/sessions`.
 - Compression and the cache of the assets, which `public/.htaccess` asks of
   Apache: `curl -sI -H 'Accept-Encoding: gzip' https://<site>/` carries
   `Content-Encoding: gzip` (or `br`, if Hetzner's nginx compresses first),
