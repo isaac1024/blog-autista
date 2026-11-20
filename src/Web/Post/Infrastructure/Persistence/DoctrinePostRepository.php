@@ -90,7 +90,13 @@ final readonly class DoctrinePostRepository implements PostRepository
     #[\Override]
     public function listed(PostSelection $selection, int $offset, int $limit): array
     {
-        return $this->cards($this->listedIds($selection, $offset, $limit));
+        return $this->cards($this->idsListed($selection, $offset, $limit));
+    }
+
+    #[\Override]
+    public function listedIds(PostSelection $selection, int $offset, int $limit): array
+    {
+        return array_map(static fn (string $id): PostId => new PostId($id), $this->idsListed($selection, $offset, $limit));
     }
 
     #[\Override]
@@ -216,7 +222,7 @@ final readonly class DoctrinePostRepository implements PostRepository
      *
      * @return list<string>
      */
-    private function listedIds(PostSelection $selection, int $offset, int $limit): array
+    private function idsListed(PostSelection $selection, int $offset, int $limit): array
     {
         $connection = $this->entityManager->getConnection();
 

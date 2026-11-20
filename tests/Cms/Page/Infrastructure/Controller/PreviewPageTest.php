@@ -288,7 +288,7 @@ final class PreviewPageTest extends TestCase
             $imageRepository,
             $redirectsByOrigin,
             new CmsLinkedContents($urlGenerator, $pageRepository, self::createStub(PostRepository::class), self::createStub(TermRepository::class), self::createStub(AuthorRepository::class), $redirectsByOrigin, new CmsExternalViews(self::createStub(ExternalResourceRepository::class), $pageRepository, $urlGenerator, new ExternalImageUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))), new CmsPostCards(self::createStub(PostRepository::class), self::createStub(ImageRepository::class), self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new \Cms\Shared\Infrastructure\Http\AvatarUrl($urlGenerator, new SignedUrls(new UriSigner('secret')))),
-            new CmsMosaics(new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
+            new CmsMosaics($postRepository ?? self::createStub(PostRepository::class), new CmsPostCards($postRepository ?? self::createStub(PostRepository::class), $imageRepository, $termRepository ?? self::createStub(TermRepository::class), $redirectsByOrigin, $urlGenerator), new PostCardsComponent(new CatalogueTranslator())),
         );
     }
 }

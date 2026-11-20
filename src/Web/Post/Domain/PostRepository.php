@@ -41,6 +41,14 @@ interface PostRepository
     public function listed(PostSelection $selection, int $offset, int $limit): array;
 
     /**
+     * The ids of the posts listed() reads the cards of, in the same order,
+     * for whoever reads the cards of several lists at once.
+     *
+     * @return list<PostId>
+     */
+    public function listedIds(PostSelection $selection, int $offset, int $limit): array;
+
+    /**
      * The cards of the posts search engines may index, newest first by the
      * day they were first published, as many as the limit at most.
      *

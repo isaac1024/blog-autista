@@ -24,6 +24,8 @@ use Web\Page\Domain\PageType;
 use Web\Page\Infrastructure\Controller\PublishedPage;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
+use Web\Post\Domain\PostCard;
+use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Post\Domain\PostSelection;
 use Web\Redirect\Domain\RedirectRepository;
@@ -161,8 +163,16 @@ final class PublishedPageTest extends TestCase
         ] + CmsPostPublishedMother::body())), [1, 2]);
         $posts = array_map(PostCardMother::of(...), $posts);
         $postRepository = $this->createMock(PostRepository::class);
-        $postRepository->expects(self::exactly(2))->method('listed')->willReturnCallback(
-            static fn (PostSelection $selection, int $offset, int $limit): array => 0 === $offset && 2 === $limit && [$tag] === $selection->tagIds && null === $selection->sectionId && null === $selection->authorId ? $posts : [],
+        // Each mosaic asking for other posts reads which; their cards are read once for all.
+        $postRepository->expects(self::exactly(2))->method('listedIds')->willReturnCallback(
+            static fn (PostSelection $selection, int $offset, int $limit): array => 0 === $offset && 2 === $limit && [$tag] === $selection->tagIds && null === $selection->sectionId && null === $selection->authorId ? array_map(static fn (PostCard $card): PostId => new PostId($card->id), $posts) : [],
+        );
+        $postRepository->expects(self::once())->method('cardsOf')->willReturnCallback(
+            static function (array $ids) use ($posts): array {
+                $asked = array_map(static fn (mixed $id): string => $id instanceof PostId ? $id->value() : '', $ids);
+
+                return array_values(array_filter($posts, static fn (PostCard $card): bool => \in_array($card->id, $asked, true)));
+            },
         );
         $urlGenerator = new RouteNameUrlGenerator();
         $imageRepository = self::createStub(ImageRepository::class);
