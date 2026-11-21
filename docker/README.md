@@ -294,6 +294,19 @@ The first time:
    Then open the CMS once: it checks the administrator on its first
    request.
 
+   The settings of the site and its unique pages exist once and are made
+   from the console, as drafts the CMS then fills and publishes. The slug
+   of each page comes from its title, the home page aside; `contact` and
+   `legal_notice` only if the blog has them:
+
+   ```bash
+   php85 bin/console cms:settings:create "<name of the blog>"
+   php85 bin/console cms:page:create-unique home "<title>"
+   php85 bin/console cms:page:create-unique search "<title>"
+   php85 bin/console cms:page:create-unique privacy_policy "<title>"
+   php85 bin/console cms:page:create-unique cookie_policy "<title>"
+   ```
+
 7. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
    interpreter and the mail notification on:
    `/usr/home/<login>/public_html/blog/bin/cron/async` and
