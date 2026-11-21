@@ -13,6 +13,13 @@ doctrine:
         default_table_options:
             charset: utf8mb4
             collation: utf8mb4_uca1400_ai_ci
+        # Encrypted, without checking who answers: Hetzner's database server
+        # is another machine, whose certificate no authority of the system
+        # signs, and only listening on the way is guarded against. PDO only
+        # speaks TLS once given a CA, which then goes unused.
+        options:
+            !php/const Pdo\Mysql::ATTR_SSL_CA: /etc/ssl/certs/ca-certificates.crt
+            !php/const Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT: false
         types:
             cms_author_id: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
             cms_author_avatar: Cms\Author\Infrastructure\Persistence\Doctrine\AvatarType
