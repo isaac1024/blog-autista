@@ -7,6 +7,12 @@ doctrine:
         #server_version: '16'
 
         profiling_collect_backtrace: '%kernel.debug%'
+        # Every table names its character set and collation, whatever the
+        # server defaults to (Hetzner's server says utf8mb3): full Unicode,
+        # compared without accents or case, so "sueno" finds "sueño".
+        default_table_options:
+            charset: utf8mb4
+            collation: utf8mb4_uca1400_ai_ci
         types:
             cms_author_id: Cms\Author\Infrastructure\Persistence\Doctrine\AuthorIdType
             cms_author_avatar: Cms\Author\Infrastructure\Persistence\Doctrine\AvatarType
