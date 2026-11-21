@@ -55,7 +55,6 @@ expect 'a page not found is 404' "status $(status "$h")" test "$(status "$h")" =
 expect 'the cache keeps it a minute' "cache-control: $(header "$h" cache-control)" has 's-maxage=60' "$(header "$h" cache-control)"
 expect 'HSTS once' "$(count "$h" strict-transport-security) times" test "$(count "$h" strict-transport-security)" = 1
 expect 'a Content-Security-Policy' 'none' test "$(count "$h" content-security-policy)" -ge 1
-expect 'HTML compressed' "content-encoding: $(header "$h" content-encoding)" has '^(br|gzip)$' "$(header "$h" content-encoding)"
 
 asset=$(curl -sS "$SITE$missing" | grep -oE '/assets/[^"]+\.(css|js)' | head -1)
 expect 'compiled assets kept for good' "${asset:-no asset named by the page}" has immutable "$(header "$(headers "$SITE${asset:-/assets/none}")" cache-control)"
@@ -68,8 +67,11 @@ expect 'the visits beacon reaches PHP, refusing another site' "status $(status "
 
 echo "CMS $CMS"
 
-h=$(headers "$CMS/login")
+# A page that answers 200: Hetzner's proxy leaves the pages not found
+# uncompressed, and the site has no other page before its content.
+h=$(headers -H 'Accept-Encoding: br, gzip' "$CMS/login")
 expect '/login answers' "status $(status "$h")" test "$(status "$h")" = 200
+expect 'HTML compressed' "content-encoding: $(header "$h" content-encoding)" has '^(br|gzip)$' "$(header "$h" content-encoding)"
 expect 'never indexed' "x-robots-tag: $(header "$h" x-robots-tag)" has noindex "$(header "$h" x-robots-tag)"
 expect 'its cookie is secure' 'no secure cookie' has '^set-cookie:.*;\s*secure' "$h"
 expect 'HSTS once' "$(count "$h" strict-transport-security) times" test "$(count "$h" strict-transport-security)" = 1
