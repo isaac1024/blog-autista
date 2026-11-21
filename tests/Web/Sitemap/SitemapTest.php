@@ -94,7 +94,7 @@ final class SitemapTest extends WebTestCase
         self::assertSame(['/vida-diaria/2026/11/07/mi-primer-dia.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2026'));
         self::assertSame(['/vida-diaria/2025/03/02/un-dia-de-2025.html' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'posts-2025'));
         // The page cache keeps it an hour, as it does a post.
-        self::assertSame('max-age=0, public, s-maxage=3600', $client->getResponse()->headers->get('Cache-Control'));
+        self::assertSame('max-age=0, public, s-maxage=300', $client->getResponse()->headers->get('Cache-Control'));
         self::assertSame('application/xml; charset=UTF-8', $client->getResponse()->headers->get('Content-Type'));
     }
 
@@ -263,7 +263,7 @@ final class SitemapTest extends WebTestCase
         $client->request('GET', self::SITE.'/robots.txt');
         self::assertResponseIsSuccessful();
         self::assertSame("User-agent: *\nAllow: /\n\nSitemap: ".self::SITE."/sitemap.xml\n", $client->getResponse()->getContent());
-        self::assertSame('max-age=0, public, s-maxage=3600', $client->getResponse()->headers->get('Cache-Control'));
+        self::assertSame('max-age=0, public, s-maxage=300', $client->getResponse()->headers->get('Cache-Control'));
 
         $client->request('GET', 'http://cms.blogautista.localhost/robots.txt');
         self::assertResponseIsSuccessful();

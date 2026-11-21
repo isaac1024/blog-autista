@@ -54,7 +54,7 @@ final class SiteCacheLifetimesTest extends WebTestCase
         yield 'the home, which may show mosaics' => ['/', 'max-age=0, public, s-maxage=300'];
         yield 'a page, which may show mosaics' => ['/sobre-mi.html', 'max-age=0, public, s-maxage=300'];
         yield 'an author, whose bio may show mosaics' => ['/autor/isaac.html', 'max-age=0, public, s-maxage=300'];
-        yield 'a post, which only republishing changes' => ['/vida-diaria/2026/11/07/mi-primer-dia.html', 'max-age=0, public, s-maxage=3600'];
+        yield 'a post, as soon corrected or taken off as the lists' => ['/vida-diaria/2026/11/07/mi-primer-dia.html', 'max-age=0, public, s-maxage=300'];
     }
 
     /**

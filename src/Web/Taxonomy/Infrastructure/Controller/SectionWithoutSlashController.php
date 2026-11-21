@@ -56,7 +56,7 @@ final class SectionWithoutSlashController extends AbstractController
         // to it as long as the section itself.
         $response = $this->movedTo($this->generateUrl('web_section', ['slug' => $slug]), $request);
         $response->setMaxAge(0);
-        $response->setSharedMaxAge(SiteCacheLifetimes::LISTS);
+        $response->setSharedMaxAge(SiteCacheLifetimes::LIFETIME);
 
         return $response;
     }

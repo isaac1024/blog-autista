@@ -6,8 +6,8 @@ cms:
             saved: 'Cambios guardados.'
             filled: 'Datos y imagen leídos de nuevo desde su dirección. Revísalos y guarda.'
             unread: 'No se ha podido leer la dirección del recurso. No ha cambiado nada.'
-            published: 'Recurso publicado en la web.'
-            unpublished: 'Recurso retirado de la web: los textos que lo enlazan lo muestran como texto normal.'
+            published: 'Recurso publicado: aparecerá en la web en unos minutos.'
+            unpublished: 'Recurso retirado: en unos minutos, los textos que lo enlazan lo mostrarán como texto normal.'
             discarded: 'Cambios descartados: el recurso vuelve a ser el publicado.'
             deleted: 'Recurso borrado.'
             checked:
@@ -18,34 +18,34 @@ cms:
         page:
             created: 'Página creada.'
             saved: 'Cambios guardados.'
-            published: 'Página publicada en la web.'
-            unpublished: 'Página retirada de la web.'
+            published: 'Página publicada: aparecerá en la web en unos minutos.'
+            unpublished: 'Página retirada: dejará de verse en la web en unos minutos.'
             discarded: 'Cambios descartados: la página vuelve a ser la publicada.'
             deleted: 'Página borrada.'
         author:
             created: 'Autor creado.'
             saved: 'Cambios guardados.'
-            published: 'Autor publicado en la web.'
-            unpublished: 'Autor retirado de la web.'
+            published: 'Autor publicado: aparecerá en la web en unos minutos.'
+            unpublished: 'Autor retirado: dejará de verse en la web en unos minutos.'
             discarded: 'Cambios descartados: el autor vuelve a ser el publicado.'
             deleted: 'Autor borrado.'
         post:
             created: 'Post creado.'
             saved: 'Cambios guardados.'
-            published: 'Post publicado en la web.'
-            unpublished: 'Post retirado de la web.'
+            published: 'Post publicado: aparecerá en la web en unos minutos.'
+            unpublished: 'Post retirado: dejará de verse en la web en unos minutos.'
             discarded: 'Cambios descartados: el post vuelve a ser el publicado.'
             deleted: 'Post borrado.'
         image:
             uploaded: 'Imagen subida.'
             saved: 'Cambios guardados.'
-            published: 'Imagen publicada en la web.'
-            unpublished: 'Imagen retirada de la web.'
+            published: 'Imagen publicada: aparecerá en la web en unos minutos.'
+            unpublished: 'Imagen retirada: dejará de verse en la web en unos minutos, salvo en los navegadores que ya la cargaron, donde puede durar hasta un día.'
             discarded: 'Cambios descartados: la imagen vuelve a ser la publicada.'
             deleted: 'Imagen borrada.'
         settings:
             saved: 'Cambios guardados.'
-            published: 'Ajustes publicados en la web.'
+            published: 'Ajustes publicados: la web los mostrará en unos minutos.'
             discarded: 'Cambios descartados: los ajustes vuelven a ser los que usa la web.'
         redirect:
             created: 'Redirección creada.'
@@ -582,8 +582,8 @@ cms:
         notices:
             created: 'Sección creada.'
             saved: 'Cambios guardados.'
-            published: 'Sección publicada en la web.'
-            unpublished: 'Sección retirada de la web.'
+            published: 'Sección publicada: aparecerá en la web en unos minutos.'
+            unpublished: 'Sección retirada: dejará de verse en la web en unos minutos.'
             discarded: 'Cambios descartados: la sección vuelve a ser la publicada.'
             deleted: 'Sección borrada.'
         discard:
@@ -624,8 +624,8 @@ cms:
         notices:
             created: 'Etiqueta creada.'
             saved: 'Cambios guardados.'
-            published: 'Etiqueta publicada en la web.'
-            unpublished: 'Etiqueta retirada de la web.'
+            published: 'Etiqueta publicada: aparecerá en la web en unos minutos.'
+            unpublished: 'Etiqueta retirada: dejará de verse en la web en unos minutos.'
             discarded: 'Cambios descartados: la etiqueta vuelve a ser la publicada.'
             deleted: 'Etiqueta borrada.'
         discard:

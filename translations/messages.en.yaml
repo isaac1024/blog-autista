@@ -6,8 +6,8 @@ cms:
             saved: 'Changes saved.'
             filled: 'Details and image read again from its address. Check them and save.'
             unread: 'The address of the resource could not be read. Nothing changed.'
-            published: 'Resource published on the site.'
-            unpublished: 'Resource taken off the site: texts that link it show it as plain text.'
+            published: 'Resource published: it will show on the site within a few minutes.'
+            unpublished: 'Resource taken off the site: within a few minutes, texts that link it will show it as plain text.'
             discarded: 'Changes discarded: the resource is the published one again.'
             deleted: 'Resource deleted.'
             checked:
@@ -18,34 +18,34 @@ cms:
         page:
             created: 'Page created.'
             saved: 'Changes saved.'
-            published: 'Page published on the site.'
-            unpublished: 'Page taken off the site.'
+            published: 'Page published: it will show on the site within a few minutes.'
+            unpublished: 'Page taken off the site: it will stop showing within a few minutes.'
             discarded: 'Changes discarded: the page is back to the published one.'
             deleted: 'Page deleted.'
         author:
             created: 'Author created.'
             saved: 'Changes saved.'
-            published: 'Author published on the site.'
-            unpublished: 'Author taken off the site.'
+            published: 'Author published: it will show on the site within a few minutes.'
+            unpublished: 'Author taken off the site: it will stop showing within a few minutes.'
             discarded: 'Changes discarded: the author is the published one again.'
             deleted: 'Author deleted.'
         post:
             created: 'Post created.'
             saved: 'Changes saved.'
-            published: 'Post published on the site.'
-            unpublished: 'Post taken off the site.'
+            published: 'Post published: it will show on the site within a few minutes.'
+            unpublished: 'Post taken off the site: it will stop showing within a few minutes.'
             discarded: 'Changes discarded: the post is the published one again.'
             deleted: 'Post deleted.'
         image:
             uploaded: 'Image uploaded.'
             saved: 'Changes saved.'
-            published: 'Image published on the site.'
-            unpublished: 'Image taken off the site.'
+            published: 'Image published: it will show on the site within a few minutes.'
+            unpublished: 'Image taken off the site: it will stop showing within a few minutes, but browsers that already loaded it may keep it up to a day.'
             discarded: 'Changes discarded: the image is back to the published one.'
             deleted: 'Image deleted.'
         settings:
             saved: 'Changes saved.'
-            published: 'Settings published on the site.'
+            published: 'Settings published: the site will show them within a few minutes.'
             discarded: 'Changes discarded: the settings are back to the ones the site uses.'
         redirect:
             created: 'Redirect created.'
@@ -582,8 +582,8 @@ cms:
         notices:
             created: 'Section created.'
             saved: 'Changes saved.'
-            published: 'Section published on the site.'
-            unpublished: 'Section taken off the site.'
+            published: 'Section published: it will show on the site within a few minutes.'
+            unpublished: 'Section taken off the site: it will stop showing within a few minutes.'
             discarded: 'Changes discarded: the section is the published one again.'
             deleted: 'Section deleted.'
         discard:
@@ -624,8 +624,8 @@ cms:
         notices:
             created: 'Tag created.'
             saved: 'Changes saved.'
-            published: 'Tag published on the site.'
-            unpublished: 'Tag taken off the site.'
+            published: 'Tag published: it will show on the site within a few minutes.'
+            unpublished: 'Tag taken off the site: it will stop showing within a few minutes.'
             discarded: 'Changes discarded: the tag is the published one again.'
             deleted: 'Tag deleted.'
         discard:

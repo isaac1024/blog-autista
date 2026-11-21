@@ -428,18 +428,17 @@ next: wait for the cron to consume them, a minute at most.
   the only ones the site reads. Leave it
   off for the CMS host: Varnish strips the cookies it isn't told to keep, the
   CMS session among them. Nothing purges it: each page tells how long to keep
-  it with `s-maxage`, 5 minutes for the home, pages, authors, sections and
-  tags (so a new post soon shows in their lists and mosaics), an hour for a
-  post, and a day for an image file (browsers keep that one a year). Check
+  it with `s-maxage`, 5 minutes for every page (so a new post soon shows in
+  the lists and mosaics, and one corrected or taken off soon shows so), and
+  a day for an image file (browsers keep that one a year). Check
   once contracted that Varnish honours `s-maxage` rather than its own TTL for
   dynamic content (`curl -sI` a section twice, five minutes apart, and read
   `Age`); if it doesn't, set its dynamic TTL to 5 minutes, for the whole site.
 - **TLS/HTTP/3 are not reproduced.** HTTPS is terminated by Hetzner; local
   traffic is plain HTTP on port 80.
-- **The document root differs.** On the account, the web root is `public_html`.
-  Either symlink it to `public/` or rename the directory (Symfony documents
-  both approaches). Do not copy `public/` elsewhere: the front controller and
-  asset paths assume the project layout.
+- **The document root differs.** On the account, the project lives in
+  `public_html/blog/` and the document root of each domain is
+  `blog/public` (see "Deploying"); here it is `public/` of the project.
 - **No cron scheduler.** `bin/console` and the CLI PHP version on the account
   are the way to run commands; wire scheduled commands to the 10 cron jobs.
 - **Redis 7 vs 8.** The exact Redis minor behind Webhosting L is not published;
