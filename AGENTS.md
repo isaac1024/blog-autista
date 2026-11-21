@@ -191,6 +191,19 @@ module of the site imports the ones beside it by relative paths, which
 versioned addresses; the test servers serve plain paths, so only a page of the
 running app shows a broken import.
 
+## Keeping it small
+
+The blog has one editor and runs on shared hosting, and the split between
+`Cms` and `Web` already makes every feature touch two contexts, an event, a
+projection and their tests. Don't grow it further in that direction:
+
+- A feature of the site uses the events that already exist before adding
+  new ones.
+- A new module needs a written reason, as `Redirect` and `Analytics` had
+  theirs, not only that it is a different thing.
+- No new gates, and the existing ones are not tightened: escaped mutants
+  point to untested behaviour, an MSI is not a target.
+
 ## Code style
 
 Symfony's coding standard, the `@Symfony` php-cs-fixer ruleset (a PSR-12-derived
