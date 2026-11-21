@@ -1,0 +1,4 @@
+#!/bin/sh
+# Cron job, monthly, at night: compacts the full-text index of the posts.
+cd "$(dirname "$0")/../.." || exit 1
+exec "${PHP:-/usr/bin/php85}" bin/console dbal:run-sql 'OPTIMIZE TABLE web_post' --quiet

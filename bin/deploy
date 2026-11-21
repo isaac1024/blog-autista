@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+#
+# Deploys the commit checked out (HEAD) to the Hetzner account, in place.
+#
+#   bin/deploy               builds, uploads and deploys
+#   bin/deploy --build-only  builds under var/deploy/build and stops there
+#
+# Where to, in .deploy.env at the root of the project (git-ignored):
+#
+#   DEPLOY_SSH=<login>@<server>
+#   DEPLOY_PORT=<SSH port of the account>
+#   DEPLOY_PATH=/usr/home/<login>/public_html/blog
+#   DEPLOY_PHP=/usr/bin/php85
+#
+# 1. Builds HEAD under var/deploy/build: the dependencies without the
+#    development ones, the stylesheet and the compiled assets. In the PHP
+#    container, as the app runs, and npm on this machine.
+# 2. Uploads it to a staging folder of the account, out of the web root.
+# 3. Checks the account before touching the site: PHP has what the app
+#    needs, the queue of events is empty (its messages can't be read by
+#    another release), and the files only the account keeps are there.
+# 4. Copies the release over the site, keeping what the account keeps
+#    (.env.local, the private key of the vault, var/, the images) and the
+#    compiled assets of the releases before, which pages Varnish still
+#    keeps name. Then migrates the database, as the owner of the database,
+#    clears the cache and writes the static error pages.
+#
+# The first time, see "Deploying" in docker/README.md.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+BUILD='var/deploy/build'
+
+if [ "${1:-}" != --build-only ] && [ ! -f .deploy.env ]; then
+    echo 'bin/deploy: .deploy.env is missing; see "Deploying" in docker/README.md.' >&2
+    exit 1
+fi
+
+if [ -f .deploy.env ]; then
+    # shellcheck source=/dev/null
+    . ./.deploy.env
+fi
+STAGING='blog-deploy/incoming'
+
+if [ "${1:-}" != --build-only ] && [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    echo 'bin/deploy: commit or stash your changes first; only HEAD is deployed.' >&2
+    exit 1
+fi
+
+step() { printf '\n==> %s\n' "$1"; }
+
+in_build() {
+    docker compose exec -T -u www-data -w "/var/www/html/$BUILD" -e APP_ENV=prod -e APP_DEBUG=0 php "$@"
+}
+
+step "Building $(git rev-parse --short HEAD)"
+rm -rf "${BUILD:?}"
+mkdir -p "$BUILD"
+git archive HEAD | tar -x -C "$BUILD"
+(cd "$BUILD" && npm ci --no-audit --no-fund --loglevel=error)
+# The Tailwind binary already downloaded, so a build needs no network for it.
+if [ -d var/tailwind ]; then
+    mkdir -p "$BUILD/var/tailwind"
+    find var/tailwind -mindepth 1 -maxdepth 1 -type d -exec cp -R {} "$BUILD/var/tailwind/" \;
+fi
+in_build composer install --no-dev --classmap-authoritative --no-scripts --no-interaction --no-progress --quiet
+in_build php bin/console tailwind:build --minify --quiet
+in_build php bin/console asset-map:compile --quiet
+# The account needs neither the packages of npm, once compiled, nor this
+# machine's cache, whose paths are absolute.
+rm -rf "${BUILD:?}/node_modules" "${BUILD:?}/var"
+
+if [ "${1:-}" = --build-only ]; then
+    step "Built under $BUILD"
+    exit 0
+fi
+
+: "${DEPLOY_SSH:?is not set in .deploy.env}" "${DEPLOY_PATH:?is not set in .deploy.env}"
+DEPLOY_PORT="${DEPLOY_PORT:?is not set in .deploy.env}"
+DEPLOY_PHP="${DEPLOY_PHP:-/usr/bin/php85}"
+
+step "Uploading to ~/$STAGING"
+ssh -p "$DEPLOY_PORT" "$DEPLOY_SSH" "mkdir -p '$STAGING'"
+rsync -az --delete -e "ssh -p $DEPLOY_PORT" \
+    --exclude=/tests/ --exclude=/docker/ --exclude=/tools/ --exclude=/docs/ \
+    --exclude='/.env.dev' --exclude='/.env.test' --exclude=/compose.yaml --exclude=/.dockerignore \
+    --exclude=/.editorconfig --exclude=/.npmrc --exclude=/package.json --exclude=/package-lock.json \
+    --exclude=/eslint.config.js --exclude=/jsconfig.json --exclude=/playwright.config.js \
+    --exclude=/stryker.config.mjs --exclude=/ui-check.config.mjs --exclude=/infection.json5 \
+    --exclude=/phpmd.xml --exclude=/phpstan.dist.neon --exclude=/phpunit.dist.xml \
+    --exclude=/.php-cs-fixer.dist.php --exclude=/.twig-cs-fixer.dist.php --exclude=/AGENTS.md \
+    --exclude=/bin/phpunit \
+    "$BUILD/" "$DEPLOY_SSH:$STAGING/"
+
+step "Checking the account and deploying to $DEPLOY_PATH"
+ssh -p "$DEPLOY_PORT" "$DEPLOY_SSH" bash -s -- "$DEPLOY_PATH" "$DEPLOY_PHP" "$STAGING" <<'REMOTE'
+set -euo pipefail
+LIVE=$1
+PHP=$2
+INCOMING=$HOME/$3
+COMPOSER="$PHP $(command -v composer)"
+MIGRATE_ENV=$HOME/.blog-migrate.env
+
+fail() { echo "bin/deploy: $1" >&2; exit 1; }
+
+cd "$INCOMING"
+$COMPOSER check-platform-reqs --no-dev --no-interaction --quiet || fail 'PHP lacks an extension the app needs (composer check-platform-reqs).'
+"$PHP" -r '$gd = function_exists("gd_info") ? gd_info() : []; exit(($gd["WebP Support"] ?? false) && ($gd["JPEG Support"] ?? false) ? 0 : 1);' \
+    || fail 'GD reads and writes neither WebP nor JPEG.'
+
+[ -f "$LIVE/.env.local" ] || fail "$LIVE/.env.local is missing; see \"Deploying\" in docker/README.md."
+[ -f "$LIVE/config/secrets/prod/prod.decrypt.private.php" ] || fail 'the private key of the vault is missing on the account.'
+[ -f "$MIGRATE_ENV" ] || fail "$MIGRATE_ENV is missing: the DATABASE_URL of the owner of the database, for the migrations."
+
+# A message queued by this release can't be read by the next one.
+if [ -f "$LIVE/.env.local.php" ]; then
+    queued=$(cd "$LIVE" && "$PHP" bin/console messenger:stats async --format=json | "$PHP" -r 'echo json_decode(stream_get_contents(STDIN), true)["transports"]["async"]["count"] ?? "?";')
+    [ "$queued" = 0 ] || fail "the queue of events holds $queued message(s); let the cron consume them and deploy again."
+fi
+
+# The compiled assets of the releases before stay: pages kept by Varnish name them.
+mkdir -p "$LIVE/public/assets"
+rsync -a "$INCOMING/public/assets/" "$LIVE/public/assets/"
+rsync -a --delete \
+    --exclude=/.env.local --exclude=/.env.local.php \
+    --exclude=/config/secrets/prod/prod.decrypt.private.php \
+    --exclude=/var/ --exclude=/media/ --exclude=/public/media/ \
+    --exclude=/public/assets/ --exclude=/public/error/ \
+    "$INCOMING/" "$LIVE/"
+
+cd "$LIVE"
+mkdir -p var media public/media
+$COMPOSER dump-env prod --quiet
+(set -a; . "$MIGRATE_ENV"; set +a; "$PHP" bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --quiet)
+"$PHP" bin/console cache:clear --quiet
+"$PHP" bin/console error:dump public/error 500 502 503 504 --force --quiet
+
+# Nothing of the account's web root answers but the site's public/, which
+# allows itself again: Apache reads the .htaccess of every folder above it.
+[ -f "$HOME/public_html/.htaccess" ] || printf 'Require all denied\n' > "$HOME/public_html/.htaccess"
+
+echo "Deployed. Open the CMS once now: it checks the administrator on its first request."
+REMOTE
+
+rm -rf "${BUILD:?}"
+step "Done: $(git rev-parse --short HEAD)"

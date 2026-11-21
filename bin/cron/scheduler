@@ -1,0 +1,5 @@
+#!/bin/sh
+# Cron job, every minute, "exclusive execution" in konsoleH: runs what is
+# due of the schedule, such as the nightly count of visits.
+cd "$(dirname "$0")/../.." || exit 1
+exec "${PHP:-/usr/bin/php85}" bin/console messenger:consume scheduler_default --time-limit=50 --memory-limit=256M --quiet

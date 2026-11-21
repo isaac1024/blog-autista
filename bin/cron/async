@@ -1,0 +1,5 @@
+#!/bin/sh
+# Cron job, every minute, "exclusive execution" in konsoleH: builds the site
+# from what the CMS published. Stops well before the next run.
+cd "$(dirname "$0")/../.." || exit 1
+exec "${PHP:-/usr/bin/php85}" bin/console messenger:consume async --time-limit=50 --memory-limit=256M --quiet

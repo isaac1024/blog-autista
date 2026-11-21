@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# Smoke test of a deployed site, with curl alone:
+#
+#   bin/smoke https://www.blogautista.com https://cms.blogautista.com
+#
+# Checks what only the hosting shows: that the site answers, that the cache
+# keeps a page not found a minute, that the headers of security reach the
+# browser once each, that the HTML is compressed, that http leads to https,
+# that compiled assets are kept for good, that the CMS is never indexed and
+# its cookie is secure, and that the visits beacon reaches PHP. It works on
+# a site without content yet, as right after the first deploy.
+
+set -uo pipefail
+
+if [ $# -ne 2 ]; then
+    echo 'Usage: bin/smoke <https://site> <https://cms>' >&2
+    exit 2
+fi
+
+SITE=${1%/}
+CMS=${2%/}
+failures=0
+
+# expect <what> <what was found> <test...>: the test passes or the check fails.
+expect() {
+    local what=$1 found=$2
+    shift 2
+    if "$@"; then
+        printf '  ok    %s\n' "$what"
+    else
+        printf '  FAIL  %s (%s)\n' "$what" "$found"
+        failures=$((failures + 1))
+    fi
+}
+
+has() { grep -qiE "$1" <<<"$2"; }
+
+# The headers of a response, lowercased names, without carriage returns.
+headers() { curl -sS -o /dev/null -D - "$@" | tr -d '\r' | sed -E 's/^([^:]+):/\L\1:/'; }
+status() { head -1 <<<"$1" | awk '{print $2}'; }
+header() { grep -i "^$2:" <<<"$1" | head -1 | cut -d' ' -f2-; }
+count() { grep -ci "^$2:" <<<"$1"; }
+
+echo "Site $SITE"
+
+for path in /robots.txt /sitemap.xml /feed.xml; do
+    code=$(status "$(headers "$SITE$path")")
+    expect "$path answers" "status $code" test "$code" = 200
+done
+
+missing="/no-existe-$RANDOM$RANDOM.html"
+h=$(headers -H 'Accept-Encoding: br, gzip' "$SITE$missing")
+expect 'a page not found is 404' "status $(status "$h")" test "$(status "$h")" = 404
+expect 'the cache keeps it a minute' "cache-control: $(header "$h" cache-control)" has 's-maxage=60' "$(header "$h" cache-control)"
+expect 'HSTS once' "$(count "$h" strict-transport-security) times" test "$(count "$h" strict-transport-security)" = 1
+expect 'a Content-Security-Policy' 'none' test "$(count "$h" content-security-policy)" -ge 1
+expect 'HTML compressed' "content-encoding: $(header "$h" content-encoding)" has '^(br|gzip)$' "$(header "$h" content-encoding)"
+
+asset=$(curl -sS "$SITE$missing" | grep -oE '/assets/[^"]+\.(css|js)' | head -1)
+expect 'compiled assets kept for good' "${asset:-no asset named by the page}" has immutable "$(header "$(headers "$SITE${asset:-/assets/none}")" cache-control)"
+
+h=$(headers "http://${SITE#https://}/robots.txt")
+expect 'http leads to https for good' "status $(status "$h"), location $(header "$h" location)" has '^301 https://' "$(status "$h") $(header "$h" location)"
+
+h=$(headers -X POST -H 'Sec-Fetch-Site: cross-site' -H 'Content-Type: application/json' --data '{}' "$SITE/v")
+expect 'the visits beacon reaches PHP, refusing another site' "status $(status "$h"), age $(header "$h" age)" has '^4[0-9][0-9] $' "$(status "$h") $(header "$h" age)"
+
+echo "CMS $CMS"
+
+h=$(headers "$CMS/login")
+expect '/login answers' "status $(status "$h")" test "$(status "$h")" = 200
+expect 'never indexed' "x-robots-tag: $(header "$h" x-robots-tag)" has noindex "$(header "$h" x-robots-tag)"
+expect 'its cookie is secure' 'no secure cookie' has '^set-cookie:.*;\s*secure' "$h"
+expect 'HSTS once' "$(count "$h" strict-transport-security) times" test "$(count "$h" strict-transport-security)" = 1
+
+if [ "$failures" -gt 0 ]; then
+    printf '\n%d check(s) failed.\n' "$failures"
+    exit 1
+fi
+
+printf '\nAll checks passed.\n'

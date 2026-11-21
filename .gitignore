@@ -51,3 +51,6 @@ phpstan.neon
 ###> Playwright MCP ###
 /.playwright-mcp/
 ###< Playwright MCP ###
+
+# Where bin/deploy deploys to.
+/.deploy.env

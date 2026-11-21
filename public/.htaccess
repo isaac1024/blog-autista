@@ -5,6 +5,11 @@
 # to each configured DirectoryIndex file (e.g. index.php, index.html, index.pl).
 DirectoryIndex index.php
 
+# On Hetzner the project lives inside the web root of the account, which
+# answers nothing (the .htaccess above this folder deny it): the site's own
+# folder answers again.
+Require all granted
+
 # When PHP doesn't answer at all (its processes are all busy, or it is down),
 # Apache serves the static copy of the site's error page that `error:dump`
 # writes at deploy time (see docker/README.md), instead of its own. An error

@@ -1,0 +1,4 @@
+# The project lives inside the web root of the Hetzner account, and only its
+# public/ is the site: nothing else of it answers, whichever host is asked.
+# public/.htaccess allows its own folder again.
+Require all denied

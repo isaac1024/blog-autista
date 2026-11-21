@@ -61,11 +61,10 @@ migrations live in
 `src/Shared/Infrastructure/Persistence/Doctrine/Migrations`. The
 `app_test` database is created by `docker/mariadb/init/01-test-database.sql`.
 
-On Webhosting L, wire the 10 available cron jobs to a short-lived consumer, for
-example `php bin/console messenger:consume scheduler_default --time-limit=50`
-every minute, and another one to `php bin/console messenger:consume async
---time-limit=50` for domain events, such as publishing a page. The first one
-also counts the visits of the day just over, every night.
+On Webhosting L, two of the 10 cron jobs are short-lived consumers, every
+minute: `bin/cron/scheduler`, which also counts the visits of the day just
+over, every night, and `bin/cron/async`, for domain events, such as
+publishing a page (see "Deploying").
 
 ## Visit counts
 
@@ -182,25 +181,17 @@ Tailwind bundle does from `assets/styles/app.css`. Keep the watcher above
 running while changing templates or styles: in the dev environment the
 bundle fails on purpose when there is no built stylesheet.
 
-Shared hosting can't run the Tailwind binary, so build the assets before
-uploading and deploy `public/assets/` with the code. Upload it without
-deleting the files already there: Varnish keeps pages that name the versioned
-files of the release before, and they must still be found until it lets them
-go. Delete that directory locally afterwards: while it exists, development
-serves those compiled copies instead of the current files.
-
-```bash
-npm ci   # the packages the CMS runs in the browser, from npm
-docker compose exec -u www-data php bin/console tailwind:build --minify
-docker compose exec -u www-data php bin/console cache:clear --env=prod
-docker compose exec -u www-data php bin/console asset-map:compile --env=prod
-docker compose exec -u www-data php bin/console error:dump public/error 500 502 503 504 --env=prod --force
-```
+Shared hosting can't run the Tailwind binary, so `bin/deploy` builds the
+stylesheet and compiles the assets here, and uploads `public/assets/`
+without deleting the files already there: Varnish keeps pages that name the
+versioned files of the release before, and they must still be found until it
+lets them go. It builds under `var/deploy/build`, never in the project:
+while `public/assets/` exists here, development serves those compiled copies
+instead of the current files.
 
 `error:dump` writes the error page as static HTML to `public/error/`, which
 Apache serves (`ErrorDocument` in `public/.htaccess`) when PHP doesn't answer
-at all. It names the compiled assets, so run it after `asset-map:compile` and
-upload `public/error/` with them.
+at all. `bin/deploy` runs it on the account, after the assets are there.
 
 ## Images
 
@@ -209,6 +200,85 @@ public files: the CMS serves each original through
 `/images/{id}/file`, behind its login, so neither the web server nor another
 host maps that directory. The site serves only its own copies of the published
 images, from `public/media/`, under `/media/`.
+
+## Deploying
+
+`bin/deploy` deploys the commit checked out to the Hetzner account, in
+place: it builds the release here (the dependencies without the development
+ones, the stylesheet and the compiled assets), uploads it to a staging
+folder of the account, checks the account before touching the site (PHP's
+extensions, GD's WebP and JPEG, an empty queue of events, the files only the
+account keeps), copies it over the site, migrates the database, clears the
+cache and writes the static error pages. `bin/deploy --build-only` stops
+after the build, under `var/deploy/build`. `bin/smoke <https://site>
+<https://cms>` then checks what only the hosting shows.
+
+On the account the project lives in `public_html/blog/` and the domain's
+document root is `public_html/blog/public`: the folder above the web root
+can't be ours there, so the project sits inside it, and the `.htaccess` of
+`public_html/` (written by the first deploy) and of the project deny it all
+but `public/`, which allows itself again.
+
+The first time:
+
+1. On this machine, `.deploy.env` (git-ignored):
+
+   ```bash
+   DEPLOY_SSH=<login>@<server>
+   DEPLOY_PORT=<SSH port of the account>
+   DEPLOY_PATH=/usr/home/<login>/public_html/blog
+   DEPLOY_PHP=/usr/bin/php85
+   ```
+
+2. The keys of the vault and the administrator's password, as in the
+   checklist below. Commit `config/secrets/prod/`, and copy the private key
+   to the account by hand, readable by its owner only:
+
+   ```bash
+   ssh -p 222 <login>@<server> 'mkdir -p public_html/blog/config/secrets/prod'
+   scp -P 222 config/secrets/prod/prod.decrypt.private.php <login>@<server>:public_html/blog/config/secrets/prod/
+   ssh -p 222 <login>@<server> 'chmod 600 public_html/blog/config/secrets/prod/prod.decrypt.private.php'
+   ```
+
+3. On the account, `public_html/blog/.env.local`, with `chmod 600`. The
+   app connects as the user of the database that only reads and writes
+   (`_w`); its password, as every password in a URL here, of letters,
+   digits, `-` and `_` only (`DATABASE_URL` is read with `resolve:`, which
+   takes a `%` for a parameter):
+
+   ```bash
+   APP_ENV=prod
+   APP_DEBUG=0
+   APP_SECRET=<php -r 'echo bin2hex(random_bytes(32));'>
+   DEFAULT_URI=https://www.<domain>
+   WEB_HOST=www.<domain>
+   CMS_HOST=cms.<domain>
+   CMS_USER_IDENTIFIER=<the administrator>
+   DATABASE_URL="mysql://<user>_w:<password>@<database server>:3306/<database>?serverVersion=11.8.6-MariaDB&charset=utf8mb4"
+   REDIS_URL=redis:///run/redis_<login>/redis.sock
+   ```
+
+4. On the account, `~/.blog-migrate.env`, with `chmod 600`, out of the web
+   root: the `DATABASE_URL` of the owner of the database, which may change
+   tables, for the migrations alone.
+
+5. `bin/deploy`. Then, in konsoleH, the document root of the domain to
+   `blog/public`, and open the CMS once: it checks the administrator on its
+   first request.
+
+6. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
+   interpreter and the mail notification on:
+   `/usr/home/<login>/public_html/blog/bin/cron/async` and
+   `.../bin/cron/scheduler` every minute, with "exclusive execution", so a
+   run a slow message stretches past the minute makes the next one skip;
+   `.../bin/cron/optimize` monthly, at night.
+
+7. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
+   answer over https.
+
+After that, `bin/deploy` is all. It refuses to deploy while the queue of
+events holds messages, since those of one release can't be read by the
+next: wait for the cron to consume them, a minute at most.
 
 ## Production checklist
 
@@ -248,14 +318,11 @@ images, from `public/media/`, under `/media/`.
   `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN` and
   `REDIS_URL` with the real values, in `.env.local` on the account. Clear the
   cache after changing the hosts, since routes are compiled with them.
-- Deploy in this order: stop the cron jobs that consume `async`, let the
-  queue drain (`messenger:stats`), deploy the code, run
-  `doctrine:migrations:migrate`, clear the cache, and start the cron jobs
-  again. Messages are kept with PHP's `serialize()`, so one queued by a
-  release whose message had other fields can't be read by the next: the
-  queue must be empty before a release goes up. Inspect what lands in the
-  `failed` transport with `messenger:failed:show` and, rather than retrying
-  it, publish again from the CMS whatever it concerned.
+- `bin/deploy` refuses to deploy while the queue of `async` holds messages:
+  they are kept with PHP's `serialize()`, so one queued by a release whose
+  message had other fields can't be read by the next. Inspect what lands in
+  the `failed` transport with `messenger:failed:show` and, rather than
+  retrying it, publish again from the CMS whatever it concerned.
 - A page published at an address another page had until just before waits
   for the event that frees it: the site tries again a minute later, up to the
   three retries of `async`. If it still lands in `failed`, the event that
@@ -264,13 +331,12 @@ images, from `public/media/`, under `/media/`.
   session. Changing `APP_SECRET` does too, and also invalidates every preview
   link already handed out: rotate it only when needed, and say so to whoever
   holds a preview link.
-- The cron job that consumes `async` never overlaps itself: keep its
-  `--time-limit` well under the minute between runs, and put
-  `flock -n var/async.lock` before it, so a run a slow message stretches past
-  the minute makes the next one skip rather than start a second consumer.
-  Consumers side by side are safe (projections run in read committed and lock
-  only the rows they change, and a deadlock is retried by Messenger), but
-  each one is a PHP process of the 10 the account has.
+- The cron jobs never overlap themselves: konsoleH runs them with
+  "exclusive execution", and `bin/cron/async` stops after 50 seconds, well
+  under the minute between runs. Consumers side by side would be safe
+  (projections run in read committed and lock only the rows they change,
+  and a deadlock is retried by Messenger), but each one is a PHP process of
+  the 10 the account has.
 - Search: once a month, at night, a cron job runs `OPTIMIZE TABLE web_post`
   (`bin/console dbal:run-sql 'OPTIMIZE TABLE web_post'`), which compacts the
   full-text index after many posts are published and republished. A search
