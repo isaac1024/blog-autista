@@ -12,6 +12,7 @@ use Web\Post\Domain\AddressTaken;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\PostRepository;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 
 /**
  * Puts on the site each post the CMS publishes.
@@ -28,6 +29,7 @@ final readonly class CmsPostPublishedSubscriber implements DomainEventSubscriber
     public function __construct(
         private PostRepository $postRepository,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -41,9 +43,10 @@ final readonly class CmsPostPublishedSubscriber implements DomainEventSubscriber
     {
         if ($event instanceof CmsPostPublished) {
             try {
-                $this->projection->apply('post', $event, function () use ($event): void {
+                // Forgotten by the page cache once applied, so it doesn't show until it expires.
+                $this->cachePurge->around('post', $event->aggregateId(), fn () => $this->projection->apply('post', $event, function () use ($event): void {
                     new PostSaver($event)($this->postRepository);
-                });
+                }));
             } catch (AddressTaken $exception) {
                 // The event that frees the address is on its way: try again
                 // once it has had time to arrive, within the usual retries.

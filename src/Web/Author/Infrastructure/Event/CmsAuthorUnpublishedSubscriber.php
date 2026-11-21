@@ -11,6 +11,7 @@ use Web\Author\Domain\AuthorRepository;
 use Web\Author\Domain\AvatarCopies;
 use Web\Author\Domain\CmsAuthorUnpublished;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 
 /**
  * Takes off the site each author the CMS unpublishes.
@@ -21,6 +22,7 @@ final readonly class CmsAuthorUnpublishedSubscriber implements DomainEventSubscr
         private AuthorRepository $authorRepository,
         private AvatarCopies $avatarCopies,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -33,9 +35,10 @@ final readonly class CmsAuthorUnpublishedSubscriber implements DomainEventSubscr
     public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsAuthorUnpublished) {
-            $this->projection->apply('author', $event, function () use ($event): void {
+            // Forgotten by the page cache once applied, so it doesn't show until it expires.
+            $this->cachePurge->around('author', $event->aggregateId(), fn () => $this->projection->apply('author', $event, function () use ($event): void {
                 new AuthorRemover($event)($this->authorRepository, $this->avatarCopies);
-            });
+            }));
         }
     }
 }

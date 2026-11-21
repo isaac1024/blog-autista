@@ -12,6 +12,7 @@ use Web\Page\Domain\CmsPagePublished;
 use Web\Page\Domain\PageRepository;
 use Web\Page\Domain\SlugTaken;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 
 /**
  * Puts on the site each page the CMS publishes.
@@ -28,6 +29,7 @@ final readonly class CmsPagePublishedSubscriber implements DomainEventSubscriber
     public function __construct(
         private PageRepository $pageRepository,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -41,9 +43,10 @@ final readonly class CmsPagePublishedSubscriber implements DomainEventSubscriber
     {
         if ($event instanceof CmsPagePublished) {
             try {
-                $this->projection->apply('page', $event, function () use ($event): void {
+                // Forgotten by the page cache once applied, so it doesn't show until it expires.
+                $this->cachePurge->around('page', $event->aggregateId(), fn () => $this->projection->apply('page', $event, function () use ($event): void {
                     new PageSaver($event)($this->pageRepository);
-                });
+                }));
             } catch (SlugTaken $exception) {
                 // The event that frees the address is on its way: try again
                 // once it has had time to arrive, within the usual retries.

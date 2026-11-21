@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
 use Shared\Infrastructure\Event\EventRetry;
+use Shared\Tests\Infrastructure\Http\ForgottenPages;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
@@ -16,9 +17,12 @@ use Web\Post\Domain\PostId;
 use Web\Post\Domain\PostRepository;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Post\Domain\PostIdMother;
+use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
 final class CmsPostSubscribersTest extends KernelTestCase
 {
+    use SectionSlugs;
+
     private const string OTHER_POST = '01a1da50-3c8d-7e01-9b4f-6d3fac2e1b02';
 
     public function testItPutsOnTheSiteThePostTheCmsPublishes(): void
@@ -82,6 +86,27 @@ final class CmsPostSubscribersTest extends KernelTestCase
         $this->dispatch('cms.post.unpublished', PostIdMother::DEFAULT_VALUE, ['revision' => 2]);
 
         self::assertNull($this->storedPost());
+    }
+
+    /**
+     * Taken off the site, or corrected, a post is forgotten by the page cache
+     * where it was, and where it is once corrected.
+     */
+    public function testItHasThePageCacheForgetThePostTakenOffOrCorrected(): void
+    {
+        self::saveSectionSlug();
+        $this->handle(CmsPostPublishedMother::body());
+        ForgottenPages::take();
+
+        $this->handle(['slug' => 'mi-primer-dia-corregido'] + CmsPostPublishedMother::body(), 2);
+        $corrected = ForgottenPages::take();
+        $this->dispatch('cms.post.unpublished', PostIdMother::DEFAULT_VALUE, ['revision' => 3]);
+        $unpublished = ForgottenPages::take();
+
+        self::assertCount(2, $corrected);
+        self::assertStringEndsWith('/2026/11/07/mi-primer-dia.html', $corrected[0]);
+        self::assertStringEndsWith('/2026/11/07/mi-primer-dia-corregido.html', $corrected[1]);
+        self::assertSame([$corrected[1]], $unpublished);
     }
 
     /**

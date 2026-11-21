@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
 use Shared\Tests\Domain\RichText\RichTextMother as Text;
+use Shared\Tests\Infrastructure\Http\ForgottenPages;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
 use Web\Image\Domain\Image;
@@ -78,6 +79,21 @@ final class CmsImageSubscribersTest extends KernelTestCase
 
         self::assertNull($this->storedImage());
         self::assertSame([], $this->copies());
+    }
+
+    /**
+     * Taken off the site, an image is forgotten by the page cache at every
+     * width it was served.
+     */
+    public function testItHasThePageCacheForgetTheImageTakenOffAtEveryWidth(): void
+    {
+        $this->handle('cms.image.published', CmsImagePublishedMother::body());
+        ForgottenPages::take();
+
+        $this->handle('cms.image.unpublished', [], 2);
+
+        $file = substr(CmsImagePublishedMother::PATH, 0, -\strlen('.webp'));
+        self::assertSame(["/media/{$file}-400w.webp", "/media/{$file}-800w.webp", "/media/{$file}-1200w.webp"], ForgottenPages::take());
     }
 
     public function testItKeepsTheImageWhenItsUnpublicationArrivesAfterALaterPublication(): void

@@ -11,6 +11,7 @@ use Web\Image\Domain\CmsImageUnpublished;
 use Web\Image\Domain\ImageRepository;
 use Web\Image\Domain\ImageVariants;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 
 /**
  * Takes off the site each image the CMS unpublishes.
@@ -21,6 +22,7 @@ final readonly class CmsImageUnpublishedSubscriber implements DomainEventSubscri
         private ImageRepository $imageRepository,
         private ImageVariants $imageVariants,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -33,9 +35,10 @@ final readonly class CmsImageUnpublishedSubscriber implements DomainEventSubscri
     public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsImageUnpublished) {
-            $this->projection->apply('image', $event, function () use ($event): void {
+            // Forgotten by the page cache once applied, so it doesn't show until it expires.
+            $this->cachePurge->around('image', $event->aggregateId(), fn () => $this->projection->apply('image', $event, function () use ($event): void {
                 new ImageRemover($event)($this->imageRepository, $this->imageVariants);
-            });
+            }));
         }
     }
 }

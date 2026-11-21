@@ -66,6 +66,9 @@ when@test:
             alias: http_client
         # Answers for the sites the tests read, as each test records them.
         Shared\Tests\Infrastructure\Http\RecordedSites: ~
+        # The addresses the page cache is told to forget, as each test reads them.
+        Shared\Domain\PageCache:
+            class: Shared\Tests\Infrastructure\Http\ForgottenPages
 
     parameters:
         # Tests keep their files apart from the real ones, one directory per

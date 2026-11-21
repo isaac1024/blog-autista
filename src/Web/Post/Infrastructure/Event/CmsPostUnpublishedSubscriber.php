@@ -10,6 +10,7 @@ use Web\Post\Application\PostRemover;
 use Web\Post\Domain\CmsPostUnpublished;
 use Web\Post\Domain\PostRepository;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 
 /**
  * Takes off the site each post the CMS unpublishes.
@@ -19,6 +20,7 @@ final readonly class CmsPostUnpublishedSubscriber implements DomainEventSubscrib
     public function __construct(
         private PostRepository $postRepository,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -31,9 +33,10 @@ final readonly class CmsPostUnpublishedSubscriber implements DomainEventSubscrib
     public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsPostUnpublished) {
-            $this->projection->apply('post', $event, function () use ($event): void {
+            // Forgotten by the page cache once applied, so it doesn't show until it expires.
+            $this->cachePurge->around('post', $event->aggregateId(), fn () => $this->projection->apply('post', $event, function () use ($event): void {
                 new PostRemover($event)($this->postRepository);
-            });
+            }));
         }
     }
 }

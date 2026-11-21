@@ -7,6 +7,7 @@ namespace Web\Taxonomy\Infrastructure\Event;
 use Shared\Domain\Event\ReceivedEvent;
 use Shared\Infrastructure\Event\DomainEventSubscriber;
 use Web\Shared\Domain\Projection;
+use Web\Shared\Infrastructure\Cache\SiteCachePurge;
 use Web\Taxonomy\Application\TermRemover;
 use Web\Taxonomy\Domain\CmsTermUnpublished;
 use Web\Taxonomy\Domain\TermRepository;
@@ -19,6 +20,7 @@ final readonly class CmsTermUnpublishedSubscriber implements DomainEventSubscrib
     public function __construct(
         private TermRepository $termRepository,
         private Projection $projection,
+        private SiteCachePurge $cachePurge,
     ) {}
 
     #[\Override]
@@ -31,9 +33,10 @@ final readonly class CmsTermUnpublishedSubscriber implements DomainEventSubscrib
     public function handle(ReceivedEvent $event): void
     {
         if ($event instanceof CmsTermUnpublished) {
-            $this->projection->apply('term', $event, function () use ($event): void {
+            // Forgotten by the page cache once applied, so it doesn't show until it expires.
+            $this->cachePurge->around('term', $event->aggregateId(), fn () => $this->projection->apply('term', $event, function () use ($event): void {
                 new TermRemover($event)($this->termRepository);
-            });
+            }));
         }
     }
 }

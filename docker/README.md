@@ -268,6 +268,7 @@ The first time:
    CMS_GATE_PASSWORD_HASH=
    DATABASE_URL="mysql://<user>_w:<password>@<database server>:3306/<database>?serverVersion=11.8.6-MariaDB&charset=utf8mb4"
    REDIS_URL=redis:///run/redis_<login>/redis.sock
+   VARNISH_PURGE=1
    ```
 
 4. On the account, `~/.blog-migrate.env`, out of the web root and as
@@ -427,7 +428,16 @@ next: wait for the cron to consume them, a minute at most.
   a negation, strip every parameter but `pagina` and `q` instead, which are
   the only ones the site reads. Leave it
   off for the CMS host: Varnish strips the cookies it isn't told to keep, the
-  CMS session among them. Nothing purges it: each page tells how long to keep
+  CMS session among them; in konsoleH, the CMS's subdomain has its own
+  settings with the Pipe URL `.*`, so nothing of it is cached, and the
+  static extensions leave out `xml` and `txt`, so the sitemap, the feed and
+  robots.txt keep the lifetime the app tells. Varnish takes a PURGE (and a
+  BAN) from the account's server alone, where the cron applies what the CMS
+  publishes: with `VARNISH_PURGE=1`, a post, page, author, section, tag or
+  image taken off the site, and a post or page corrected, is forgotten at
+  once (`Web\Shared\Infrastructure\Cache\SiteCachePurge`); a purge that
+  fails is a warning of the log, which `app:health` tells. Nothing else
+  purges it: each page tells how long to keep
   it with `s-maxage`, 5 minutes for every page (so a new post soon shows in
   the lists and mosaics, and one corrected or taken off soon shows so), and
   a day for an image file (browsers keep that one a year). Check

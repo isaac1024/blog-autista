@@ -7,6 +7,7 @@ namespace Web\Tests\Page\Infrastructure\Event;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Infrastructure\Event\DomainEventMessage;
 use Shared\Infrastructure\Event\DomainEventMessageHandler;
+use Shared\Tests\Infrastructure\Http\ForgottenPages;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Web\Page\Domain\Page;
 use Web\Page\Domain\PageRepository;
@@ -26,6 +27,19 @@ final class CmsPageUnpublishedSubscriberTest extends KernelTestCase
         $this->handle(2);
 
         self::assertNull($this->storedPage());
+    }
+
+    /**
+     * Taken off the site, a page is forgotten by the page cache where it was.
+     */
+    public function testItHasThePageCacheForgetThePageTakenOff(): void
+    {
+        $this->pageOnTheSite();
+        ForgottenPages::take();
+
+        $this->handle(2);
+
+        self::assertSame(['/sobre-mi.html'], ForgottenPages::take());
     }
 
     public function testItKeepsThePageWhenItWasPublishedAgainAfterwards(): void
