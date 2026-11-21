@@ -17,4 +17,14 @@ final class KernelTest extends KernelTestCase
         self::assertInstanceOf(Kernel::class, $kernel);
         self::assertSame('test', $kernel->getEnvironment());
     }
+
+    public function testItKeepsTheTimeInUtcWhateverTimeZoneTheServerSays(): void
+    {
+        date_default_timezone_set('Europe/Berlin');
+
+        self::bootKernel();
+
+        self::assertSame('UTC', date_default_timezone_get());
+        self::assertSame('UTC', new \DateTimeImmutable()->getTimezone()->getName());
+    }
 }

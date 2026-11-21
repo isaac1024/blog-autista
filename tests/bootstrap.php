@@ -13,6 +13,11 @@ ini_set('error_log', dirname(__DIR__).'/var/log/test.log');
 
 new Dotenv()->bootEnv(dirname(__DIR__).'/.env');
 
+// UTC, as the kernel keeps it once booted (Kernel::boot), also for the tests
+// that boot none, whichever order they run in: the php.ini of the container
+// keeps Europe/Berlin, as Hetzner's servers do.
+date_default_timezone_set('UTC');
+
 // Parallel runs give every process a TEST_TOKEN (ParaTest workers and Infection
 // threads count from 1) and doctrine.yaml appends it to the database name, so
 // each process owns app_test<token>. Create and migrate that database the first
