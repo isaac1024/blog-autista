@@ -1150,7 +1150,7 @@ site:
         words: 'We filled in the words of the address you opened.'
         latest: 'Latest posts'
     footer:
-        licence: 'Content published under the licence'
+        licence: 'Content under the licence'
     home: 'Go to the home page'
     not_found:
         title: 'We can’t find this page'

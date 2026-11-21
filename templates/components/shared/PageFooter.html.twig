@@ -1,19 +1,15 @@
 {#
-    The bar under every page of the site: the name of the blog, the footer
-    menu, and the licence its content is published under, CC BY 4.0. Side by
-    side from md up, one under the other below.
+    The bar under every page of the site: the footer menu, then the copyright
+    and the licence its content is published under, CC BY 4.0. The links run
+    in a row from md up, and one under the other below, so none is left
+    alone on a line of its own.
 #}
 {% if brand or links is not empty %}
 <footer class="border-t border-divider bg-bg">
-    <div class="mx-auto grid w-full max-w-[72rem] gap-6 px-[clamp(1rem,4vw,2rem)] pt-10 pb-12 text-base md:grid-cols-[minmax(0,28rem)_1fr] md:gap-x-16">
-        <div class="grid content-start gap-2">
-{% if brand %}
-            <p class="m-0 text-lg font-bold">{{ brand }}</p>
-{% endif %}
-        </div>
+    <div class="mx-auto grid w-full max-w-[72rem] gap-4 px-[clamp(1rem,4vw,2rem)] pt-8 pb-10 text-base">
 {% if links is not empty %}
-        <nav class="md:justify-self-end" aria-label="{{ 'ui.footer_navigation'|trans }}">
-            <ul class="m-0 flex list-none flex-wrap gap-x-6 gap-y-1 p-0">
+        <nav aria-label="{{ 'ui.footer_navigation'|trans }}">
+            <ul class="m-0 flex list-none flex-col gap-y-1 p-0 md:flex-row md:flex-wrap md:gap-x-8">
 {% for link in links %}
                 <li><a class="inline-flex min-h-11 items-center text-text underline decoration-divider decoration-[0.08em] underline-offset-[0.25em] hover:text-accent hover:decoration-current" href="{{ link.url }}">{{ link.label }}</a></li>
 {% endfor %}
@@ -21,7 +17,7 @@
         </nav>
 {% endif %}
 {% if brand %}
-        <p class="m-0 text-muted md:col-span-2">© {{ year ?: 'now'|date('Y') }} {{ brand }} · {{ 'site.footer.licence'|trans }} <a class="text-muted underline decoration-divider decoration-[0.08em] underline-offset-[0.25em] hover:text-accent hover:decoration-current" rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a></p>
+        <p class="m-0 text-muted">© {{ year ?: 'now'|date('Y') }} {{ brand }} · {{ 'site.footer.licence'|trans }} <a class="text-muted underline decoration-divider decoration-[0.08em] underline-offset-[0.25em] hover:text-accent hover:decoration-current" rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a></p>
 {% endif %}
     </div>
 </footer>
