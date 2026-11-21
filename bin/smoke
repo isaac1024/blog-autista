@@ -8,8 +8,8 @@
 # keeps a page not found a minute, that the headers of security reach the
 # browser once each, that the HTML is compressed, that http leads to https,
 # that compiled assets are kept for good, that the CMS is never indexed and
-# its cookie is secure, and that the visits beacon reaches PHP. It works on
-# a site without content yet, as right after the first deploy.
+# it asks its HTTP password first, and that the visits beacon reaches PHP.
+# It works on a site without content yet, as right after the first deploy.
 
 set -uo pipefail
 
@@ -71,16 +71,20 @@ fi
 h=$(headers -X POST -H 'Sec-Fetch-Site: cross-site' -H 'Content-Type: application/json' --data '{}' "$SITE/v")
 expect 'the visits beacon reaches PHP, refusing another site' "status $(status "$h"), age $(header "$h" age)" has '^4[0-9][0-9] $' "$(status "$h") $(header "$h" age)"
 
+# A static page Apache serves as is, answering 200: Hetzner's proxy leaves
+# the pages not found uncompressed, and the site has no other page before
+# its content.
+h=$(headers -H 'Accept-Encoding: br, gzip' "$SITE/error/500.html")
+expect 'HTML compressed' "status $(status "$h"), content-encoding: $(header "$h" content-encoding)" has '^200 (br|gzip)$' "$(status "$h") $(header "$h" content-encoding)"
+
 echo "CMS $CMS"
 
-# A page that answers 200: Hetzner's proxy leaves the pages not found
-# uncompressed, and the site has no other page before its content.
-h=$(headers -H 'Accept-Encoding: br, gzip' "$CMS/login")
-expect '/login answers' "status $(status "$h")" test "$(status "$h")" = 200
-expect 'HTML compressed' "content-encoding: $(header "$h" content-encoding)" has '^(br|gzip)$' "$(header "$h" content-encoding)"
+h=$(headers "$CMS/login")
+expect 'asks its HTTP password before anything' "status $(status "$h"), www-authenticate: $(header "$h" www-authenticate)" has '^401 Basic' "$(status "$h") $(header "$h" www-authenticate)"
 expect 'never indexed' "x-robots-tag: $(header "$h" x-robots-tag)" has noindex "$(header "$h" x-robots-tag)"
-expect 'its cookie is secure' 'no secure cookie' has '^set-cookie:.*;\s*secure' "$h"
 expect 'HSTS once' "$(count "$h" strict-transport-security) times" test "$(count "$h" strict-transport-security)" = 1
+code=$(status "$(headers "$CMS/robots.txt")")
+expect 'robots.txt open' "status $code" test "$code" = 200
 
 if [ "$failures" -gt 0 ]; then
     printf '\n%d check(s) failed.\n' "$failures"
