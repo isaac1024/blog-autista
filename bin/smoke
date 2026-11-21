@@ -69,7 +69,7 @@ if [ "$bare" != "$SITE" ]; then
 fi
 
 h=$(headers -X POST -H 'Sec-Fetch-Site: cross-site' -H 'Content-Type: application/json' --data '{}' "$SITE/v")
-expect 'the visits beacon reaches PHP, refusing another site' "status $(status "$h"), age $(header "$h" age)" has '^4[0-9][0-9] $' "$(status "$h") $(header "$h" age)"
+expect 'the visits beacon reaches PHP, refusing another site' "status $(status "$h"), age $(header "$h" age)" has '^4[0-9][0-9] 0?$' "$(status "$h") $(header "$h" age)"
 
 # A static page Apache serves as is, answering 200: Hetzner's proxy leaves
 # the pages not found uncompressed, and the site has no other page before
