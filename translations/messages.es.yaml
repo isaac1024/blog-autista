@@ -1150,7 +1150,7 @@ site:
         words: 'Hemos puesto las palabras de la dirección que abriste.'
         latest: 'Lo último'
     footer:
-        privacy: 'Sin rastreadores de otras webs. Lo que viene de ellas solo se carga si lo aceptas.'
+        licence: 'Contenido publicado bajo licencia'
     home: 'Ir a la portada'
     not_found:
         title: 'No encontramos esta página'

@@ -1,7 +1,7 @@
 {#
-    The bar under every page of the site: the name of the blog and what it
-    promises about privacy, the footer menu, and the copyright. Side by side
-    from md up, one under the other below.
+    The bar under every page of the site: the name of the blog, the footer
+    menu, and the licence its content is published under, CC BY 4.0. Side by
+    side from md up, one under the other below.
 #}
 {% if brand or links is not empty %}
 <footer class="border-t border-divider bg-bg">
@@ -10,7 +10,6 @@
 {% if brand %}
             <p class="m-0 text-lg font-bold">{{ brand }}</p>
 {% endif %}
-            <p class="m-0 text-muted">{{ 'site.footer.privacy'|trans }}</p>
         </div>
 {% if links is not empty %}
         <nav class="md:justify-self-end" aria-label="{{ 'ui.footer_navigation'|trans }}">
@@ -22,7 +21,7 @@
         </nav>
 {% endif %}
 {% if brand %}
-        <p class="m-0 text-muted md:col-span-2">© {{ year ?: 'now'|date('Y') }} {{ brand }}</p>
+        <p class="m-0 text-muted md:col-span-2">© {{ year ?: 'now'|date('Y') }} {{ brand }} · {{ 'site.footer.licence'|trans }} <a class="text-muted underline decoration-divider decoration-[0.08em] underline-offset-[0.25em] hover:text-accent hover:decoration-current" rel="license" href="https://creativecommons.org/licenses/by/4.0/deed.es">CC BY 4.0</a></p>
 {% endif %}
     </div>
 </footer>
