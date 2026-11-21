@@ -264,6 +264,8 @@ The first time:
    CMS_HOST=cms.<domain>
    CMS_USER_IDENTIFIER=<the administrator>
    CMS_USER_PASSWORD_HASH=
+   CMS_GATE_USER=<the user of the HTTP password>
+   CMS_GATE_PASSWORD_HASH=
    DATABASE_URL="mysql://<user>_w:<password>@<database server>:3306/<database>?serverVersion=11.8.6-MariaDB&charset=utf8mb4"
    REDIS_URL=redis:///run/redis_<login>/redis.sock
    ```
@@ -278,13 +280,14 @@ The first time:
    readable by their owner alone, and writes `.env.local.php` from
    `.env.local`.
 
-6. On the account, the hash of the administrator's password, which the
-   password itself never leaves:
+6. On the account, the hashes of the administrator's password and of the
+   HTTP password the CMS asks before anything else (another one), which
+   the passwords themselves never leave:
 
    ```bash
    cd ~/public_html/blog
-   php85 bin/console security:hash-password
-   nano .env.local      # CMS_USER_PASSWORD_HASH='<the hash>', between single quotes
+   php85 bin/console security:hash-password   # once for each
+   nano .env.local      # CMS_USER_PASSWORD_HASH='<the hash>' and CMS_GATE_PASSWORD_HASH='<the other>', between single quotes
    php85 "$(command -v composer)" dump-env prod && chmod 600 .env.local.php
    ```
 
@@ -321,6 +324,12 @@ next: wait for the cron to consume them, a minute at most.
 - `APP_SECRET`: random and non-empty, for example `php -r 'echo bin2hex(random_bytes(32));'`.
   `.env` leaves it empty on purpose, and the CMS refuses to authenticate with
   an empty one.
+- `CMS_GATE_USER` and `CMS_GATE_PASSWORD_HASH` in `.env.local` on the
+  account: the HTTP password every request to the CMS host asks before the
+  app, so bots find no login form to try (`Cms\Authentication\Infrastructure\Security\CmsGate`).
+  Previews and `robots.txt` stay open. Past ten wrong passwords in a quarter
+  of an hour, an address is refused without checking them. Production
+  refuses the CMS without them; development and the tests go without.
 - `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` in `.env.local` on the
   account: the hash of a strong password, never the password, which
   `bin/console security:hash-password` makes on the account. Put the hash

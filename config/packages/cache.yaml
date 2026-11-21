@@ -21,6 +21,9 @@ framework:
             # that keeps a sweep of words from taking every PHP process.
             web.search_limiter.cache:
                 adapter: cache.adapter.redis
+            # How many wrong HTTP passwords of the CMS each address gave of late.
+            cms.gate_limiter.cache:
+                adapter: cache.adapter.redis
 
 when@test:
     services:
@@ -42,4 +45,6 @@ when@test:
                 web.visit_limiter.cache:
                     adapter: web.test.cache.adapter.memory
                 web.search_limiter.cache:
+                    adapter: web.test.cache.adapter.memory
+                cms.gate_limiter.cache:
                     adapter: web.test.cache.adapter.memory
