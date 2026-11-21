@@ -230,42 +230,75 @@ The first time:
    DEPLOY_PHP=/usr/bin/php85
    ```
 
-2. On the account, `public_html/blog/.env.local`, with `chmod 600`: every
-   setting and secret of production lives there, and nowhere else. The
-   app connects as the user of the database that only reads and writes
+2. On the account, before anything else, the web root answers nothing, so
+   no file of the project is ever served while it lands there:
+
+   ```bash
+   printf 'Require all denied\n' > ~/public_html/.htaccess
+   ```
+
+3. On the account, `public_html/blog/.env.local`: every setting and secret
+   of production lives there, and nowhere else; nothing of it is in the
+   repository. Create it readable by its owner alone, before writing
+   anything in it:
+
+   ```bash
+   mkdir -p ~/public_html/blog
+   install -m 600 /dev/null ~/public_html/blog/.env.local
+   php85 -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'   # APP_SECRET
+   nano ~/public_html/blog/.env.local
+   ```
+
+   The app connects as the user of the database that only reads and writes
    (`_w`); its password, as every password in a URL here, of letters,
    digits, `-` and `_` only (`DATABASE_URL` is read with `resolve:`, which
-   takes a `%` for a parameter):
+   takes a `%` for a parameter). The hash of the administrator's password
+   comes after the first deploy (step 6):
 
    ```bash
    APP_ENV=prod
    APP_DEBUG=0
-   APP_SECRET=<php -r 'echo bin2hex(random_bytes(32));'>
+   APP_SECRET=<the line above>
    DEFAULT_URI=https://www.<domain>
    WEB_HOST=www.<domain>
    CMS_HOST=cms.<domain>
    CMS_USER_IDENTIFIER=<the administrator>
-   CMS_USER_PASSWORD_HASH='<bin/console security:hash-password>'
+   CMS_USER_PASSWORD_HASH=
    DATABASE_URL="mysql://<user>_w:<password>@<database server>:3306/<database>?serverVersion=11.8.6-MariaDB&charset=utf8mb4"
    REDIS_URL=redis:///run/redis_<login>/redis.sock
    ```
 
-3. On the account, `~/.blog-migrate.env`, with `chmod 600`, out of the web
-   root: the `DATABASE_URL` of the owner of the database, which may change
-   tables, for the migrations alone.
+4. On the account, `~/.blog-migrate.env`, out of the web root and as
+   private (`install -m 600 /dev/null ~/.blog-migrate.env`): the
+   `DATABASE_URL` of the owner of the database, which may change tables,
+   for the migrations alone.
 
-4. `bin/deploy`. Then, in konsoleH, the document root of the domain to
-   `blog/public`, and open the CMS once: it checks the administrator on its
-   first request.
+5. `bin/deploy`. Then, in konsoleH, the document root of the domain and of
+   the CMS's subdomain to `blog/public`. Every deploy keeps both files
+   readable by their owner alone, and writes `.env.local.php` from
+   `.env.local`.
 
-5. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
+6. On the account, the hash of the administrator's password, which the
+   password itself never leaves:
+
+   ```bash
+   cd ~/public_html/blog
+   php85 bin/console security:hash-password
+   nano .env.local      # CMS_USER_PASSWORD_HASH='<the hash>', between single quotes
+   php85 "$(command -v composer)" dump-env prod && chmod 600 .env.local.php
+   ```
+
+   Then open the CMS once: it checks the administrator on its first
+   request.
+
+7. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
    interpreter and the mail notification on:
    `/usr/home/<login>/public_html/blog/bin/cron/async` and
    `.../bin/cron/scheduler` every minute, with "exclusive execution", so a
    run a slow message stretches past the minute makes the next one skip;
    `.../bin/cron/optimize` monthly, at night.
 
-6. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
+8. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
    answer over https.
 
 After that, `bin/deploy` is all. It refuses to deploy while the queue of
@@ -290,10 +323,10 @@ next: wait for the cron to consume them, a minute at most.
   an empty one.
 - `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` in `.env.local` on the
   account: the hash of a strong password, never the password, which
-  `bin/console security:hash-password` makes. Put the hash between single
-  quotes: it holds `$`, which a `.env` file otherwise reads as a variable.
-  To change the password, hash a new one, replace it and deploy again (the
-  deploy writes `.env.local.php` from it). The CMS refuses the hash of the
+  `bin/console security:hash-password` makes on the account. Put the hash
+  between single quotes: it holds `$`, which a `.env` file otherwise reads
+  as a variable. To change the password, hash a new one, replace it and run
+  `composer dump-env prod` there, or deploy again. The CMS refuses the hash of the
   development password, `admin`, in production. Both checks run when the
   CMS first needs the administrator, on the first request to its host, not
   when the app boots, so open the CMS right after deploying.
