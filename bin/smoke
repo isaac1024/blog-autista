@@ -62,6 +62,12 @@ expect 'compiled assets kept for good' "${asset:-no asset named by the page}" ha
 h=$(headers "http://${SITE#https://}/robots.txt")
 expect 'http leads to https for good' "status $(status "$h"), location $(header "$h" location)" has '^301 https://' "$(status "$h") $(header "$h" location)"
 
+bare=${SITE/:\/\/www./:\/\/}
+if [ "$bare" != "$SITE" ]; then
+    h=$(headers "$bare/robots.txt?a=1")
+    expect 'the domain without www leads to the site for good' "status $(status "$h"), location $(header "$h" location)" test "$(status "$h") $(header "$h" location)" = "301 $SITE/robots.txt?a=1"
+fi
+
 h=$(headers -X POST -H 'Sec-Fetch-Site: cross-site' -H 'Content-Type: application/json' --data '{}' "$SITE/v")
 expect 'the visits beacon reaches PHP, refusing another site' "status $(status "$h"), age $(header "$h" age)" has '^4[0-9][0-9] $' "$(status "$h") $(header "$h" age)"
 
