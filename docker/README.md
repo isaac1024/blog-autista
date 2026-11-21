@@ -312,7 +312,10 @@ The first time:
    `/usr/home/<login>/public_html/blog/bin/cron/async` and
    `.../bin/cron/scheduler` every minute, with "exclusive execution", so a
    run a slow message stretches past the minute makes the next one skip;
-   `.../bin/cron/optimize` monthly, at night.
+   `.../bin/cron/optimize` monthly, at night; `.../bin/cron/health` daily,
+   in the morning, which writes, and so mails, only what went wrong
+   (`app:health`: events failed for good or waiting for long, errors and
+   warnings in the log of yesterday, visits left uncounted).
 
 8. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
    answer over https.

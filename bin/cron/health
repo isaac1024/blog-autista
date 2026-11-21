@@ -1,0 +1,5 @@
+#!/bin/sh
+# Cron job, daily in the morning, with the mail notification on in konsoleH:
+# writes, and so mails, only what went wrong.
+cd "$(dirname "$0")/../.." || exit 1
+exec "${PHP:-/usr/bin/php85}" bin/console app:health
