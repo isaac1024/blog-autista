@@ -187,6 +187,31 @@ final class RichTextComponentsTest extends TestCase
             ],
             [['href' => null, 'runs' => [['text' => 'Lee ', 'bold' => false], ['text' => 'el borrador', 'bold' => true], ['text' => ' luego.', 'bold' => false]]]],
         ];
+        yield 'an email address written links itself, the full stop after it apart' => [
+            [['text' => 'Escríbeme a isaac.abreu@blogautista.com.']],
+            [
+                ['href' => null, 'runs' => [['text' => 'Escríbeme a ', 'bold' => false]]],
+                ['href' => 'mailto:isaac.abreu@blogautista.com', 'runs' => [['text' => 'isaac.abreu@blogautista.com', 'bold' => false]]],
+                ['href' => null, 'runs' => [['text' => '.', 'bold' => false]]],
+            ],
+        ];
+        yield 'an email address in bold links itself, still bold' => [
+            [['text' => 'Correo: '], ['text' => 'ana@ejemplo.es', 'marks' => ['bold']], ['text' => ' o '], ['text' => 'luis+blog@correo.ejemplo.org', 'marks' => ['bold']]],
+            [
+                ['href' => null, 'runs' => [['text' => 'Correo: ', 'bold' => false]]],
+                ['href' => 'mailto:ana@ejemplo.es', 'runs' => [['text' => 'ana@ejemplo.es', 'bold' => true]]],
+                ['href' => null, 'runs' => [['text' => ' o ', 'bold' => false]]],
+                ['href' => 'mailto:luis+blog@correo.ejemplo.org', 'runs' => [['text' => 'luis+blog@correo.ejemplo.org', 'bold' => true]]],
+            ],
+        ];
+        yield 'text that only looks like an address links nothing' => [
+            [['text' => 'Usa @usuario, a@b o nombre@dominio sin punto.']],
+            [['href' => null, 'runs' => [['text' => 'Usa @usuario, a@b o nombre@dominio sin punto.', 'bold' => false]]]],
+        ];
+        yield 'an email address in a link keeps the link' => [
+            [['text' => 'ana@ejemplo.es', 'marks' => ['link'], 'page_id' => self::PUBLISHED]],
+            [['href' => '/sobre-mi.html', 'runs' => [['text' => 'ana@ejemplo.es', 'bold' => false]]]],
+        ];
     }
 
     /**

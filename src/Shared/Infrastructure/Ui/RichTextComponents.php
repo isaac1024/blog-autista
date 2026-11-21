@@ -36,6 +36,13 @@ use Shared\Infrastructure\Ui\Page\PageComponent;
 final readonly class RichTextComponents
 {
     /**
+     * An email address as people write one, such as nombre.apellido@dominio.es:
+     * a name, an at sign and a domain that ends in letters, so the full stop
+     * that ends a sentence after it is left out. Captured, to cut text around it.
+     */
+    private const string EMAIL = '/((?<![\p{L}\p{N}._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![\p{L}\p{N}-]))/u';
+
+    /**
      * Embedded images and what widgets show are painted from what the caller
      * knows of them, keyed by id; one it doesn't give, such as one off the
      * site, isn't painted, and text linking it stays plain. Ids are never
@@ -232,6 +239,10 @@ final readonly class RichTextComponents
      * that link the same one form one stretch, so a link partly bold is
      * still one link. A run whose content isn't on the site links none.
      *
+     * An email address written in a run that links nothing links itself, so
+     * a reader writes to it with a click, as written: its address stays in
+     * sight, to copy.
+     *
      * @param array<string, string> $links
      *
      * @return list<array{href: ?string, runs: list<array{text: string, bold: bool}>}>
@@ -243,19 +254,43 @@ final readonly class RichTextComponents
 
         foreach ($text->runs() as $run) {
             $linked = $run->link()?->id();
-            $href = null === $linked ? null : ($links[$linked] ?? null);
-            $piece = ['text' => $run->text(), 'bold' => \in_array(Mark::Bold, $run->marks(), true)];
+            $bold = \in_array(Mark::Bold, $run->marks(), true);
+            $pieces = null === $linked
+                ? self::emailPieces($run->text())
+                : [[$links[$linked] ?? null, $run->text()]];
 
-            if (null !== $last && $stretches[$last]['href'] === $href) {
-                $stretches[$last]['runs'][] = $piece;
+            foreach ($pieces as [$href, $piece]) {
+                $piece = ['text' => $piece, 'bold' => $bold];
 
-                continue;
+                if (null !== $last && $stretches[$last]['href'] === $href) {
+                    $stretches[$last]['runs'][] = $piece;
+
+                    continue;
+                }
+
+                $stretches[] = ['href' => $href, 'runs' => [$piece]];
+                $last = array_key_last($stretches);
             }
-
-            $stretches[] = ['href' => $href, 'runs' => [$piece]];
-            $last = array_key_last($stretches);
         }
 
         return $stretches;
+    }
+
+    /**
+     * The text of a run cut around the email addresses written in it, each
+     * piece with what it links: an address, itself; the rest, nothing.
+     *
+     * @return list<array{?string, string}>
+     */
+    private static function emailPieces(string $text): array
+    {
+        $parts = preg_split(self::EMAIL, $text, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY);
+        $pieces = [];
+
+        foreach (false === $parts ? [$text] : $parts as $part) {
+            $pieces[] = [1 === preg_match(self::EMAIL, $part) ? 'mailto:'.$part : null, $part];
+        }
+
+        return $pieces;
     }
 }
