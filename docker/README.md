@@ -53,7 +53,7 @@ grants privileges to that user.
 | Events | `symfony/messenger` + `symfony/doctrine-messenger` | Domain events go through `Shared\Domain\Event\EventBus` to the Doctrine `async` transport; the `worker` service consumes it in development (`docker compose logs -f worker`), cron in production |
 | Cronjobs | `symfony/scheduler` | `#[AsSchedule]` in `src/Shared/Infrastructure/Scheduler/Schedule.php`, plus tasks of a context such as `#[AsPeriodicTask]` on `Web\Analytics\Infrastructure\Scheduler\NightlyVisitCount`; consume with `messenger:consume scheduler_default` |
 | Visit counts | `symfony/rate-limiter` + Redis | The site counts its visits itself, with no third party: see [Visit counts](#visit-counts) |
-| Security | `symfony/security-bundle` | The CMS has one administrator, read from `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` (the hash, kept in the secrets vault in production) by `Cms\Authentication\Infrastructure\Security\AdministratorUserProvider`; `form_login` in `config/packages/security.yaml` |
+| Security | `symfony/security-bundle` | The CMS has one administrator, read from `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` (the hash, kept in the `.env.local` of the server in production) by `Cms\Authentication\Infrastructure\Security\AdministratorUserProvider`; `form_login` in `config/packages/security.yaml` |
 | Templates | `symfony/twig-bundle` + `symfony/ux-twig-component` | Every component lives in `Shared\Infrastructure\Twig\Components` (`Shared:` prefix, templates in `templates/components/shared/`); the contexts compose them |
 
 Doctrine mappings are declared per module (`src/Cms/Page/Domain`) and
@@ -230,17 +230,8 @@ The first time:
    DEPLOY_PHP=/usr/bin/php85
    ```
 
-2. The keys of the vault and the administrator's password, as in the
-   checklist below. Commit `config/secrets/prod/`, and copy the private key
-   to the account by hand, readable by its owner only:
-
-   ```bash
-   ssh -p 222 <login>@<server> 'mkdir -p public_html/blog/config/secrets/prod'
-   scp -P 222 config/secrets/prod/prod.decrypt.private.php <login>@<server>:public_html/blog/config/secrets/prod/
-   ssh -p 222 <login>@<server> 'chmod 600 public_html/blog/config/secrets/prod/prod.decrypt.private.php'
-   ```
-
-3. On the account, `public_html/blog/.env.local`, with `chmod 600`. The
+2. On the account, `public_html/blog/.env.local`, with `chmod 600`: every
+   setting and secret of production lives there, and nowhere else. The
    app connects as the user of the database that only reads and writes
    (`_w`); its password, as every password in a URL here, of letters,
    digits, `-` and `_` only (`DATABASE_URL` is read with `resolve:`, which
@@ -254,26 +245,27 @@ The first time:
    WEB_HOST=www.<domain>
    CMS_HOST=cms.<domain>
    CMS_USER_IDENTIFIER=<the administrator>
+   CMS_USER_PASSWORD_HASH='<bin/console security:hash-password>'
    DATABASE_URL="mysql://<user>_w:<password>@<database server>:3306/<database>?serverVersion=11.8.6-MariaDB&charset=utf8mb4"
    REDIS_URL=redis:///run/redis_<login>/redis.sock
    ```
 
-4. On the account, `~/.blog-migrate.env`, with `chmod 600`, out of the web
+3. On the account, `~/.blog-migrate.env`, with `chmod 600`, out of the web
    root: the `DATABASE_URL` of the owner of the database, which may change
    tables, for the migrations alone.
 
-5. `bin/deploy`. Then, in konsoleH, the document root of the domain to
+4. `bin/deploy`. Then, in konsoleH, the document root of the domain to
    `blog/public`, and open the CMS once: it checks the administrator on its
    first request.
 
-6. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
+5. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
    interpreter and the mail notification on:
    `/usr/home/<login>/public_html/blog/bin/cron/async` and
    `.../bin/cron/scheduler` every minute, with "exclusive execution", so a
    run a slow message stretches past the minute makes the next one skip;
    `.../bin/cron/optimize` monthly, at night.
 
-7. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
+6. `bin/smoke https://www.<domain> https://cms.<domain>` once the domains
    answer over https.
 
 After that, `bin/deploy` is all. It refuses to deploy while the queue of
@@ -296,24 +288,15 @@ next: wait for the cron to consume them, a minute at most.
 - `APP_SECRET`: random and non-empty, for example `php -r 'echo bin2hex(random_bytes(32));'`.
   `.env` leaves it empty on purpose, and the CMS refuses to authenticate with
   an empty one.
-- `CMS_USER_IDENTIFIER` in `.env.local`, and the hash of a strong password,
-  never the password, in the secrets vault of production. Once, make the keys
-  of the vault and keep the private one only on the account (the recipe of
-  `.gitignore` leaves it out of the repository):
-
-  ```bash
-  bin/console secrets:generate-keys --env=prod
-  bin/console security:hash-password   # type the password; copy the hash
-  bin/console secrets:set CMS_USER_PASSWORD_HASH --env=prod   # paste the hash
-  ```
-
-  Commit `config/secrets/prod/` but `prod.decrypt.private.php`, which goes to
-  the account by hand. To change the password, hash a new one and `secrets:set`
-  it again. Leave `CMS_USER_PASSWORD_HASH` out of `.env.local`: a value there
-  would hide the vault's. The CMS refuses the hash of the development
-  password, `admin`, in production. Both checks run when the CMS first needs
-  the administrator, on the first request to its host, not when the app
-  boots, so open the CMS right after deploying.
+- `CMS_USER_IDENTIFIER` and `CMS_USER_PASSWORD_HASH` in `.env.local` on the
+  account: the hash of a strong password, never the password, which
+  `bin/console security:hash-password` makes. Put the hash between single
+  quotes: it holds `$`, which a `.env` file otherwise reads as a variable.
+  To change the password, hash a new one, replace it and deploy again (the
+  deploy writes `.env.local.php` from it). The CMS refuses the hash of the
+  development password, `admin`, in production. Both checks run when the
+  CMS first needs the administrator, on the first request to its host, not
+  when the app boots, so open the CMS right after deploying.
 - `WEB_HOST`, `CMS_HOST`, `DEFAULT_URI`, `DATABASE_URL`,
   `MESSENGER_TRANSPORT_DSN`, `MESSENGER_FAILURE_TRANSPORT_DSN` and
   `REDIS_URL` with the real values, in `.env.local` on the account. Clear the

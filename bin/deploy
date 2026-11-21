@@ -20,7 +20,7 @@
 #    needs, the queue of events is empty (its messages can't be read by
 #    another release), and the files only the account keeps are there.
 # 4. Copies the release over the site, keeping what the account keeps
-#    (.env.local, the private key of the vault, var/, the images) and the
+#    (.env.local, var/, the images) and the
 #    compiled assets of the releases before, which pages Varnish still
 #    keeps name. Then migrates the database, as the owner of the database,
 #    clears the cache and writes the static error pages.
@@ -111,7 +111,6 @@ $COMPOSER check-platform-reqs --no-dev --no-interaction --quiet || fail 'PHP lac
     || fail 'GD reads and writes neither WebP nor JPEG.'
 
 [ -f "$LIVE/.env.local" ] || fail "$LIVE/.env.local is missing; see \"Deploying\" in docker/README.md."
-[ -f "$LIVE/config/secrets/prod/prod.decrypt.private.php" ] || fail 'the private key of the vault is missing on the account.'
 [ -f "$MIGRATE_ENV" ] || fail "$MIGRATE_ENV is missing: the DATABASE_URL of the owner of the database, for the migrations."
 
 # A message queued by this release can't be read by the next one.
@@ -125,7 +124,6 @@ mkdir -p "$LIVE/public/assets"
 rsync -a "$INCOMING/public/assets/" "$LIVE/public/assets/"
 rsync -a --delete \
     --exclude=/.env.local --exclude=/.env.local.php \
-    --exclude=/config/secrets/prod/prod.decrypt.private.php \
     --exclude=/var/ --exclude=/media/ --exclude=/public/media/ \
     --exclude=/public/assets/ --exclude=/public/error/ \
     "$INCOMING/" "$LIVE/"

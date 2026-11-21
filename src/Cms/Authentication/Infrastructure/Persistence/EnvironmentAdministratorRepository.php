@@ -12,8 +12,8 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 /**
  * Outbound adapter that reads the administrator from environment variables:
  * their identifier, and the hash of their password, which
- * `bin/console security:hash-password` makes and the secrets vault keeps in
- * production. The password itself is kept nowhere.
+ * `bin/console security:hash-password` makes and the .env.local of the
+ * server keeps in production. The password itself is kept nowhere.
  */
 #[AsAlias(AdministratorRepository::class)]
 final readonly class EnvironmentAdministratorRepository implements AdministratorRepository
