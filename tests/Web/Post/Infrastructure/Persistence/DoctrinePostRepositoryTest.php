@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Web\Tests\Post\Infrastructure\Persistence;
 
 use DAMA\DoctrineTestBundle\PHPUnit\SkipDatabaseRollback;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Shared\Tests\Infrastructure\Persistence\Doctrine\MappedTables;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -244,23 +245,33 @@ final class DoctrinePostRepositoryTest extends KernelTestCase
 
     /**
      * A search that would take longer than it may asks for another word.
-     * MariaDB only stops a statement between the rows it reads, so the
-     * search has a hundred to read, committed, as full-text search needs:
-     * with one, it sometimes ended before it was checked.
+     * It is made to take longer for sure: another session holds the table
+     * locked, so the search waits until MariaDB stops it. A search that only
+     * read many rows ended, on a busy machine, before the timer of MariaDB
+     * came to stop it.
      */
     #[SkipDatabaseRollback]
     public function testItRefusesASearchThatWouldTakeLongerThanItMay(): void
     {
-        foreach (range(1, 100) as $number) {
-            $this->publishText(\sprintf('01a1e000-0000-7000-8000-%012d', $number), '2026-11-01T10:00:00+00:00', 'El ruido del metro', 'Cómo viví la hora punta.', 'Cuánto ruido.');
+        $connection = $this->entityManager()->getConnection();
+        $repository = new DoctrinePostRepository($this->entityManager(), 0.05);
+        /** @var array{host: string, port: int, user: string, password: string, dbname: string} $params */
+        $params = $connection->getParams();
+        $locker = DriverManager::getConnection(['driver' => 'pdo_mysql', 'host' => $params['host'], 'port' => $params['port'], 'user' => $params['user'], 'password' => $params['password'], 'dbname' => $params['dbname']]);
+        $locker->executeStatement('LOCK TABLES web_post WRITE');
+        // A search the limit didn't stop would wait a day for the table; a
+        // few seconds tell it wasn't stopped.
+        $connection->executeStatement('SET SESSION lock_wait_timeout = 5');
+
+        try {
+            $this->expectException(SearchTooBroad::class);
+
+            $repository->searched(SearchTerms::fromText('ruido'), 0, 10);
+        } finally {
+            $connection->executeStatement('SET SESSION lock_wait_timeout = DEFAULT');
+            $locker->executeStatement('UNLOCK TABLES');
+            $locker->close();
         }
-
-        $this->entityManager()->clear();
-        $repository = new DoctrinePostRepository($this->entityManager(), 0.000001);
-
-        $this->expectException(SearchTooBroad::class);
-
-        $repository->searched(SearchTerms::fromText('ruido'), 0, 10);
     }
 
     /**
