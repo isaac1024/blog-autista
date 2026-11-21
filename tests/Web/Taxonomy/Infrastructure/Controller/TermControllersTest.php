@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Web\Tests\Taxonomy\Infrastructure\Controller;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Tests\Domain\ClockMother;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
+use Web\Page\Domain\Page;
+use Web\Page\Domain\PageRepository;
 use Web\Post\Domain\CmsPostPublished;
 use Web\Post\Domain\Post;
 use Web\Post\Domain\PostId;
@@ -16,6 +19,7 @@ use Web\Taxonomy\Domain\CmsTermPublished;
 use Web\Taxonomy\Domain\Term;
 use Web\Taxonomy\Domain\TermId;
 use Web\Taxonomy\Domain\TermRepository;
+use Web\Tests\Page\Domain\CmsPagePublishedMother;
 use Web\Tests\Post\Domain\CmsPostPublishedMother;
 use Web\Tests\Taxonomy\Domain\SectionSlugs;
 
@@ -28,6 +32,7 @@ final class TermControllersTest extends WebTestCase
     use SectionSlugs;
 
     private const string HOST = 'http://www.blogautista.localhost';
+    private const string PAGE = '0196f3a0-0000-7000-8000-0000000000b1';
 
     #[DataProvider('publishedTerms')]
     public function testItServesThePublishedTermAtItsAddress(string $taxonomy, string $path, string $route): void
@@ -76,9 +81,10 @@ final class TermControllersTest extends WebTestCase
     }
 
     /**
-     * An address of a single segment is taken as that of a section once it
-     * ends in a slash, so it goes there, as long as it is no shorter than a
-     * slug: shorter paths of the site answer only themselves.
+     * An address of a single segment without the final slash leads to the
+     * section there, as long as it is no shorter than a slug: shorter paths
+     * of the site answer only themselves. The cache keeps the way there as
+     * long as the section.
      */
     public function testItLeadsAnAddressWithoutTheTrailingSlashToTheSection(): void
     {
@@ -86,9 +92,59 @@ final class TermControllersTest extends WebTestCase
         self::saveSectionSlug();
         $this->publish('section', 'vida-diaria');
 
-        $client->request('GET', self::HOST.'/vida-diaria');
+        $client->request('GET', self::HOST.'/vida-diaria?pagina=2');
 
-        self::assertResponseRedirects(self::HOST.'/vida-diaria/', Response::HTTP_MOVED_PERMANENTLY);
+        self::assertResponseRedirects('/vida-diaria/?pagina=2', Response::HTTP_MOVED_PERMANENTLY);
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=0, public, s-maxage=300');
+    }
+
+    /**
+     * Nothing there is not found at once, as cached as any page not found,
+     * rather than a redirect to the address with the slash that is not found
+     * either: a sweep of bots reaches PHP once per address.
+     */
+    #[DataProvider('addressesOfNoSectionWithoutTheSlash')]
+    public function testItRespondsNotFoundAtOnceWithoutTheSlashWhereNoSectionIs(string $path): void
+    {
+        $client = self::createClient();
+        self::saveSectionSlug();
+        $this->publish('tag', 'sueno');
+
+        $client->request('GET', self::HOST.$path);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=0, public, s-maxage=60');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function addressesOfNoSectionWithoutTheSlash(): iterable
+    {
+        yield 'a word' => ['/wp-admin'];
+        yield 'the address of a tag' => ['/sueno'];
+    }
+
+    /**
+     * A section off the site whose address the CMS keeps a redirect for is
+     * answered by it at once, without the slash too.
+     */
+    public function testItAnswersAnAddressWithoutTheSlashByTheRedirectOfTheSectionThere(): void
+    {
+        $client = self::createClient();
+        self::saveSectionSlug();
+        self::getContainer()->get(PageRepository::class)->save(Page::publish(CmsPagePublishedMother::create(id: self::PAGE, title: 'Destino', slug: 'destino')));
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e1', '/trabajo/', 'page', self::PAGE);
+        $this->redirect('0196f3a0-0000-7000-8000-0000000000e2', '/viajes/', null, null);
+
+        $client->request('GET', self::HOST.'/trabajo?utm_source=boletin');
+
+        self::assertResponseRedirects('/destino.html?utm_source=boletin', Response::HTTP_MOVED_PERMANENTLY);
+        self::assertResponseHeaderSame('Cache-Control', 'max-age=3600, public');
+
+        $client->request('GET', self::HOST.'/viajes');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_GONE);
     }
 
     public function testItLeavesPathsShorterThanASlugToThemselves(): void
@@ -188,5 +244,16 @@ final class TermControllersTest extends WebTestCase
         }
 
         return $id;
+    }
+
+    /**
+     * A redirect as the CMS keeps it, which the site reads as it is.
+     */
+    private function redirect(string $id, string $source, ?string $targetType, ?string $targetId): void
+    {
+        self::getContainer()->get(Connection::class)->insert('shared_redirect', [
+            'id' => $id, 'source' => $source, 'target_type' => $targetType, 'target_id' => $targetId,
+            'origin_type' => null, 'origin_id' => null, 'created_at' => '2026-11-09 10:00', 'updated_at' => '2026-11-09 10:00', 'version' => 1,
+        ]);
     }
 }
