@@ -9,6 +9,8 @@ use Cms\External\Domain\Availability;
 use Cms\External\Domain\ExternalResourceRepository;
 use Cms\External\Domain\ResourceStatus;
 use Cms\Tests\External\Domain\ExternalResourceMother;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Shared\Infrastructure\Http\SignedUrls;
 use Shared\Tests\Domain\ClockMother;
@@ -163,6 +165,24 @@ final class ExternalResourceEditingControllersTest extends ExternalResourceContr
 
         self::assertSame([['key' => 'cms.notices.external.unread', 'parameters' => []]], self::errorNotices($client));
         self::assertEquals(ExternalResourceMother::video(title: 'Título viejo'), $this->storedResource(ExternalResourceMother::ID));
+    }
+
+    /**
+     * An address that reads as another kind of resource than the one saved
+     * refuses to fill it, and the editor is told why.
+     */
+    public function testItGoesBackAndTellsWhenTheAddressReadsAsAnotherKind(): void
+    {
+        $client = self::createAuthenticatedClient();
+        $this->saveResource(ExternalResourceMother::video(title: 'Título viejo'));
+        self::getContainer()->get(Connection::class)->update('cms_external_resource', ['provider' => 'vimeo'], ['id' => ExternalResourceMother::ID]);
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
+        RecordedSites::answerJson('https://www.youtube.com/oembed?format=json&url='.rawurlencode(ExternalResourceMother::VIDEO_URL), ['title' => 'Título nuevo']);
+
+        $this->post($client, 'cms_externals_fill', self::HOST.'/externals/'.ExternalResourceMother::ID.'/fill');
+
+        self::assertResponseRedirects('/externals/'.ExternalResourceMother::ID, Response::HTTP_SEE_OTHER);
+        self::assertSame([['key' => 'errors.external.url.another_kind', 'parameters' => []]], self::errorNotices($client));
     }
 
     /**
@@ -349,7 +369,7 @@ final class ExternalResourceEditingControllersTest extends ExternalResourceContr
 
     private function found(): \Cms\External\Application\ExternalResourceResponse
     {
-        self::getContainer()->get(\Doctrine\ORM\EntityManagerInterface::class)->clear();
+        self::getContainer()->get(EntityManagerInterface::class)->clear();
 
         return new ExternalResourceFinder(ExternalResourceMother::ID)(self::getContainer()->get(ExternalResourceRepository::class));
     }

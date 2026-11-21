@@ -34,7 +34,9 @@ use Web\Tests\Taxonomy\Domain\CmsTermPublishedMother;
 /**
  * The sitemap of the site follows what the CMS publishes: each address
  * search engines may index, in its file, with when it last changed; the
- * index tells each file with when any of its addresses did.
+ * index tells each file with when any of its addresses did. It checks the
+ * wiring, from the events to the XML served; the rules of the files and
+ * their entries are told by the tests of Web\Sitemap\Application.
  */
 final class SitemapTest extends WebTestCase
 {
@@ -221,26 +223,6 @@ final class SitemapTest extends WebTestCase
         self::assertSame(['/' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'paginas'));
         $client->request('GET', self::SITE.'/sitemap-autores.xml');
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
-    }
-
-    /**
-     * A file that loses an address, or gains one, changed when it did: the
-     * index tells search engines so, though the rest of it didn't change.
-     */
-    public function testAFileChangesWhenAnAddressLeavesIt(): void
-    {
-        $client = self::createClient();
-        $this->publishSite();
-
-        self::mockTime(ClockMother::now('2026-11-12 08:00:00'));
-        $this->dispatch('cms.page.unpublished', self::PAGE, ['revision' => 2]);
-
-        self::assertSame(['/' => '2026-11-07T10:00:00+00:00'], $this->file($client, 'paginas'));
-        self::assertSame('2026-11-12T08:00:00+00:00', $this->index($client)['/sitemap-paginas.xml']);
-
-        // So does one that gains an address.
-        $this->dispatch('cms.page.published', self::PAGE, ['last_published_at' => '2026-11-14T09:00:00+00:00', 'revision' => 3] + CmsPagePublishedMother::body());
-        self::assertSame('2026-11-14T09:00:00+00:00', $this->index($client)['/sitemap-paginas.xml']);
     }
 
     /**

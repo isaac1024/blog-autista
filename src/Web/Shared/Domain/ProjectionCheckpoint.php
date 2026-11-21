@@ -26,10 +26,6 @@ final class ProjectionCheckpoint
     ) {
         // Rejects what is no id of any aggregate.
         new AggregateId($aggregateId);
-
-        if ('' === $projection || $revision < 0) {
-            throw new \InvalidArgumentException('The projection checkpoint is invalid.');
-        }
     }
 
     public function revision(): int
