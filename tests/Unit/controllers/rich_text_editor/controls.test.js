@@ -197,15 +197,15 @@ test('the tools of a table edit its rows and columns, but never its header row a
     assert.equal(editor.target('tableTools').hidden, true);
 });
 
-test('the box of a table, which scrolls when the table is too wide, is reached by the keyboard and named', async () => {
+test('the box of a table, which scrolls when the table is too wide, is named and takes no focus inside the text', async () => {
     const editor = await openEditor({ document: doc(paragraph('Text')), features: TABLES });
     await editor.focus('end');
     await editor.press('insertTable');
     const box = editor.editor.view.dom.querySelector('table')?.parentElement;
 
     assert.deepEqual(
-        [box?.tabIndex, box?.getAttribute('role'), box?.getAttribute('aria-label')],
-        [0, 'region', 'Table'],
+        [box?.hasAttribute('tabindex'), box?.getAttribute('role'), box?.getAttribute('aria-label')],
+        [false, 'region', 'Table'],
     );
 });
 

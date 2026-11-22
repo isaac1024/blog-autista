@@ -9,7 +9,7 @@ import { Bold } from '@tiptap/extension-bold';
 import { Blockquote } from '@tiptap/extension-blockquote';
 import { BulletList, OrderedList, ListItem } from '@tiptap/extension-list';
 import { Table, TableRow, TableHeader, TableCell, TableView } from '@tiptap/extension-table';
-import { Placeholder, UndoRedo } from '@tiptap/extensions';
+import { Gapcursor, Placeholder, UndoRedo } from '@tiptap/extensions';
 import { BlockMover } from '../rich_text/block_mover.js';
 import { ControlsShortcut } from '../rich_text/controls_shortcut.js';
 import { movedMessage, onHeading } from '../rich_text/block_movement.js';
@@ -1396,6 +1396,13 @@ export default class extends BaseController {
             Paragraph,
             Text,
             UndoRedo,
+            /*
+             * Leaves a place for the cursor before and after a block that
+             * holds no text, as a table at the end: without it, the arrows
+             * take the cursor out of the document, and what is typed there
+             * goes back into the last cell.
+             */
+            Gapcursor,
             ControlsShortcut.configure({ onRequest: () => this.focusControls() }),
             BlockMover.configure({ onMove: (direction, section) => this.announceMove(direction, section) }),
             SlashMenu.configure({ items: (query) => this.slashItems(query), render: () => this.slashRender() }),
@@ -1466,14 +1473,15 @@ export default class extends BaseController {
 
             /*
              * The box of a table, which scrolls sideways when the table is
-             * wider than the editor, is reached by the keyboard and named, as
-             * the site's own tables are, so its hidden columns can be read.
+             * wider than the editor, is named, as the site's own tables are.
+             * Unlike theirs, it takes no focus of its own: the cursor reaches
+             * every cell, and the box scrolls to it; a box that took the focus
+             * inside the text would take what is typed below the table too.
              */
             class ScrollingTableView extends TableView {
                 /** @param {ConstructorParameters<typeof TableView>} args */
                 constructor(...args) {
                     super(...args);
-                    this.dom.tabIndex = 0;
                     this.dom.setAttribute('role', 'region');
                     this.dom.setAttribute('aria-label', label);
                 }

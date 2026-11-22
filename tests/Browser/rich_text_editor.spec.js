@@ -307,6 +307,36 @@ test('Enter in a quote source leaves the quote for a new paragraph', async ({ pa
     await expect(page.locator('[data-quote-source]')).toHaveText('Its author');
 });
 
+test('what is typed below a table at the end goes to a new paragraph, not into its last cell', async ({ page }) => {
+    const cell = (type, words) => ({ type, content: [{ type: 'paragraph', content: [{ type: 'text', text: words }] }] });
+    const document = {
+        type: 'doc',
+        content: [
+            { type: 'paragraph', content: [{ type: 'text', text: 'Before' }] },
+            {
+                type: 'table',
+                content: [
+                    { type: 'tableRow', content: [cell('tableHeader', 'Name'), cell('tableHeader', 'Purpose')] },
+                    { type: 'tableRow', content: [cell('tableCell', 'First'), cell('tableCell', 'Last')] },
+                ],
+            },
+        ],
+    };
+    await loadController(page, 'rich-text-editor', richTextEditor({
+        document,
+        features: { blocks: ['table'], headingLevels: [], marks: [] },
+        blockOptions: [{ value: 'paragraph', label: 'Paragraph' }],
+    }));
+    await page.getByText('Last').click();
+    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.type('After the table');
+
+    await expect.poll(async () => text((await inputDocument(page)).content)).toEqual(['Before', '', 'After the table']);
+    await expect(page.locator('th')).toHaveText(['Name', 'Purpose']);
+    await expect(page.locator('td')).toHaveText(['First', 'Last']);
+});
+
 test('cancels a pending image search when the editor is disconnected', async ({ page }) => {
     let requestStarted;
     const started = new Promise((resolve) => { requestStarted = resolve; });

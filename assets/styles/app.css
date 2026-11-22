@@ -534,6 +534,35 @@
             background-color: var(--color-selection-bg);
             color: var(--color-selection-text);
         }
+
+        /*
+         * The cursor between two blocks that hold no text, or after the
+         * last of them, as a table, is a line where typing opens a
+         * paragraph; the styles Tiptap would inject break the content
+         * security policy, so they are here. It takes its place among the
+         * blocks, which the editor lays out as a flex column: absolute,
+         * as Tiptap has it, it would show at the top of the text.
+         */
+        & .ProseMirror-gapcursor {
+            display: none;
+            pointer-events: none;
+            position: relative;
+            height: 0;
+            margin: 0;
+        }
+
+        & .ProseMirror-gapcursor::after {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -2px;
+            width: 20px;
+            border-top: 2px solid var(--color-text);
+        }
+
+        &.ProseMirror-focused .ProseMirror-gapcursor {
+            display: block;
+        }
     }
 
     .rich-text-menu-option {
