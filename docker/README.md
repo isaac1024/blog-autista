@@ -204,7 +204,13 @@ images, from `public/media/`, under `/media/`.
 ## Deploying
 
 `bin/deploy` deploys the commit checked out to the Hetzner account, in
-place: it builds the release here (the dependencies without the development
+place, once it has passed every gate: unless it already did, it runs
+`bin/verify` first. That runs `ui:check` alone, after Tailwind's build, as
+Lighthouse needs a quiet machine, then `composer check:full` and
+`npm run check:js:full` side by side, mutations included, the first to fail
+stopping the other, all on 8 cores; each writes its output under
+`var/verify/`, and a commit that passed is noted there. It needs the app
+running in Docker. Then it builds the release here (the dependencies without the development
 ones, the stylesheet and the compiled assets), uploads it to a staging
 folder of the account, checks the account before touching the site (PHP's
 extensions, GD's WebP and JPEG, an empty queue of events, the files only the
@@ -228,6 +234,8 @@ The first time:
    DEPLOY_PORT=<SSH port of the account>
    DEPLOY_PATH=/usr/home/<login>/public_html/blog
    DEPLOY_PHP=/usr/bin/php85
+   SMOKE_SITE=https://www.<domain>   # optional, once the domains answer:
+   SMOKE_CMS=https://cms.<domain>    # bin/smoke after every deploy
    ```
 
 2. On the account, before anything else, the web root answers nothing, so
