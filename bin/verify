@@ -60,29 +60,34 @@ step "Interface: Tailwind's build and ui:check"
 
 step 'PHP (composer check:full) and JavaScript (npm run check:js:full), side by side'
 # Each part leads a process group of its own, PHP's inside the container,
-# so stopping one stops every process it started.
-in_php setsid sh -c "echo \$\$ > $LOGS/php.pid; exec taskset -c $CPUS composer check:full" > "$LOGS/php.log" 2>&1 &
+# so stopping one stops every process it started. setsid waits for it: a
+# process already leading its group, as one started by docker exec, would
+# otherwise be forked away and look finished at once.
+in_php setsid --wait sh -c "echo \$\$ > $LOGS/php.pid; exec taskset -c $CPUS composer check:full" > "$LOGS/php.log" 2>&1 &
 php_lane=$!
-setsid sh -c "exec taskset -c $CPUS npm run check:js:full" > "$LOGS/js.log" 2>&1 &
+setsid --wait sh -c "echo \$\$ > $LOGS/js.pid; exec taskset -c $CPUS npm run check:js:full" > "$LOGS/js.log" 2>&1 &
 js_lane=$!
 
 stop_lanes() {
     if [ -f "$LOGS/php.pid" ]; then
         in_php sh -c "kill -TERM -- -\$(cat $LOGS/php.pid)" 2>/dev/null || true
     fi
-    kill -TERM -- "-$js_lane" 2>/dev/null || true
+    if [ -f "$LOGS/js.pid" ]; then
+        kill -TERM -- "-$(cat "$LOGS/js.pid")" 2>/dev/null || true
+    fi
     wait 2>/dev/null || true
-    rm -f "$LOGS/php.pid"
+    rm -f "$LOGS/php.pid" "$LOGS/js.pid"
 }
 trap 'stop_lanes; exit 130' INT TERM
 
-remaining=2
-while [ "$remaining" -gt 0 ]; do
+declare -A parts=(["$php_lane"]=php ["$js_lane"]=js)
+while [ "${#parts[@]}" -gt 0 ]; do
     set +e
-    wait -n -p lane "$php_lane" "$js_lane"
+    wait -n -p lane "${!parts[@]}"
     status=$?
     set -e
-    part=$([ "$lane" = "$php_lane" ] && echo php || echo js)
+    part=${parts[$lane]}
+    unset "parts[$lane]"
 
     if [ "$status" -ne 0 ]; then
         trap - INT TERM
@@ -91,10 +96,9 @@ while [ "$remaining" -gt 0 ]; do
     fi
 
     echo "    $part passed"
-    remaining=$((remaining - 1))
 done
 trap - INT TERM
-rm -f "$LOGS/php.pid"
+rm -f "$LOGS/php.pid" "$LOGS/js.pid"
 
 # Nothing changed while they ran, or the note would be of something else.
 if dirty || [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
