@@ -91,7 +91,8 @@ stop_lanes() {
         [ -f "$pidfile" ] || continue
         lane=$(basename "$pidfile" .pid)
         case $lane in
-            php-*) in_php sh -c "kill -TERM -- -\$(cat $pidfile)" 2>/dev/null || true ;;
+            # The sh of the container, dash, takes no -- before a group.
+            php-*) in_php sh -c "kill -TERM -\$(cat $pidfile)" 2>/dev/null || true ;;
             *) kill -TERM -- "-$(cat "$pidfile")" 2>/dev/null || true ;;
         esac
     done
@@ -106,25 +107,19 @@ js_lane js-static 'npm run audit:js && npm run lint:js && npm run typecheck:js'
 js_lane js-tests 'npm run test:js && npm run mutation:js'
 trap 'stop_lanes; exit 130' INT TERM
 
-# Looks every second for a lane that ended: wait -n, given the lanes,
-# was seen to tell of one that failed only once another ended too.
 while [ "${#lanes[@]}" -gt 0 ]; do
-    sleep 1
-    for pid in "${!lanes[@]}"; do
-        kill -0 "$pid" 2>/dev/null && continue
-        status=0
-        wait "$pid" || status=$?
-        lane=${lanes[$pid]}
-        unset "lanes[$pid]"
+    status=0
+    wait -n -p pid "${!lanes[@]}" || status=$?
+    lane=${lanes[$pid]}
+    unset "lanes[$pid]"
 
-        if [ "$status" -ne 0 ]; then
-            trap - INT TERM
-            stop_lanes
-            failed "$lane"
-        fi
+    if [ "$status" -ne 0 ]; then
+        trap - INT TERM
+        stop_lanes
+        failed "$lane"
+    fi
 
-        echo "    $lane passed ($(elapsed))"
-    done
+    echo "    $lane passed ($(elapsed))"
 done
 trap - INT TERM
 rm -f "$LOGS"/*.pid
