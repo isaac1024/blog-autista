@@ -206,10 +206,12 @@ images, from `public/media/`, under `/media/`.
 `bin/deploy` deploys the commit checked out to the Hetzner account, in
 place, once it has passed every gate: unless it already did, it runs
 `bin/verify` first. That runs `ui:check` alone, after Tailwind's build, as
-Lighthouse needs a quiet machine, then `composer check:full` and
-`npm run check:js:full` side by side, mutations included, the first to fail
-stopping the other, all on 8 cores; each writes its output under
-`var/verify/`, and a commit that passed is noted there. It needs the app
+Lighthouse needs a quiet machine, then the gates of `composer check:full`
+and `npm run check:js:full` in four lanes side by side (the static gates of
+PHP, its tests then Infection, the static gates of JavaScript, its tests
+then Stryker), the first to fail stopping the others, all on 8 cores; each
+lane writes its output under `var/verify/`, and a commit that passed is
+noted there. It needs the app
 running in Docker. Then it builds the release here (the dependencies without the development
 ones, the stylesheet and the compiled assets), uploads it to a staging
 folder of the account, checks the account before touching the site (PHP's

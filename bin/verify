@@ -8,13 +8,20 @@
 # 1. The interface first, alone, with the machine quiet, as Lighthouse
 #    measures how fast the pages load: Tailwind's build, the CSS syntax
 #    gate, then npm run ui:check.
-# 2. Then PHP (composer check:full, mutations included) and JavaScript
-#    (npm run check:js:full, mutations included) side by side. The first
-#    to fail stops the other.
+# 2. Then the gates of composer check:full and npm run check:js:full, in
+#    four lanes side by side, each running its steps one after another:
+#      php-static  composer audit:all, cs:check, twig:cs:check, complexity, stan, schema
+#      php-tests   composer test, then infection
+#      js-static   npm run audit:js, lint:js, typecheck:js
+#      js-tests    npm run test:js, then mutation:js
+#    The mutations wait for the tests they mutate, and the static gates
+#    run beside them. The first lane to fail stops the others.
 #
 # All of it on CPUS alone (8 cores): the tools count the cores they are
-# given and size their workers to them. Each part writes its output to
-# var/verify/<part>.log; the end of the one that fails is shown.
+# given and size their workers to them. Each lane writes its output to
+# var/verify/<lane>.log; the end of the one that fails is shown.
+#
+# A step added to check:full or check:js:full is added here too.
 #
 # It needs the app running in Docker (docker compose up -d), as the
 # interface is checked on it, and no change left uncommitted, as the note
@@ -39,17 +46,20 @@ curl -s -o /dev/null --max-time 10 http://www.blogautista.localhost/ \
 
 HEAD_SHA=$(git rev-parse HEAD)
 mkdir -p "$LOGS" "$NOTES"
+rm -f "$LOGS"/*.pid
 started=$SECONDS
 
 in_php() {
     docker compose exec -T -u www-data php "$@"
 }
 
-# Shows the end of a part's log and stops.
+elapsed() { echo "$(((SECONDS - started) / 60))m$(((SECONDS - started) % 60))s"; }
+
+# Shows the end of a lane's log and stops.
 failed() {
     printf '\n--- end of %s ---\n' "$LOGS/$1.log" >&2
     tail -n 40 "$LOGS/$1.log" >&2
-    fail "$1 failed; the whole output is in $LOGS/$1.log."
+    fail "$1 failed after $(elapsed); the whole output is in $LOGS/$1.log."
 }
 
 step "Interface: Tailwind's build and ui:check"
@@ -57,48 +67,63 @@ step "Interface: Tailwind's build and ui:check"
     in_php taskset -c "$CPUS" php bin/console tailwind:build \
         && taskset -c "$CPUS" npm run ui:check
 } > "$LOGS/ui.log" 2>&1 || failed ui
+echo "    ui passed ($(elapsed))"
 
-step 'PHP (composer check:full) and JavaScript (npm run check:js:full), side by side'
-# Each part leads a process group of its own, PHP's inside the container,
-# so stopping one stops every process it started. setsid waits for it: a
-# process already leading its group, as one started by docker exec, would
-# otherwise be forked away and look finished at once.
-in_php setsid --wait sh -c "echo \$\$ > $LOGS/php.pid; exec taskset -c $CPUS composer check:full" > "$LOGS/php.log" 2>&1 &
-php_lane=$!
-setsid --wait sh -c "echo \$\$ > $LOGS/js.pid; exec taskset -c $CPUS npm run check:js:full" > "$LOGS/js.log" 2>&1 &
-js_lane=$!
+# Each lane leads a process group of its own, those of PHP inside the
+# container, so stopping one stops every process it started. setsid waits
+# for it: a process already leading its group, as one started by docker
+# exec, would otherwise be forked away and look finished at once.
+declare -A lanes=()
+
+php_lane() {
+    in_php setsid --wait sh -c "echo \$\$ > $LOGS/$1.pid; exec taskset -c $CPUS sh -c '$2'" > "$LOGS/$1.log" 2>&1 &
+    lanes[$!]=$1
+}
+
+js_lane() {
+    setsid --wait sh -c "echo \$\$ > $LOGS/$1.pid; exec taskset -c $CPUS sh -c '$2'" > "$LOGS/$1.log" 2>&1 &
+    lanes[$!]=$1
+}
 
 stop_lanes() {
-    if [ -f "$LOGS/php.pid" ]; then
-        in_php sh -c "kill -TERM -- -\$(cat $LOGS/php.pid)" 2>/dev/null || true
-    fi
-    if [ -f "$LOGS/js.pid" ]; then
-        kill -TERM -- "-$(cat "$LOGS/js.pid")" 2>/dev/null || true
-    fi
+    local pidfile lane
+    for pidfile in "$LOGS"/*.pid; do
+        [ -f "$pidfile" ] || continue
+        lane=$(basename "$pidfile" .pid)
+        case $lane in
+            php-*) in_php sh -c "kill -TERM -- -\$(cat $pidfile)" 2>/dev/null || true ;;
+            *) kill -TERM -- "-$(cat "$pidfile")" 2>/dev/null || true ;;
+        esac
+    done
     wait 2>/dev/null || true
-    rm -f "$LOGS/php.pid" "$LOGS/js.pid"
+    rm -f "$LOGS"/*.pid
 }
+
+step 'Static gates, tests and mutations, in four lanes side by side'
+php_lane php-static 'composer audit:all && composer cs:check && composer twig:cs:check && composer complexity && composer stan && composer schema'
+php_lane php-tests 'composer test && composer infection'
+js_lane js-static 'npm run audit:js && npm run lint:js && npm run typecheck:js'
+js_lane js-tests 'npm run test:js && npm run mutation:js'
 trap 'stop_lanes; exit 130' INT TERM
 
-declare -A parts=(["$php_lane"]=php ["$js_lane"]=js)
-while [ "${#parts[@]}" -gt 0 ]; do
+while [ "${#lanes[@]}" -gt 0 ]; do
     set +e
-    wait -n -p lane "${!parts[@]}"
+    wait -n -p pid "${!lanes[@]}"
     status=$?
     set -e
-    part=${parts[$lane]}
-    unset "parts[$lane]"
+    lane=${lanes[$pid]}
+    unset "lanes[$pid]"
 
     if [ "$status" -ne 0 ]; then
         trap - INT TERM
         stop_lanes
-        failed "$part"
+        failed "$lane"
     fi
 
-    echo "    $part passed"
+    echo "    $lane passed ($(elapsed))"
 done
 trap - INT TERM
-rm -f "$LOGS/php.pid" "$LOGS/js.pid"
+rm -f "$LOGS"/*.pid
 
 # Nothing changed while they ran, or the note would be of something else.
 if dirty || [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
@@ -106,4 +131,4 @@ if dirty || [ "$(git rev-parse HEAD)" != "$HEAD_SHA" ]; then
 fi
 
 touch "$NOTES/$HEAD_SHA"
-step "All gates passed for $(git rev-parse --short HEAD) in $(((SECONDS - started) / 60))m$(((SECONDS - started) % 60))s"
+step "All gates passed for $(git rev-parse --short HEAD) in $(elapsed)"
