@@ -25,12 +25,11 @@ final readonly class PostCardsComponent
     /**
      * @param list<CardPost> $posts
      */
-    public function __invoke(array $posts, int $headingLevel, bool $wide): PageComponent
+    public function __invoke(array $posts, int $headingLevel): PageComponent
     {
         return new PageComponent('Shared:PostCards', [
             'cards' => $this->cards($posts),
             'headingLevel' => $headingLevel,
-            'wide' => $wide,
             // A list of posts is what its page shows: its first picture opens it.
             'lead' => true,
         ]);

@@ -6,13 +6,13 @@
     it may be the largest thing on the screen; the others wait until they
     are near it.
 #}
-<ul class="m-0 grid list-none gap-x-10 gap-y-12 p-0 sm:grid-cols-2{{ wide ? ' lg:grid-cols-3' : '' }}">
+<ul class="m-0 grid list-none gap-x-10 gap-y-12 p-0 sm:grid-cols-2">
 {% for card in cards %}
     <li class="m-0 p-0">
         <article class="h-full">
             <a class="group grid content-start gap-3 text-text no-underline forced-colors:text-[LinkText]" href="{{ card.url }}">
 {% if card.image %}
-                <img class="block aspect-video h-auto w-full bg-surface object-cover" src="{{ card.image.src }}" srcset="{{ card.image.srcset }}" sizes="{{ wide ? '(min-width: 64rem) 22rem, (min-width: 40rem) 45vw, 100vw' : '(min-width: 40rem) 21rem, 100vw' }}" width="{{ card.image.width }}" height="{{ card.image.height }}" alt=""{% if lead and loop.first %} fetchpriority="high"{% else %} loading="lazy" decoding="async"{% endif %}>
+                <img class="block aspect-video h-auto w-full bg-surface object-cover" src="{{ card.image.src }}" srcset="{{ card.image.srcset }}" sizes="(min-width: 40rem) 21rem, 100vw" width="{{ card.image.width }}" height="{{ card.image.height }}" alt=""{% if lead and loop.first %} fetchpriority="high"{% else %} loading="lazy" decoding="async"{% endif %}>
 {% endif %}
                 <div class="grid gap-1.5">
                     <span class="text-base text-accent">{{ card.section }}</span>

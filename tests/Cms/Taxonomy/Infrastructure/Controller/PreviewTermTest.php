@@ -57,7 +57,7 @@ final class PreviewTermTest extends TestCase
         $page = $this->preview($postRepository)($segment, TermResponse::fromTerm(TermMother::published(taxonomy: $taxonomy)));
         ComponentContracts::assertHonoured($page);
 
-        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => true])->props['cards'];
+        $cards = PageComponents::one($page, 'Shared:PostCards', ['headingLevel' => 2])->props['cards'];
         self::assertIsArray($cards);
         self::assertSame(['Un día'], array_column($cards, 'title'));
         self::assertSame([], PageComponents::find($page, 'Shared:Pagination', []));

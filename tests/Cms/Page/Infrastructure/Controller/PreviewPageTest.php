@@ -228,7 +228,7 @@ final class PreviewPageTest extends TestCase
         ComponentContracts::assertHonoured($result);
 
         /** @var list<array{url: string, title: string, section: string, excerpt: ?string}> $cards */
-        $cards = PageComponents::one($result, 'Shared:PostCards', ['headingLevel' => 2, 'wide' => false])->props['cards'];
+        $cards = PageComponents::one($result, 'Shared:PostCards', ['headingLevel' => 2])->props['cards'];
         self::assertSame([['Un día', 'Vida diaria publicada', PostMother::META_DESCRIPTION], ['Otro día', 'Vida diaria publicada', PostMother::META_DESCRIPTION]], array_map(static fn (array $card): array => [$card['title'], $card['section'], $card['excerpt']], $cards));
         self::assertSame('https://www.blogautista.localhost/un-dia.html', $cards[0]['url']);
     }

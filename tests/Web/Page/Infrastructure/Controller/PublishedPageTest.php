@@ -188,7 +188,7 @@ final class PublishedPageTest extends TestCase
         ComponentContracts::assertHonoured($result);
 
         $mosaics = PageComponents::find($result, 'Shared:PostCards', []);
-        self::assertSame([[2, false], [3, false]], array_map(static fn ($component): array => [$component->props['headingLevel'], $component->props['wide']], $mosaics));
+        self::assertSame([2, 3], array_map(static fn ($component): mixed => $component->props['headingLevel'], $mosaics));
         $cards = $mosaics[0]->props['cards'];
         self::assertIsArray($cards);
         self::assertSame(['/vida-diaria/2026/11/07/entrada-1.html', '/vida-diaria/2026/11/07/entrada-2.html'], array_column($cards, 'url'));

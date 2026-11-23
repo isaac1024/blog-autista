@@ -28,14 +28,13 @@ final readonly class SiteTermPage
      */
     public function __invoke(Page $layout, string $name, array $posts, ?array $pagination): Page
     {
-        // A list of cards, not a text to read: as wide as three of them.
-        $page = $layout->withMainClass(WebLayout::WIDE_MAIN_CLASS)->withMain('Shared:PageTitle', ['title' => $name]);
+        $page = $layout->withMain('Shared:PageTitle', ['title' => $name]);
 
         if ([] === $posts) {
             return $page->withMain('Shared:Notice', ['message' => $this->translator->trans('site.posts.empty')]);
         }
 
-        $cards = ($this->postCards)($posts, 2, true);
+        $cards = ($this->postCards)($posts, 2);
         $page = $page->withMain($cards->name, $cards->props);
 
         return null === $pagination ? $page : $page->withMain('Shared:Pagination', $pagination);

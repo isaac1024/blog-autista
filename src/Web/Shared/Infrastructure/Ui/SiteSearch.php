@@ -67,7 +67,7 @@ final readonly class SiteSearch
             return $page->withMain('Shared:Notice', ['message' => $this->translator->trans('site.search.none', ['%text%' => trim($text)])]);
         }
 
-        $cards = ($this->postCardsComponent)(($this->postCards)($found->posts), 3, false);
+        $cards = ($this->postCardsComponent)(($this->postCards)($found->posts), 3);
         $heading = $this->translator->trans('site.search.results', ['%text%' => trim($text)]);
 
         return $page

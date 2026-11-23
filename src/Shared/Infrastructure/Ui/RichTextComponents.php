@@ -72,7 +72,7 @@ final readonly class RichTextComponents
                 $cards = $mosaics[$block->key()] ?? [];
 
                 if ([] !== $cards) {
-                    $components[] = new PageComponent('Shared:PostCards', ['cards' => $cards, 'headingLevel' => $headingLevel + 1, 'wide' => false, 'lead' => false]);
+                    $components[] = new PageComponent('Shared:PostCards', ['cards' => $cards, 'headingLevel' => $headingLevel + 1, 'lead' => false]);
                 }
 
                 continue;
