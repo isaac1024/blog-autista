@@ -106,21 +106,25 @@ js_lane js-static 'npm run audit:js && npm run lint:js && npm run typecheck:js'
 js_lane js-tests 'npm run test:js && npm run mutation:js'
 trap 'stop_lanes; exit 130' INT TERM
 
+# Looks every second for a lane that ended: wait -n, given the lanes,
+# was seen to tell of one that failed only once another ended too.
 while [ "${#lanes[@]}" -gt 0 ]; do
-    set +e
-    wait -n -p pid "${!lanes[@]}"
-    status=$?
-    set -e
-    lane=${lanes[$pid]}
-    unset "lanes[$pid]"
+    sleep 1
+    for pid in "${!lanes[@]}"; do
+        kill -0 "$pid" 2>/dev/null && continue
+        status=0
+        wait "$pid" || status=$?
+        lane=${lanes[$pid]}
+        unset "lanes[$pid]"
 
-    if [ "$status" -ne 0 ]; then
-        trap - INT TERM
-        stop_lanes
-        failed "$lane"
-    fi
+        if [ "$status" -ne 0 ]; then
+            trap - INT TERM
+            stop_lanes
+            failed "$lane"
+        fi
 
-    echo "    $lane passed ($(elapsed))"
+        echo "    $lane passed ($(elapsed))"
+    done
 done
 trap - INT TERM
 rm -f "$LOGS"/*.pid
