@@ -328,6 +328,11 @@ test('what is typed below a table at the end goes to a new paragraph, not into i
         blockOptions: [{ value: 'paragraph', label: 'Paragraph' }],
     }));
     await page.getByText('Last').click();
+    // As a person sees the editor take the click before typing: the tools of
+    // a table show once the cursor is in one. The browser hands keys over
+    // before it tells the editor where a click left the cursor, so keys
+    // pressed at once on a busy machine would start from where it was.
+    await expect(page.getByRole('group', { name: 'Table' })).toBeVisible();
     await page.keyboard.press('End');
     await page.keyboard.press('ArrowDown');
     await page.keyboard.type('After the table');
