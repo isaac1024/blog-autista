@@ -232,10 +232,10 @@ The first time:
 1. On this machine, `.deploy.env` (git-ignored):
 
    ```bash
-   DEPLOY_SSH=<login>@<server>
+   DEPLOY_SSH=<login>@<server>       # as konsoleH shows them; never in the repository
    DEPLOY_PORT=<SSH port of the account>
-   DEPLOY_PATH=/usr/home/<login>/public_html/blog
-   DEPLOY_PHP=/usr/bin/php85
+   DEPLOY_PATH=<home of the account>/public_html/blog
+   DEPLOY_PHP=<path of the PHP binary of the account>
    SMOKE_SITE=https://www.<domain>   # optional, once the domains answer:
    SMOKE_CMS=https://cms.<domain>    # bin/smoke after every deploy
    ```
@@ -320,7 +320,7 @@ The first time:
 
 7. The cron jobs, in konsoleH's Cron job Manager, with Bash as the
    interpreter and the mail notification on:
-   `/usr/home/<login>/public_html/blog/bin/cron/async` and
+   `<home of the account>/public_html/blog/bin/cron/async` and
    `.../bin/cron/scheduler` every minute, with "exclusive execution", so a
    run a slow message stretches past the minute makes the next one skip;
    `.../bin/cron/optimize` monthly, at night; `.../bin/cron/health` daily,

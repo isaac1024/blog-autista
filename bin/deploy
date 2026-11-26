@@ -5,14 +5,15 @@
 #   bin/deploy               builds, uploads and deploys
 #   bin/deploy --build-only  builds under var/deploy/build and stops there
 #
-# Where to, in .deploy.env at the root of the project (git-ignored):
+# Where to, in .deploy.env at the root of the project, git-ignored and on
+# this machine alone: nothing of the account is written in the repository.
 #
 #   DEPLOY_SSH=<login>@<server>
 #   DEPLOY_PORT=<SSH port of the account>
-#   DEPLOY_PATH=/usr/home/<login>/public_html/blog
-#   DEPLOY_PHP=/usr/bin/php85
-#   SMOKE_SITE=https://www.blogautista.com   (optional: bin/smoke after it)
-#   SMOKE_CMS=https://cms.blogautista.com
+#   DEPLOY_PATH=<home of the account>/public_html/blog
+#   DEPLOY_PHP=<path of the PHP binary of the account>
+#   SMOKE_SITE=https://www.<domain>   (optional: bin/smoke after it)
+#   SMOKE_CMS=https://cms.<domain>
 #
 # 0. Deploys nothing that hasn't passed every gate: bin/verify runs them over
 #    HEAD unless it already passed them.
@@ -91,9 +92,8 @@ if [ "${1:-}" = --build-only ]; then
     exit 0
 fi
 
-: "${DEPLOY_SSH:?is not set in .deploy.env}" "${DEPLOY_PATH:?is not set in .deploy.env}"
-DEPLOY_PORT="${DEPLOY_PORT:?is not set in .deploy.env}"
-DEPLOY_PHP="${DEPLOY_PHP:-/usr/bin/php85}"
+: "${DEPLOY_SSH:?is not set in .deploy.env}" "${DEPLOY_PORT:?is not set in .deploy.env}" \
+    "${DEPLOY_PATH:?is not set in .deploy.env}" "${DEPLOY_PHP:?is not set in .deploy.env}"
 
 step "Uploading to ~/$STAGING"
 ssh -p "$DEPLOY_PORT" "$DEPLOY_SSH" "mkdir -p '$STAGING'"
