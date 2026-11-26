@@ -1,5 +1,9 @@
 # Blog autista
 
+> El código de [blogautista.com](https://www.blogautista.com): la web pública
+> y el CMS con el que la escribo. Es software libre, bajo la GPL versión 3 o
+> posterior; la documentación del código está en inglés.
+
 The code of [blogautista.com](https://www.blogautista.com), a blog written in
 Spanish: the public site and the CMS its single editor writes it with.
 
@@ -60,7 +64,7 @@ rather than in a public issue.
 
 ## License
 
-Copyright (C) 2026 isaac1024
+Copyright (C) 2026 Isaac Abreu
 
 This program is free software: you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
